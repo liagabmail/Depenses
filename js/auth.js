@@ -21,8 +21,8 @@ async function init() {
     updateYearPill();
     setView('mois');
     // Correction mobile : forcer le rendu si mobile
-    if (window.innerWidth <= 640 && typeof renderMois === 'function') {
-      setTimeout(() => { renderMois(); }, 100);
+    if (window.innerWidth <= 640 && typeof rerenderAll === 'function') {
+      setTimeout(() => { rerenderAll(); }, 100);
     }
   } else {
     document.getElementById('loginPage').style.display = 'flex';
