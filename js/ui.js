@@ -247,10 +247,9 @@ function renderTxnList() {
   const el = document.getElementById('txnList');
   if (!rows.length) { el.innerHTML = '<div class="empty">Aucune transaction</div>'; return; }
   el.innerHTML = rows.map(r => {
-    const uc = userC(r.user_id); const ub = userD(r.user_id);
+    const uc = userC(r.user_id);
     const catColor = getCatColor(r.Catégorie); const catBg = catColor+'22';
     return `<div class="txn-row" onclick="openEdit('${r.id}')">
-      <span class="av" style="width:22px;height:22px;font-size:10px;flex-shrink:0;background:${ub};color:${uc};border:1px solid ${uc}">${r.user_id[0]}</span>
       ${r.Catégorie ? `<span class="txn-cat" style="background:${catBg};color:${catColor};">${r.Catégorie.replace(' / Sorties','')}</span>` : ''}
       <span class="txn-desc">${r.Note ? r.Note : (r.Note === '' ? '' : (r.Catégorie || '—'))}</span>
       ${r.Date ? `<span class="txn-date">${fmtDate(r.Date)}</span>` : ''}
@@ -322,6 +321,7 @@ function renderAnnee() {
   });
 
   const nowM = now.getMonth(), nowY = now.getFullYear();
+  // Toujours tableau classique, mais scaling CSS
   let html = '';
   pairs.forEach(([y,m]) => {
     const {g, m:mv} = totals(y,m);
@@ -338,7 +338,7 @@ function renderAnnee() {
   const tG = +dG.reduce((a,b)=>a+b,0).toFixed(2);
   const tM = +dM.reduce((a,b)=>a+b,0).toFixed(2);
   html += `<tr class="ann-total"><td>Total ${yr}</td><td style="color:${gC()}">${fmt(tG)}</td><td style="color:${mC()}">${fmt(tM)}</td><td>${fmt(tG+tM)}</td><td></td></tr>`;
-  document.getElementById('annTableBody').innerHTML = html;
+  document.querySelector('.ann-table-wrapper').innerHTML = `<table class='ann-table'><thead><tr><th>Mois</th><th id='thG'>Gabriel</th><th id='thM'>Mélissa</th><th>Total</th><th>Écart</th></tr></thead><tbody id='annTableBody'>${html}</tbody></table>`;
   applyColorUI();
 }
 
