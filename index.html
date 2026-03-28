@@ -61,8 +61,6 @@
     </div>
     <div class="header-right">
       <span class="user-info" id="userInfo"></span>
-      <button class="utab" id="utabG" onclick="setUser('Gabriel')"><span class="av" id="avG">G</span>Gabriel</button>
-      <button class="utab" id="utabM" onclick="setUser('Mélissa')"><span class="av" id="avM">M</span>Mélissa</button>
       <button class="icon-btn" onclick="openSettings()" title="Paramètres" id="desktopSettingsBtn">⚙</button>
       <button class="icon-btn" onclick="doLogout()" title="Déconnexion" style="font-size:13px;">⏻</button>
     </div>
@@ -243,9 +241,10 @@
       <div class="date-field"><label>Date</label><input type="date" id="mAddDate" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--t1);font-size:13px;font-family:'DM Sans',sans-serif;padding:8px 10px;outline:none;"/></div>
       <div class="field"><label>Catégorie</label><select id="mAddCat"></select></div>
       <div class="field"><label>Note</label><input type="text" id="mAddDesc" placeholder="Ex: épicerie Metro"/></div>
-      <div style="display:flex;gap:8px;margin-top:4px;">
-        <button class="btn-cancel" style="flex:1;" onclick="closeAddModal()">Annuler</button>
-        <button class="btn-save" style="flex:2;" onclick="addMobileTxn()">+ Ajouter</button>
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+        <button class="btn-cancel" style="flex:1;min-width:120px;" onclick="closeAddModal()">Terminer</button>
+        <button class="btn-save" style="flex:2;min-width:120px;" onclick="addMobileTxn(true)">+ Ajouter une autre</button>
+        <button class="btn-save" style="flex:2;min-width:120px;" onclick="addMobileTxn(false)">Ajouter et fermer</button>
       </div>
     </div>
   </div>

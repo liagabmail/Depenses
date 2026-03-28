@@ -76,6 +76,8 @@ async function addMobileTxn() {
   const user = document.getElementById('mAddUser').value;
   const cat  = document.getElementById('mAddCat').value;
   const desc = document.getElementById('mAddDesc').value.trim();
+  let keepOpen = false;
+  if (typeof arguments[0] === 'boolean') keepOpen = arguments[0];
   if (!date) { alert('Veuillez entrer une date.'); return; }
   if (!amt || amt <= 0) { alert('Montant invalide.'); return; }
   setSyncIndicator('Enregistrement…', true);
@@ -90,8 +92,8 @@ async function addMobileTxn() {
   document.getElementById('mAddDesc').value = '';
   document.getElementById('mAddCat').value = settings.cats.includes('Autre') ? 'Autre' : settings.cats[0];
   setMobileToday();
-  closeAddModal();
   await fetchData();
   setSyncIndicator('Synchronisé ✓');
   rerenderAll();
+  if (!keepOpen) closeAddModal();
 }

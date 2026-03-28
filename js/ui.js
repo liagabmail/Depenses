@@ -37,15 +37,6 @@ function applyTheme() {
 }
 
 function applyColorUI() {
-  const tG = document.getElementById('utabG');
-  const tM = document.getElementById('utabM');
-  if (!tG) return;
-  const isGA = tG.classList.contains('active');
-  const isMA = tM.classList.contains('active');
-  tG.style.cssText = isGA ? `border-color:${gC()};background:${gD()};color:${gC()}` : '';
-  tM.style.cssText = isMA ? `border-color:${mC()};background:${mD()};color:${mC()}` : '';
-  document.getElementById('avG').style.cssText = `background:${gD()};color:${gC()};border:1px solid ${gC()}`;
-  document.getElementById('avM').style.cssText = `background:${mD()};color:${mC()};border:1px solid ${mC()}`;
   document.getElementById('titleAccent').style.color = mC();
   ['dotG1','dotG2','dotG3'].forEach(id => { const e = document.getElementById(id); if(e) e.style.background = gC(); });
   ['dotM1','dotM2','dotM3'].forEach(id => { const e = document.getElementById(id); if(e) e.style.background = mC(); });
@@ -58,8 +49,6 @@ function applyColorUI() {
 // ═══════════════════════════════════════════════════
 function setUser(u) {
   document.getElementById('addUser').value = u;
-  document.querySelectorAll('.utab').forEach(b => b.classList.remove('active'));
-  document.getElementById(u === 'Gabriel' ? 'utabG' : 'utabM').classList.add('active');
   applyColorUI();
 }
 
@@ -230,8 +219,13 @@ function renderFilters() {
   const sorts = `
     <button class="fbtn ${txnSort.startsWith('date')?'active':''}" onclick="toggleSort('date')">Date${dateArrow}</button>
     <button class="fbtn ${txnSort.startsWith('amt')?'active':''}"  onclick="toggleSort('amt')">Montant${amtArrow}</button>`;
-  document.getElementById('filterRow').innerHTML =
-    filters + '<span style="width:1px;background:var(--border2);margin:0 4px;align-self:stretch;display:inline-block;"></span>' + sorts;
+  let html = '';
+  if (window.innerWidth <= 640) {
+    html = `<div style="display:flex;gap:8px;">${filters}</div><div style="display:flex;gap:8px;margin-top:6px;">${sorts}</div>`;
+  } else {
+    html = filters + '<span style="width:1px;background:var(--border2);margin:0 4px;align-self:stretch;display:inline-block;"></span>' + sorts;
+  }
+  document.getElementById('filterRow').innerHTML = html;
 }
 
 function setFilter(f) { txnFilter = f; renderFilters(); renderTxnList(); }
@@ -258,7 +252,7 @@ function renderTxnList() {
     return `<div class="txn-row" onclick="openEdit('${r.id}')">
       <span class="av" style="width:22px;height:22px;font-size:10px;flex-shrink:0;background:${ub};color:${uc};border:1px solid ${uc}">${r.user_id[0]}</span>
       ${r.Catégorie ? `<span class="txn-cat" style="background:${catBg};color:${catColor};">${r.Catégorie.replace(' / Sorties','')}</span>` : ''}
-      <span class="txn-desc">${r.Note || r.Catégorie || '—'}</span>
+      <span class="txn-desc">${r.Note ? r.Note : (r.Note === '' ? '' : (r.Catégorie || '—'))}</span>
       ${r.Date ? `<span class="txn-date">${fmtDate(r.Date)}</span>` : ''}
       <span class="txn-amt" style="color:${uc}">${fmt(r.Montant)}</span>
     </div>`;

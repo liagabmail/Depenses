@@ -108,7 +108,11 @@ body{background:var(--bg0);color:var(--t1);font-family:'DM Sans',sans-serif;min-
 .btn-add:hover{opacity:.85;}
 
 /* TXN LIST */
-.filter-row{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
+.filter-row{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:nowrap;align-items:center;overflow-x:auto;}
+@media (max-width: 640px) {
+  .filter-row { flex-wrap:nowrap; overflow-x:auto; }
+  .fbtn { min-width: 90px; }
+}
 .fbtn{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--t2);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;}
 .fbtn.active{background:var(--bg3);color:var(--t1);}
 .fbtn:hover{color:var(--t1);}
