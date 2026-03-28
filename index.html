@@ -88,7 +88,8 @@
         <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title">Par catégorie — <span id="catMonthLabel"></span></div>
+        <div class="card-title">Répartition par catégorie — <span id="catMonthLabel"></span></div>
+        <div class="chart-wrap"><canvas id="catPieChart"></canvas></div>
         <div id="catBars"></div>
       </div>
     </div>
@@ -126,7 +127,8 @@
         <div class="chart-wrap"><canvas id="annBarChart"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title">Par catégorie</div>
+        <div class="card-title">Répartition par catégorie — <span id="annYearLabel"></span></div>
+        <div class="chart-wrap"><canvas id="annCatPieChart"></canvas></div>
         <div id="annCatBars"></div>
       </div>
     </div>
@@ -154,12 +156,11 @@
     <div class="cmp-grid" id="cmpChips"></div>
     <div class="metrics" id="cmpMetrics"></div>
     <div class="card">
-      <div class="card-title">Comparaison des mois sélectionnés</div>
-      <div class="legend"><span><span class="dot" id="dotG3"></span>Gabriel</span><span><span class="dot" id="dotM3"></span>Mélissa</span></div>
+      <div class="card-title">Répartition par catégorie (total)</div>
       <div class="cmp-chart-wrap"><canvas id="cmpChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">Par catégorie — sélection</div>
+      <div class="card-title">Détail des catégories</div>
       <div id="cmpCatBars"></div>
     </div>
   </div>
@@ -178,10 +179,6 @@
     </div>
     <div class="sec-sep">Catégories</div>
     <div class="cat-chip-list" id="catChipList"></div>
-    <div class="cat-add-row">
-      <input type="text" id="newCatInput" placeholder="Nouvelle catégorie…" onkeydown="if(event.key==='Enter')addCategory()"/>
-      <button class="btn-sm" onclick="addCategory()">+ Ajouter</button>
-    </div>
   </div>
 </div>
 

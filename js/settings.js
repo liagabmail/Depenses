@@ -9,7 +9,7 @@ async function loadSettings() {
       dark: data.dark !== false,
       colorG: data.colorg || '#5B9CF6',
       colorM: data.colorm || '#F472B6',
-      catColors: data.catcolors || {}
+        // catColors: data.catcolors || {} // plus utilisé
     };
   }
   isDark = settings.dark;
@@ -23,7 +23,7 @@ async function saveSettings() {
     dark: settings.dark,
     colorg: settings.colorG,
     colorm: settings.colorM,
-    catcolors: settings.catColors || {}
+     // catcolors: settings.catColors || {} // plus utilisé
   });
   setSyncIndicator('Synchronisé ✓');
 }
@@ -49,9 +49,6 @@ async function toggleDark() {
   await saveSettings();
 }
 
-function getCatColor(cat) {
-  return settings.catColors && settings.catColors[cat] ? settings.catColors[cat] : '#8b90a8';
-}
 
 function saveCatColor(cat, color) {
   if (!settings.catColors) settings.catColors = {};
@@ -62,32 +59,19 @@ function saveCatColor(cat, color) {
 }
 
 function renderCatChips() {
-  document.getElementById('catChipList').innerHTML = settings.cats.map((cat, i) => {
+  document.getElementById('catChipList').innerHTML = settings.cats.map((cat) => {
     const col = getCatColor(cat);
-    return `<div class="cat-chip" style="border-color:${col}33;">
-      <input type="color" value="${col}" title="Couleur" style="width:16px;height:16px;border:none;border-radius:3px;cursor:pointer;padding:0;background:none;flex-shrink:0;" onchange="saveCatColor('${cat.replace(/'/g, "\\'")}',this.value)" onclick="event.stopPropagation()"/>
+    return `<div class="cat-chip" style="border-color:${col}33;background:${col}22;">
+      <span style="width:14px;height:14px;border-radius:50%;background:${col};display:inline-block;margin-right:8px;"></span>
       <span style="flex:1;">${cat}</span>
-      <span class="cat-chip-del" onclick="deleteCat(${i})">✕</span>
     </div>`;
   }).join('');
 }
 
 async function addCategory() {
-  const inp = document.getElementById('newCatInput');
-  const val = inp.value.trim();
-  if (!val || settings.cats.includes(val)) return;
-  settings.cats.push(val);
-  inp.value = '';
-  renderCatChips();
-  populateCatSelect('addCat');
-  await saveSettings();
+  // Suppression de l'ajout de catégorie
 }
 
 async function deleteCat(i) {
-  if (settings.cats.length <= 1) return;
-  settings.cats.splice(i, 1);
-  renderCatChips();
-  populateCatSelect('addCat');
-  rerenderAll();
-  await saveSettings();
+  // Suppression de la suppression de catégorie
 }
