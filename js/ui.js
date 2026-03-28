@@ -221,7 +221,7 @@ function renderFilters() {
     <button class="fbtn ${txnSort.startsWith('amt')?'active':''}"  onclick="toggleSort('amt')">Montant${amtArrow}</button>`;
   let html = '';
   if (window.innerWidth <= 640) {
-    html = `<div style="display:flex;gap:8px;">${filters}</div><div style="display:flex;gap:8px;margin-top:6px;">${sorts}</div>`;
+    html = `<div style="display:flex;gap:8px;">${filters}</div><div style="display:flex;gap:8px;margin-top:8px;">${sorts}</div>`;
   } else {
     html = filters + '<span style="width:1px;background:var(--border2);margin:0 4px;align-self:stretch;display:inline-block;"></span>' + sorts;
   }

@@ -29,8 +29,7 @@ async function saveSettings() {
 }
 
 function openSettings() {
-  document.getElementById('colorG').value = settings.colorG || '#5B9CF6';
-  document.getElementById('colorM').value = settings.colorM || '#F472B6';
+  // Plus de colorG/colorM
   document.getElementById('darkToggle').className = 'toggle' + (isDark ? ' on' : '');
   renderCatChips();
   document.getElementById('settingsModal').style.display = 'flex';

@@ -1,3 +1,9 @@
+.txn-date {
+  text-align: center;
+  display: inline-block;
+  min-width: 70px;
+  width: 80px;
+}
 /* Transactions : scaling mobile */
 @media (max-width: 700px) {
   .txn-row {
