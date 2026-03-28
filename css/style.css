@@ -1,3 +1,37 @@
+/* TABLE RESPONSIVE MOBILE */
+@media (max-width: 700px) {
+  .ann-table, .ann-table thead, .ann-table tbody, .ann-table tr, .ann-table th, .ann-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .ann-table {
+    overflow-x: auto;
+    white-space: nowrap;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 480px;
+    max-width: 100vw;
+    margin-bottom: 1rem;
+  }
+  .ann-table th, .ann-table td {
+    min-width: 120px;
+    text-align: left;
+    padding: 8px 10px;
+  }
+  .ann-table thead {
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .ann-table tr {
+    border-bottom: 1px solid var(--border2);
+  }
+  .ann-table::-webkit-scrollbar {
+    height: 8px;
+  }
+}
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg0:#0e1018;--bg1:#161b26;--bg2:#1c2233;--bg3:#232a3e;
