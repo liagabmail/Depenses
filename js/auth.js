@@ -24,6 +24,16 @@ async function init() {
     if (window.innerWidth <= 640 && typeof rerenderAll === 'function') {
       setTimeout(() => { rerenderAll(); }, 100);
     }
+
+    // Correction PWA/mobile : forcer le rendu quand l'app devient visible
+    if (!window._depensesVisibilityListener) {
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && typeof rerenderAll === 'function') {
+          setTimeout(() => { rerenderAll(); }, 100);
+        }
+      });
+      window._depensesVisibilityListener = true;
+    }
   } else {
     document.getElementById('loginPage').style.display = 'flex';
   }
