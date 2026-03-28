@@ -9,7 +9,7 @@ async function loadSettings() {
       dark: data.dark !== false,
       colorG: data.colorg || '#5B9CF6',
       colorM: data.colorm || '#F472B6',
-        // catColors: data.catcolors || {} // plus utilisé
+      // catColors: data.catcolors || {} // plus utilisé
     };
   }
   isDark = settings.dark;
@@ -23,22 +23,26 @@ async function saveSettings() {
     dark: settings.dark,
     colorg: settings.colorG,
     colorm: settings.colorM,
-     // catcolors: settings.catColors || {} // plus utilisé
+    // catcolors: settings.catColors || {} // plus utilisé
   });
   setSyncIndicator('Synchronisé ✓');
 }
 
 function openSettings() {
-  // Plus de colorG/colorM
   document.getElementById('darkToggle').className = 'toggle' + (isDark ? ' on' : '');
   renderCatChips();
   document.getElementById('settingsModal').style.display = 'flex';
 }
-function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+function closeSettings() {
+  document.getElementById('settingsModal').style.display = 'none';
+}
 
 function saveUserColor(who, color) {
-  if (who === 'G') settings.colorG = color; else settings.colorM = color;
-  applyColorUI(); rerenderAll(); saveSettings();
+  if (who === 'G') settings.colorG = color;
+  else settings.colorM = color;
+  applyColorUI();
+  rerenderAll();
+  saveSettings();
 }
 
 async function toggleDark() {
@@ -48,7 +52,6 @@ async function toggleDark() {
   rerenderAll();
   await saveSettings();
 }
-
 
 function saveCatColor(cat, color) {
   if (!settings.catColors) settings.catColors = {};
@@ -69,9 +72,9 @@ function renderCatChips() {
 }
 
 async function addCategory() {
-  // Suppression de l'ajout de catégorie
+  // Désactivé
 }
 
 async function deleteCat(i) {
-  // Suppression de la suppression de catégorie
+  // Désactivé
 }

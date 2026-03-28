@@ -66,6 +66,7 @@ function setView(v) {
   });
   const bp = document.getElementById('bnav-params');
   if (bp) bp.classList.remove('active');
+
   if (v === 'mois') renderMois();
   else if (v === 'annee') renderAnnee();
   else renderComparer();
@@ -102,7 +103,6 @@ document.addEventListener('click', e => {
     document.getElementById('yearPickerPopup').classList.remove('open');
   }
 });
-
 // ═══════════════════════════════════════════════════
 // DATA HELPERS
 // ═══════════════════════════════════════════════════
@@ -133,19 +133,18 @@ function catTotals(pairs) {
   return r;
 }
 
-// Couleurs fixes pour chaque catégorie présente
 function getCatColor(cat) {
   const fixedColors = {
-    'Épicerie': '#66BB6A',      // vert vif doux
-    'Restaurant': '#FF8A65',   // orange chaud
-    'Restaurant / Sorties': '#FF8A65', // orange chaud (alias)
-    'Transport': '#42A5F5',    // bleu clair
-    'Loisirs': '#AB47BC',      // violet équilibré
-    'Abonnements': '#78909C',  // gris bleuté
-    'Santé': '#EF5350',        // rouge doux
-    'Maison': '#BCAAA4',       // beige/brun clair
-    'Autre': '#CFD8DC',        // gris très clair
-    '': '#CFD8DC'              // Catégorie vide = gris très clair
+    'Épicerie': '#66BB6A',
+    'Restaurant': '#FF8A65',
+    'Restaurant / Sorties': '#FF8A65',
+    'Transport': '#42A5F5',
+    'Loisirs': '#AB47BC',
+    'Abonnements': '#78909C',
+    'Santé': '#EF5350',
+    'Maison': '#BCAAA4',
+    'Autre': '#CFD8DC',
+    '': '#CFD8DC'
   };
   return fixedColors[cat] || fixedColors['Autre'];
 }
@@ -206,9 +205,8 @@ function renderCatBars(pairs, elId) {
       <div class="cat-amts"><span style="color:${gC()}">${fmt(ct[c].g||0)}</span><span style="color:var(--t3)">/</span><span style="color:${mC()}">${fmt(ct[c].m||0)}</span></div>
     </div>`).join('');
 }
-
 // ═══════════════════════════════════════════════════
-// VUE MOIS — filtres, tri, liste transactions
+// VUE MOIS
 // ═══════════════════════════════════════════════════
 function populateCatSelect(id) {
   const el = document.getElementById(id);
@@ -217,6 +215,7 @@ function populateCatSelect(id) {
   el.innerHTML = settings.cats.map(c => `<option>${c}</option>`).join('');
   const defaultCat = settings.cats.includes('Autre') ? 'Autre' : settings.cats[settings.cats.length-1];
   el.value = (cur && settings.cats.includes(cur)) ? cur : defaultCat;
+
   if (id === 'addCat') {
     const mel = document.getElementById('mAddCat');
     if (mel) {
@@ -274,7 +273,6 @@ function renderTxnList() {
     </div>`;
   }).join('');
 }
-
 // ─ Charts ─
 let lineInst = null;
 function renderLineChart() {
@@ -286,12 +284,36 @@ function renderLineChart() {
   lineInst = new Chart(document.getElementById('lineChart'), {
     type: 'line',
     data: { labels: MONTHS.map(m => m.slice(0,3)), datasets: [
-      {label:'Gabriel', data:dG, borderColor:gC(), backgroundColor:rgba(gC(),.12), tension:.38, fill:true, pointRadius:3, pointBackgroundColor:gC()},
-      {label:'Mélissa', data:dM, borderColor:mC(), backgroundColor:rgba(mC(),.12), tension:.38, fill:true, pointRadius:3, pointBackgroundColor:mC()}
+      {
+        label:'Gabriel',
+        data:dG,
+        borderColor:gC(),
+        backgroundColor:rgba(gC(),.12),
+        tension:.38,
+        fill:true,
+        pointRadius:3,
+        pointBackgroundColor:gC()
+      },
+      {
+        label:'Mélissa',
+        data:dM,
+        borderColor:mC(),
+        backgroundColor:rgba(mC(),.12),
+        tension:.38,
+        fill:true,
+        pointRadius:3,
+        pointBackgroundColor:mC()
+      }
     ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales: { x:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:"'DM Sans',sans-serif"}}},
-                y:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:"'DM Sans',sans-serif"},callback:v=>'$'+v}} } }
+    options: {
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales: {
+        x:{ grid:{ color:gc }, ticks:{ color:tc, font:{ size:10 } } },
+        y:{ grid:{ color:gc }, ticks:{ color:tc, font:{ size:10 }, callback:v=>'$'+v } }
+      }
+    }
   });
 }
 
@@ -303,13 +325,13 @@ function renderMois() {
   document.getElementById('lineYearLabel').textContent = currentYear;
   renderMetrics([[currentYear, currentMonthIdx]], 'metricsRow', lbl);
 
-  // Pie chart par catégorie (mois en cours)
   const pairs = [[currentYear, currentMonthIdx]];
   const ct = catTotals(pairs);
   const cats = settings.cats.filter(c => ct[c] && (ct[c].g > 0 || ct[c].m > 0));
   const data = cats.map(c => (ct[c].g||0) + (ct[c].m||0));
   const labels = cats.map(c => c.replace(' / Sorties',''));
   const colors = cats.map(c => getCatColor(c));
+
   if (window.catPieInst) { window.catPieInst.destroy(); window.catPieInst = null; }
   const pieEl = document.getElementById('catPieChart');
   if (pieEl) {
@@ -330,7 +352,13 @@ function renderMois() {
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + fmt(ctx.parsed); } } }
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return ctx.label + ': ' + fmt(ctx.parsed);
+                }
+              }
+            }
           }
         }
       });
@@ -338,16 +366,17 @@ function renderMois() {
       pieEl.getContext('2d').clearRect(0,0,pieEl.width,pieEl.height);
     }
   }
-  // Affichage texte sous le graphique
+
   const catBarsEl = document.getElementById('catBars');
   if (!cats.length) {
     catBarsEl.innerHTML = '<div class="empty">Aucune dépense</div>';
   } else {
-    catBarsEl.innerHTML = cats.map((c,i) => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      <span style="width:14px;height:14px;border-radius:50%;background:${colors[i]};display:inline-block;"></span>
-      <span style="flex:1;">${labels[i]}</span>
-      <span style="font-weight:500;">${fmt(data[i])}</span>
-    </div>`).join('');
+    catBarsEl.innerHTML = cats.map((c,i) => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="width:14px;height:14px;border-radius:50%;background:${colors[i]};display:inline-block;"></span>
+        <span style="flex:1;">${labels[i]}</span>
+        <span style="font-weight:500;">${fmt(data[i])}</span>
+      </div>`).join('');
   }
 
   populateCatSelect('addCat');
@@ -366,12 +395,13 @@ function renderAnnee() {
   document.getElementById('annYearLabel').textContent = yr;
   const pairs = Array.from({length:12}, (_,i) => [yr, i]);
   renderMetrics(pairs, 'annMetrics', 'Année ' + yr);
-  // Pie chart par catégorie (année)
+
   const ct = catTotals(pairs);
   const cats = settings.cats.filter(c => ct[c] && (ct[c].g > 0 || ct[c].m > 0));
   const data = cats.map(c => (ct[c].g||0) + (ct[c].m||0));
   const labels = cats.map(c => c.replace(' / Sorties',''));
   const colors = cats.map(c => getCatColor(c));
+
   if (window.annCatPieInst) { window.annCatPieInst.destroy(); window.annCatPieInst = null; }
   const pieEl = document.getElementById('annCatPieChart');
   if (pieEl) {
@@ -392,7 +422,13 @@ function renderAnnee() {
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + fmt(ctx.parsed); } } }
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return ctx.label + ': ' + fmt(ctx.parsed);
+                }
+              }
+            }
           }
         }
       });
@@ -400,16 +436,17 @@ function renderAnnee() {
       pieEl.getContext('2d').clearRect(0,0,pieEl.width,pieEl.height);
     }
   }
-  // Affichage texte sous le graphique
+
   const catBarsEl = document.getElementById('annCatBars');
   if (!cats.length) {
     catBarsEl.innerHTML = '<div class="empty">Aucune dépense</div>';
   } else {
-    catBarsEl.innerHTML = cats.map((c,i) => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      <span style="width:14px;height:14px;border-radius:50%;background:${colors[i]};display:inline-block;"></span>
-      <span style="flex:1;">${labels[i]}</span>
-      <span style="font-weight:500;">${fmt(data[i])}</span>
-    </div>`).join('');
+    catBarsEl.innerHTML = cats.map((c,i) => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="width:14px;height:14px;border-radius:50%;background:${colors[i]};display:inline-block;"></span>
+        <span style="flex:1;">${labels[i]}</span>
+        <span style="font-weight:500;">${fmt(data[i])}</span>
+      </div>`).join('');
   }
 
   const dG = pairs.map(([y,m]) => totals(y,m).g);
@@ -419,17 +456,25 @@ function renderAnnee() {
   const tc = isDark ? '#454c68' : '#9aa0b8';
   annBarInst = new Chart(document.getElementById('annBarChart'), {
     type: 'bar',
-    data: { labels: MONTHS.map(m=>m.slice(0,3)), datasets: [
-      {label:'Gabriel', data:dG, backgroundColor:rgba(gC(),.7), borderRadius:4},
-      {label:'Mélissa', data:dM, backgroundColor:rgba(mC(),.7), borderRadius:4}
-    ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales: { x:{grid:{display:false},ticks:{color:tc,font:{size:10}}},
-                y:{grid:{color:gc},ticks:{color:tc,font:{size:10},callback:v=>'$'+v}} } }
+    data: {
+      labels: MONTHS.map(m=>m.slice(0,3)),
+      datasets: [
+        {label:'Gabriel', data:dG, backgroundColor:rgba(gC(),.7), borderRadius:4},
+        {label:'Mélissa', data:dM, backgroundColor:rgba(mC(),.7), borderRadius:4}
+      ]
+    },
+    options: {
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales: {
+        x:{ grid:{ display:false }, ticks:{ color:tc, font:{ size:10 } } },
+        y:{ grid:{ color:gc }, ticks:{ color:tc, font:{ size:10 }, callback:v=>'$'+v } }
+      }
+    }
   });
 
   const nowM = now.getMonth(), nowY = now.getFullYear();
-  // Toujours tableau classique, mais scaling CSS
   let html = '';
   pairs.forEach(([y,m]) => {
     const {g, m:mv} = totals(y,m);
@@ -440,17 +485,37 @@ function renderAnnee() {
       <td style="color:${gC()}">${fmt(g)}</td>
       <td style="color:${mC()}">${fmt(mv)}</td>
       <td>${fmt(g+mv)}</td>
-      <td>${d===0?'—':`<span class="diff-badge" style="background:${rgba(d>0?gC():mC(),.15)};color:${d>0?gC():mC()};font-size:11px;">${d>0?'G':'M'} +${fmt(Math.abs(d))}</span>`}</td>
+      <td>${
+        d===0
+          ? '—'
+          : `<span class="diff-badge" style="background:${rgba(d>0?gC():mC(),.15)};color:${d>0?gC():mC()};font-size:11px;">${d>0?'G':'M'} +${fmt(Math.abs(d))}</span>`
+      }</td>
     </tr>`;
   });
   const tG = +dG.reduce((a,b)=>a+b,0).toFixed(2);
   const tM = +dM.reduce((a,b)=>a+b,0).toFixed(2);
-  html += `<tr class="ann-total"><td>Total ${yr}</td><td style="color:${gC()}">${fmt(tG)}</td><td style="color:${mC()}">${fmt(tM)}</td><td>${fmt(tG+tM)}</td><td></td></tr>`;
-  document.querySelector('.ann-table-wrapper').innerHTML = `<table class='ann-table'><thead><tr><th>Mois</th><th id='thG'>Gabriel</th><th id='thM'>Mélissa</th><th>Total</th><th>Écart</th></tr></thead><tbody id='annTableBody'>${html}</tbody></table>`;
+  html += `<tr class="ann-total">
+    <td>Total ${yr}</td>
+    <td style="color:${gC()}">${fmt(tG)}</td>
+    <td style="color:${mC()}">${fmt(tM)}</td>
+    <td>${fmt(tG+tM)}</td>
+    <td></td>
+  </tr>`;
+  document.querySelector('.ann-table-wrapper').innerHTML =
+    `<table class='ann-table'>
+      <thead>
+        <tr><th>Mois</th><th id='thG'>Gabriel</th><th id='thM'>Mélissa</th><th>Total</th><th>Écart</th></tr>
+      </thead>
+      <tbody id='annTableBody'>${html}</tbody>
+    </table>`;
   applyColorUI();
 }
 
-function goToMonth(m, y) { currentMonthIdx = m; currentYear = y; setView('mois'); }
+function goToMonth(m, y) {
+  currentMonthIdx = m;
+  currentYear = y;
+  setView('mois');
+}
 
 // ═══════════════════════════════════════════════════
 // VUE COMPARER
@@ -463,7 +528,9 @@ function renderComparer() {
     const bg     = isSel ? rgba(gC(),.18) : 'transparent';
     const border = isSel ? gC() : 'var(--border2)';
     const color  = isSel ? gC() : 'var(--t2)';
-    return `<button class="month-chip" style="background:${bg};border-color:${border};color:${color}" onclick="toggleCmp(${i})">${mn.slice(0,3)} <span style="font-size:10px;opacity:.65">${cmpYear}</span></button>`;
+    return `<button class="month-chip" style="background:${bg};border-color:${border};color:${color}" onclick="toggleCmp(${i})">
+      ${mn.slice(0,3)} <span style="font-size:10px;opacity:.65">${cmpYear}</span>
+    </button>`;
   }).join('');
 
   const pairs = cmpSelected.length ? cmpSelected.map(s=>[s.y,s.m]) : [[cmpYear, currentMonthIdx]];
@@ -478,13 +545,22 @@ function renderComparer() {
   const tc = isDark ? '#454c68' : '#9aa0b8';
   cmpInst = new Chart(document.getElementById('cmpChart'), {
     type: 'bar',
-    data: { labels: pairs.map(([y,m]) => MONTHS[m].slice(0,3)+' '+y), datasets: [
-      {label:'Gabriel', data:dG, backgroundColor:rgba(gC(),.7), borderRadius:5},
-      {label:'Mélissa', data:dM, backgroundColor:rgba(mC(),.7), borderRadius:5}
-    ]},
-    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-      scales: { x:{grid:{display:false},ticks:{color:tc,font:{size:11},autoSkip:false,maxRotation:35}},
-                y:{grid:{color:gc},ticks:{color:tc,font:{size:10},callback:v=>'$'+v}} } }
+    data: {
+      labels: pairs.map(([y,m]) => MONTHS[m].slice(0,3)+' '+y),
+      datasets: [
+        {label:'Gabriel', data:dG, backgroundColor:rgba(gC(),.7), borderRadius:5},
+        {label:'Mélissa', data:dM, backgroundColor:rgba(mC(),.7), borderRadius:5}
+      ]
+    },
+    options: {
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales: {
+        x:{ grid:{ display:false }, ticks:{ color:tc, font:{ size:11 }, autoSkip:false, maxRotation:35 } },
+        y:{ grid:{ color:gc }, ticks:{ color:tc, font:{ size:10 }, callback:v=>'$'+v } }
+      }
+    }
   });
   applyColorUI();
 }
@@ -493,7 +569,6 @@ function toggleCmp(i) {
   const idx = cmpSelected.findIndex(s => s.y === cmpYear && s.m === i);
   if (idx === -1) {
     if (cmpSelected.length >= 2) {
-      // Retire le plus ancien (premier sélectionné)
       cmpSelected.shift();
     }
     cmpSelected.push({y:cmpYear, m:i});
@@ -519,8 +594,13 @@ function openEdit(id) {
   document.getElementById('eCat').value  = row.Catégorie || '';
   document.getElementById('editModal').style.display = 'flex';
 }
-function closeEdit() { document.getElementById('editModal').style.display = 'none'; editRow = null; }
-function closeOverlay(id, e) { if (e.target.id === id) document.getElementById(id).style.display = 'none'; }
+function closeEdit() {
+  document.getElementById('editModal').style.display = 'none';
+  editRow = null;
+}
+function closeOverlay(id, e) {
+  if (e.target.id === id) document.getElementById(id).style.display = 'none';
+}
 
 // ═══════════════════════════════════════════════════
 // MODAL AJOUT MOBILE
@@ -533,7 +613,9 @@ function openAddModal() {
   document.getElementById('addModalOverlay').classList.add('open');
   setTimeout(() => document.getElementById('mAddAmt').focus(), 100);
 }
-function closeAddModal() { document.getElementById('addModalOverlay').classList.remove('open'); }
+function closeAddModal() {
+  document.getElementById('addModalOverlay').classList.remove('open');
+}
 function setMobileToday() {
   const d = new Date();
   document.getElementById('mAddDate').value = d.toISOString().split('T')[0];
@@ -542,132 +624,14 @@ function setMobileToday() {
 // ═══════════════════════════════════════════════════
 // RERENDER ALL
 // ═══════════════════════════════════════════════════
-let cmpPieInst = null;
-function renderComparer() {
-  document.getElementById('cmpYearLabel').textContent = cmpYear;
-  document.getElementById('cmpChips').innerHTML = MONTHS.map((mn, i) => {
-    const isSel = cmpSelected.some(s => s.y === cmpYear && s.m === i);
-    const bg     = isSel ? rgba(gC(),.18) : 'transparent';
-    const border = isSel ? gC() : 'var(--border2)';
-    const color  = isSel ? gC() : 'var(--t2)';
-    return `<button class="month-chip" style="background:${bg};border-color:${border};color:${color}" onclick="toggleCmp(${i})">${mn.slice(0,3)} <span style="font-size:10px;opacity:.65">${cmpYear}</span></button>`;
-  }).join('');
-  const pairs = cmpSelected.length ? cmpSelected.map(s=>[s.y,s.m]) : [[cmpYear, currentMonthIdx]];
-  const label = pairs.length === 1 ? MONTHS[pairs[0][1]]+' '+pairs[0][0] : pairs.length+' mois';
-  renderMetrics(pairs, 'cmpMetrics', label);
-
-  // Un pie chart par mois sélectionné, côte à côte, avec titre
-  const cmpChartWrap = document.querySelector('.cmp-chart-wrap');
-  cmpChartWrap.innerHTML = '';
-  if (window.cmpPieInsts) { window.cmpPieInsts.forEach(inst => inst.destroy()); }
-  window.cmpPieInsts = [];
-  const chartRow = document.createElement('div');
-  chartRow.style.display = 'flex';
-  chartRow.style.flexWrap = 'wrap';
-  chartRow.style.justifyContent = 'center';
-  chartRow.style.gap = '32px';
-  pairs.forEach(([y, m], idx) => {
-    const ct = catTotals([[y, m]]);
-    const cats = settings.cats.filter(c => ct[c] && (ct[c].g > 0 || ct[c].m > 0));
-    const data = cats.map(c => (ct[c].g||0) + (ct[c].m||0));
-    const labels = cats.map(c => c.replace(' / Sorties',''));
-    const colors = cats.map(c => getCatColor(c));
-    const chartCol = document.createElement('div');
-    chartCol.style.display = 'flex';
-    chartCol.style.flexDirection = 'column';
-    chartCol.style.alignItems = 'center';
-    chartCol.style.width = '220px';
-    const title = document.createElement('div');
-    title.textContent = MONTHS[m] + ' ' + y;
-    title.style.fontWeight = 'bold';
-    title.style.fontSize = '15px';
-    title.style.color = isDark ? '#eee' : '#222';
-    title.style.marginBottom = '8px';
-    chartCol.appendChild(title);
-    const canvas = document.createElement('canvas');
-    canvas.width = 220; canvas.height = 180;
-    chartCol.appendChild(canvas);
-    chartRow.appendChild(chartCol);
-    if (cats.length) {
-      const inst = new Chart(canvas, {
-        type: 'pie',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-            backgroundColor: colors,
-            borderColor: isDark ? '#222' : '#fff',
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: false,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + fmt(ctx.parsed); } } }
-          }
-        }
-      });
-      window.cmpPieInsts.push(inst);
-    } else {
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.font = '14px DM Sans, sans-serif';
-      ctx.fillStyle = isDark ? '#eee' : '#222';
-      ctx.fillText('Aucune dépense', 10, 30);
-    }
-  });
-  cmpChartWrap.appendChild(chartRow);
-
-  // (Légende supprimée)
-
-  // Tableau comparatif des catégories pour les mois sélectionnés (max 2)
-  const catBarsEl = document.getElementById('cmpCatBars');
-  if (pairs.length === 0) {
-    catBarsEl.innerHTML = '<div class="empty">Aucune dépense</div>';
-    return;
+function rerenderAll() {
+  if (currentView === 'mois') {
+    renderMois();
+  } else if (currentView === 'annee') {
+    renderAnnee();
+  } else if (currentView === 'comparer') {
+    renderComparer();
   }
-  // Affiche toutes les catégories, même si le total est 0
-  const allCats = settings.cats.slice();
-  // En-tête
-  let table = '<table class="cmp-cat-table" style="border-collapse:collapse;width:100%;min-width:320px;text-align:right;">';
-  table += '<thead><tr><th style="text-align:left;padding:6px 10px;">Catégorie</th>';
-  pairs.forEach(([y, m]) => {
-    table += `<th style="padding:6px 10px;">${MONTHS[m]} ${y}</th>`;
-  });
-  table += '<th style="padding:6px 10px;">Total</th></tr></thead><tbody>';
-  // Lignes par catégorie
-  allCats.forEach(cat => {
-    table += `<tr><td style="color:${getCatColor(cat)};font-weight:500;text-align:left;padding:6px 10px;white-space:nowrap;">${cat}</td>`;
-    let total = 0;
-    pairs.forEach(([y, m]) => {
-      const ct = catTotals([[y, m]]);
-      const val = (ct[cat]?.g||0) + (ct[cat]?.m||0);
-      total += val;
-      table += `<td style="padding:6px 10px;">${val === 0 ? '<span style=\"opacity:.4;\">$0.00</span>' : fmt(val)}</td>`;
-    });
-    table += `<td style="font-weight:600;padding:6px 10px;">${total === 0 ? '<span style=\"opacity:.4;\">$0.00</span>' : fmt(total)}</td></tr>`;
-  });
-  // Ligne total général
-  table += '<tr class="cmp-cat-total" style="background:rgba(128,128,128,0.07);"><td style="font-weight:600;text-align:left;padding:6px 10px;">Total</td>';
-  pairs.forEach(([y, m]) => {
-    const ct = catTotals([[y, m]]);
-    let sum = 0;
-    allCats.forEach(cat => { sum += (ct[cat]?.g||0) + (ct[cat]?.m||0); });
-    table += `<td style="font-weight:600;padding:6px 10px;">${sum === 0 ? '<span style=\"opacity:.4;\">$0.00</span>' : fmt(sum)}</td>`;
-  });
-  // Total général sur la sélection
-  let sumAll = 0;
-  allCats.forEach(cat => {
-    pairs.forEach(([y, m]) => {
-      const ct = catTotals([[y, m]]);
-      sumAll += (ct[cat]?.g||0) + (ct[cat]?.m||0);
-    });
-  });
-  table += `<td style="font-weight:700;padding:6px 10px;">${sumAll === 0 ? '<span style=\"opacity:.4;\">$0.00</span>' : fmt(sumAll)}</td></tr>`;
-  table += '</tbody></table>';
-  catBarsEl.innerHTML = table;
-
-  applyColorUI();
 }
+
+

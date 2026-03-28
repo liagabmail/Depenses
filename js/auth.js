@@ -4,15 +4,17 @@
 async function init() {
   const { data: { session } } = await sb.auth.getSession();
   document.getElementById('loadingPage').style.display = 'none';
+
   if (session) {
     document.getElementById('mainApp').style.display = 'block';
     document.getElementById('userInfo').textContent = session.user.email;
+
     let who = localStorage.getItem('depenses_user');
     if (!who) {
       who = await askUserIdentity();
       if (who) localStorage.setItem('depenses_user', who);
     }
-    // Si déjà enregistré, on ne redemande pas, on connecte directement
+
     await loadSettings();
     await fetchData();
     applyTheme();
@@ -20,6 +22,7 @@ async function init() {
     setToday();
     updateYearPill();
     setView('mois');
+
     // Correction mobile : forcer le rendu si mobile
     if (window.innerWidth <= 640 && typeof rerenderAll === 'function') {
       setTimeout(() => { rerenderAll(); }, 100);
@@ -79,7 +82,10 @@ async function doLogin() {
     password: document.getElementById('loginPass').value
   });
   if (error) document.getElementById('loginErr').textContent = 'Erreur : ' + error.message;
-  else { document.getElementById('loginPage').style.display = 'none'; init(); }
+  else {
+    document.getElementById('loginPage').style.display = 'none';
+    init();
+  }
 }
 
 async function doLogout() {
