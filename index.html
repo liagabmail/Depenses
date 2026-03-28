@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dépenses — Gabriel & Mélissa</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingPage" class="centered">
+  <div class="loading-txt">Chargement…</div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginPage" class="centered" style="display:none;">
+  <div class="login-box">
+    <div class="login-title">Dépenses<em style="color:var(--cM);">.</em></div>
+    <div class="login-sub">Gabriel &amp; Mélissa</div>
+    <form class="lf" onsubmit="event.preventDefault();doLogin()">
+      <div><label>Courriel</label><input type="email" id="loginEmail" placeholder="votre@email.com" autocomplete="email"/></div>
+      <div><label>Mot de passe</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"/></div>
+      <div class="login-err" id="loginErr"></div>
+      <button type="submit" class="btn-login">Se connecter</button>
+    </form>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none;">
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="title">Dépenses<em id="titleAccent">.</em></div>
+      <div style="position:relative;display:inline-block;">
+        <div class="year-pill" id="yearPill" onclick="toggleYearPicker()">
+          <span id="yearPillVal"></span>
+          <span style="font-size:10px;opacity:.6;">▾</span>
+        </div>
+        <div class="year-picker-popup" id="yearPickerPopup">
+          <button class="yp-btn" onclick="shiftYear(-1);event.stopPropagation()">←</button>
+          <span class="year-picker-val" id="ypVal"></span>
+          <button class="yp-btn" onclick="shiftYear(1);event.stopPropagation()">→</button>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="user-info" id="userInfo"></span>
+      <button class="utab" id="utabG" onclick="setUser('Gabriel')"><span class="av" id="avG">G</span>Gabriel</button>
+      <button class="utab" id="utabM" onclick="setUser('Mélissa')"><span class="av" id="avM">M</span>Mélissa</button>
+      <button class="icon-btn" onclick="openSettings()" title="Paramètres" id="desktopSettingsBtn">⚙</button>
+      <button class="icon-btn" onclick="doLogout()" title="Déconnexion" style="font-size:13px;">⏻</button>
+    </div>
+  </div>
+
+  <!-- VIEW TABS -->
+  <div class="view-tabs">
+    <button class="vtab active" onclick="setView('mois')">Mois en cours</button>
+    <button class="vtab" onclick="setView('annee')">Toute l'année</button>
+    <button class="vtab" onclick="setView('comparer')">Comparer</button>
+  </div>
+
+  <!-- ══ VUE MOIS ══ -->
+  <div id="vue-mois">
+    <div class="month-nav">
+      <button class="mnav-btn" onclick="changeMonth(-1)">←</button>
+      <div class="month-label" id="monthLabel"></div>
+      <button class="mnav-btn" onclick="changeMonth(1)">→</button>
+    </div>
+    <div class="metrics" id="metricsRow"></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Évolution <span id="lineYearLabel"></span></div>
+        <div class="legend"><span><span class="dot" id="dotG1"></span>Gabriel</span><span><span class="dot" id="dotM1"></span>Mélissa</span></div>
+        <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Par catégorie — <span id="catMonthLabel"></span></div>
+        <div id="catBars"></div>
+      </div>
+    </div>
+    <div class="card desktop-add-card">
+      <div class="card-title">Ajouter une dépense</div>
+      <div class="add-form" id="desktopAddForm">
+        <div class="form-row" style="align-items:flex-end;">
+          <div class="field" style="max-width:150px;"><label>Qui</label><select id="addUser"><option>Gabriel</option><option>Mélissa</option></select></div>
+          <div class="field" style="max-width:140px;"><label>Montant ($)</label><input type="number" id="addAmt" placeholder="0.00" min="0" step="0.01"/></div>
+          <div class="date-field">
+            <label>Date</label>
+            <input type="date" id="addDate" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--t1);font-size:13px;font-family:'DM Sans',sans-serif;padding:8px 10px;outline:none;"/>
+          </div>
+          <div class="field" style="max-width:165px;"><label>Catégorie</label><select id="addCat"></select></div>
+          <div class="field"><label>Note</label><input type="text" id="addDesc" placeholder="Ex: épicerie Metro"/></div>
+          <button class="btn-add" onclick="addTxn()">+ Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Transactions — <span id="txnMonthLabel"></span></div>
+      <div class="filter-row" id="filterRow"></div>
+      <div class="sync-indicator" id="syncIndicator"></div>
+      <div class="txn-list" id="txnList"></div>
+    </div>
+  </div>
+
+  <!-- ══ VUE ANNÉE ══ -->
+  <div id="vue-annee" style="display:none;">
+    <div class="metrics" id="annMetrics"></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Total mensuel — <span id="annYearLabel"></span></div>
+        <div class="legend"><span><span class="dot" id="dotG2"></span>Gabriel</span><span><span class="dot" id="dotM2"></span>Mélissa</span></div>
+        <div class="chart-wrap"><canvas id="annBarChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Par catégorie</div>
+        <div id="annCatBars"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Résumé mensuel</div>
+      <table class="ann-table">
+        <thead><tr><th>Mois</th><th id="thG">Gabriel</th><th id="thM">Mélissa</th><th>Total</th><th>Écart</th></tr></thead>
+        <tbody id="annTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ VUE COMPARER ══ -->
+  <div id="vue-comparer" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+      <div style="font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;font-weight:500;">Sélectionner les mois à comparer</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="mnav-btn" onclick="changeCmpYear(-1)">←</button>
+        <span style="font-size:13px;font-weight:500;min-width:44px;text-align:center;" id="cmpYearLabel"></span>
+        <button class="mnav-btn" onclick="changeCmpYear(1)">→</button>
+      </div>
+    </div>
+    <div class="cmp-grid" id="cmpChips"></div>
+    <div class="metrics" id="cmpMetrics"></div>
+    <div class="card">
+      <div class="card-title">Comparaison des mois sélectionnés</div>
+      <div class="legend"><span><span class="dot" id="dotG3"></span>Gabriel</span><span><span class="dot" id="dotM3"></span>Mélissa</span></div>
+      <div class="cmp-chart-wrap"><canvas id="cmpChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Par catégorie — sélection</div>
+      <div id="cmpCatBars"></div>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+</div><!-- /#mainApp -->
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settingsModal" style="display:none;" onclick="closeOverlay('settingsModal',event)">
+  <div class="modal">
+    <div class="modal-title">Paramètres <span class="modal-close" onclick="closeSettings()">✕</span></div>
+    <div class="sec-sep">Apparence</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Mode sombre</div><div class="setting-sub">Basculer thème clair / sombre</div></div>
+      <div class="toggle on" id="darkToggle" onclick="toggleDark()"></div>
+    </div>
+    <div class="sec-sep">Couleurs</div>
+    <div class="color-row"><div class="color-row-label">Couleur Gabriel</div><input type="color" class="color-input" id="colorG" onchange="saveUserColor('G',this.value)"/></div>
+    <div class="color-row"><div class="color-row-label">Couleur Mélissa</div><input type="color" class="color-input" id="colorM" onchange="saveUserColor('M',this.value)"/></div>
+    <div class="sec-sep">Catégories</div>
+    <div class="cat-chip-list" id="catChipList"></div>
+    <div class="cat-add-row">
+      <input type="text" id="newCatInput" placeholder="Nouvelle catégorie…" onkeydown="if(event.key==='Enter')addCategory()"/>
+      <button class="btn-sm" onclick="addCategory()">+ Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="overlay" id="editModal" style="display:none;" onclick="closeOverlay('editModal',event)">
+  <div class="edit-modal">
+    <div class="modal-title">Modifier la dépense <span class="modal-close" onclick="closeEdit()">✕</span></div>
+    <div class="edit-form">
+      <div class="field"><label>Qui</label><select id="eUser"><option>Gabriel</option><option>Mélissa</option></select></div>
+      <div class="field"><label>Montant ($)</label><input type="number" id="eAmt" min="0" step="0.01"/></div>
+      <div class="date-field"><label>Date</label><input type="date" id="eDate" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--t1);font-size:13px;font-family:'DM Sans',sans-serif;padding:8px 10px;outline:none;"/></div>
+      <div class="field"><label>Catégorie</label><select id="eCat"></select></div>
+      <div class="field"><label>Note</label><input type="text" id="eDesc"/></div>
+    </div>
+    <div class="edit-actions">
+      <button class="btn-del" onclick="deleteEditTxn()">Supprimer</button>
+      <button class="btn-cancel" onclick="closeEdit()">Annuler</button>
+      <button class="btn-save" onclick="saveEdit()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fabBtn" onclick="openAddModal()" aria-label="Ajouter une dépense">+</button>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-btn active" id="bnav-mois" onclick="setView('mois')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Mois
+    </button>
+    <button class="bnav-btn" id="bnav-annee" onclick="setView('annee')">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Année
+    </button>
+    <button class="bnav-btn" id="bnav-comparer" onclick="setView('comparer')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Comparer
+    </button>
+    <button class="bnav-btn" id="bnav-params" onclick="openSettings()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Paramètres
+    </button>
+  </div>
+</nav>
+
+<!-- ADD MODAL (mobile FAB) -->
+<div class="add-modal-overlay" id="addModalOverlay" onclick="if(event.target===this)closeAddModal()">
+  <div class="add-modal">
+    <div class="add-modal-handle"></div>
+    <div class="add-modal-title">Ajouter une dépense</div>
+    <div class="add-form" style="gap:12px;">
+      <div class="field"><label>Qui</label><select id="mAddUser"><option>Gabriel</option><option>Mélissa</option></select></div>
+      <div class="field"><label>Montant ($)</label><input type="number" id="mAddAmt" placeholder="0.00" min="0" step="0.01"/></div>
+      <div class="date-field"><label>Date</label><input type="date" id="mAddDate" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;color:var(--t1);font-size:13px;font-family:'DM Sans',sans-serif;padding:8px 10px;outline:none;"/></div>
+      <div class="field"><label>Catégorie</label><select id="mAddCat"></select></div>
+      <div class="field"><label>Note</label><input type="text" id="mAddDesc" placeholder="Ex: épicerie Metro"/></div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn-cancel" style="flex:1;" onclick="closeAddModal()">Annuler</button>
+        <button class="btn-save" style="flex:2;" onclick="addMobileTxn()">+ Ajouter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS (ordre important) -->
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script>init();</script>
+
+</body>
+</html>
