@@ -20,6 +20,10 @@ async function init() {
     setToday();
     updateYearPill();
     setView('mois');
+    // Correction mobile : forcer le rendu si mobile
+    if (window.innerWidth <= 640 && typeof renderMois === 'function') {
+      setTimeout(() => { renderMois(); }, 100);
+    }
   } else {
     document.getElementById('loginPage').style.display = 'flex';
   }
