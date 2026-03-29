@@ -639,7 +639,7 @@ function toggleCmp(i) {
   }
   renderComparer();
 }
-  renderComparer();
+
 // ═══════════════════════════════════════════════════
 // MODAL ÉDITION
 // ═══════════════════════════════════════════════════
@@ -694,3 +694,5 @@ function rerenderAll() {
     renderComparer();
   }
 }
+
+
