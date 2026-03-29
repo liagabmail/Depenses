@@ -146,7 +146,6 @@
   <!-- ══ VUE COMPARER ══ -->
   <div id="vue-comparer" style="display:none;">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-      <div style="font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;font-weight:500;">Sélectionner les mois à comparer</div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button class="mnav-btn" onclick="changeCmpYear(-1)">←</button>
         <span style="font-size:13px;font-weight:500;min-width:44px;text-align:center;" id="cmpYearLabel"></span>
@@ -156,12 +155,8 @@
     <div class="cmp-grid" id="cmpChips"></div>
     <div class="metrics" id="cmpMetrics"></div>
     <div class="card">
-      <div class="card-title">Répartition par catégorie (total)</div>
-      <div class="cmp-chart-wrap"><canvas id="cmpChart"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Détail des catégories</div>
-      <div id="cmpCatBars"></div>
+      <div class="card-title">Détail par catégorie</div>
+      <div class="ann-table-wrapper" id="cmpCatTable"></div>
     </div>
   </div>
 

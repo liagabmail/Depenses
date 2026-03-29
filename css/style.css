@@ -299,3 +299,7 @@ body{background:var(--bg0);color:var(--t1);font-family:'DM Sans',sans-serif;min-
   .add-modal{border-radius:18px;max-width:480px;padding:1.5rem;}
   .add-modal-handle{display:none;}
 }
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}

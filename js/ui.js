@@ -227,21 +227,55 @@ function populateCatSelect(id) {
 }
 
 function renderFilters() {
-  const filters = ['Tous','Gabriel','Mélissa'].map(f =>
-    `<button class="fbtn ${txnFilter===f?'active':''}" onclick="setFilter('${f}')">${f}</button>`
-  ).join('');
-  const dateArrow = txnSort.startsWith('date') ? (txnSort==='date-desc'?' ↓':' ↑') : '';
-  const amtArrow  = txnSort.startsWith('amt')  ? (txnSort==='amt-desc' ?' ↓':' ↑') : '';
+  const filterList = ['Tous', 'Gabriel', 'Mélissa'];
+
+  // --- FILTER BUTTONS ---
+  const filters = filterList.map(f => `
+    <button 
+      class="fbtn ${txnFilter === f ? 'active' : ''}" 
+      onclick="setFilter('${f}')"
+    >${f}</button>
+  `).join('');
+
+  // --- SORT ARROWS ---
+  const dateArrow = txnSort.startsWith('date')
+    ? (txnSort === 'date-desc' ? ' ↓' : ' ↑')
+    : '';
+
+  const amtArrow = txnSort.startsWith('amt')
+    ? (txnSort === 'amt-desc' ? ' ↓' : ' ↑')
+    : '';
+
+  // --- SORT BUTTONS ---
   const sorts = `
-    <button class="fbtn ${txnSort.startsWith('date')?'active':''}" onclick="toggleSort('date')">Date${dateArrow}</button>
-    <button class="fbtn ${txnSort.startsWith('amt')?'active':''}"  onclick="toggleSort('amt')">Montant${amtArrow}</button>`;
-  let html = '';
-  if (window.innerWidth <= 640) {
-    html = `<div style="display:flex;gap:8px;">${filters}</div><div style="display:flex;gap:8px;margin-top:8px;">${sorts}</div>`;
-  } else {
-    html = filters + '<span style="width:1px;background:var(--border2);margin:0 4px;align-self:stretch;display:inline-block;"></span>' + sorts;
-  }
-  document.getElementById('filterRow').innerHTML = html;
+    <button 
+      class="fbtn ${txnSort.startsWith('date') ? 'active' : ''}" 
+      onclick="toggleSort('date')"
+    >Date${dateArrow}</button>
+
+    <button 
+      class="fbtn ${txnSort.startsWith('amt') ? 'active' : ''}" 
+      onclick="toggleSort('amt')"
+    >Montant${amtArrow}</button>
+  `;
+
+  // --- FORCE VERTICAL STACK ---
+  const html = `
+    <div style="display:flex;gap:8px;flex-wrap:nowrap;">
+      ${filters}
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:nowrap;margin-top:8px;">
+      ${sorts}
+    </div>
+  `;
+
+  // Force le conteneur principal à être vertical
+  const row = document.getElementById('filterRow');
+  row.style.display = "flex";
+  row.style.flexDirection = "column";
+  row.style.gap = "0"; // optionnel
+  row.innerHTML = html;
 }
 
 function setFilter(f) { txnFilter = f; renderFilters(); renderTxnList(); }
@@ -522,60 +556,121 @@ function goToMonth(m, y) {
 // ═══════════════════════════════════════════════════
 let cmpInst = null;
 function renderComparer() {
+  // Garantir 2 slots
+  if (cmpSelected.length < 2) {
+    const pm = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const py = now.getMonth() === 0 ? now.getFullYear()-1 : now.getFullYear();
+    cmpSelected = [{y:py,m:pm},{y:now.getFullYear(),m:now.getMonth()}];
+  }
+
+  const s0 = cmpSelected[0], s1 = cmpSelected[1];
+  const lbl0 = MONTHS[s0.m] + ' ' + s0.y;
+  const lbl1 = MONTHS[s1.m] + ' ' + s1.y;
+
+  // Navigation année + chips — A en bleu, B en rose
   document.getElementById('cmpYearLabel').textContent = cmpYear;
   document.getElementById('cmpChips').innerHTML = MONTHS.map((mn, i) => {
-    const isSel = cmpSelected.some(s => s.y === cmpYear && s.m === i);
+    const isSel = (s0.y===cmpYear&&s0.m===i) || (s1.y===cmpYear&&s1.m===i);
     const bg     = isSel ? rgba(gC(),.18) : 'transparent';
     const border = isSel ? gC() : 'var(--border2)';
     const color  = isSel ? gC() : 'var(--t2)';
-    return `<button class="month-chip" style="background:${bg};border-color:${border};color:${color}" onclick="toggleCmp(${i})">
-      ${mn.slice(0,3)} <span style="font-size:10px;opacity:.65">${cmpYear}</span>
-    </button>`;
+    return `<button class="month-chip" style="background:${bg};border-color:${border};color:${color}" onclick="toggleCmp(${i})">${mn.slice(0,3)} <span style="font-size:10px;opacity:.65">${cmpYear}</span></button>`;
   }).join('');
 
-  const pairs = cmpSelected.length ? cmpSelected.map(s=>[s.y,s.m]) : [[cmpYear, currentMonthIdx]];
-  const label = pairs.length === 1 ? MONTHS[pairs[0][1]]+' '+pairs[0][0] : pairs.length+' mois';
-  renderMetrics(pairs, 'cmpMetrics', label);
-  renderCatBars(pairs, 'cmpCatBars');
+  // Métriques : Gabriel total des 2 mois vs Mélissa total des 2 mois
+  const tG = +(totals(s0.y,s0.m).g + totals(s1.y,s1.m).g).toFixed(2);
+  const tM = +(totals(s0.y,s0.m).m + totals(s1.y,s1.m).m).toFixed(2);
+  const diff = +(tG - tM).toFixed(2);
+  document.getElementById('cmpMetrics').innerHTML = `
+    <div class="metric">
+      <div class="metric-label"><span class="av" style="width:16px;height:16px;font-size:8px;background:${gD()};color:${gC()};border:1px solid ${gC()}">G</span>Gabriel</div>
+      <div class="metric-value" style="color:${gC()}">${fmt(tG)}</div>
+      <div class="metric-sub">${lbl0} + ${lbl1}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label"><span class="av" style="width:16px;height:16px;font-size:8px;background:${mD()};color:${mC()};border:1px solid ${mC()}">M</span>Mélissa</div>
+      <div class="metric-value" style="color:${mC()}">${fmt(tM)}</div>
+      <div class="metric-sub">${lbl0} + ${lbl1}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Total commun</div>
+      <div class="metric-value">${fmt(tG+tM)}</div>
+      <div class="metric-sub">ensemble</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Écart</div>
+      <div class="metric-value" style="font-size:14px;margin-top:4px;">
+        ${diff===0
+          ? `<span class="diff-badge" style="background:rgba(128,128,128,.15);color:var(--t2)">Égalité</span>`
+          : `<span class="diff-badge" style="background:${rgba(diff>0?gC():mC(),.15)};color:${diff>0?gC():mC()}">${diff>0?'Gabriel':'Mélissa'} +${fmt(Math.abs(diff))}</span>`}
+      </div>
+      <div class="metric-sub">dépense plus</div>
+    </div>`;
 
-  const dG = pairs.map(([y,m]) => totals(y,m).g);
-  const dM = pairs.map(([y,m]) => totals(y,m).m);
-  if (cmpInst) { cmpInst.destroy(); cmpInst = null; }
-  const gc = isDark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.06)';
-  const tc = isDark ? '#454c68' : '#9aa0b8';
-  cmpInst = new Chart(document.getElementById('cmpChart'), {
-    type: 'bar',
-    data: {
-      labels: pairs.map(([y,m]) => MONTHS[m].slice(0,3)+' '+y),
-      datasets: [
-        {label:'Gabriel', data:dG, backgroundColor:rgba(gC(),.7), borderRadius:5},
-        {label:'Mélissa', data:dM, backgroundColor:rgba(mC(),.7), borderRadius:5}
-      ]
-    },
-    options: {
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{ legend:{ display:false } },
-      scales: {
-        x:{ grid:{ display:false }, ticks:{ color:tc, font:{ size:11 }, autoSkip:false, maxRotation:35 } },
-        y:{ grid:{ color:gc }, ticks:{ color:tc, font:{ size:10 }, callback:v=>'$'+v } }
-      }
-    }
+  // Tableau par catégorie — Gabriel+Mélissa par mois
+  const rows0 = monthRows(s0.y, s0.m);
+  const rows1 = monthRows(s1.y, s1.m);
+  const ct0 = {}, ct1 = {};
+  rows0.forEach(r => { const c = r.Catégorie||'Autre'; ct0[c] = +((ct0[c]||0) + r.Montant).toFixed(2); });
+  rows1.forEach(r => { const c = r.Catégorie||'Autre'; ct1[c] = +((ct1[c]||0) + r.Montant).toFixed(2); });
+
+  const allCats = [...new Set([...Object.keys(ct0), ...Object.keys(ct1)])];
+  const orderedCats = [...settings.cats.filter(c => allCats.includes(c)), ...allCats.filter(c => !settings.cats.includes(c))];
+
+  if (!orderedCats.length) {
+    document.getElementById('cmpCatTable').innerHTML = '<div class="empty">Aucune dépense pour ces mois</div>';
+    applyColorUI(); return;
+  }
+
+  let tableRows = '', tot0 = 0, tot1 = 0;
+  orderedCats.forEach(c => {
+    const v0 = ct0[c]||0, v1 = ct1[c]||0;
+    tot0 = +(tot0+v0).toFixed(2); tot1 = +(tot1+v1).toFixed(2);
+    const delta = +(v1-v0).toFixed(2);
+    const col = getCatColor(c);
+    const ecart = delta===0 ? '<span style="opacity:.3">—</span>'
+      : `<span style="font-size:11px;padding:2px 7px;border-radius:20px;background:${rgba(delta>0?'#EF5350':'#66BB6A',.15)};color:${delta>0?'#EF5350':'#66BB6A'}">${delta>0?'+':''}${fmt(delta)}</span>`;
+    tableRows += `<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:7px;vertical-align:middle;"></span>${c.replace(' / Sorties','')}</td>
+      <td style="text-align:right">${v0>0?fmt(v0):'<span style="opacity:.3">—</span>'}</td>
+      <td style="text-align:right">${v1>0?fmt(v1):'<span style="opacity:.3">—</span>'}</td>
+      <td style="text-align:right">${ecart}</td>
+    </tr>`;
   });
+  const totDelta = +(tot1-tot0).toFixed(2);
+  const totEcart = totDelta===0 ? '<span style="opacity:.3">—</span>'
+    : `<span style="font-size:11px;padding:2px 7px;border-radius:20px;background:${rgba(totDelta>0?'#EF5350':'#66BB6A',.15)};color:${totDelta>0?'#EF5350':'#66BB6A'}">${totDelta>0?'+':''}${fmt(totDelta)}</span>`;
+
+  document.getElementById('cmpCatTable').innerHTML = `
+    <table class="ann-table" style="width:100%">
+      <thead><tr>
+        <th style="text-align:left">Catégorie</th>
+        <th style="text-align:right">${lbl0}</th>
+        <th style="text-align:right">${lbl1}</th>
+        <th style="text-align:right;color:var(--t2)">Écart</th>
+      </tr></thead>
+      <tbody>${tableRows}</tbody>
+      <tfoot><tr class="ann-total">
+        <td>Total</td>
+        <td style="text-align:right">${fmt(tot0)}</td>
+        <td style="text-align:right">${fmt(tot1)}</td>
+        <td style="text-align:right">${totEcart}</td>
+      </tr></tfoot>
+    </table>`;
   applyColorUI();
 }
 
 function toggleCmp(i) {
-  const idx = cmpSelected.findIndex(s => s.y === cmpYear && s.m === i);
-  if (idx === -1) {
-    if (cmpSelected.length >= 2) {
-      cmpSelected.shift();
-    }
-    cmpSelected.push({y:cmpYear, m:i});
-  } else if (cmpSelected.length > 1) {
-    cmpSelected.splice(idx, 1);
+  if (cmpSelected.length < 2) {
+    cmpSelected = [{y:cmpYear,m:i},{y:cmpYear,m:i}];
+    window._cmpTurn = 1;
+  } else if (!window._cmpTurn || window._cmpTurn === 0) {
+    cmpSelected[0] = {y:cmpYear, m:i};
+    window._cmpTurn = 1;
+  } else {
+    cmpSelected[1] = {y:cmpYear, m:i};
+    window._cmpTurn = 0;
   }
-  cmpSelected.sort((a,b) => a.y !== b.y ? a.y-b.y : a.m-b.m);
   renderComparer();
 }
 
