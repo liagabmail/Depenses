@@ -6,15 +6,30 @@
   "display": "standalone",
   "background_color": "#111111",
   "theme_color": "#111111",
+
   "icons": [
     {
-      "src": "icon.png",
-      "sizes": "192x192",
+      "src": "icon1024.png",
+      "sizes": "1024x1024",
       "type": "image/png"
     },
     {
-      "src": "icon.png",
+      "src": "icon512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+
+  "screenshots": [
+    {
+      "src": "screenshots/desktop.png",
+      "sizes": "983x821",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "screenshots/mobile.png",
+      "sizes": "363x825",
       "type": "image/png"
     }
   ]
