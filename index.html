@@ -43,43 +43,39 @@
 <div id="mainApp" style="display:none;">
 <div class="app">
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="header-left">
-      <div class="title">Dépenses<em id="titleAccent">.</em></div>
-      <div style="position:relative;display:inline-block;">
-        <div class="year-pill" id="yearPill" onclick="toggleYearPicker()">
-          <span id="yearPillVal"></span>
-          <span style="font-size:10px;opacity:.6;">▾</span>
-        </div>
-        <div class="year-picker-popup" id="yearPickerPopup">
-          <button class="yp-btn" onclick="shiftYear(-1);event.stopPropagation()">←</button>
-          <span class="year-picker-val" id="ypVal"></span>
-          <button class="yp-btn" onclick="shiftYear(1);event.stopPropagation()">→</button>
-        </div>
-      </div>
-    </div>
-    <div class="header-right">
-      <span class="user-info" id="userInfo"></span>
-      <button class="icon-btn" onclick="openSettings()" title="Paramètres" id="desktopSettingsBtn">⚙</button>
-      <button class="icon-btn" onclick="doLogout()" title="Déconnexion" style="font-size:13px;">⏻</button>
-    </div>
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="title">Dépenses<em id="titleAccent">.</em></div>
   </div>
+  <div class="header-right">
+    <span class="user-info" id="userInfo"></span>
+    <button class="icon-btn" onclick="openSettings()" title="Paramètres" id="desktopSettingsBtn">⚙</button>
+    <button class="icon-btn" onclick="doLogout()" title="Déconnexion" style="font-size:13px;">⏻</button>
+  </div>
+</div>
 
-  <!-- VIEW TABS -->
-  <div class="view-tabs">
-    <button class="vtab active" onclick="setView('mois')">Mois en cours</button>
-    <button class="vtab" onclick="setView('annee')">Toute l'année</button>
-    <button class="vtab" onclick="setView('comparer')">Comparer</button>
-  </div>
+<!-- VIEW TABS -->
+<div class="view-tabs">
+  <button class="vtab active" onclick="setView('mois')">Mois en cours</button>
+  <button class="vtab" onclick="setView('annee')">Toute l'année</button>
+  <button class="vtab" onclick="setView('comparer')">Comparer</button>
+</div>
 
   <!-- ══ VUE MOIS ══ -->
   <div id="vue-mois">
-    <div class="month-nav">
-      <button class="mnav-btn" onclick="changeMonth(-1)">←</button>
-      <div class="month-label" id="monthLabel"></div>
-      <button class="mnav-btn" onclick="changeMonth(1)">→</button>
-    </div>
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:1.25rem;">
+  <div class="month-nav" style="margin-bottom:0;">
+    <button class="mnav-btn" onclick="shiftYear(-1)">←</button>
+    <div class="month-label" id="yearPillVal" style="min-width:80px;text-align:center;"></div>
+    <button class="mnav-btn" onclick="shiftYear(1)">→</button>
+  </div>
+  <div class="month-nav" style="margin-bottom:0;">
+    <button class="mnav-btn" onclick="changeMonth(-1)">←</button>
+    <div class="month-label" id="monthLabel" style="min-width:80px;text-align:center;"></div>
+    <button class="mnav-btn" onclick="changeMonth(1)">→</button>
+  </div>
+</div>
     <div class="metrics" id="metricsRow"></div>
     <div class="two-col">
       <div class="card">
@@ -117,48 +113,51 @@
     </div>
   </div>
 
-  <!-- ══ VUE ANNÉE ══ -->
-  <div id="vue-annee" style="display:none;">
-    <div class="metrics" id="annMetrics"></div>
-    <div class="two-col">
-      <div class="card">
-        <div class="card-title">Total mensuel — <span id="annYearLabel"></span></div>
-        <div class="legend"><span><span class="dot" id="dotG2"></span>Gabriel</span><span><span class="dot" id="dotM2"></span>Mélissa</span></div>
-        <div class="chart-wrap"><canvas id="annBarChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Répartition par catégorie — <span id="annYearLabel"></span></div>
-        <div class="chart-wrap"><canvas id="annCatPieChart"></canvas></div>
-        <div id="annCatBars"></div>
-      </div>
+<!-- ══ VUE ANNÉE ══ -->
+<div id="vue-annee" style="display:none;">
+<div class="month-nav" style="margin-bottom:1.25rem;">
+  <button class="mnav-btn" onclick="shiftYear(-1)">←</button>
+  <div class="month-label" id="annYearNav" style="min-width:80px;text-align:center;"></div>
+  <button class="mnav-btn" onclick="shiftYear(1)">→</button>
+</div>
+  <div class="metrics" id="annMetrics"></div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Total mensuel — <span id="annYearLabel"></span></div>
+      <div class="legend"><span><span class="dot" id="dotG2"></span>Gabriel</span><span><span class="dot" id="dotM2"></span>Mélissa</span></div>
+      <div class="chart-wrap"><canvas id="annBarChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">Résumé mensuel</div>
-      <div class="ann-table-wrapper">
-        <table class="ann-table">
-          <thead><tr><th>Mois</th><th id="thG">Gabriel</th><th id="thM">Mélissa</th><th>Total</th><th>Écart</th></tr></thead>
-          <tbody id="annTableBody"></tbody>
-        </table>
-      </div>
+      <div class="card-title">Répartition par catégorie — <span id="annYearLabel"></span></div>
+      <div class="chart-wrap"><canvas id="annCatPieChart"></canvas></div>
+      <div id="annCatBars"></div>
     </div>
   </div>
+  <div class="card">
+    <div class="card-title">Résumé mensuel</div>
+    <div class="ann-table-wrapper">
+      <table class="ann-table">
+        <thead><tr><th>Mois</th><th id="thG">Gabriel</th><th id="thM">Mélissa</th><th>Total</th><th>Écart</th></tr></thead>
+        <tbody id="annTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-  <!-- ══ VUE COMPARER ══ -->
-  <div id="vue-comparer" style="display:none;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button class="mnav-btn" onclick="changeCmpYear(-1)">←</button>
-        <span style="font-size:13px;font-weight:500;min-width:44px;text-align:center;" id="cmpYearLabel"></span>
-        <button class="mnav-btn" onclick="changeCmpYear(1)">→</button>
-      </div>
-    </div>
-    <div class="cmp-grid" id="cmpChips"></div>
-    <div class="metrics" id="cmpMetrics"></div>
-    <div class="card">
-      <div class="card-title">Détail par catégorie</div>
-      <div class="ann-table-wrapper" id="cmpCatTable"></div>
-    </div>
+<!-- ══ VUE COMPARER ══ -->
+<div id="vue-comparer" style="display:none;">
+  <div class="month-nav" style="margin-bottom:1.25rem;">
+    <button class="mnav-btn" onclick="changeCmpYear(-1)">←</button>
+    <div class="month-label" id="cmpYearLabel" style="min-width:80px;text-align:center;"></div>
+    <button class="mnav-btn" onclick="changeCmpYear(1)">→</button>
   </div>
+  <div class="cmp-grid" id="cmpChips"></div>
+  <div class="metrics" id="cmpMetrics"></div>
+  <div class="card">
+    <div class="card-title">Détail par catégorie</div>
+    <div class="ann-table-wrapper" id="cmpCatTable"></div>
+  </div>
+</div>
 
 </div><!-- /.app -->
 </div><!-- /#mainApp -->

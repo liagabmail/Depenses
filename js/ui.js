@@ -86,23 +86,9 @@ function changeCmpYear(d) { cmpYear += d; renderComparer(); }
 // ═══════════════════════════════════════════════════
 function updateYearPill() {
   document.getElementById('yearPillVal').textContent = globalYear;
-  document.getElementById('ypVal').textContent = globalYear;
+  const ypVal = document.getElementById('ypVal');
+  if (ypVal) ypVal.textContent = globalYear;
 }
-function toggleYearPicker() {
-  yearPickerOpen = !yearPickerOpen;
-  document.getElementById('yearPickerPopup').classList.toggle('open', yearPickerOpen);
-}
-function shiftYear(d) {
-  globalYear += d; currentYear = globalYear;
-  updateYearPill();
-  rerenderAll();
-}
-document.addEventListener('click', e => {
-  if (yearPickerOpen && !e.target.closest('#yearPill') && !e.target.closest('#yearPickerPopup')) {
-    yearPickerOpen = false;
-    document.getElementById('yearPickerPopup').classList.remove('open');
-  }
-});
 // ═══════════════════════════════════════════════════
 // DATA HELPERS
 // ═══════════════════════════════════════════════════
@@ -353,7 +339,7 @@ function renderLineChart() {
 
 function renderMois() {
   const lbl = MONTHS[currentMonthIdx] + ' ' + currentYear;
-  document.getElementById('monthLabel').textContent = lbl;
+  document.getElementById('monthLabel').textContent = MONTHS[currentMonthIdx];
   document.getElementById('catMonthLabel').textContent = lbl;
   document.getElementById('txnMonthLabel').textContent = lbl;
   document.getElementById('lineYearLabel').textContent = currentYear;
@@ -426,6 +412,8 @@ function renderMois() {
 let annBarInst = null;
 function renderAnnee() {
   const yr = globalYear;
+  const el = document.getElementById('annYearNav');
+  if (el) el.textContent = yr;
   document.getElementById('annYearLabel').textContent = yr;
   const pairs = Array.from({length:12}, (_,i) => [yr, i]);
   renderMetrics(pairs, 'annMetrics', 'Année ' + yr);
@@ -728,5 +716,9 @@ function rerenderAll() {
     renderComparer();
   }
 }
-
-
+function shiftYear(d) {
+  globalYear += d;
+  currentYear = globalYear;
+  updateYearPill();
+  rerenderAll();
+}
