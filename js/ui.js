@@ -77,6 +77,7 @@ function changeMonth(d) {
   if (d > 0 && currentMonthIdx === 0) currentYear++;
   if (d < 0 && currentMonthIdx === 11) currentYear--;
   txnFilter = 'Tous';
+  updateYearPill()
   renderMois();
 }
 function changeCmpYear(d) { cmpYear += d; renderComparer(); }
@@ -85,9 +86,9 @@ function changeCmpYear(d) { cmpYear += d; renderComparer(); }
 // YEAR PICKER
 // ═══════════════════════════════════════════════════
 function updateYearPill() {
-  document.getElementById('yearPillVal').textContent = globalYear;
+  document.getElementById('yearPillVal').textContent = currentYear; 
   const ypVal = document.getElementById('ypVal');
-  if (ypVal) ypVal.textContent = globalYear;
+  if (ypVal) ypVal.textContent = currentYear;
 }
 // ═══════════════════════════════════════════════════
 // DATA HELPERS
