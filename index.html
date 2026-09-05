@@ -2,8 +2,25 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dépenses du couple</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Dépenses</title>
+
+<!-- ===================== PWA : installation "app" sans barre de navigateur ===================== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a73e8">
+
+<!-- Android / Chrome -->
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- iOS / Safari (Ajouter à l'écran d'accueil) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dépenses">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<!-- ============================================================================================ -->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -33,6 +50,10 @@
     font-family:'Google Sans','Roboto',Arial,sans-serif;
     background:var(--bg);
     color:var(--text);
+    /* Zones de sécurité pour l'affichage plein écran en mode app (encoches / barres système) */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    -webkit-tap-highlight-color: transparent;
   }
   .app{
     max-width:1080px;
@@ -584,6 +605,13 @@
 </div></div>
 
 <script>
+/* ===================== ENREGISTREMENT DU SERVICE WORKER (nécessaire pour l'installation sur Android) ===================== */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('Service worker non enregistré :', err));
+  });
+}
+
 /* ===================== CONFIGURATION SUPABASE ===================== */
 const SUPABASE_URL = 'https://lfjkowexlgacbydaygwu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QvOdWQ4Fd5oRLJYNNBZKsg_DPoWy82G';
