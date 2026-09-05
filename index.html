@@ -668,16 +668,21 @@ async function chargerDepensesSupabase() {
   }
   depenses = (data || []).map(e => ({
     id: e.id,
-    who: e.Qui || 'p1',
+    who: e.Qui === nomsPersonnes.p2 || e.Qui === 'p2' ? 'p2' : 'p1',
     amount: Number(e.Montant || 0),
     date: e.Date,
     category: e.Categorie || 'Autre',
     note: e.Note || ''
   }));
+  await Promise.all([
+    supabaseClient.from('Depenses').update({Qui:nomsPersonnes.p1}).eq('Qui','p1'),
+    supabaseClient.from('Depenses').update({Qui:nomsPersonnes.p2}).eq('Qui','p2')
+  ]);
   toutAfficher();
 }
 
 function libellePersonne(who){ return nomsPersonnes[who] || who; }
+function nomPersonneSupabase(who){ return who === 'p2' ? 'Mélissa' : 'Gabriel'; }
 
 let chartEvolution, chartCategories, chartAnneeMensuel, chartAnneeCategories;
 
@@ -766,7 +771,7 @@ document.getElementById('btn-add').addEventListener('click', async ()=>{
 
   const nouvelleDepenseDB = { 
     id: uid(), 
-    Qui: who, 
+    Qui: nomPersonneSupabase(who), 
     Montant: amount, 
     Date: date, 
     Categorie: category, 
@@ -782,7 +787,7 @@ document.getElementById('btn-add').addEventListener('click', async ()=>{
 
   depenses.push({
     id: nouvelleDepenseDB.id,
-    who: nouvelleDepenseDB.Qui,
+    who,
     amount: nouvelleDepenseDB.Montant,
     date: nouvelleDepenseDB.Date,
     category: nouvelleDepenseDB.Categorie,
@@ -812,10 +817,11 @@ document.getElementById('delete-edit').addEventListener('click',async()=>{if(dep
 document.getElementById('save-edit').addEventListener('click',async()=>{
   const amount=parseFloat(document.getElementById('edit-amount').value),date=document.getElementById('edit-date').value;
   if(!depenseEnEdition||!amount||amount<=0||!date){alert('Merci d’entrer un montant et une date valides.');return;}
-  const update={Qui:document.getElementById('edit-who').value,Montant:amount,Date:date,Categorie:document.getElementById('edit-category').value,Note:document.getElementById('edit-note').value.trim()};
+  const who=document.getElementById('edit-who').value;
+  const update={Qui:nomPersonneSupabase(who),Montant:amount,Date:date,Categorie:document.getElementById('edit-category').value,Note:document.getElementById('edit-note').value.trim()};
   const {error}=await supabaseClient.from('Depenses').update(update).eq('id',depenseEnEdition.id);
   if(error){alert('Erreur lors de la modification.');console.error(error);return;}
-  Object.assign(depenseEnEdition,{who:update.Qui,amount,date,category:update.Categorie,note:update.Note});
+  Object.assign(depenseEnEdition,{who,amount,date,category:update.Categorie,note:update.Note});
   document.getElementById('edit-modal').style.display='none'; toutAfficher();
 });
 
