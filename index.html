@@ -478,7 +478,7 @@
       <div class="form-grid">
         <div class="field">
           <label>Qui</label>
-          <select id="f-who"><option value="p1">Gabriel</option><option value="p2">Mélissa</option></select>
+          <select id="f-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select>
         </div>
         <div class="field">
           <label>Date</label>
@@ -574,7 +574,7 @@
   <button class="mobile-close-btn" id="close-edit" aria-label="Fermer">&times;</button>
   <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Modifier une dépense</h3>
   <div class="form-grid">
-    <div class="field"><label>Qui</label><select id="edit-who"><option value="p1">Gabriel</option><option value="p2">Mélissa</option></select></div>
+    <div class="field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select></div>
     <div class="field"><label>Date</label><input type="date" id="edit-date"></div>
     <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0"></div>
     <div class="field"><label>Catégorie</label><select id="edit-category"></select></div>
@@ -655,7 +655,7 @@ function appliquerTheme(){
 }
 
 document.getElementById('f-date').value = aujourdhui.toISOString().slice(0,10);
-document.getElementById('f-who').value = currentUser || 'p1';
+document.getElementById('f-who').value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
 document.getElementById('mobile-add').addEventListener('click',()=>document.querySelector('.form-card').classList.add('mobile-add-open'));
 document.getElementById('close-add').addEventListener('click',()=>document.querySelector('.form-card').classList.remove('mobile-add-open'));
 
@@ -682,7 +682,8 @@ async function chargerDepensesSupabase() {
 }
 
 function libellePersonne(who){ return nomsPersonnes[who] || who; }
-function nomPersonneSupabase(who){ return who === 'p2' ? 'Mélissa' : 'Gabriel'; }
+function clePersonne(who){ return who === 'Mélissa' || who === 'p2' ? 'p2' : 'p1'; }
+function nomPersonneSupabase(who){ return clePersonne(who) === 'p2' ? 'Mélissa' : 'Gabriel'; }
 
 let chartEvolution, chartCategories, chartAnneeMensuel, chartAnneeCategories;
 
@@ -699,8 +700,8 @@ function rafraichirOptionsCategories(){
   select.innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
   if(categories.includes(current)) select.value = current;
   const userSelect = document.getElementById('f-who');
-  userSelect.innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${key}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
-  userSelect.value = currentUser || 'p1';
+  userSelect.innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
+  userSelect.value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
 }
 
 function afficherNavigationPeriode(){
@@ -787,7 +788,7 @@ document.getElementById('btn-add').addEventListener('click', async ()=>{
 
   depenses.push({
     id: nouvelleDepenseDB.id,
-    who,
+    who: clePersonne(who),
     amount: nouvelleDepenseDB.Montant,
     date: nouvelleDepenseDB.Date,
     category: nouvelleDepenseDB.Categorie,
@@ -804,8 +805,8 @@ function ouvrirEdition(id){
   const depense=depenses.find(e=>e.id===id); if(!depense) return;
   depenseEnEdition=depense;
   document.getElementById('edit-amount').value=depense.amount;
-  document.getElementById('edit-who').innerHTML=Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${key}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
-  document.getElementById('edit-who').value=depense.who;
+  document.getElementById('edit-who').innerHTML=Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
+  document.getElementById('edit-who').value=libellePersonne(depense.who);
   document.getElementById('edit-date').value=depense.date;
   document.getElementById('edit-note').value=depense.note;
   document.getElementById('edit-category').innerHTML=categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
@@ -817,7 +818,7 @@ document.getElementById('delete-edit').addEventListener('click',async()=>{if(dep
 document.getElementById('save-edit').addEventListener('click',async()=>{
   const amount=parseFloat(document.getElementById('edit-amount').value),date=document.getElementById('edit-date').value;
   if(!depenseEnEdition||!amount||amount<=0||!date){alert('Merci d’entrer un montant et une date valides.');return;}
-  const who=document.getElementById('edit-who').value;
+  const who=clePersonne(document.getElementById('edit-who').value);
   const update={Qui:nomPersonneSupabase(who),Montant:amount,Date:date,Categorie:document.getElementById('edit-category').value,Note:document.getElementById('edit-note').value.trim()};
   const {error}=await supabaseClient.from('Depenses').update(update).eq('id',depenseEnEdition.id);
   if(error){alert('Erreur lors de la modification.');console.error(error);return;}
