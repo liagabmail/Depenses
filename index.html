@@ -78,16 +78,20 @@
     width: 90%; max-width: 400px;
   }
   .auth-card h2 { margin-top: 0; font-weight: 500; font-size: 20px; }
-  .auth-buttons { display: flex; gap: 12px; margin-top: 20px; }
-  .auth-btn {
-    flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
-    background: var(--surface); font-family: inherit; font-size: 15px; font-weight: 500;
-    cursor: pointer; transition: all .15s ease;
-  }
-  .auth-btn.p1 { color: var(--blue); border-color: var(--blue); }
-  .auth-btn.p1:hover { background: var(--blue); color: #fff; }
-  .auth-btn.p2 { color: var(--red); border-color: var(--red); }
-  .auth-btn.p2:hover { background: var(--red); color: #fff; }
+  .auth-card p.subtitle{color:var(--text-secondary);font-size:13px;margin:0 0 20px;}
+  .auth-form{text-align:left;display:flex;flex-direction:column;gap:14px;}
+  .auth-form .field label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:500;}
+  .auth-form .field input{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
+  .auth-form .field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,115,232,.15);}
+  .auth-submit{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;}
+  .auth-submit:hover{background:var(--blue-dark);}
+  .auth-submit:disabled{opacity:.6;cursor:default;}
+  .auth-error{color:var(--red);font-size:13px;margin:0;min-height:16px;}
+  .auth-success{color:var(--green);font-size:13px;margin:0;min-height:16px;}
+  .link-btn{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;}
+  .link-btn:hover{color:var(--blue-dark);}
+  .account-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .account-row .email{font-size:14px;font-weight:500;word-break:break-all;}
 
   /* En-tête */
   header.top{
@@ -172,6 +176,36 @@
 
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
+
+  .section-header{margin-bottom:18px;}
+  .section-header h2{margin:0 0 4px;font-size:19px;font-weight:500;display:flex;align-items:center;gap:8px;}
+  .section-header p{margin:0;font-size:13px;color:var(--text-secondary);}
+  .subtabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;}
+  .subtab-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text-secondary);padding:10px 16px;position:relative;transition:color .15s ease;}
+  .subtab-btn:hover{color:var(--text);}
+  .subtab-btn.active{color:var(--blue);}
+  .subtab-btn.active::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--blue);}
+  .subtab-panel{display:none;}
+  .subtab-panel.active{display:block;}
+
+  .recurrent-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .recurrent-row:last-child{border-bottom:none;}
+  .recurrent-row.inactive{opacity:.5;}
+  .recurrent-info{display:flex;flex-direction:column;gap:5px;min-width:0;}
+  .recurrent-nom{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .recurrent-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .freq-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f1f3f4;color:var(--text-secondary);white-space:nowrap;}
+  body.dark .freq-pill{background:#2c3136;}
+  .recurrent-actions{display:flex;align-items:center;gap:14px;flex-shrink:0;}
+  .recurrent-montant{font-weight:500;font-size:14px;min-width:70px;text-align:right;white-space:nowrap;}
+  .switch.small{width:38px;height:22px;}
+  .switch.small .switch-track::after{width:16px;height:16px;left:3px;top:3px;}
+  .switch.small input:checked + .switch-track::after{transform:translateX(16px);}
+  .recurrent-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;align-items:end;}
+  @media (max-width:760px){
+    .recurrent-row{flex-wrap:wrap;}
+    .recurrent-actions{margin-left:auto;}
+  }
 
   /* Cartes / Grille */
   .grid-2{
@@ -283,6 +317,21 @@
     transition:background .15s ease, box-shadow .15s ease;
   }
   .btn-add:hover{background:var(--blue-dark);box-shadow:var(--shadow-1);}
+  .type-toggle{display:flex;gap:8px;}
+  .type-btn{
+    flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+    background:var(--surface);color:var(--text-secondary);font-family:inherit;font-size:13px;font-weight:500;
+    cursor:pointer;transition:all .15s ease;
+  }
+  .type-btn:hover{border-color:var(--blue);color:var(--blue);}
+  .type-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .type-pill{
+    display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
+    background:#f1f3f4;color:var(--text-secondary);margin-left:6px;white-space:nowrap;
+  }
+  body.dark .type-pill{background:#2c3136;}
+  .type-pill.personnelle{background:#fff3cd;color:#8a6100;}
+  body.dark .type-pill.personnelle{background:#4a3f1f;color:#f5d78a;}
   .mobile-add-btn,.mobile-close-btn{display:none;}
   .modal-close-btn{
     display:block;
@@ -318,7 +367,9 @@
   .mobile-sort select{border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:13px inherit;padding:7px 9px;}
   .mobile-sort{display:none;gap:6px;align-items:center;}
   .sort-direction{width:34px;height:34px;padding:0!important;font-size:18px!important;line-height:1;cursor:pointer;}
-  .table-filters{display:flex;justify-content:flex-end;padding:4px 20px 10px;}
+  .table-filters{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px;gap:10px;flex-wrap:wrap;}
+  .table-filters .field{margin-bottom:0;}
+  .table-filters select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);}
   .table-card h3{margin:0;font-size:15px;color:var(--text);font-weight:500;}
   .row-count{font-size:13px;color:var(--text-secondary);}
   table{width:100%;border-collapse:collapse;font-size:14px;}
@@ -355,6 +406,8 @@
     color:var(--blue-dark);
   }
   .amount-cell{font-weight:500;text-align:right;}
+  .recurring-icon{display:inline-block;font-size:13px;color:var(--blue);margin-left:2px;cursor:default;}
+  body.dark .recurring-icon{color:#8ab4f8;}
   .del-btn{
     background:none;border:none;cursor:pointer;
     color:var(--text-secondary);
@@ -372,6 +425,23 @@
     font-size:14px;
   }
 
+  .budget-row{margin-bottom:16px;}
+  .budget-row:last-child{margin-bottom:0;}
+  .budget-row-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:8px;}
+  .budget-row-cat{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;}
+  .budget-row-cat .swatch{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .budget-row-amounts{font-size:12px;color:var(--text-secondary);white-space:nowrap;}
+  .budget-row-amounts strong{color:var(--text);font-weight:500;}
+  .budget-bar{height:8px;border-radius:6px;background:#eef0f3;overflow:hidden;}
+  body.dark .budget-bar{background:#2c3136;}
+  .budget-bar-fill{height:100%;border-radius:6px;transition:width .25s ease;}
+  .budget-empty{font-size:13px;color:var(--text-secondary);padding:8px 0;}
+  .budget-input-field{margin-bottom:0;}
+  .budget-input-field label{display:flex;align-items:center;gap:6px;}
+  .budget-input-field label .swatch{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .budget-input-field .input-money{position:relative;}
+  .budget-input-field input{padding-right:34px;}
+  .budget-input-field .suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text-secondary);pointer-events:none;}
   .settings-section{margin-bottom:20px;}
   .settings-section h3{margin:0 0 12px;font-size:15px;font-weight:500;}
   .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
@@ -406,11 +476,11 @@
   .edit-card{background:var(--surface);padding:24px;border-radius:var(--radius);width:min(92%,760px);box-shadow:var(--shadow-2);}
   .edit-card h2{margin:0 0 18px;font-size:20px;font-weight:500;}.edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
   .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
+  .btn-danger{background:#d93025;color:#fff;border-color:#d93025;}
+  .btn-danger:hover{background:#b0261a;border-color:#b0261a;}
   .user-choice{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
   .user-choice.active{border-color:var(--blue);box-shadow:0 0 0 2px color-mix(in srgb,var(--blue) 20%,transparent);}
   .user-choice.p2.active{border-color:var(--red);box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 20%,transparent);}
-  #delete-edit{background:#d93025;color:#fff;border-color:#d93025;}
-  #delete-edit:hover{background:#fce8e6;}
   #save-edit{background:var(--blue);}
   .edit-actions{grid-column:1 / -1;display:flex;justify-content:flex-end;gap:12px;}
   @media (max-width:760px){
@@ -457,15 +527,60 @@
 </head>
 <body>
 
-  <!-- MODAL DE SÉLECTION DE L'UTILISATEUR -->
+  <!-- MODAL DE CONNEXION (authentification réelle Supabase) -->
   <div id="auth-modal" style="display:none;">
     <div class="auth-card">
-      <h2>Qui est en train d'utiliser l'application ?</h2>
-      <p style="color:var(--text-secondary);font-size:13px;margin-bottom:20px;">Ce choix sera mémorisé pour vos prochaines visites.</p>
-      <div class="auth-buttons">
-        <button class="auth-btn p1" onclick="selectUser('p1')">Gabriel</button>
-        <button class="auth-btn p2" onclick="selectUser('p2')">Mélissa</button>
+      <div id="login-view">
+        <h2>Connexion</h2>
+        <p class="subtitle">Connectez-vous avec votre compte pour accéder aux dépenses du couple.</p>
+        <form class="auth-form" id="login-form">
+          <div class="field">
+            <label>Courriel</label>
+            <input type="email" id="login-email" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label>Mot de passe</label>
+            <input type="password" id="login-password" autocomplete="current-password" required>
+          </div>
+          <p class="auth-error" id="login-error"></p>
+          <button type="submit" class="auth-submit" id="login-submit">Se connecter</button>
+        </form>
+        <p style="text-align:center;margin:14px 0 0;"><button type="button" class="link-btn" id="show-forgot-password">Mot de passe oublié ?</button></p>
       </div>
+      <div id="forgot-password-view" style="display:none;">
+        <h2>Mot de passe oublié</h2>
+        <p class="subtitle">Entrez votre courriel : vous recevrez un lien pour choisir un nouveau mot de passe.</p>
+        <form class="auth-form" id="forgot-password-form">
+          <div class="field">
+            <label>Courriel</label>
+            <input type="email" id="forgot-email" autocomplete="username" required>
+          </div>
+          <p class="auth-error" id="forgot-error"></p>
+          <p class="auth-success" id="forgot-success"></p>
+          <button type="submit" class="auth-submit" id="forgot-submit">Envoyer le lien</button>
+        </form>
+        <p style="text-align:center;margin:14px 0 0;"><button type="button" class="link-btn" id="show-login">Retour à la connexion</button></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CRÉATION DE MOT DE PASSE (après avoir cliqué sur un lien d'invitation reçu par courriel) -->
+  <div id="setpw-modal" style="display:none;">
+    <div class="auth-card">
+      <h2>Bienvenue !</h2>
+      <p class="subtitle">Choisissez votre mot de passe pour accéder à l'application.</p>
+      <form class="auth-form" id="setpw-form">
+        <div class="field">
+          <label>Nouveau mot de passe</label>
+          <input type="password" id="setpw-password" autocomplete="new-password" minlength="6" required>
+        </div>
+        <div class="field">
+          <label>Confirmer le mot de passe</label>
+          <input type="password" id="setpw-password-confirm" autocomplete="new-password" minlength="6" required>
+        </div>
+        <p class="auth-error" id="setpw-error"></p>
+        <button type="submit" class="auth-submit" id="setpw-submit">Confirmer et continuer</button>
+      </form>
     </div>
   </div>
 
@@ -483,8 +598,8 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="mois">Mois</button>
-    <button class="tab-btn" data-tab="annee">Année</button>
+    <button class="tab-btn active" data-tab="conjoint">👥 Conjoint</button>
+    <button class="tab-btn" data-tab="personnel">👤 Personnel</button>
     <button class="tab-btn" data-tab="comparer">Comparer</button>
   </nav>
 
@@ -492,6 +607,7 @@
     <button id="month-prev" aria-label="Mois précédent">&lsaquo;</button>
     <span class="period-label" id="month-label"></span>
     <button id="month-next" aria-label="Mois suivant">&rsaquo;</button>
+    <button id="month-today" aria-label="Revenir au mois actuel" style="margin-left:6px;color:var(--blue);border-color:var(--blue);">Maintenant</button>
   </div>
   <div class="period-nav" id="year-nav" style="display:none;">
     <button id="year-prev" aria-label="Année précédente">&lsaquo;</button>
@@ -499,95 +615,399 @@
     <button id="year-next" aria-label="Année suivante">&rsaquo;</button>
   </div>
 
-  <!-- ONGLET : MOIS EN COURS -->
-  <section class="tab-panel active" id="tab-mois">
-    <div class="stats-row" id="mois-stats"></div>
-    <div class="grid-2">
-      <div class="card">
-        <h3 id="month-evolution-title">Évolution des dépenses</h3>
-        <div class="chart-wrap"><canvas id="chart-evolution"></canvas></div>
+  <!-- ===================== SECTION : CONJOINT ===================== -->
+  <section class="tab-panel active" id="tab-conjoint">
+    <div class="section-header">
+      <h2>👥 Dépenses conjointes</h2>
+      <p>Dépenses partagées, visibles et modifiables par vous deux.</p>
+    </div>
+
+    <nav class="subtabs">
+      <button class="subtab-btn active" data-scope="conjoint" data-sub="mois">Mois</button>
+      <button class="subtab-btn" data-scope="conjoint" data-sub="annee">Année</button>
+      <button class="subtab-btn" data-scope="conjoint" data-sub="recurrent">Récurrent</button>
+      <button class="subtab-btn" data-scope="conjoint" data-sub="budget">Budget</button>
+    </nav>
+
+    <!-- Sous-onglet : MOIS -->
+    <div class="subtab-panel active" data-scope="conjoint" data-sub="mois">
+      <div class="stats-row" id="mois-stats-conjoint"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3 id="month-evolution-title-conjoint">Évolution des dépenses</h3>
+          <div class="chart-wrap"><canvas id="chart-evolution-conjoint"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Répartition par catégorie</h3>
+          <div class="chart-wrap"><canvas id="chart-categories-mois-conjoint"></canvas></div>
+        </div>
       </div>
-      <div class="card">
-        <h3>Répartition par catégorie</h3>
-        <div class="chart-wrap"><canvas id="chart-categories"></canvas></div>
+
+      <div class="card form-card" id="form-card-conjoint">
+        <button class="mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
+        <h3 style="margin-bottom:14px;">Ajouter une dépense conjointe</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Qui</label>
+            <select id="f-who-conjoint"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="f-date-conjoint">
+          </div>
+          <div class="field">
+            <label>Montant</label>
+            <input type="number" id="f-amount-conjoint" step="0.01" min="0" placeholder="0,00 $">
+          </div>
+          <div class="field">
+            <label>Catégorie</label>
+            <select id="f-category-conjoint">
+              <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
+              <option>Maison</option><option>Loisirs</option><option>Santé</option>
+              <option>Vêtements</option><option>Abonnements</option><option>Autre</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Note</label>
+            <input type="text" id="f-note-conjoint" placeholder="Optionnel">
+          </div>
+          <button class="btn-add" id="btn-add-conjoint">Ajouter</button>
+        </div>
+      </div>
+      <button class="mobile-add-btn" id="mobile-add-conjoint" aria-label="Ajouter une dépense conjointe">+</button>
+
+      <div class="card table-card">
+        <div class="table-head-row">
+          <h3>Dépenses conjointes</h3>
+          <span class="row-count" id="row-count-conjoint">0 dépenses</span>
+        </div>
+        <div class="table-filters">
+          <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-conjoint" aria-label="Trier les dépenses">
+          <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
+        </select><button type="button" class="sort-direction" id="mobile-sort-dir-conjoint" aria-label="Tri croissant">↑</button></div></div>
+        <div style="overflow-x:auto;">
+          <table id="table-conjoint" data-scope="conjoint">
+            <thead>
+              <tr>
+                <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
+                <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
+                <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
+                <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
+                <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
+              </tr>
+            </thead>
+            <tbody id="table-body-conjoint"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-state-conjoint" style="display:none;">Aucune dépense conjointe pour l'instant — ajoutez-en une ci-dessus.</div>
       </div>
     </div>
 
-    <div class="card form-card">
-      <button class="mobile-close-btn" id="close-add" aria-label="Fermer">&times;</button>
-      <h3 style="margin-bottom:14px;">Ajouter une dépense</h3>
-      <div class="form-grid">
-        <div class="field">
-          <label>Qui</label>
-          <select id="f-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select>
+    <!-- Sous-onglet : ANNÉE -->
+    <div class="subtab-panel" data-scope="conjoint" data-sub="annee">
+      <div class="stats-row" id="annee-stats-conjoint"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Dépenses par mois</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-mensuel-conjoint"></canvas></div>
         </div>
-        <div class="field">
-          <label>Date</label>
-          <input type="date" id="f-date">
+        <div class="card">
+          <h3>Répartition par catégorie (année)</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-categories-conjoint"></canvas></div>
         </div>
-        <div class="field">
-          <label>Montant</label>
-          <input type="number" id="f-amount" step="0.01" min="0" placeholder="0,00 $">
-        </div>
-        <div class="field">
-          <label>Catégorie</label>
-          <select id="f-category">
-            <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
-            <option>Logement</option><option>Loisirs</option><option>Santé</option>
-            <option>Vêtements</option><option>Abonnements</option><option>Autre</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Note</label>
-          <input type="text" id="f-note" placeholder="Optionnel">
-        </div>
-        <button class="btn-add" id="btn-add">Ajouter</button>
       </div>
     </div>
-    <button class="mobile-add-btn" id="mobile-add" aria-label="Ajouter une dépense">+</button>
 
-    <div class="card table-card">
-      <div class="table-head-row">
-        <h3>Toutes les dépenses</h3>
-        <span class="row-count" id="row-count">0 dépenses</span>
+    <!-- Sous-onglet : RÉCURRENT -->
+    <div class="subtab-panel" data-scope="conjoint" data-sub="recurrent">
+      <div class="stats-row" id="recurrent-stats-conjoint"></div>
+      <div class="card form-card">
+        <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
+        <div class="recurrent-form-grid">
+          <div class="field"><label>Nom</label><input type="text" id="rec-nom-conjoint" placeholder="Netflix, Loyer..."></div>
+          <div class="field"><label>Montant</label><input type="number" id="rec-montant-conjoint" step="0.01" min="0" placeholder="0,00 $"></div>
+          <div class="field">
+            <label>Catégorie</label>
+            <select id="rec-categorie-conjoint">
+              <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
+              <option>Maison</option><option>Loisirs</option><option>Santé</option>
+              <option>Vêtements</option><option>Abonnements</option><option>Autre</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Fréquence</label>
+            <select id="rec-frequence-conjoint">
+              <option value="semaine">Chaque semaine</option>
+              <option value="2semaines">Chaque 2 semaines</option>
+              <option value="mois" selected>Chaque mois</option>
+              <option value="annee">Chaque année</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Qui</label>
+            <select id="rec-who-conjoint"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select>
+          </div>
+          <div class="field"><label>Depuis le</label><input type="date" id="rec-date-conjoint"></div>
+          <div class="field">
+            <label>Se termine</label>
+            <select id="rec-fin-type-conjoint">
+              <option value="jamais">Jamais</option>
+              <option value="nombre">Après un nombre de paiements</option>
+              <option value="date">À une date précise</option>
+            </select>
+          </div>
+          <div class="field" id="rec-fin-nombre-field-conjoint" style="display:none;">
+            <label>Nombre de paiements</label>
+            <input type="number" id="rec-fin-nombre-conjoint" min="1" step="1" placeholder="ex: 12">
+          </div>
+          <div class="field" id="rec-fin-date-field-conjoint" style="display:none;">
+            <label>Date de fin</label>
+            <input type="date" id="rec-fin-date-conjoint">
+          </div>
+          <button class="btn-add" id="btn-add-recurrent-conjoint" style="grid-column:1/-1;">Ajouter</button>
+        </div>
       </div>
-      <div class="table-filters"><div class="mobile-sort"><select id="mobile-sort" aria-label="Trier les dépenses">
-        <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
-      </select><button type="button" class="mobile-sort-dir sort-direction" id="mobile-sort-dir" aria-label="Tri croissant">↑</button></div></div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
-              <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
-              <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
-              <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
-              <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
-            </tr>
-          </thead>
-          <tbody id="table-body"></tbody>
-        </table>
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Paiements récurrents conjoints</h3>
+        <div id="recurrent-list-conjoint"></div>
       </div>
-      <div class="empty-state" id="empty-state" style="display:none;">Aucune dépense pour l'instant — ajoutez-en une ci-dessus.</div>
+    </div>
+
+    <!-- Sous-onglet : BUDGET -->
+    <div class="subtab-panel" data-scope="conjoint" data-sub="budget">
+      <div class="stats-row" id="stats-conjoint"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Budget par catégorie</h3>
+          <div id="budget-list-conjoint"></div>
+        </div>
+        <div class="card">
+          <h3>Répartition des dépenses conjointes</h3>
+          <div class="chart-wrap"><canvas id="chart-categories-conjoint"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Gérer le budget conjoint de <span id="periode-label-conjoint"></span></h3>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ce budget est partagé : vous et votre partenaire pouvez tous les deux le consulter et le modifier. Il concerne seulement les dépenses <em>conjointes</em>. Le budget est propre à chaque mois.</p>
+
+        <div class="field budget-input-field" style="max-width:280px;margin-bottom:8px;">
+          <label><strong>Budget total du mois</strong> (toutes catégories)</label>
+          <div class="input-money">
+            <input type="number" id="budget-total-input-conjoint" step="1" min="0" placeholder="0">
+            <span class="suffix">$ / mois</span>
+          </div>
+        </div>
+        <p id="budget-total-ecart-conjoint" style="font-size:13px;margin:0 0 18px;"></p>
+
+        <div style="padding-top:14px;border-top:1px solid var(--border);">
+          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
+          <div id="budget-form-conjoint" class="settings-grid"></div>
+        </div>
+
+        <button class="btn-add" id="save-budgets-conjoint" style="margin-top:16px;">Sauvegarder le budget conjoint</button>
+        <p id="budget-save-status-conjoint" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;"></p>
+      </div>
     </div>
   </section>
 
-  <!-- ONGLET : TOUTE L'ANNÉE -->
-  <section class="tab-panel" id="tab-annee">
-    <div class="stats-row" id="annee-stats"></div>
-    <div class="grid-2">
-      <div class="card">
-        <h3>Dépenses par mois</h3>
-        <div class="chart-wrap"><canvas id="chart-annee-mensuel"></canvas></div>
+  <!-- ===================== SECTION : PERSONNEL ===================== -->
+  <section class="tab-panel" id="tab-personnel">
+    <div class="section-header">
+      <h2>👤 Mes dépenses personnelles</h2>
+      <p>Visibles uniquement par vous.</p>
+    </div>
+
+    <nav class="subtabs">
+      <button class="subtab-btn active" data-scope="personnel" data-sub="mois">Mois</button>
+      <button class="subtab-btn" data-scope="personnel" data-sub="annee">Année</button>
+      <button class="subtab-btn" data-scope="personnel" data-sub="recurrent">Récurrent</button>
+      <button class="subtab-btn" data-scope="personnel" data-sub="budget">Budget</button>
+    </nav>
+
+    <!-- Sous-onglet : MOIS -->
+    <div class="subtab-panel active" data-scope="personnel" data-sub="mois">
+      <div class="stats-row" id="mois-stats-personnel"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3 id="month-evolution-title-personnel">Évolution des dépenses</h3>
+          <div class="chart-wrap"><canvas id="chart-evolution-personnel"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Répartition par catégorie</h3>
+          <div class="chart-wrap"><canvas id="chart-categories-mois-personnel"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card form-card" id="form-card-personnel">
+        <button class="mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
+        <h3 style="margin-bottom:14px;">Ajouter une dépense personnelle</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Qui</label>
+            <select id="f-who-personnel" disabled></select>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="f-date-personnel">
+          </div>
+          <div class="field">
+            <label>Montant</label>
+            <input type="number" id="f-amount-personnel" step="0.01" min="0" placeholder="0,00 $">
+          </div>
+          <div class="field">
+            <label>Catégorie</label>
+            <select id="f-category-personnel">
+              <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
+              <option>Maison</option><option>Loisirs</option><option>Santé</option>
+              <option>Vêtements</option><option>Abonnements</option><option>Autre</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Note</label>
+            <input type="text" id="f-note-personnel" placeholder="Optionnel">
+          </div>
+          <button class="btn-add" id="btn-add-personnel">Ajouter</button>
+        </div>
+      </div>
+      <button class="mobile-add-btn" id="mobile-add-personnel" aria-label="Ajouter une dépense personnelle">+</button>
+
+      <div class="card table-card">
+        <div class="table-head-row">
+          <h3>Mes dépenses personnelles</h3>
+          <span class="row-count" id="row-count-personnel">0 dépenses</span>
+        </div>
+        <div class="table-filters">
+          <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-personnel" aria-label="Trier les dépenses">
+          <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
+        </select><button type="button" class="sort-direction" id="mobile-sort-dir-personnel" aria-label="Tri croissant">↑</button></div></div>
+        <div style="overflow-x:auto;">
+          <table id="table-personnel" data-scope="personnel">
+            <thead>
+              <tr>
+                <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
+                <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
+                <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
+                <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
+                <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
+              </tr>
+            </thead>
+            <tbody id="table-body-personnel"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-state-personnel" style="display:none;">Aucune dépense personnelle pour l'instant — ajoutez-en une ci-dessus.</div>
+      </div>
+    </div>
+
+    <!-- Sous-onglet : ANNÉE -->
+    <div class="subtab-panel" data-scope="personnel" data-sub="annee">
+      <div class="stats-row" id="annee-stats-personnel"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Dépenses par mois</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-mensuel-personnel"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Répartition par catégorie (année)</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-categories-personnel"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sous-onglet : RÉCURRENT -->
+    <div class="subtab-panel" data-scope="personnel" data-sub="recurrent">
+      <div class="stats-row" id="recurrent-stats-personnel"></div>
+      <div class="card form-card">
+        <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
+        <div class="recurrent-form-grid">
+          <div class="field"><label>Nom</label><input type="text" id="rec-nom-personnel" placeholder="Netflix, Abonnement..."></div>
+          <div class="field"><label>Montant</label><input type="number" id="rec-montant-personnel" step="0.01" min="0" placeholder="0,00 $"></div>
+          <div class="field">
+            <label>Catégorie</label>
+            <select id="rec-categorie-personnel">
+              <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
+              <option>Maison</option><option>Loisirs</option><option>Santé</option>
+              <option>Vêtements</option><option>Abonnements</option><option>Autre</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Fréquence</label>
+            <select id="rec-frequence-personnel">
+              <option value="semaine">Chaque semaine</option>
+              <option value="2semaines">Chaque 2 semaines</option>
+              <option value="mois" selected>Chaque mois</option>
+              <option value="annee">Chaque année</option>
+            </select>
+          </div>
+          <div class="field"><label>Depuis le</label><input type="date" id="rec-date-personnel"></div>
+          <div class="field">
+            <label>Se termine</label>
+            <select id="rec-fin-type-personnel">
+              <option value="jamais">Jamais</option>
+              <option value="nombre">Après un nombre de paiements</option>
+              <option value="date">À une date précise</option>
+            </select>
+          </div>
+          <div class="field" id="rec-fin-nombre-field-personnel" style="display:none;">
+            <label>Nombre de paiements</label>
+            <input type="number" id="rec-fin-nombre-personnel" min="1" step="1" placeholder="ex: 12">
+          </div>
+          <div class="field" id="rec-fin-date-field-personnel" style="display:none;">
+            <label>Date de fin</label>
+            <input type="date" id="rec-fin-date-personnel">
+          </div>
+          <button class="btn-add" id="btn-add-recurrent-personnel" style="grid-column:1/-1;">Ajouter</button>
+        </div>
       </div>
       <div class="card">
-        <h3>Répartition par catégorie (année)</h3>
-        <div class="chart-wrap"><canvas id="chart-annee-categories"></canvas></div>
+        <h3 style="margin-bottom:12px;">Mes paiements récurrents</h3>
+        <div id="recurrent-list-personnel"></div>
+      </div>
+    </div>
+
+    <!-- Sous-onglet : BUDGET -->
+    <div class="subtab-panel" data-scope="personnel" data-sub="budget">
+      <div class="stats-row" id="stats-personnel"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Budget par catégorie</h3>
+          <div id="budget-list-personnel"></div>
+        </div>
+        <div class="card">
+          <h3>Répartition de mes dépenses personnelles</h3>
+          <div class="chart-wrap"><canvas id="chart-categories-personnel"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Gérer mon budget de <span id="periode-label-personnel"></span></h3>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ces montants ne concernent que vous et servent à suivre vos dépenses <em>personnelles</em> (pas les dépenses conjointes). Cette section n'est visible que par vous. Le budget est propre à chaque mois.</p>
+
+        <div class="field budget-input-field" style="max-width:280px;margin-bottom:8px;">
+          <label><strong>Budget total du mois</strong> (toutes catégories)</label>
+          <div class="input-money">
+            <input type="number" id="budget-total-input-personnel" step="1" min="0" placeholder="0">
+            <span class="suffix">$ / mois</span>
+          </div>
+        </div>
+        <p id="budget-total-ecart-personnel" style="font-size:13px;margin:0 0 18px;"></p>
+
+        <div style="padding-top:14px;border-top:1px solid var(--border);">
+          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
+          <div id="budget-form-personnel" class="settings-grid"></div>
+        </div>
+
+        <button class="btn-add" id="save-budgets-personnel" style="margin-top:16px;">Sauvegarder mon budget</button>
+        <p id="budget-save-status-personnel" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;"></p>
       </div>
     </div>
   </section>
 
+  <!-- ===================== SECTION : COMPARER ===================== -->
   <section class="tab-panel" id="tab-comparer">
+    <div class="compare-toggle" id="compare-scope-toggle" style="margin-bottom:10px;">
+      <button class="active" data-scope="tout">Tout</button>
+      <button data-scope="conjoint">Conjoint</button>
+      <button data-scope="personnel">Personnel</button>
+    </div>
     <div class="compare-toggle"><button class="active" data-mode="mois">Comparer 2 mois</button><button data-mode="annee">Comparer 2 années</button></div>
     <div class="compare-selects">
       <div class="field"><select id="compare-a" aria-label="Première période"></select></div>
@@ -600,8 +1020,33 @@
 
   <!-- ONGLET : PARAMÈTRES -->
   <section class="tab-panel" id="tab-parametres">
-    <div class="card settings-section"><h3>Utilisateur actif</h3>
-      <div class="settings-grid"><button class="user-choice p1" id="choose-p1" onclick="selectUser('p1')">Gabriel</button><button class="user-choice p2" id="choose-p2" onclick="selectUser('p2')">Mélissa</button></div>
+    <div class="card settings-section"><h3>Compte</h3>
+      <div class="account-row">
+        <div>
+          <div class="email" id="account-email">...</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Connecté en tant que <span id="account-nom">...</span></div>
+        </div>
+        <button class="btn-secondary" id="logout-btn">Se déconnecter</button>
+      </div>
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+        <button class="btn-secondary" id="show-change-password" type="button">Changer mon mot de passe</button>
+        <form class="auth-form" id="change-password-form" style="display:none;margin-top:14px;max-width:320px;">
+          <div class="field">
+            <label>Nouveau mot de passe</label>
+            <input type="password" id="change-password-new" autocomplete="new-password" minlength="6" required>
+          </div>
+          <div class="field">
+            <label>Confirmer le nouveau mot de passe</label>
+            <input type="password" id="change-password-confirm" autocomplete="new-password" minlength="6" required>
+          </div>
+          <p class="auth-error" id="change-password-error"></p>
+          <p class="auth-success" id="change-password-success"></p>
+          <div style="display:flex;gap:10px;">
+            <button type="submit" class="auth-submit" id="change-password-submit" style="margin-top:0;">Confirmer</button>
+            <button type="button" class="btn-secondary" id="cancel-change-password">Annuler</button>
+          </div>
+        </form>
+      </div>
     </div>
     <div class="card settings-section">
       <h3>Apparence</h3>
@@ -631,6 +1076,7 @@
                 <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Montant</th>
                 <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Categorie</th>
                 <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Note</th>
+                <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Type</th>
               </tr>
             </thead>
             <tbody>
@@ -640,6 +1086,7 @@
                 <td style="padding:6px 10px;border:1px solid var(--border);">42,50</td>
                 <td style="padding:6px 10px;border:1px solid var(--border);">Épicerie</td>
                 <td style="padding:6px 10px;border:1px solid var(--border);">IGA</td>
+                <td style="padding:6px 10px;border:1px solid var(--border);">Conjointe</td>
               </tr>
               <tr>
                 <td style="padding:6px 10px;border:1px solid var(--border);">Mélissa</td>
@@ -647,14 +1094,16 @@
                 <td style="padding:6px 10px;border:1px solid var(--border);">18,00</td>
                 <td style="padding:6px 10px;border:1px solid var(--border);">Restaurant</td>
                 <td style="padding:6px 10px;border:1px solid var(--border);"></td>
+                <td style="padding:6px 10px;border:1px solid var(--border);">Personnelle</td>
               </tr>
             </tbody>
           </table>
         </div>
         <ul style="font-size:13px;color:var(--text-secondary);margin:0;padding-left:18px;line-height:1.7;">
-          <li>Colonnes attendues : <strong>Qui</strong>, <strong>Date</strong>, <strong>Montant</strong>, <strong>Categorie</strong>, <strong>Note</strong> (peu importe l'ordre).</li>
+          <li>Colonnes attendues : <strong>Qui</strong>, <strong>Date</strong>, <strong>Montant</strong>, <strong>Categorie</strong>, <strong>Note</strong>, <strong>Type</strong> (peu importe l'ordre).</li>
           <li>Si aucun nom valide n'est écrit dans <strong>Qui</strong>, la dépense est attribuée à la personne actuellement connectée dans l'application (celle qui fait l'import).</li>
           <li>Si la valeur dans <strong>Categorie</strong> ne correspond à aucune catégorie existante, la dépense est classée dans <strong>Autre</strong>.</li>
+          <li>Si la valeur dans <strong>Type</strong> n'est pas "Personnelle", la dépense est considérée comme <strong>Conjointe</strong> par défaut.</li>
           <li>Les dates peuvent être écrites en <strong>AAAA-MM-JJ</strong> ou <strong>JJ/MM/AAAA</strong>.</li>
         </ul>
       </div>
@@ -692,7 +1141,55 @@
     <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0"></div>
     <div class="field"><label>Catégorie</label><select id="edit-category"></select></div>
     <div class="field"><label>Note</label><input type="text" id="edit-note"></div>
-    <div class="edit-actions"><button class="btn-secondary" id="delete-edit">Supprimer</button><button class="btn-add" id="save-edit">Sauvegarder</button></div>
+    <div class="field">
+      <label>Type</label>
+      <select id="edit-type"><option value="conjointe">👥 Conjointe</option><option value="personnelle">👤 Personnelle</option></select>
+    </div>
+    <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit">Supprimer</button><button class="btn-add" id="save-edit">Sauvegarder</button></div>
+  </div>
+</div></div>
+
+<div class="edit-modal" id="edit-recurrent-modal"><div class="edit-card">
+  <button class="modal-close-btn" id="close-edit-recurrent" aria-label="Fermer">&times;</button>
+  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Modifier un paiement récurrent</h3>
+  <div class="form-grid">
+    <div class="field"><label>Nom</label><input type="text" id="edit-rec-nom"></div>
+    <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" step="0.01" min="0"></div>
+    <div class="field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
+    <div class="field">
+      <label>Fréquence</label>
+      <select id="edit-rec-frequence">
+        <option value="semaine">Chaque semaine</option>
+        <option value="2semaines">Chaque 2 semaines</option>
+        <option value="mois">Chaque mois</option>
+        <option value="annee">Chaque année</option>
+      </select>
+    </div>
+    <div class="field" id="edit-rec-qui-field">
+      <label>Qui</label>
+      <select id="edit-rec-qui"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select>
+    </div>
+    <div class="field"><label>Depuis le</label><input type="date" id="edit-rec-date-debut"></div>
+    <div class="field">
+      <label>Se termine</label>
+      <select id="edit-rec-fin-type">
+        <option value="jamais">Jamais</option>
+        <option value="nombre">Après un nombre de paiements</option>
+        <option value="date">À une date précise</option>
+      </select>
+    </div>
+    <div class="field" id="edit-rec-fin-nombre-field" style="display:none;">
+      <label>Nombre de paiements</label>
+      <input type="number" id="edit-rec-fin-nombre" min="1" step="1">
+    </div>
+    <div class="field" id="edit-rec-fin-date-field" style="display:none;">
+      <label>Date de fin</label>
+      <input type="date" id="edit-rec-fin-date">
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="edit-rec-actif" style="width:auto;"> Actif</label>
+    </div>
+    <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit-recurrent">Supprimer</button><button class="btn-add" id="save-edit-recurrent">Sauvegarder</button></div>
   </div>
 </div></div>
 
@@ -711,47 +1208,237 @@ const SUPABASE_KEY = 'sb_publishable_QvOdWQ4Fd5oRLJYNNBZKsg_DPoWy82G';
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ===================== GESTION DE L'UTILISATEUR ===================== */
-let currentUser = localStorage.getItem('depenses_current_user');
+/* ===================== AUTHENTIFICATION SUPABASE (vrais comptes) ===================== */
+/* ===================== À FAIRE UNE FOIS : vos deux comptes ===================== */
+/* 1. Dans Supabase : Authentication > Users > "Invite user", et invitez Gabriel et Mélissa
+      avec LEURS VRAIS courriels (chacun reçoit un lien pour choisir son mot de passe).
+   2. Remplacez les deux courriels ci-dessous par ces mêmes vrais courriels.
+   3. Chaque personne se connecte avec SON compte, sur SON appareil (ne partagez pas un
+      seul compte à deux) : c'est ce qui rend l'onglet Personnel réellement privé. */
+const EMAIL_PERSONNES = {
+  'liagabmail@gmail.com': 'p1',
+  'melissa.bienvenu2@gmail.com': 'p2'
+};
+
+let currentUser = null;
+let currentSession = null;
 const nomsPersonnes = { p1: "Gabriel", p2: "Mélissa" };
 const couleursPersonnes = { p1: "#1a73e8", p2: "#e91e63" };
 
-function verifierUtilisateur() {
-  if (!currentUser || !nomsPersonnes[currentUser]) {
+/* Détecte si on arrive depuis un lien d'invitation ou de réinitialisation de mot de passe
+   (Supabase ajoute ces informations dans le fragment #... de l'URL au retour du courriel). */
+const paramsLien = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+let enChoixMotDePasse = ['invite','recovery'].includes(paramsLien.get('type'));
+
+function personneDepuisEmail(email){
+  if(!email) return null;
+  return EMAIL_PERSONNES[email.trim().toLowerCase()] || null;
+}
+
+async function initAuth(){
+  const { data:{ session } } = await supabaseClient.auth.getSession();
+  await gererSession(session);
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    gererSession(session);
+  });
+}
+
+async function gererSession(session){
+  currentSession = session;
+  if(!session){
+    currentUser = null;
+    document.getElementById('setpw-modal').style.display = 'none';
     document.getElementById('auth-modal').style.display = 'flex';
-  } else {
-    document.getElementById('auth-modal').style.display = 'none';
-    mettreAJourInterfaceUtilisateur();
+    afficherVueLogin();
+    return;
   }
-}
 
-function selectUser(qui) {
-  currentUser = qui;
-  localStorage.setItem('depenses_current_user', qui);
+  /* Compte fraîchement invité : on demande d'abord de choisir un mot de passe
+     avant de donner accès aux dépenses. */
+  if(enChoixMotDePasse){
+    document.getElementById('auth-modal').style.display = 'none';
+    document.getElementById('setpw-modal').style.display = 'flex';
+    return;
+  }
+
   document.getElementById('auth-modal').style.display = 'none';
+  document.getElementById('setpw-modal').style.display = 'none';
+  const personneTrouvee = personneDepuisEmail(session.user.email);
+  if(!personneTrouvee){
+    console.warn(`Courriel non reconnu dans EMAIL_PERSONNES : "${session.user.email}". Vérifiez cette constante dans le code. Par défaut, ce compte est traité comme Gabriel.`);
+  }
+  currentUser = personneTrouvee || 'p1';
+  const emailEl = document.getElementById('account-email');
+  const nomEl = document.getElementById('account-nom');
+  if(emailEl) emailEl.textContent = session.user.email;
+  if(nomEl) nomEl.textContent = nomsPersonnes[currentUser];
   mettreAJourInterfaceUtilisateur();
-  rafraichirOptionsCategories();
-  toutAfficher();
+  rafraichirOptionsFormulaires();
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase() ]);
+  await genererDepensesRecurrentes();
 }
 
-function resetUser() {
-  localStorage.removeItem('depenses_current_user');
-  currentUser = null;
-  document.getElementById('auth-modal').style.display = 'flex';
+document.getElementById('setpw-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const motDePasse = document.getElementById('setpw-password').value;
+  const confirmation = document.getElementById('setpw-password-confirm').value;
+  const erreurEl = document.getElementById('setpw-error');
+  const bouton = document.getElementById('setpw-submit');
+  erreurEl.textContent = '';
+
+  if(motDePasse.length < 6){
+    erreurEl.textContent = "Le mot de passe doit contenir au moins 6 caractères.";
+    return;
+  }
+  if(motDePasse !== confirmation){
+    erreurEl.textContent = "Les deux mots de passe ne correspondent pas.";
+    return;
+  }
+
+  bouton.disabled = true;
+  bouton.textContent = 'Enregistrement...';
+  const { error } = await supabaseClient.auth.updateUser({ password: motDePasse });
+  bouton.disabled = false;
+  bouton.textContent = 'Confirmer et continuer';
+
+  if(error){
+    erreurEl.textContent = "Une erreur est survenue. Réessayez ou redemandez un lien d'invitation.";
+    console.error(error);
+    return;
+  }
+
+  enChoixMotDePasse = false;
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  await gererSession(currentSession);
+});
+
+document.getElementById('login-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const bouton = document.getElementById('login-submit');
+  const erreurEl = document.getElementById('login-error');
+  erreurEl.textContent = '';
+  bouton.disabled = true;
+  bouton.textContent = 'Connexion...';
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  bouton.disabled = false;
+  bouton.textContent = 'Se connecter';
+  if(error){
+    erreurEl.textContent = "Courriel ou mot de passe incorrect.";
+    console.error(error);
+  }
+});
+
+/* Bascule entre la vue "connexion" et la vue "mot de passe oublié" dans le même modal */
+function afficherVueLogin(){
+  document.getElementById('login-view').style.display = '';
+  document.getElementById('forgot-password-view').style.display = 'none';
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('forgot-error').textContent = '';
+  document.getElementById('forgot-success').textContent = '';
+  document.getElementById('forgot-password-form').reset();
 }
+document.getElementById('show-forgot-password').addEventListener('click', ()=>{
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('forgot-password-view').style.display = '';
+  const emailDejaEntre = document.getElementById('login-email').value.trim();
+  if(emailDejaEntre) document.getElementById('forgot-email').value = emailDejaEntre;
+  document.getElementById('forgot-error').textContent = '';
+  document.getElementById('forgot-success').textContent = '';
+});
+document.getElementById('show-login').addEventListener('click', afficherVueLogin);
+
+/* Envoie un courriel avec un lien de réinitialisation. Le lien ramène sur cette même page
+   avec #type=recovery dans l'URL, ce qui déclenche automatiquement le modal "Choisissez
+   votre mot de passe" (voir enChoixMotDePasse / gererSession) une fois cliqué. */
+document.getElementById('forgot-password-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('forgot-email').value.trim();
+  const bouton = document.getElementById('forgot-submit');
+  const erreurEl = document.getElementById('forgot-error');
+  const succesEl = document.getElementById('forgot-success');
+  erreurEl.textContent = '';
+  succesEl.textContent = '';
+  bouton.disabled = true;
+  bouton.textContent = 'Envoi...';
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  bouton.disabled = false;
+  bouton.textContent = 'Envoyer le lien';
+  if(error){
+    erreurEl.textContent = "Une erreur est survenue. Vérifiez le courriel et réessayez.";
+    console.error(error);
+    return;
+  }
+  succesEl.textContent = "Courriel envoyé ! Vérifiez votre boîte de réception (et vos indésirables).";
+});
+
+document.getElementById('logout-btn').addEventListener('click', async ()=>{
+  await supabaseClient.auth.signOut();
+});
+
+document.getElementById('show-change-password').addEventListener('click', ()=>{
+  document.getElementById('change-password-form').style.display = '';
+  document.getElementById('show-change-password').style.display = 'none';
+});
+function fermerChangementMotDePasse(){
+  document.getElementById('change-password-form').style.display = 'none';
+  document.getElementById('show-change-password').style.display = '';
+  document.getElementById('change-password-form').reset();
+  document.getElementById('change-password-error').textContent = '';
+  document.getElementById('change-password-success').textContent = '';
+}
+document.getElementById('cancel-change-password').addEventListener('click', fermerChangementMotDePasse);
+
+document.getElementById('change-password-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const nouveau = document.getElementById('change-password-new').value;
+  const confirmation = document.getElementById('change-password-confirm').value;
+  const erreurEl = document.getElementById('change-password-error');
+  const succesEl = document.getElementById('change-password-success');
+  const bouton = document.getElementById('change-password-submit');
+  erreurEl.textContent = '';
+  succesEl.textContent = '';
+
+  if(nouveau.length < 6){
+    erreurEl.textContent = "Le mot de passe doit contenir au moins 6 caractères.";
+    return;
+  }
+  if(nouveau !== confirmation){
+    erreurEl.textContent = "Les deux mots de passe ne correspondent pas.";
+    return;
+  }
+
+  bouton.disabled = true;
+  bouton.textContent = 'Enregistrement...';
+  const { error } = await supabaseClient.auth.updateUser({ password: nouveau });
+  bouton.disabled = false;
+  bouton.textContent = 'Confirmer';
+
+  if(error){
+    erreurEl.textContent = "Une erreur est survenue. Réessayez.";
+    console.error(error);
+    return;
+  }
+  succesEl.textContent = "Mot de passe mis à jour ✓";
+  document.getElementById('change-password-form').reset();
+  setTimeout(fermerChangementMotDePasse, 1800);
+});
 
 function mettreAJourInterfaceUtilisateur() {
   const nom = nomsPersonnes[currentUser];
   document.getElementById('current-user-name').textContent = nom;
   const dot = document.getElementById('current-user-dot');
   dot.className = `dot ${currentUser}`;
-  document.querySelectorAll('.user-choice').forEach(button=>button.classList.toggle('active',button.id===`choose-${currentUser}`));
 }
 
 /* ===================== DONNÉES ET ÉTAT ===================== */
 let COULEURS_CATEGORIES = {
   "Épicerie":"#1a73e8","Restaurant":"#ea4335","Transport":"#fbbc04",
-  "Logement":"#34a853","Loisirs":"#a142f4","Santé":"#00acc1",
+  "Maison":"#34a853","Loisirs":"#a142f4","Santé":"#00acc1",
   "Vêtements":"#f06292","Abonnements":"#ff7043","Autre":"#9aa0a6"
 };
 const NOMS_MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
@@ -760,14 +1447,19 @@ function uid(){ return Math.random().toString(36).slice(2,10); }
 
 let categories = Object.keys(COULEURS_CATEGORIES);
 let depenses = [];
-let etatTri = { key:"Date", dir:"desc" };
+let etatTri = { conjoint:{key:"Date", dir:"desc"}, personnel:{key:"Date", dir:"desc"} };
 
 const formaterMonnaie = (n) => n.toLocaleString('fr-CA', {style:'currency', currency:'CAD'});
 const aujourdhui = new Date();
 let moisActif = {year:aujourdhui.getFullYear(), month:aujourdhui.getMonth()};
 let anneeActive = aujourdhui.getFullYear();
 let modeComparaison = 'mois';
+let modeCompareScope = 'tout';
 let depenseEnEdition = null;
+let activeMainTab = 'conjoint';
+let activeSubtab = { conjoint:'mois', personnel:'mois' };
+let charts = {};
+function detruireGraphique(cle){ if(charts[cle]){ charts[cle].destroy(); delete charts[cle]; } }
 
 function appliquerTheme(){
   document.body.classList.toggle('dark', localStorage.getItem('depenses_theme') === 'dark');
@@ -775,10 +1467,13 @@ function appliquerTheme(){
   if(darkMode) darkMode.checked = document.body.classList.contains('dark');
 }
 
-document.getElementById('f-date').value = aujourdhui.toISOString().slice(0,10);
-document.getElementById('f-who').value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
-document.getElementById('mobile-add').addEventListener('click',()=>document.querySelector('.form-card').classList.add('mobile-add-open'));
-document.getElementById('close-add').addEventListener('click',()=>document.querySelector('.form-card').classList.remove('mobile-add-open'));
+document.getElementById('f-date-conjoint').value = aujourdhui.toISOString().slice(0,10);
+document.getElementById('f-date-personnel').value = aujourdhui.toISOString().slice(0,10);
+
+document.getElementById('mobile-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.add('mobile-add-open'));
+document.getElementById('close-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.remove('mobile-add-open'));
+document.getElementById('mobile-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.add('mobile-add-open'));
+document.getElementById('close-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.remove('mobile-add-open'));
 
 /* Chargement initial depuis Supabase (avec les noms exacts des colonnes) */
 async function chargerDepensesSupabase() {
@@ -793,20 +1488,579 @@ async function chargerDepensesSupabase() {
     amount: Number(e.Montant || 0),
     date: e.Date,
     category: e.Categorie || 'Autre',
-    note: e.Note || ''
+    note: e.Note || '',
+    type: e.Type === 'personnelle' ? 'personnelle' : 'conjointe',
+    recurrenceId: e.RecurrenceId || null
   }));
   await Promise.all([
     supabaseClient.from('Depenses').update({Qui:nomsPersonnes.p1}).eq('Qui','p1'),
     supabaseClient.from('Depenses').update({Qui:nomsPersonnes.p2}).eq('Qui','p2')
   ]);
-  toutAfficher();
+  rafraichirActif();
 }
+
+/* ===================== BUDGETS PERSONNELS (par personne, par mois, par catégorie) ===================== */
+/* Stockés dans la table Supabase "Budgets" (Personne, Categorie, Periode, Montant). La catégorie
+   spéciale "TOTAL" représente le budget global du mois (toutes catégories confondues), distinct
+   de la somme des catégories, pour permettre d'afficher un écart. Si la table n'existe pas encore
+   chez l'utilisateur, on retombe sur le stockage local de l'appareil. */
+let budgets = { p1:{}, p2:{}, conjoint:{} };
+let budgetsSupabaseDisponible = true;
+
+function periodeActive(){
+  return `${moisActif.year}-${String(moisActif.month+1).padStart(2,'0')}`;
+}
+
+async function chargerBudgetsSupabase(){
+  try{
+    const { data, error } = await supabaseClient.from('Budgets').select('*');
+    if(error) throw error;
+    budgets = { p1:{}, p2:{}, conjoint:{} };
+    (data || []).forEach(b=>{
+      const cle = b.Personne === 'Conjoint' ? 'conjoint' : clePersonne(b.Personne);
+      const periode = b.Periode || periodeActive();
+      if(!budgets[cle][periode]) budgets[cle][periode] = {};
+      const catKey = b.Categorie === 'TOTAL' ? '__total__' : b.Categorie;
+      budgets[cle][periode][catKey] = Number(b.Montant || 0);
+    });
+  } catch(err){
+    budgetsSupabaseDisponible = false;
+    console.warn("Table 'Budgets' introuvable ou incomplète dans Supabase, utilisation du stockage local.", err);
+    try{ budgets = JSON.parse(localStorage.getItem('depenses_budgets') || '{}'); }catch(e){ budgets = {}; }
+    budgets.p1 = budgets.p1 || {};
+    budgets.p2 = budgets.p2 || {};
+    budgets.conjoint = budgets.conjoint || {};
+  }
+  afficherSectionBudget('personnel');
+  afficherSectionBudget('conjoint');
+}
+
+/* Config propre à chaque section : quelles dépenses compter, sous quelle clé stocker le
+   budget, et quel nom envoyer à Supabase pour la colonne Personne. */
+function configSection(scope){
+  if(scope === 'conjoint'){
+    return {
+      filtre: e => e.type === 'conjointe' && dansMoisActif(e.date),
+      budgetKey: 'conjoint',
+      personneSupabase: 'Conjoint',
+      valueClass: ''
+    };
+  }
+  return {
+    filtre: e => e.type === 'personnelle' && e.who === currentUser && dansMoisActif(e.date),
+    budgetKey: currentUser,
+    personneSupabase: nomPersonneSupabase(currentUser),
+    valueClass: currentUser
+  };
+}
+
+async function sauvegarderBudget(scope){
+  const cfg = configSection(scope);
+  const periode = periodeActive();
+  const statut = document.getElementById(`budget-save-status-${scope}`);
+  const valeurs = {};
+  categories.forEach(cat=>{
+    const input = document.getElementById(`budget-input-${scope}-${cat}`);
+    if(input){ valeurs[cat] = Math.max(0, parseFloat(input.value) || 0); }
+  });
+  const totalInput = document.getElementById(`budget-total-input-${scope}`);
+  const totalSaisi = totalInput ? Math.max(0, parseFloat(totalInput.value) || 0) : 0;
+  valeurs['__total__'] = totalSaisi;
+
+  if(!budgets[cfg.budgetKey]) budgets[cfg.budgetKey] = {};
+  budgets[cfg.budgetKey][periode] = valeurs;
+
+  /* On retente toujours Supabase, même si une tentative précédente (dans cette session)
+     avait échoué : la cause était peut-être temporaire et possiblement réglée depuis. */
+  try{
+    const lignes = categories.map(cat=>({
+      id: `${cfg.budgetKey}-${periode}-${cat}`,
+      Personne: cfg.personneSupabase,
+      Categorie: cat,
+      Periode: periode,
+      Montant: valeurs[cat] || 0,
+      user_id: scope === 'personnel' ? (currentSession?.user?.id || null) : null
+    }));
+    lignes.push({
+      id: `${cfg.budgetKey}-${periode}-TOTAL`,
+      Personne: cfg.personneSupabase,
+      Categorie: 'TOTAL',
+      Periode: periode,
+      Montant: totalSaisi,
+      user_id: scope === 'personnel' ? (currentSession?.user?.id || null) : null
+    });
+    const { error } = await supabaseClient.from('Budgets').upsert(lignes, { onConflict:'id' });
+    if(error){
+      /* La colonne user_id n'existe peut-être pas encore sur Budgets : on réessaie sans elle
+         (voir les instructions pour l'ajouter et garder les budgets personnels privés). */
+      console.warn("Upsert avec user_id impossible sur Budgets, nouvel essai sans cette colonne.", error);
+      const sansUserId = lignes.map(({user_id, ...reste}) => reste);
+      const retry = await supabaseClient.from('Budgets').upsert(sansUserId, { onConflict:'id' });
+      if(retry.error) throw retry.error;
+    }
+    budgetsSupabaseDisponible = true;
+    if(statut) statut.textContent = "Budget sauvegardé ✓";
+  } catch(err){
+    console.error(`Échec de la sauvegarde du budget (${scope}) dans Supabase :`, err);
+    budgetsSupabaseDisponible = false;
+    localStorage.setItem('depenses_budgets', JSON.stringify(budgets));
+    if(statut) statut.textContent = "Sauvegardé sur cet appareil seulement (voir la console pour l'erreur exacte).";
+  }
+  afficherSectionBudget(scope);
+}
+
+/* Recalcule en direct l'écart entre le budget total saisi et la somme des catégories,
+   pendant que l'utilisateur tape (avant même de sauvegarder). */
+function recalculerEcartBudget(scope){
+  const totalInput = document.getElementById(`budget-total-input-${scope}`);
+  const ecartEl = document.getElementById(`budget-total-ecart-${scope}`);
+  if(!totalInput || !ecartEl) return;
+  const total = Math.max(0, parseFloat(totalInput.value) || 0);
+  let somme = 0;
+  categories.forEach(cat=>{
+    const input = document.getElementById(`budget-input-${scope}-${cat}`);
+    if(input) somme += Math.max(0, parseFloat(input.value) || 0);
+  });
+  const diff = total - somme;
+  if(total <= 0){
+    ecartEl.textContent = "Entrez un budget total pour voir la répartition par catégorie se comparer à celui-ci.";
+    ecartEl.style.color = 'var(--text-secondary)';
+  } else if(Math.abs(diff) < 0.01){
+    ecartEl.textContent = `Répartition complète : ${formaterMonnaie(somme)} sur ${formaterMonnaie(total)}. ✓`;
+    ecartEl.style.color = 'var(--green)';
+  } else if(diff > 0){
+    ecartEl.textContent = `Il reste ${formaterMonnaie(diff)} non assigné à une catégorie (${formaterMonnaie(somme)} sur ${formaterMonnaie(total)}).`;
+    ecartEl.style.color = 'var(--text-secondary)';
+  } else {
+    ecartEl.textContent = `Vos catégories dépassent le budget total de ${formaterMonnaie(Math.abs(diff))} (${formaterMonnaie(somme)} sur ${formaterMonnaie(total)}).`;
+    ecartEl.style.color = 'var(--red)';
+  }
+}
+
+/* ===================== DÉPENSES RÉCURRENTES (abonnements, paiements réguliers) ===================== */
+/* Stockées dans la table Supabase "Recurrences" (Nom, Montant, Categorie, Frequence, DateDebut,
+   FinType, FinNombre, FinDate, Qui, Type, Actif). Si la table n'existe pas encore chez
+   l'utilisateur, on retombe sur le stockage local de l'appareil, comme pour les budgets.
+   Chaque récurrence active génère automatiquement de vraies dépenses (dans Personnel ou
+   Conjoint selon son type) pour chaque échéance passée ET future (jusqu'à un horizon
+   d'environ 2 ans, régénéré à chaque connexion), en les reliant via RecurrenceId sur la
+   table Depenses afin de ne jamais les dupliquer. */
+let recurrences = [];
+let recurrencesSupabaseDisponible = true;
+let recurrenceEnEdition = null;
+
+async function chargerRecurrencesSupabase(){
+  try{
+    const { data, error } = await supabaseClient.from('Recurrences').select('*');
+    if(error) throw error;
+    recurrences = (data || []).map(r => ({
+      id: r.id,
+      nom: r.Nom || '',
+      montant: Number(r.Montant || 0),
+      categorie: r.Categorie || 'Autre',
+      frequence: ['semaine','2semaines','mois','annee'].includes(r.Frequence) ? r.Frequence : 'mois',
+      dateDebut: r.DateDebut || null,
+      finType: ['jamais','nombre','date'].includes(r.FinType) ? r.FinType : 'jamais',
+      finNombre: r.FinNombre != null ? Number(r.FinNombre) : null,
+      finDate: r.FinDate || null,
+      who: r.Qui ? clePersonne(r.Qui) : null,
+      type: r.Type === 'personnelle' ? 'personnelle' : 'conjointe',
+      actif: r.Actif !== false
+    }));
+    recurrencesSupabaseDisponible = true;
+  } catch(err){
+    recurrencesSupabaseDisponible = false;
+    console.warn("Table 'Recurrences' introuvable ou incomplète dans Supabase, utilisation du stockage local.", err);
+    try{ recurrences = JSON.parse(localStorage.getItem('depenses_recurrences') || '[]'); }catch(e){ recurrences = []; }
+  }
+  afficherRecurrencesScope('conjoint');
+  afficherRecurrencesScope('personnel');
+}
+
+function sauvegarderRecurrencesLocal(){
+  localStorage.setItem('depenses_recurrences', JSON.stringify(recurrences));
+}
+
+function multiplicateurMensuel(frequence){
+  if(frequence==='semaine') return 52/12;
+  if(frequence==='2semaines') return 26/12;
+  if(frequence==='annee') return 1/12;
+  return 1; /* mois */
+}
+function libelleFrequence(f){
+  return { semaine:'Chaque semaine', '2semaines':'Chaque 2 semaines', mois:'Chaque mois', annee:'Chaque année' }[f] || f;
+}
+
+/* Avance une date d'une période, en gérant correctement les fins de mois (ex: 31 janvier
+   + 1 mois -> 28/29 février plutôt que de déborder sur mars). */
+function ajouterPeriode(date, frequence){
+  const d = new Date(date);
+  if(frequence==='semaine'){ d.setDate(d.getDate()+7); return d; }
+  if(frequence==='2semaines'){ d.setDate(d.getDate()+14); return d; }
+  if(frequence==='annee'){
+    const jour = d.getDate();
+    d.setFullYear(d.getFullYear()+1);
+    if(d.getDate() !== jour) d.setDate(0);
+    return d;
+  }
+  const jour = d.getDate();
+  d.setMonth(d.getMonth()+1);
+  if(d.getDate() !== jour) d.setDate(0);
+  return d;
+}
+
+/* Par défaut (connexion, ajout, activation), on génère 12 mois à l'avance pour les
+   récurrences "jamais" — largement suffisant à l'affichage immédiat. La génération s'étend
+   ensuite automatiquement au fur et à mesure que l'utilisateur navigue plus loin dans le
+   temps (mois ou année suivants, voir rafraichirSousOnglet), jusqu'à un plafond de 25 ans
+   à partir d'aujourd'hui (largement suffisant pour un prêt hypothécaire, par exemple).
+   Les récurrences avec un nombre de paiements ou une date de fin s'arrêtent d'elles-mêmes
+   avant cela si c'est plus tôt. */
+function horizonParDefaut(){
+  const d = new Date();
+  d.setMonth(d.getMonth()+12);
+  return d;
+}
+const PLAFOND_ANNEES = 25;
+function horizonMaximal(){
+  const d = new Date();
+  d.setFullYear(d.getFullYear()+PLAFOND_ANNEES);
+  return d;
+}
+
+/* Calcule toutes les dates d'échéance d'une récurrence, du départ jusqu'à la date limite
+   donnée (elle-même plafonnée à 25 ans dans le futur), en respectant sa condition de fin
+   (jamais / nombre de paiements / date de fin). Couvre les échéances passées et futures. */
+function genererOccurrences(rec, limiteDate){
+  const dates = [];
+  if(!rec.dateDebut) return dates;
+  let courant = new Date(rec.dateDebut+"T00:00:00");
+  const plafond = horizonMaximal();
+  const limiteDemandee = limiteDate && limiteDate < plafond ? limiteDate : plafond;
+  const finDateObj = rec.finType==='date' && rec.finDate ? new Date(rec.finDate+"T00:00:00") : null;
+  const limite = finDateObj && finDateObj < limiteDemandee ? finDateObj : limiteDemandee;
+  let compte = 0;
+  while(courant <= limite){
+    if(rec.finType==='nombre' && rec.finNombre != null && compte >= rec.finNombre) break;
+    dates.push(new Date(courant));
+    compte++;
+    courant = ajouterPeriode(courant, rec.frequence);
+  }
+  return dates;
+}
+function formaterDateISO(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+/* Génère dans Depenses toute échéance (passée ou future, jusqu'à limiteDate) qui n'a pas
+   encore été créée pour chaque récurrence active. Chaque dépense générée porte la note du
+   nom de la récurrence et est reliée à elle via recurrenceId, pour ne jamais être recréée
+   en double. Un verrou simple évite les appels concurrents qui se chevaucheraient. */
+let generationRecurrentesEnCours = false;
+async function genererDepensesRecurrentes(limiteDate){
+  if(generationRecurrentesEnCours) return;
+  generationRecurrentesEnCours = true;
+  try{
+    const limite = limiteDate || horizonParDefaut();
+    const aInserer = [];
+    recurrences.filter(r=>r.actif).forEach(rec=>{
+      const datesExistantes = new Set(depenses.filter(e=>e.recurrenceId===rec.id).map(e=>e.date));
+      genererOccurrences(rec, limite).forEach(dateObj=>{
+        const dateStr = formaterDateISO(dateObj);
+        if(!datesExistantes.has(dateStr)){
+          aInserer.push({
+            id: uid(),
+            Qui: nomPersonneSupabase(rec.who),
+            Montant: rec.montant,
+            Date: dateStr,
+            Categorie: rec.categorie,
+            Note: rec.nom,
+            Type: rec.type,
+            RecurrenceId: rec.id,
+            user_id: rec.type === 'personnelle' ? (currentSession?.user?.id || null) : null
+          });
+        }
+      });
+    });
+    if(!aInserer.length) return;
+
+    let { error } = await supabaseClient.from('Depenses').insert(aInserer);
+    if(error){
+      /* La colonne RecurrenceId n'existe peut-être pas encore sur la table Depenses :
+         on réessaie sans elle pour que les dépenses soient tout de même créées. */
+      console.warn("Insertion avec RecurrenceId impossible (avez-vous ajouté la colonne ? voir les instructions), nouvel essai sans cette colonne.", error);
+      const sansRecurrenceId = aInserer.map(({RecurrenceId, ...reste}) => reste);
+      const retry = await supabaseClient.from('Depenses').insert(sansRecurrenceId);
+      if(retry.error){ console.warn("Échec de la génération des dépenses récurrentes.", retry.error); return; }
+    }
+
+    aInserer.forEach(d => depenses.push({
+      id: d.id, who: clePersonne(d.Qui), amount: d.Montant, date: d.Date,
+      category: d.Categorie, note: d.Note, type: d.Type, recurrenceId: d.RecurrenceId
+    }));
+    rafraichirActif();
+  } finally {
+    generationRecurrentesEnCours = false;
+  }
+}
+
+
+function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
+  const val = document.getElementById(selectId).value;
+  document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
+  document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
+}
+['conjoint','personnel'].forEach(scope=>{
+  document.getElementById(`rec-fin-type-${scope}`).addEventListener('change', ()=>
+    appliquerAffichageFinRecurrence(`rec-fin-type-${scope}`, `rec-fin-nombre-field-${scope}`, `rec-fin-date-field-${scope}`));
+});
+document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
+  appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field'));
+
+async function ajouterRecurrence(scope){
+  const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
+  const nom = document.getElementById(`rec-nom-${scope}`).value.trim();
+  const montant = parseFloat(document.getElementById(`rec-montant-${scope}`).value);
+  const categorie = document.getElementById(`rec-categorie-${scope}`).value;
+  const frequence = document.getElementById(`rec-frequence-${scope}`).value;
+  const dateDebut = document.getElementById(`rec-date-${scope}`).value || aujourdhui.toISOString().slice(0,10);
+  const who = scope==='conjoint' ? clePersonne(document.getElementById('rec-who-conjoint').value) : currentUser;
+  const finType = document.getElementById(`rec-fin-type-${scope}`).value;
+  const finNombreRaw = document.getElementById(`rec-fin-nombre-${scope}`).value;
+  const finNombre = finType==='nombre' ? (parseInt(finNombreRaw,10) || null) : null;
+  const finDateRaw = document.getElementById(`rec-fin-date-${scope}`).value;
+  const finDate = finType==='date' ? (finDateRaw || null) : null;
+
+  if(!nom || !montant || montant<=0){
+    alert("Merci d'entrer un nom et un montant valides.");
+    return;
+  }
+  if(finType==='nombre' && !finNombre){
+    alert("Merci d'entrer un nombre de paiements valide.");
+    return;
+  }
+  if(finType==='date' && !finDate){
+    alert("Merci d'entrer une date de fin.");
+    return;
+  }
+
+  const id = uid();
+  const nouvelleRecurrenceDB = {
+    id, Nom: nom, Montant: montant, Categorie: categorie, Frequence: frequence,
+    DateDebut: dateDebut, FinType: finType, FinNombre: finNombre, FinDate: finDate,
+    Qui: nomPersonneSupabase(who), Type: type, Actif: true,
+    user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
+  };
+
+  try{
+    const { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
+    if(error) throw error;
+    recurrencesSupabaseDisponible = true;
+  } catch(err){
+    console.warn("Impossible d'enregistrer la récurrence dans Supabase, sauvegarde locale seulement.", err);
+    recurrencesSupabaseDisponible = false;
+  }
+
+  recurrences.push({ id, nom, montant, categorie, frequence, dateDebut, finType, finNombre, finDate, who, type, actif:true });
+  if(!recurrencesSupabaseDisponible) sauvegarderRecurrencesLocal();
+
+  document.getElementById(`rec-nom-${scope}`).value = '';
+  document.getElementById(`rec-montant-${scope}`).value = '';
+  document.getElementById(`rec-fin-type-${scope}`).value = 'jamais';
+  document.getElementById(`rec-fin-nombre-${scope}`).value = '';
+  document.getElementById(`rec-fin-date-${scope}`).value = '';
+  appliquerAffichageFinRecurrence(`rec-fin-type-${scope}`, `rec-fin-nombre-field-${scope}`, `rec-fin-date-field-${scope}`);
+
+  afficherRecurrencesScope(scope);
+  await genererDepensesRecurrentes();
+}
+document.getElementById('btn-add-recurrent-conjoint').addEventListener('click', ()=>ajouterRecurrence('conjoint'));
+document.getElementById('btn-add-recurrent-personnel').addEventListener('click', ()=>ajouterRecurrence('personnel'));
+
+/* Supprime les dépenses déjà générées pour une récurrence qui tombent aujourd'hui ou
+   plus tard (garde intact l'historique passé). Utilisé quand on modifie une récurrence
+   (pour régénérer les échéances futures avec les nouvelles valeurs) ou qu'on la met en
+   pause (pour ne plus avoir de dépenses futures fantômes). */
+async function supprimerDepensesFuturesRecurrence(id){
+  const aujourdhuiStr = aujourdhui.toISOString().slice(0,10);
+  try{
+    const { error } = await supabaseClient.from('Depenses').delete().eq('RecurrenceId', id).gte('Date', aujourdhuiStr);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de supprimer les dépenses futures liées dans Supabase.", err);
+  }
+  depenses = depenses.filter(e => !(e.recurrenceId === id && e.date >= aujourdhuiStr));
+}
+
+async function basculerActifRecurrence(id){
+  const rec = recurrences.find(r=>r.id===id); if(!rec) return;
+  rec.actif = !rec.actif;
+  try{
+    const { error } = await supabaseClient.from('Recurrences').update({Actif:rec.actif}).eq('id', id);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de mettre à jour la récurrence dans Supabase, sauvegarde locale seulement.", err);
+    sauvegarderRecurrencesLocal();
+  }
+  if(rec.actif){
+    await genererDepensesRecurrentes();
+  } else {
+    await supprimerDepensesFuturesRecurrence(id);
+    rafraichirActif();
+  }
+  afficherRecurrencesScope(rec.type==='personnelle' ? 'personnel' : 'conjoint');
+}
+
+async function supprimerRecurrence(id, sansConfirmation){
+  if(!sansConfirmation && !confirm("Supprimer ce paiement récurrent ? Toutes les dépenses générées automatiquement pour lui (passées et futures) seront aussi supprimées.")) return;
+  const rec = recurrences.find(r=>r.id===id);
+
+  /* Supprime d'abord toutes les dépenses générées par cette récurrence (passées et futures) */
+  try{
+    const { error } = await supabaseClient.from('Depenses').delete().eq('RecurrenceId', id);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de supprimer les dépenses liées dans Supabase (la colonne RecurrenceId existe-t-elle sur Depenses ?).", err);
+  }
+  depenses = depenses.filter(e=>e.recurrenceId !== id);
+
+  try{
+    const { error } = await supabaseClient.from('Recurrences').delete().eq('id', id);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de supprimer la récurrence dans Supabase.", err);
+  }
+  recurrences = recurrences.filter(r=>r.id!==id);
+  sauvegarderRecurrencesLocal();
+  if(rec) afficherRecurrencesScope(rec.type==='personnelle' ? 'personnel' : 'conjoint');
+  rafraichirActif();
+}
+
+function afficherRecurrencesScope(scope){
+  const liste = recurrences.filter(r => scope==='conjoint' ? r.type==='conjointe' : (r.type==='personnelle' && r.who===currentUser));
+  const actifs = liste.filter(r=>r.actif);
+  const totalMensuel = actifs.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r.frequence),0);
+
+  const statsEl = document.getElementById(`recurrent-stats-${scope}`);
+  if(statsEl){
+    statsEl.innerHTML = `
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> mensuel équiv.</span></div><div class="value">${formaterMonnaie(totalMensuel)}</div></div>
+      <div class="stat-card"><div class="label">Paiements<span class="mobile-line"> actifs</span></div><div class="value">${actifs.length}</div></div>
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> (incl. inactifs)</span></div><div class="value">${liste.length}</div></div>
+    `;
+  }
+
+  const listEl = document.getElementById(`recurrent-list-${scope}`);
+  if(!listEl) return;
+  if(!liste.length){
+    listEl.innerHTML = `<div class="budget-empty">Aucun paiement récurrent pour l'instant. Utilisez le formulaire ci-dessus pour en ajouter un.</div>`;
+    return;
+  }
+  const listeTriee = liste.slice().sort((a,b)=> (b.actif - a.actif) || a.nom.localeCompare(b.nom));
+  listEl.innerHTML = listeTriee.map(r=>`
+    <div class="recurrent-row ${r.actif?'':'inactive'}" onclick="ouvrirEditionRecurrence('${r.id}')" style="cursor:pointer;">
+      <div class="recurrent-info">
+        <div class="recurrent-nom">${r.nom}${scope==='conjoint' ? ` <span class="who-badge"><span class="dot ${r.who}"></span>${libellePersonne(r.who)}</span>` : ''}</div>
+        <div class="recurrent-meta">
+          <span class="cat-pill" style="background:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}">${r.categorie}</span>
+          <span class="freq-pill">${libelleFrequence(r.frequence)}</span>
+          ${r.finType==='nombre' ? `<span class="freq-pill">${r.finNombre} paiement${r.finNombre>1?'s':''} max</span>` : ''}
+          ${r.finType==='date' ? `<span class="freq-pill">Jusqu'au ${r.finDate}</span>` : ''}
+        </div>
+      </div>
+      <div class="recurrent-actions">
+        <div class="recurrent-montant">${formaterMonnaie(r.montant)}</div>
+        <label class="switch small" title="${r.actif ? 'Actif' : 'Inactif'}" onclick="event.stopPropagation()">
+          <input type="checkbox" ${r.actif?'checked':''} onchange="basculerActifRecurrence('${r.id}')">
+          <span class="switch-track"></span>
+        </label>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* Modal d'édition d'un paiement récurrent */
+function ouvrirEditionRecurrence(id){
+  const rec = recurrences.find(r=>r.id===id); if(!rec) return;
+  recurrenceEnEdition = rec;
+  document.getElementById('edit-rec-nom').value = rec.nom;
+  document.getElementById('edit-rec-montant').value = rec.montant;
+  document.getElementById('edit-rec-categorie').innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+  document.getElementById('edit-rec-categorie').value = rec.categorie;
+  document.getElementById('edit-rec-frequence').value = rec.frequence;
+  document.getElementById('edit-rec-date-debut').value = rec.dateDebut || '';
+  document.getElementById('edit-rec-fin-type').value = rec.finType || 'jamais';
+  document.getElementById('edit-rec-fin-nombre').value = rec.finNombre || '';
+  document.getElementById('edit-rec-fin-date').value = rec.finDate || '';
+  document.getElementById('edit-rec-actif').checked = rec.actif;
+  appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field');
+
+  const quiField = document.getElementById('edit-rec-qui-field');
+  if(rec.type==='conjointe'){
+    quiField.style.display = '';
+    document.getElementById('edit-rec-qui').innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
+    document.getElementById('edit-rec-qui').value = libellePersonne(rec.who);
+  } else {
+    quiField.style.display = 'none';
+  }
+
+  document.getElementById('edit-recurrent-modal').style.display = 'flex';
+}
+document.getElementById('close-edit-recurrent').addEventListener('click', ()=>document.getElementById('edit-recurrent-modal').style.display='none');
+document.getElementById('delete-edit-recurrent').addEventListener('click', async ()=>{
+  if(recurrenceEnEdition && confirm("Supprimer ce paiement récurrent ? Toutes les dépenses générées automatiquement pour lui (passées et futures) seront aussi supprimées.")){
+    document.getElementById('edit-recurrent-modal').style.display='none';
+    await supprimerRecurrence(recurrenceEnEdition.id, true);
+  }
+});
+document.getElementById('save-edit-recurrent').addEventListener('click', async ()=>{
+  if(!recurrenceEnEdition) return;
+  const nom = document.getElementById('edit-rec-nom').value.trim();
+  const montant = parseFloat(document.getElementById('edit-rec-montant').value);
+  if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
+  const categorie = document.getElementById('edit-rec-categorie').value;
+  const frequence = document.getElementById('edit-rec-frequence').value;
+  const dateDebut = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
+  const finType = document.getElementById('edit-rec-fin-type').value;
+  const finNombre = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
+  const finDate = finType==='date' ? (document.getElementById('edit-rec-fin-date').value || null) : null;
+  const actif = document.getElementById('edit-rec-actif').checked;
+
+  if(finType==='nombre' && !finNombre){ alert("Merci d'entrer un nombre de paiements valide."); return; }
+  if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
+
+  let who = recurrenceEnEdition.who;
+  if(recurrenceEnEdition.type==='conjointe'){
+    who = clePersonne(document.getElementById('edit-rec-qui').value);
+  }
+
+  const update = {
+    Nom: nom, Montant: montant, Categorie: categorie, Frequence: frequence,
+    DateDebut: dateDebut, FinType: finType, FinNombre: finNombre, FinDate: finDate,
+    Qui: nomPersonneSupabase(who), Actif: actif
+  };
+
+  try{
+    const { error } = await supabaseClient.from('Recurrences').update(update).eq('id', recurrenceEnEdition.id);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de mettre à jour la récurrence dans Supabase, sauvegarde locale seulement.", err);
+  }
+
+  Object.assign(recurrenceEnEdition, { nom, montant, categorie, frequence, dateDebut, finType, finNombre, finDate, who, actif });
+  sauvegarderRecurrencesLocal();
+  document.getElementById('edit-recurrent-modal').style.display = 'none';
+  afficherRecurrencesScope(recurrenceEnEdition.type==='personnelle' ? 'personnel' : 'conjoint');
+  /* Les échéances passées restent inchangées (historique), mais les échéances futures déjà
+     générées sont recréées avec les nouvelles valeurs (montant, catégorie, fréquence, etc.). */
+  await supprimerDepensesFuturesRecurrence(recurrenceEnEdition.id);
+  if(actif) await genererDepensesRecurrentes();
+  rafraichirActif();
+});
 
 function libellePersonne(who){ return nomsPersonnes[who] || who; }
 function clePersonne(who){ return who === 'Mélissa' || who === 'p2' ? 'p2' : 'p1'; }
 function nomPersonneSupabase(who){ return clePersonne(who) === 'p2' ? 'Mélissa' : 'Gabriel'; }
-
-let chartEvolution, chartCategories, chartAnneeMensuel, chartAnneeCategories;
 
 function dansMoisActif(dateStr){ return dansMois(dateStr, moisActif.year, moisActif.month); }
 function dansAnnee(dateStr, year){ return new Date(dateStr+"T00:00:00").getFullYear()===year; }
@@ -815,59 +2069,163 @@ function dansMois(dateStr, year, month){
   return d.getFullYear()===year && d.getMonth()===month;
 }
 
-function rafraichirOptionsCategories(){
-  const select = document.getElementById('f-category');
-  const current = select.value;
-  select.innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
-  if(categories.includes(current)) select.value = current;
-  const userSelect = document.getElementById('f-who');
-  userSelect.innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
-  userSelect.value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
+/* Filtres qui définissent le contenu de chaque grande section */
+function filtreMoisScope(scope){
+  return e => dansMoisActif(e.date) && (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser));
+}
+function filtreAnneeScope(scope){
+  return e => dansAnnee(e.date, anneeActive) && (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser));
+}
+
+/* Rafraîchit les selects "Qui" et "Catégorie" des deux formulaires d'ajout (Conjoint / Personnel) */
+function rafraichirOptionsFormulaires(){
+  ['conjoint','personnel'].forEach(scope=>{
+    const select = document.getElementById(`f-category-${scope}`);
+    const current = select.value;
+    select.innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+    if(categories.includes(current)) select.value = current;
+
+    const selectRec = document.getElementById(`rec-categorie-${scope}`);
+    if(selectRec){
+      const currentRec = selectRec.value;
+      selectRec.innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+      if(categories.includes(currentRec)) selectRec.value = currentRec;
+    }
+  });
+
+  const whoConjoint = document.getElementById('f-who-conjoint');
+  const valeurActuelle = whoConjoint.value;
+  whoConjoint.innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
+  whoConjoint.value = Object.values(nomsPersonnes).includes(valeurActuelle) ? valeurActuelle : (nomsPersonnes[currentUser] || nomsPersonnes.p1);
+
+  const recWhoConjoint = document.getElementById('rec-who-conjoint');
+  if(recWhoConjoint){
+    const valeurRecActuelle = recWhoConjoint.value;
+    recWhoConjoint.innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
+    recWhoConjoint.value = Object.values(nomsPersonnes).includes(valeurRecActuelle) ? valeurRecActuelle : (nomsPersonnes[currentUser] || nomsPersonnes.p1);
+  }
+
+  /* Une dépense personnelle ne peut être attribuée qu'à soi-même : c'est ce qui permet à
+     Supabase de savoir à qui elle appartient et de la garder privée. */
+  const whoPersonnel = document.getElementById('f-who-personnel');
+  const nomActuel = nomsPersonnes[currentUser] || nomsPersonnes.p1;
+  whoPersonnel.innerHTML = `<option value="${nomActuel}">${nomActuel}</option>`;
+  whoPersonnel.value = nomActuel;
 }
 
 function afficherNavigationPeriode(){
   document.getElementById('month-label').textContent = `${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
-  document.getElementById('month-evolution-title').textContent = `Évolution des dépenses - ${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
   document.getElementById('year-label').textContent = anneeActive;
-  const moisVisible = document.querySelector('.tab-btn.active')?.dataset.tab === 'mois';
-  document.getElementById('month-nav').style.display = moisVisible ? 'flex' : 'none';
-  document.getElementById('year-nav').style.display = document.querySelector('.tab-btn.active')?.dataset.tab === 'annee' ? 'flex' : 'none';
+  ['conjoint','personnel'].forEach(scope=>{
+    const el = document.getElementById(`month-evolution-title-${scope}`);
+    if(el) el.textContent = `Évolution des dépenses - ${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
+  });
+  const estSection = activeMainTab === 'conjoint' || activeMainTab === 'personnel';
+  const sub = estSection ? activeSubtab[activeMainTab] : null;
+  document.getElementById('month-nav').style.display = (estSection && (sub==='mois' || sub==='budget')) ? 'flex' : 'none';
+  document.getElementById('year-nav').style.display = (estSection && sub==='annee') ? 'flex' : 'none';
 }
 
 function afficherComparaison(){
-  const options=[...new Set(depenses.map(e=>{const d=new Date(e.date+'T00:00:00');return modeComparaison==='mois'?`${d.getFullYear()}-${d.getMonth()}`:String(d.getFullYear());}))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  const source = depenses.filter(e=>{
+    if(modeCompareScope==='conjoint') return e.type==='conjointe';
+    if(modeCompareScope==='personnel') return e.type==='personnelle' && e.who===currentUser;
+    return true;
+  });
+  const options=[...new Set(source.map(e=>{const d=new Date(e.date+'T00:00:00');return modeComparaison==='mois'?`${d.getFullYear()}-${d.getMonth()}`:String(d.getFullYear());}))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   const label=key=>modeComparaison==='mois'?(()=>{const [y,m]=key.split('-').map(Number);return `${NOMS_MOIS[m]} ${y}`;})():key;
   const period=key=>modeComparaison==='mois'?(()=>{const [y,m]=key.split('-').map(Number);return e=>dansMois(e.date,y,m);})():e=>dansAnnee(e.date,Number(key));
   const a=document.getElementById('compare-a'),b=document.getElementById('compare-b');
   a.innerHTML=options.map(key=>`<option value="${key}">${label(key)}</option>`).join(''); b.innerHTML=a.innerHTML;
   if(options.length>1){a.selectedIndex=options.length-2;b.selectedIndex=options.length-1;}
-  const listA=depenses.filter(period(a.value)),listB=depenses.filter(period(b.value));
+  const listA=source.filter(period(a.value)),listB=source.filter(period(b.value));
   const totalA=listA.reduce((s,e)=>s+e.amount,0),totalB=listB.reduce((s,e)=>s+e.amount,0),diff=totalB-totalA;
   document.getElementById('compare-stats').innerHTML=`<div class="stat-card"><div class="label">${label(a.value||'')}</div><div class="value">${formaterMonnaie(totalA)}</div></div><div class="stat-card"><div class="label">${label(b.value||'')}</div><div class="value">${formaterMonnaie(totalB)}</div></div><div class="stat-card"><div class="label">Écart</div><div class="value">${diff>=0?'+':''}${formaterMonnaie(diff)}</div></div>`;
-  if(window.graphiqueComparaison) window.graphiqueComparaison.destroy();
-  window.graphiqueComparaison=new Chart(document.getElementById('chart-compare'),{type:'bar',data:{labels:[label(a.value||''),label(b.value||'')],datasets:[{label:'Dépenses',data:[totalA,totalB],backgroundColor:couleursPersonnes.p1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>formaterMonnaie(v)}}}}});
+  detruireGraphique('compare');
+  charts.compare=new Chart(document.getElementById('chart-compare'),{type:'bar',data:{labels:[label(a.value||''),label(b.value||'')],datasets:[{label:'Dépenses',data:[totalA,totalB],backgroundColor:couleursPersonnes.p1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>formaterMonnaie(v)}}}}});
+}
+document.querySelectorAll('#compare-scope-toggle button').forEach(bouton=>{
+  bouton.addEventListener('click', ()=>{
+    document.querySelectorAll('#compare-scope-toggle button').forEach(b=>b.classList.remove('active'));
+    bouton.classList.add('active');
+    modeCompareScope = bouton.dataset.scope;
+    afficherComparaison();
+  });
+});
+
+function rafraichirSousOnglet(scope, sub){
+  if(sub==='mois'){
+    afficherStatsMoisScope(scope);
+    afficherGraphiqueEvolutionScope(scope);
+    afficherGraphiqueCategoriesMoisScope(scope);
+    afficherTableauScope(scope);
+    /* S'assure que les récurrences sont bien générées au moins jusqu'à la fin du mois
+       consulté, même très loin dans le futur (aucune limite artificielle). */
+    genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
+  } else if(sub==='annee'){
+    afficherAnneeScope(scope);
+    genererDepensesRecurrentes(new Date(anneeActive, 11, 31));
+  } else if(sub==='recurrent'){
+    afficherRecurrencesScope(scope);
+  } else if(sub==='budget'){
+    afficherSectionBudget(scope);
+    genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
+  }
 }
 
-function changerMois(amount){ const date = new Date(moisActif.year, moisActif.month + amount, 1); moisActif={year:date.getFullYear(),month:date.getMonth()}; toutAfficher(); }
+/* Rafraîchit tout ce qui est visible à l'écran en ce moment (après un ajout/modif/suppr.) */
+function rafraichirActif(){
+  appliquerTheme();
+  rafraichirOptionsFormulaires();
+  if(activeMainTab==='conjoint' || activeMainTab==='personnel'){
+    rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
+  } else if(activeMainTab==='comparer'){
+    afficherComparaison();
+  }
+  afficherNavigationPeriode();
+}
+
+function changerMois(amount){
+  const date = new Date(moisActif.year, moisActif.month + amount, 1);
+  moisActif={year:date.getFullYear(),month:date.getMonth()};
+  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
+  afficherNavigationPeriode();
+}
+function allerAuMoisActuel(){
+  moisActif = {year:aujourdhui.getFullYear(), month:aujourdhui.getMonth()};
+  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
+  afficherNavigationPeriode();
+}
 document.getElementById('month-prev').addEventListener('click',()=>changerMois(-1));
 document.getElementById('month-next').addEventListener('click',()=>changerMois(1));
-document.getElementById('year-prev').addEventListener('click',()=>{anneeActive--;afficherAnnee();afficherNavigationPeriode();});
-document.getElementById('year-next').addEventListener('click',()=>{anneeActive++;afficherAnnee();afficherNavigationPeriode();});
-document.querySelectorAll('.compare-toggle button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.compare-toggle button').forEach(b=>b.classList.remove('active'));button.classList.add('active');modeComparaison=button.dataset.mode;afficherComparaison();}));
+document.getElementById('month-today').addEventListener('click', allerAuMoisActuel);
+document.getElementById('year-prev').addEventListener('click',()=>{
+  anneeActive--;
+  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab,'annee');
+  afficherNavigationPeriode();
+});
+document.getElementById('year-next').addEventListener('click',()=>{
+  anneeActive++;
+  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab,'annee');
+  afficherNavigationPeriode();
+});
+document.querySelectorAll('.compare-toggle button[data-mode]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.compare-toggle button[data-mode]').forEach(b=>b.classList.remove('active'));button.classList.add('active');modeComparaison=button.dataset.mode;afficherComparaison();}));
 document.getElementById('compare-a').addEventListener('change',afficherComparaison);
 document.getElementById('compare-b').addEventListener('change',afficherComparaison);
 
-/* Gestion des onglets */
+/* Gestion des onglets principaux (Conjoint / Personnel / Comparer) */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-    if(btn.dataset.tab==='mois') moisActif={year:aujourdhui.getFullYear(),month:aujourdhui.getMonth()};
-    if(btn.dataset.tab==='annee') anneeActive=aujourdhui.getFullYear();
-    if(btn.dataset.tab==='annee') afficherAnnee();
-    if(btn.dataset.tab==='comparer') afficherComparaison();
+    activeMainTab = btn.dataset.tab;
+    if(activeMainTab==='conjoint' || activeMainTab==='personnel'){
+      rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
+    } else if(activeMainTab==='comparer'){
+      afficherComparaison();
+    }
     afficherNavigationPeriode();
   });
 });
@@ -875,29 +2233,54 @@ document.getElementById('open-settings').addEventListener('click',()=>{
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-parametres').classList.add('active');
+  activeMainTab = 'parametres';
   afficherNavigationPeriode();
 });
 
-/* Ajout d'une dépense (en envoyant les colonnes avec majuscules) */
-document.getElementById('btn-add').addEventListener('click', async ()=>{
-  const who = document.getElementById('f-who').value;
-  const amount = parseFloat(document.getElementById('f-amount').value);
-  const date = document.getElementById('f-date').value;
-  const category = document.getElementById('f-category').value;
-  const note = document.getElementById('f-note').value.trim();
+/* Gestion des sous-onglets (Mois / Année / Budget) à l'intérieur de chaque section */
+document.querySelectorAll('.subtab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const scope = btn.dataset.scope, sub = btn.dataset.sub;
+    document.querySelectorAll(`.subtab-btn[data-scope="${scope}"]`).forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll(`.subtab-panel[data-scope="${scope}"]`).forEach(p=>p.classList.remove('active'));
+    document.querySelector(`.subtab-panel[data-scope="${scope}"][data-sub="${sub}"]`).classList.add('active');
+    activeSubtab[scope] = sub;
+    rafraichirSousOnglet(scope, sub);
+    afficherNavigationPeriode();
+  });
+});
+
+/* Ajout d'une dépense (en envoyant les colonnes avec majuscules). Le type est désormais
+   implicite selon la section (Conjoint -> conjointe, Personnel -> personnelle). */
+function determinerQui(scope){
+  return scope==='conjoint' ? document.getElementById('f-who-conjoint').value : (nomsPersonnes[currentUser] || nomsPersonnes.p1);
+}
+
+async function ajouterDepense(scope){
+  const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
+  const who = determinerQui(scope);
+  const amount = parseFloat(document.getElementById(`f-amount-${scope}`).value);
+  const date = document.getElementById(`f-date-${scope}`).value;
+  const category = document.getElementById(`f-category-${scope}`).value;
+  const note = document.getElementById(`f-note-${scope}`).value.trim();
 
   if(!amount || amount<=0 || !date){
     alert("Merci d'entrer un montant et une date valides.");
     return;
   }
 
-  const nouvelleDepenseDB = { 
-    id: uid(), 
-    Qui: nomPersonneSupabase(who), 
-    Montant: amount, 
-    Date: date, 
-    Categorie: category, 
-    Note: note 
+  const nouvelleDepenseDB = {
+    id: uid(),
+    Qui: nomPersonneSupabase(who),
+    Montant: amount,
+    Date: date,
+    Categorie: category,
+    Note: note,
+    Type: type,
+    /* Pour une dépense personnelle, on l'associe à l'utilisateur connecté : c'est ce qui
+       permet à Supabase de la garder invisible pour l'autre personne (RLS). */
+    user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
 
   const { error } = await supabaseClient.from('Depenses').insert([nouvelleDepenseDB]);
@@ -913,14 +2296,28 @@ document.getElementById('btn-add').addEventListener('click', async ()=>{
     amount: nouvelleDepenseDB.Montant,
     date: nouvelleDepenseDB.Date,
     category: nouvelleDepenseDB.Categorie,
-    note: nouvelleDepenseDB.Note
+    note: nouvelleDepenseDB.Note,
+    type: nouvelleDepenseDB.Type
   });
 
-  document.getElementById('f-amount').value = '';
-  document.getElementById('f-note').value = '';
-  document.querySelector('.form-card').classList.remove('mobile-add-open');
-  toutAfficher();
-});
+  document.getElementById(`f-amount-${scope}`).value = '';
+  document.getElementById(`f-note-${scope}`).value = '';
+  document.getElementById(`form-card-${scope}`).classList.remove('mobile-add-open');
+  rafraichirActif();
+}
+document.getElementById('btn-add-conjoint').addEventListener('click', ()=>ajouterDepense('conjoint'));
+document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajouterDepense('personnel'));
+
+function appliquerVerrouEditType(){
+  const type = document.getElementById('edit-type').value;
+  const whoSelect = document.getElementById('edit-who');
+  if(type === 'personnelle'){
+    whoSelect.value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
+    whoSelect.disabled = true;
+  } else {
+    whoSelect.disabled = false;
+  }
+}
 
 function ouvrirEdition(id){
   const depense=depenses.find(e=>e.id===id); if(!depense) return;
@@ -932,19 +2329,32 @@ function ouvrirEdition(id){
   document.getElementById('edit-note').value=depense.note;
   document.getElementById('edit-category').innerHTML=categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
   document.getElementById('edit-category').value=depense.category;
+  document.getElementById('edit-type').value=depense.type==='personnelle'?'personnelle':'conjointe';
+  appliquerVerrouEditType();
   document.getElementById('edit-modal').style.display='flex';
 }
+document.getElementById('edit-type').addEventListener('change', appliquerVerrouEditType);
 document.getElementById('close-edit').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
 document.getElementById('delete-edit').addEventListener('click',async()=>{if(depenseEnEdition && confirm('Supprimer cette dépense ?')){document.getElementById('edit-modal').style.display='none';await supprimerDepense(depenseEnEdition.id);}});
 document.getElementById('save-edit').addEventListener('click',async()=>{
   const amount=parseFloat(document.getElementById('edit-amount').value),date=document.getElementById('edit-date').value;
   if(!depenseEnEdition||!amount||amount<=0||!date){alert('Merci d’entrer un montant et une date valides.');return;}
   const who=clePersonne(document.getElementById('edit-who').value);
-  const update={Qui:nomPersonneSupabase(who),Montant:amount,Date:date,Categorie:document.getElementById('edit-category').value,Note:document.getElementById('edit-note').value.trim()};
+  const type=document.getElementById('edit-type').value==='personnelle'?'personnelle':'conjointe';
+  const update={
+    Qui:nomPersonneSupabase(who),
+    Montant:amount,
+    Date:date,
+    Categorie:document.getElementById('edit-category').value,
+    Note:document.getElementById('edit-note').value.trim(),
+    Type:type,
+    user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
+  };
   const {error}=await supabaseClient.from('Depenses').update(update).eq('id',depenseEnEdition.id);
   if(error){alert('Erreur lors de la modification.');console.error(error);return;}
-  Object.assign(depenseEnEdition,{who,amount,date,category:update.Categorie,note:update.Note});
-  document.getElementById('edit-modal').style.display='none'; toutAfficher();
+  Object.assign(depenseEnEdition,{who,amount,date,category:update.Categorie,note:update.Note,type:update.Type});
+  document.getElementById('edit-modal').style.display='none';
+  rafraichirActif();
 });
 
 document.getElementById('dark-mode').addEventListener('change',e=>{localStorage.setItem('depenses_theme',e.target.checked?'dark':'light');appliquerTheme();});
@@ -957,77 +2367,89 @@ async function supprimerDepense(id){
     return;
   }
   depenses = depenses.filter(e=>e.id!==id);
-  toutAfficher();
+  rafraichirActif();
 }
 
-/* Tri du tableau */
-document.querySelectorAll('thead th[data-sort]').forEach(th=>{
+/* Tri des tableaux (indépendant pour chaque section) */
+document.querySelectorAll('table[data-scope] thead th[data-sort]').forEach(th=>{
   th.addEventListener('click', ()=>{
+    const scope = th.closest('table').dataset.scope;
     const key = th.dataset.sort;
-    if(etatTri.key===key){ etatTri.dir = etatTri.dir==='asc' ? 'desc' : 'asc'; }
-    else { etatTri.key = key; etatTri.dir = 'asc'; }
-    afficherTableau();
+    if(etatTri[scope].key===key){ etatTri[scope].dir = etatTri[scope].dir==='asc' ? 'desc' : 'asc'; }
+    else { etatTri[scope].key = key; etatTri[scope].dir = 'asc'; }
+    afficherTableauScope(scope);
   });
 });
-document.getElementById('mobile-sort').addEventListener('change',e=>{
-  etatTri.key=e.target.value;
-  afficherTableau();
+['conjoint','personnel'].forEach(scope=>{
+  document.getElementById(`mobile-sort-${scope}`).addEventListener('change',e=>{
+    etatTri[scope].key = e.target.value;
+    afficherTableauScope(scope);
+  });
+  document.getElementById(`mobile-sort-dir-${scope}`).addEventListener('click',()=>{
+    etatTri[scope].dir = etatTri[scope].dir==='asc' ? 'desc' : 'asc';
+    afficherTableauScope(scope);
+  });
 });
-document.getElementById('mobile-sort-dir').addEventListener('click',e=>{
-  etatTri.dir=etatTri.dir==='asc' ? 'desc' : 'asc';
-  afficherTableau();
-});
+document.getElementById('save-budgets-personnel').addEventListener('click', ()=>sauvegarderBudget('personnel'));
+document.getElementById('save-budgets-conjoint').addEventListener('click', ()=>sauvegarderBudget('conjoint'));
 
-/* Rendu global */
-function toutAfficher(){
-  appliquerTheme();
-  rafraichirOptionsCategories();
-  afficherNavigationPeriode();
-  afficherStatsMois();
-  afficherGraphiqueEvolution();
-  afficherGraphiqueCategories();
-  afficherTableau();
-}
-
-function afficherStatsMois(){
-  const liste = depenses.filter(e=>dansMoisActif(e.date));
+/* ===================== RENDU : SOUS-ONGLET MOIS (par section) ===================== */
+function afficherStatsMoisScope(scope){
+  const liste = depenses.filter(filtreMoisScope(scope));
   const total = liste.reduce((s,e)=>s+e.amount,0);
-  const t1 = liste.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
-  const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
-  const utilisateur = nomsPersonnes[currentUser] ? currentUser : 'p1';
-  const moi = utilisateur === 'p2' ? t2 : t1;
-  const autre = utilisateur === 'p2' ? t1 : t2;
-  const autreNom = utilisateur === 'p2' ? nomsPersonnes.p1 : nomsPersonnes.p2;
-  const difference = moi - autre;
-  document.getElementById('mois-stats').innerHTML = `
-    <div class="stat-card"><div class="label">Total<span class="mobile-line"> du mois</span></div><div class="value">${formaterMonnaie(total)}</div></div>
-    <div class="stat-card"><div class="label">Moi<span class="mobile-line"> (${libellePersonne(utilisateur)})</span></div><div class="value ${utilisateur}">${formaterMonnaie(moi)}</div></div>
-    <div class="stat-card"><div class="label">Différence avec ${autreNom}</div><div class="value ${difference >= 0 ? 'p1' : 'p2'}">${difference >= 0 ? '+' : ''}${formaterMonnaie(difference)}</div></div>
-  `;
+  const el = document.getElementById(`mois-stats-${scope}`);
+  if(scope==='conjoint'){
+    const t1 = liste.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
+    const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
+    el.innerHTML = `
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> conjoint</span></div><div class="value">${formaterMonnaie(total)}</div></div>
+      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> ${nomsPersonnes.p1}</span></div><div class="value p1">${formaterMonnaie(t1)}</div></div>
+      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> ${nomsPersonnes.p2}</span></div><div class="value p2">${formaterMonnaie(t2)}</div></div>
+    `;
+  } else {
+    const nb = liste.length;
+    const moyenne = nb ? total/nb : 0;
+    el.innerHTML = `
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> personnel</span></div><div class="value ${currentUser}">${formaterMonnaie(total)}</div></div>
+      <div class="stat-card"><div class="label">Nombre<span class="mobile-line"> de dépenses</span></div><div class="value">${nb}</div></div>
+      <div class="stat-card"><div class="label">Dépense<span class="mobile-line"> moyenne</span></div><div class="value">${formaterMonnaie(moyenne)}</div></div>
+    `;
+  }
 }
 
-function afficherGraphiqueEvolution(){
+function afficherGraphiqueEvolutionScope(scope){
   const y = moisActif.year, m = moisActif.month;
   const joursDansMois = new Date(y, m+1, 0).getDate();
-  const cum1 = new Array(joursDansMois).fill(0);
-  const cum2 = new Array(joursDansMois).fill(0);
-  depenses.filter(e=>dansMoisActif(e.date)).forEach(e=>{
-    const jour = new Date(e.date+"T00:00:00").getDate()-1;
-    if(e.who==='p1') cum1[jour]+=e.amount; else cum2[jour]+=e.amount;
-  });
-  for(let i=1;i<joursDansMois;i++){ cum1[i]+=cum1[i-1]; cum2[i]+=cum2[i-1]; }
+  const liste = depenses.filter(filtreMoisScope(scope));
+  const ctx = document.getElementById(`chart-evolution-${scope}`);
+  detruireGraphique(`evolution-${scope}`);
 
-  const ctx = document.getElementById('chart-evolution');
-  if(chartEvolution) chartEvolution.destroy();
-  chartEvolution = new Chart(ctx, {
+  let datasets;
+  if(scope==='conjoint'){
+    const cum1 = new Array(joursDansMois).fill(0);
+    const cum2 = new Array(joursDansMois).fill(0);
+    liste.forEach(e=>{
+      const jour = new Date(e.date+"T00:00:00").getDate()-1;
+      if(e.who==='p1') cum1[jour]+=e.amount; else cum2[jour]+=e.amount;
+    });
+    for(let i=1;i<joursDansMois;i++){ cum1[i]+=cum1[i-1]; cum2[i]+=cum2[i-1]; }
+    datasets = [
+      { label:nomsPersonnes.p1, data:cum1, borderColor:couleursPersonnes.p1, backgroundColor:couleursPersonnes.p1+'18', fill:true, tension:.3, pointRadius:0, borderWidth:2.5 },
+      { label:nomsPersonnes.p2, data:cum2, borderColor:couleursPersonnes.p2, backgroundColor:couleursPersonnes.p2+'18', fill:true, tension:.3, pointRadius:0, borderWidth:2.5 }
+    ];
+  } else {
+    const cum = new Array(joursDansMois).fill(0);
+    liste.forEach(e=>{ const jour = new Date(e.date+"T00:00:00").getDate()-1; cum[jour]+=e.amount; });
+    for(let i=1;i<joursDansMois;i++){ cum[i]+=cum[i-1]; }
+    const couleur = couleursPersonnes[currentUser] || couleursPersonnes.p1;
+    datasets = [
+      { label:nomsPersonnes[currentUser] || nomsPersonnes.p1, data:cum, borderColor:couleur, backgroundColor:couleur+'18', fill:true, tension:.3, pointRadius:0, borderWidth:2.5 }
+    ];
+  }
+
+  charts[`evolution-${scope}`] = new Chart(ctx, {
     type:'line',
-    data:{
-      labels: Array.from({length:joursDansMois}, (_,i)=>i+1),
-      datasets:[
-        { label:nomsPersonnes.p1, data:cum1, borderColor:couleursPersonnes.p1, backgroundColor:couleursPersonnes.p1+'18', fill:true, tension:.3, pointRadius:0, borderWidth:2.5 },
-        { label:nomsPersonnes.p2, data:cum2, borderColor:couleursPersonnes.p2, backgroundColor:couleursPersonnes.p2+'18', fill:true, tension:.3, pointRadius:0, borderWidth:2.5 }
-      ]
-    },
+    data:{ labels: Array.from({length:joursDansMois}, (_,i)=>i+1), datasets },
     options:{
       responsive:true, maintainAspectRatio:false,
       interaction:{mode:'index', intersect:false},
@@ -1040,17 +2462,17 @@ function afficherGraphiqueEvolution(){
   });
 }
 
-function afficherGraphiqueCategories(){
-  const liste = depenses.filter(e=>dansMoisActif(e.date));
+function afficherGraphiqueCategoriesMoisScope(scope){
+  const liste = depenses.filter(filtreMoisScope(scope));
   const parCat = {};
   liste.forEach(e=> parCat[e.category] = (parCat[e.category]||0) + e.amount);
   const labels = Object.keys(parCat);
   const data = Object.values(parCat);
   const colors = labels.map(l=>COULEURS_CATEGORIES[l]||'#9aa0a6');
 
-  const ctx = document.getElementById('chart-categories');
-  if(chartCategories) chartCategories.destroy();
-  chartCategories = new Chart(ctx, {
+  const ctx = document.getElementById(`chart-categories-mois-${scope}`);
+  detruireGraphique(`categories-mois-${scope}`);
+  charts[`categories-mois-${scope}`] = new Chart(ctx, {
     type:'doughnut',
     data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, borderColor:'transparent' }] },
     options:{
@@ -1062,27 +2484,32 @@ function afficherGraphiqueCategories(){
   });
 }
 
-function afficherTableau(){
-  document.querySelectorAll('.arrow').forEach(a=>a.textContent='');
-  const arrow = document.querySelector(`.arrow[data-arrow="${etatTri.key.toLowerCase()}"]`);
-  if(arrow) arrow.textContent = etatTri.dir==='asc' ? '▲' : '▼';
-  document.getElementById('mobile-sort').value = etatTri.key;
-  const directionButton = document.getElementById('mobile-sort-dir');
-  directionButton.textContent = etatTri.dir==='asc' ? '↑' : '↓';
-  directionButton.setAttribute('aria-label', etatTri.dir==='asc' ? 'Tri croissant' : 'Tri décroissant');
+function afficherTableauScope(scope){
+  const table = document.getElementById(`table-${scope}`);
+  table.querySelectorAll('.arrow').forEach(a=>a.textContent='');
+  const tri = etatTri[scope];
+  const arrow = table.querySelector(`.arrow[data-arrow="${tri.key.toLowerCase()}"]`);
+  if(arrow) arrow.textContent = tri.dir==='asc' ? '▲' : '▼';
+  const mobileSort = document.getElementById(`mobile-sort-${scope}`);
+  if(mobileSort) mobileSort.value = tri.key;
+  const directionButton = document.getElementById(`mobile-sort-dir-${scope}`);
+  if(directionButton){
+    directionButton.textContent = tri.dir==='asc' ? '↑' : '↓';
+    directionButton.setAttribute('aria-label', tri.dir==='asc' ? 'Tri croissant' : 'Tri décroissant');
+  }
 
-  let liste = depenses.filter(e=>dansMoisActif(e.date));
+  let liste = depenses.filter(filtreMoisScope(scope));
   liste.sort((a,b)=>{
-    let key = etatTri.key === 'Date' ? 'date' : etatTri.key === 'Qui' ? 'who' : etatTri.key === 'Categorie' ? 'category' : etatTri.key === 'Note' ? 'note' : 'amount';
+    let key = tri.key === 'Date' ? 'date' : tri.key === 'Qui' ? 'who' : tri.key === 'Categorie' ? 'category' : tri.key === 'Note' ? 'note' : 'amount';
     let va = a[key], vb = b[key];
     if(key==='who'){ va = libellePersonne(va); vb = libellePersonne(vb); }
     if(key==='amount'){ va = Number(va); vb = Number(vb); }
-    if(va<vb) return etatTri.dir==='asc' ? -1 : 1;
-    if(va>vb) return etatTri.dir==='asc' ? 1 : -1;
+    if(va<vb) return tri.dir==='asc' ? -1 : 1;
+    if(va>vb) return tri.dir==='asc' ? 1 : -1;
     return 0;
   });
 
-  const tbody = document.getElementById('table-body');
+  const tbody = document.getElementById(`table-body-${scope}`);
   tbody.innerHTML = liste.map(e=>{
     const dotClass = e.who==='p1' ? 'p1' : 'p2';
     const date = new Date(e.date+"T00:00:00");
@@ -1092,36 +2519,46 @@ function afficherTableau(){
       <td data-label="Qui"><span class="who-badge desktop-who"><span class="dot ${dotClass}"></span>${libellePersonne(e.who)}</span><span class="mobile-who" title="${libellePersonne(e.who)}"><span class="dot ${dotClass}"></span>${libellePersonne(e.who)}</span></td>
       <td data-label="Date"><span class="desktop-date">${dateFmt}</span><span class="mobile-date">${dateMobile}</span></td>
       <td class="amount-cell" data-label="Montant">${formaterMonnaie(e.amount)}</td>
-      <td data-label="Catégorie"><span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]}22;color:${COULEURS_CATEGORIES[e.category]}">${e.category}</span></td>
+      <td data-label="Catégorie"><span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]}22;color:${COULEURS_CATEGORIES[e.category]}">${e.category}</span>${e.recurrenceId ? ' <span class="recurring-icon" title="Dépense récurrente">↻</span>' : ''}</td>
       <td data-label="Note">${e.note ? e.note : '<span style="color:#9aa0a6">—</span>'}</td>
     </tr>`;
   }).join('');
 
-  document.getElementById('row-count').textContent = `${liste.length} dépense${liste.length!==1?'s':''}`;
+  document.getElementById(`row-count-${scope}`).textContent = `${liste.length} dépense${liste.length!==1?'s':''}`;
+  const emptyState = document.getElementById(`empty-state-${scope}`);
+  if(emptyState) emptyState.style.display = liste.length ? 'none' : 'block';
 }
 
-function afficherAnnee(){
-  const liste = depenses.filter(e=>dansAnnee(e.date, anneeActive));
+/* ===================== RENDU : SOUS-ONGLET ANNÉE (par section) ===================== */
+function afficherAnneeScope(scope){
+  const liste = depenses.filter(filtreAnneeScope(scope));
   const total = liste.reduce((s,e)=>s+e.amount,0);
-  const t1 = liste.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
-  const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
-  const utilisateur = nomsPersonnes[currentUser] ? currentUser : 'p1';
-  const moi = utilisateur === 'p2' ? t2 : t1;
-  const autreNom = utilisateur === 'p2' ? nomsPersonnes.p1 : nomsPersonnes.p2;
-  const difference = moi - (utilisateur === 'p2' ? t1 : t2);
-  document.getElementById('annee-stats').innerHTML = `
-    <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${anneeActive}</span></div><div class="value">${formaterMonnaie(total)}</div></div>
-    <div class="stat-card"><div class="label">Moi<span class="mobile-line"> (${libellePersonne(utilisateur)})</span></div><div class="value ${utilisateur}">${formaterMonnaie(moi)}</div></div>
-    <div class="stat-card"><div class="label">Différence<span class="mobile-line"> avec ${autreNom}</span></div><div class="value ${difference >= 0 ? 'p1' : 'p2'}">${difference >= 0 ? '+' : ''}${formaterMonnaie(difference)}</div></div>
-  `;
+  const el = document.getElementById(`annee-stats-${scope}`);
+  if(scope==='conjoint'){
+    const t1 = liste.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
+    const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
+    el.innerHTML = `
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${anneeActive}</span></div><div class="value">${formaterMonnaie(total)}</div></div>
+      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> ${nomsPersonnes.p1}</span></div><div class="value p1">${formaterMonnaie(t1)}</div></div>
+      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> ${nomsPersonnes.p2}</span></div><div class="value p2">${formaterMonnaie(t2)}</div></div>
+    `;
+  } else {
+    const nb = liste.length;
+    const moyenne = nb ? total/nb : 0;
+    el.innerHTML = `
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${anneeActive}</span></div><div class="value ${currentUser}">${formaterMonnaie(total)}</div></div>
+      <div class="stat-card"><div class="label">Nombre<span class="mobile-line"> de dépenses</span></div><div class="value">${nb}</div></div>
+      <div class="stat-card"><div class="label">Dépense<span class="mobile-line"> moyenne</span></div><div class="value">${formaterMonnaie(moyenne)}</div></div>
+    `;
+  }
 
   const mensuel = new Array(12).fill(0);
   liste.forEach(e=>{ const m = new Date(e.date+"T00:00:00").getMonth(); mensuel[m]+=e.amount; });
-  const ctxM = document.getElementById('chart-annee-mensuel');
-  if(chartAnneeMensuel) chartAnneeMensuel.destroy();
-  chartAnneeMensuel = new Chart(ctxM, {
+  const ctxM = document.getElementById(`chart-annee-mensuel-${scope}`);
+  detruireGraphique(`annee-mensuel-${scope}`);
+  charts[`annee-mensuel-${scope}`] = new Chart(ctxM, {
     type:'bar',
-    data:{ labels:NOMS_MOIS, datasets:[{ label:'Dépenses', data:mensuel, backgroundColor:couleursPersonnes.p1, borderRadius:4 }] },
+    data:{ labels:NOMS_MOIS, datasets:[{ label:'Dépenses', data:mensuel, backgroundColor: scope==='conjoint' ? couleursPersonnes.p1 : (couleursPersonnes[currentUser]||couleursPersonnes.p1), borderRadius:4 }] },
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>formaterMonnaie(v)}}} }
   });
 
@@ -1130,13 +2567,102 @@ function afficherAnnee(){
   const labels = Object.keys(parCat);
   const data = Object.values(parCat);
   const colors = labels.map(l=>COULEURS_CATEGORIES[l]||'#9aa0a6');
-  const ctxC = document.getElementById('chart-annee-categories');
-  if(chartAnneeCategories) chartAnneeCategories.destroy();
-  chartAnneeCategories = new Chart(ctxC, {
+  const ctxC = document.getElementById(`chart-annee-categories-${scope}`);
+  detruireGraphique(`annee-categories-${scope}`);
+  charts[`annee-categories-${scope}`] = new Chart(ctxC, {
     type:'doughnut',
     data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, borderColor:'transparent' }] },
     options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{legend:{position:'bottom'}} }
   });
+}
+
+function afficherSectionBudget(scope){
+  const cfg = configSection(scope);
+  const periode = periodeActive();
+  const periodeLabelEl = document.getElementById(`periode-label-${scope}`);
+  if(periodeLabelEl) periodeLabelEl.textContent = `${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
+
+  const liste = depenses.filter(cfg.filtre);
+  const total = liste.reduce((s,e)=>s+e.amount,0);
+  const budgetActuel = (budgets[cfg.budgetKey] && budgets[cfg.budgetKey][periode]) || {};
+  const sommeCategories = categories.reduce((s,c)=>s+(budgetActuel[c]||0),0);
+  const budgetSaisiTotal = budgetActuel['__total__'] || 0;
+  const budgetAffiche = budgetSaisiTotal > 0 ? budgetSaisiTotal : sommeCategories;
+  const restant = budgetAffiche - total;
+  const libelleDepense = scope === 'conjoint' ? 'ce mois (conjoint)' : 'ce mois (perso)';
+
+  document.getElementById(`stats-${scope}`).innerHTML = `
+    <div class="stat-card"><div class="label">Dépensé<span class="mobile-line"> ${libelleDepense}</span></div><div class="value ${cfg.valueClass}">${formaterMonnaie(total)}</div></div>
+    <div class="stat-card"><div class="label">Budget<span class="mobile-line"> total du mois</span></div><div class="value">${formaterMonnaie(budgetAffiche)}</div></div>
+    <div class="stat-card"><div class="label">Restant<span class="mobile-line"> à dépenser</span></div><div class="value ${restant>=0?'p1':'p2'}">${restant>=0?'':'-'}${formaterMonnaie(Math.abs(restant))}</div></div>
+  `;
+
+  /* Liste des barres de progression par catégorie */
+  const parCat = {};
+  liste.forEach(e=> parCat[e.category] = (parCat[e.category]||0) + e.amount);
+  const catAvecBudgetOuDepense = categories.filter(c => (budgetActuel[c]||0) > 0 || (parCat[c]||0) > 0);
+  const budgetListEl = document.getElementById(`budget-list-${scope}`);
+  if(!catAvecBudgetOuDepense.length){
+    budgetListEl.innerHTML = `<div class="budget-empty">Aucun budget défini pour ${NOMS_MOIS[moisActif.month]}. Utilisez le formulaire ci-dessous pour en ajouter un par catégorie.</div>`;
+  } else {
+    budgetListEl.innerHTML = catAvecBudgetOuDepense.map(cat=>{
+      const depense = parCat[cat]||0;
+      const budget = budgetActuel[cat]||0;
+      const pct = budget>0 ? Math.min(100, (depense/budget)*100) : (depense>0 ? 100 : 0);
+      const depasse = budget>0 && depense>budget;
+      const couleur = depasse ? 'var(--red)' : (COULEURS_CATEGORIES[cat]||'#9aa0a6');
+      return `<div class="budget-row">
+        <div class="budget-row-top">
+          <div class="budget-row-cat"><span class="swatch" style="background:${COULEURS_CATEGORIES[cat]||'#9aa0a6'}"></span>${cat}</div>
+          <div class="budget-row-amounts"><strong>${formaterMonnaie(depense)}</strong>${budget>0 ? ' / '+formaterMonnaie(budget) : ' (pas de budget)'}</div>
+        </div>
+        <div class="budget-bar"><div class="budget-bar-fill" style="width:${pct}%;background:${couleur};"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  /* Graphique en doughnut de la répartition */
+  const labels = Object.keys(parCat);
+  const data = Object.values(parCat);
+  const colors = labels.map(l=>COULEURS_CATEGORIES[l]||'#9aa0a6');
+  const ctx = document.getElementById(`chart-categories-${scope}`);
+  const chartKey = scope === 'conjoint' ? 'chartConjointCategories' : 'chartPersonnelCategories';
+  if(window[chartKey]) window[chartKey].destroy();
+  if(labels.length){
+    window[chartKey] = new Chart(ctx, {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, borderColor:'transparent' }] },
+      options:{
+        responsive:true, maintainAspectRatio:false, cutout:'62%',
+        plugins:{ legend:{position:'bottom', labels:{boxWidth:10, font:{family:'Roboto', size:12}}},
+          tooltip:{ callbacks:{ label:(c)=> `${c.label}: ${formaterMonnaie(c.raw)}` } } }
+      }
+    });
+  }
+
+  /* Champ de budget total du mois */
+  const totalInput = document.getElementById(`budget-total-input-${scope}`);
+  if(totalInput) totalInput.value = budgetSaisiTotal || '';
+
+  /* Formulaire de gestion du budget par catégorie */
+  const formEl = document.getElementById(`budget-form-${scope}`);
+  formEl.innerHTML = categories.map(cat=>`
+    <div class="field budget-input-field">
+      <label><span class="swatch" style="background:${COULEURS_CATEGORIES[cat]||'#9aa0a6'}"></span>${cat}</label>
+      <div class="input-money">
+        <input type="number" id="budget-input-${scope}-${cat}" step="1" min="0" value="${budgetActuel[cat]||''}" placeholder="0">
+        <span class="suffix">$ / mois</span>
+      </div>
+    </div>
+  `).join('');
+
+  /* Recalcul en direct de l'écart quand on tape dans le total ou une catégorie */
+  if(totalInput) totalInput.oninput = ()=>recalculerEcartBudget(scope);
+  categories.forEach(cat=>{
+    const input = document.getElementById(`budget-input-${scope}-${cat}`);
+    if(input) input.oninput = ()=>recalculerEcartBudget(scope);
+  });
+  recalculerEcartBudget(scope);
 }
 
 /* ===================== EXPORT / IMPORT EXCEL & CSV (import seulement) ===================== */
@@ -1186,10 +2712,11 @@ function exporterExcel(liste, suffixeFichier){
       Date: e.date,
       Montant: e.amount,
       Categorie: e.category,
-      Note: e.note || ''
+      Note: e.note || '',
+      Type: e.type === 'personnelle' ? 'Personnelle' : 'Conjointe'
     }));
   const feuille = XLSX.utils.json_to_sheet(data);
-  feuille['!cols'] = [{wch:10},{wch:12},{wch:10},{wch:14},{wch:30}];
+  feuille['!cols'] = [{wch:10},{wch:12},{wch:10},{wch:14},{wch:30},{wch:12}];
   const classeur = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(classeur, feuille, 'Dépenses');
   XLSX.writeFile(classeur, `depenses_${suffixeFichier}.xlsx`);
@@ -1274,6 +2801,12 @@ function normaliserCategorie(val){
   return trouve || 'Autre';
 }
 
+function normaliserType(val){
+  const str = String(val ?? '').trim().toLowerCase();
+  if(str.startsWith('personnel')) return 'Personnelle';
+  return 'Conjointe';
+}
+
 function valeurColonne(ligne, nomsPossibles){
   for(const cle of Object.keys(ligne)){
     if(nomsPossibles.includes(cle.trim().toLowerCase())) return ligne[cle];
@@ -1294,18 +2827,26 @@ async function importerLignes(lignes){
     const montantVal = valeurColonne(ligne, ['montant','amount']);
     const catVal = valeurColonne(ligne, ['categorie','catégorie','category']);
     const noteVal = valeurColonne(ligne, ['note','notes']);
+    const typeVal = valeurColonne(ligne, ['type']);
 
     const date = normaliserDate(dateVal);
     const amount = normaliserMontant(montantVal);
     if(!date || amount === null || !(amount > 0)){ ignorees++; return; }
 
+    const type = normaliserType(typeVal) === 'Personnelle' ? 'personnelle' : 'conjointe';
+    /* Une dépense personnelle importée est toujours attribuée à la personne qui importe
+       (comme pour l'ajout manuel), afin qu'elle reste visible pour elle et cachée pour l'autre. */
+    const qui = type === 'personnelle' ? utilisateurParDefaut : normaliserQui(quiVal, utilisateurParDefaut);
+
     aInserer.push({
       id: uid(),
-      Qui: nomPersonneSupabase(normaliserQui(quiVal, utilisateurParDefaut)),
+      Qui: nomPersonneSupabase(qui),
       Montant: amount,
       Date: date,
       Categorie: normaliserCategorie(catVal),
-      Note: String(noteVal ?? '').trim()
+      Note: String(noteVal ?? '').trim(),
+      Type: type,
+      user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
     });
   });
 
@@ -1326,10 +2867,10 @@ async function importerLignes(lignes){
   }
 
   aInserer.forEach(d => depenses.push({
-    id: d.id, who: clePersonne(d.Qui), amount: d.Montant, date: d.Date, category: d.Categorie, note: d.Note
+    id: d.id, who: clePersonne(d.Qui), amount: d.Montant, date: d.Date, category: d.Categorie, note: d.Note, type: d.Type
   }));
 
-  toutAfficher();
+  rafraichirActif();
   const message = `${aInserer.length} dépense${aInserer.length>1?'s':''} importée${aInserer.length>1?'s':''}` +
     (ignorees ? ` (${ignorees} ligne${ignorees>1?'s':''} ignorée${ignorees>1?'s':''} car incomplète${ignorees>1?'s':''}).` : '.');
   if(statut) statut.textContent = message;
@@ -1386,8 +2927,7 @@ document.getElementById('import-file').addEventListener('change', async (e)=>{
 });
 
 /* Lancement au démarrage */
-verifierUtilisateur();
-chargerDepensesSupabase();
+initAuth();
 </script>
 </body>
 </html>
