@@ -198,6 +198,7 @@
   .recurrent-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .freq-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f1f3f4;color:var(--text-secondary);white-space:nowrap;}
   body.dark .freq-pill{background:#2c3136;}
+  input[type="range"]{accent-color:var(--blue);width:100%;cursor:pointer;}
   .recurrent-actions{display:flex;align-items:center;gap:14px;flex-shrink:0;}
   .recurrent-montant{font-weight:500;font-size:14px;min-width:70px;text-align:right;white-space:nowrap;}
   .switch.small{width:38px;height:22px;}
@@ -579,6 +580,7 @@
   <nav class="tabs">
     <button class="tab-btn active" data-tab="conjoint">👥 Conjoint</button>
     <button class="tab-btn" data-tab="personnel">👤 Personnel</button>
+    <button class="tab-btn" data-tab="compte">🏦 Compte</button>
     <button class="tab-btn" data-tab="comparer">Comparer</button>
   </nav>
 
@@ -979,6 +981,117 @@
     </div>
   </section>
 
+  <!-- ===================== SECTION : COMPTE CONJOINT ===================== -->
+  <section class="tab-panel" id="tab-compte">
+    <div class="section-header">
+      <h2>🏦 Compte conjoint</h2>
+      <p>Calcule combien chacun doit déposer aux 2 semaines.</p>
+    </div>
+
+    <nav class="subtabs">
+      <button class="subtab-btn active" data-scope="compte" data-sub="mois">Mois</button>
+      <button class="subtab-btn" data-scope="compte" data-sub="annee">Année</button>
+      <button class="subtab-btn" data-scope="compte" data-sub="budget">Budget</button>
+      <button class="subtab-btn" data-scope="compte" data-sub="recurrent">Récurrent</button>
+    </nav>
+
+    <!-- Sous-onglet : MOIS -->
+    <div class="subtab-panel active" data-scope="compte" data-sub="mois">
+      <div class="stats-row" id="compte-stats"></div>
+      <div class="stats-row" id="compte-unique-stats" style="display:none;margin-top:-8px;"></div>
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Détail mensuel</h3>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>Charge</th><th>Fréquence</th><th style="text-align:right;">Équiv. mensuel</th><th style="text-align:right;">Part <span id="compte-mois-th-p1"></span></th><th style="text-align:right;">Part <span id="compte-mois-th-p2"></span></th></tr>
+            </thead>
+            <tbody id="compte-mois-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sous-onglet : ANNÉE -->
+    <div class="subtab-panel" data-scope="compte" data-sub="annee">
+      <div class="stats-row" id="compte-annee-stats"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Répartition annuelle par charge</h3>
+          <div class="chart-wrap"><canvas id="chart-compte-annee"></canvas></div>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:12px;">Détail annuel</h3>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr><th>Charge</th><th style="text-align:right;">Équiv. annuel</th><th style="text-align:right;">Part <span id="compte-annee-th-p1"></span></th><th style="text-align:right;">Part <span id="compte-annee-th-p2"></span></th></tr>
+              </thead>
+              <tbody id="compte-annee-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sous-onglet : BUDGET -->
+    <div class="subtab-panel" data-scope="compte" data-sub="budget">
+      <div class="stats-row" id="compte-budget-stats"></div>
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Objectif mensuel du compte conjoint</h3>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Fixez un montant total visé par mois pour le compte conjoint, pour voir si les charges actuelles le respectent.</p>
+        <div class="field budget-input-field" style="max-width:280px;margin-bottom:8px;">
+          <label><strong>Budget mensuel visé</strong></label>
+          <div class="input-money"><input type="number" id="compte-budget-input" step="1" min="0" placeholder="0"><span class="suffix">$ / mois</span></div>
+        </div>
+        <button class="btn-add" id="save-compte-budget" style="margin-top:8px;">Sauvegarder l'objectif</button>
+        <p id="compte-budget-status" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;"></p>
+      </div>
+    </div>
+
+    <!-- Sous-onglet : RÉCURRENT -->
+    <div class="subtab-panel" data-scope="compte" data-sub="recurrent">
+      <div class="card form-card" id="form-card-compte">
+        <button class="mobile-close-btn" id="close-add-compte" aria-label="Fermer">&times;</button>
+        <h3 style="margin-bottom:14px;">Ajouter une charge</h3>
+        <div class="recurrent-form-grid">
+          <div class="field"><label>Nom</label><input type="text" id="compte-nom" placeholder="Assurance, Électricité..."></div>
+          <div class="field"><label>Montant</label><input type="number" id="compte-montant" step="0.01" min="0" placeholder="0,00 $"></div>
+          <div class="field">
+            <label>Type</label>
+            <select id="compte-recurrente">
+              <option value="oui">Récurrente</option>
+              <option value="non">Unique (ponctuelle)</option>
+            </select>
+          </div>
+          <div class="field" id="compte-frequence-field">
+            <label>Fréquence</label>
+            <select id="compte-frequence">
+              <option value="semaine">Chaque semaine</option>
+              <option value="2semaines">Chaque 2 semaines</option>
+              <option value="mois" selected>Chaque mois</option>
+              <option value="annee">Chaque année</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Part de <span id="compte-repartition-nom-p1"></span> (%)</label>
+            <input type="number" id="compte-repartition" min="0" max="100" step="1" value="50">
+          </div>
+          <div class="field" style="align-self:end;">
+            <div id="compte-repartition-p2" style="font-size:13px;color:var(--text-secondary);padding-bottom:10px;"></div>
+          </div>
+          <button class="btn-add" id="btn-add-compte" style="grid-column:1/-1;">Ajouter</button>
+        </div>
+      </div>
+      <button class="mobile-add-btn" id="mobile-add-compte" aria-label="Ajouter une charge du compte conjoint">+</button>
+
+      <div class="card">
+        <h3 style="margin-bottom:12px;">Charges du compte conjoint</h3>
+        <div id="compte-list"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===================== SECTION : COMPARER ===================== -->
   <section class="tab-panel" id="tab-comparer">
     <div class="compare-toggle" id="compare-scope-toggle" style="margin-bottom:10px;">
@@ -1167,6 +1280,42 @@
   </div>
 </div></div>
 
+<div class="edit-modal" id="edit-compte-modal"><div class="edit-card">
+  <button class="modal-close-btn" id="close-edit-compte" aria-label="Fermer">&times;</button>
+  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Modifier une charge du compte conjoint</h3>
+  <div class="form-grid">
+    <div class="field"><label>Nom</label><input type="text" id="edit-compte-nom"></div>
+    <div class="field"><label>Montant</label><input type="number" id="edit-compte-montant" step="0.01" min="0"></div>
+    <div class="field">
+      <label>Type</label>
+      <select id="edit-compte-recurrente">
+        <option value="oui">Récurrente</option>
+        <option value="non">Unique (ponctuelle)</option>
+      </select>
+    </div>
+    <div class="field" id="edit-compte-frequence-field">
+      <label>Fréquence</label>
+      <select id="edit-compte-frequence">
+        <option value="semaine">Chaque semaine</option>
+        <option value="2semaines">Chaque 2 semaines</option>
+        <option value="mois">Chaque mois</option>
+        <option value="annee">Chaque année</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Part de <span id="edit-compte-repartition-nom-p1"></span> (%)</label>
+      <input type="number" id="edit-compte-repartition" min="0" max="100" step="1">
+    </div>
+    <div class="field" style="align-self:end;">
+      <div id="edit-compte-repartition-p2" style="font-size:13px;color:var(--text-secondary);padding-bottom:10px;"></div>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="edit-compte-actif" style="width:auto;"> Actif</label>
+    </div>
+    <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit-compte">Supprimer</button><button class="btn-add" id="save-edit-compte">Sauvegarder</button></div>
+  </div>
+</div></div>
+
 
 <script>
 /* ===================== ENREGISTREMENT DU SERVICE WORKER (nécessaire pour l'installation sur Android) ===================== */
@@ -1249,7 +1398,7 @@ async function gererSession(session){
   if(nomEl) nomEl.textContent = nomsPersonnes[currentUser];
   mettreAJourInterfaceUtilisateur();
   rafraichirOptionsFormulaires();
-  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase() ]);
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerChargesCompteSupabase(), chargerObjectifCompte() ]);
   await genererDepensesRecurrentes();
 }
 
@@ -1431,7 +1580,7 @@ let modeComparaison = 'mois';
 let modeCompareScope = 'tout';
 let depenseEnEdition = null;
 let activeMainTab = 'conjoint';
-let activeSubtab = { conjoint:'mois', personnel:'mois' };
+let activeSubtab = { conjoint:'mois', personnel:'mois', compte:'mois' };
 let charts = {};
 function detruireGraphique(cle){ if(charts[cle]){ charts[cle].destroy(); delete charts[cle]; } }
 
@@ -2037,6 +2186,376 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   rafraichirActif();
 });
 
+/* ===================== COMPTE CONJOINT (calcul des dépôts aux 2 semaines) ===================== */
+/* Outil séparé des dépenses : on y liste les charges payées à partir du compte commun
+   (assurance, électricité, etc.), chacune avec sa propre répartition (pas toujours 50/50),
+   et on calcule combien chaque personne doit y déposer à chaque paie (aux 2 semaines).
+   Stocké dans la table Supabase "ChargesCompte", visible et modifiable par les deux
+   personnes (comme les dépenses conjointes). Repli sur le stockage local si la table
+   n'existe pas encore. */
+let chargesCompte = [];
+let chargesCompteSupabaseDisponible = true;
+let chargeCompteEnEdition = null;
+
+async function chargerChargesCompteSupabase(){
+  try{
+    const { data, error } = await supabaseClient.from('ChargesCompte').select('*');
+    if(error) throw error;
+    chargesCompte = (data || []).map(c => ({
+      id: c.id,
+      nom: c.Nom || '',
+      montant: Number(c.Montant || 0),
+      recurrente: c.Recurrente !== false,
+      frequence: ['semaine','2semaines','mois','annee'].includes(c.Frequence) ? c.Frequence : 'mois',
+      pourcentageP1: c.PourcentageP1 != null ? Number(c.PourcentageP1) : 50,
+      actif: c.Actif !== false
+    }));
+    chargesCompteSupabaseDisponible = true;
+  } catch(err){
+    chargesCompteSupabaseDisponible = false;
+    console.warn("Table 'ChargesCompte' introuvable ou incomplète dans Supabase, utilisation du stockage local.", err);
+    try{ chargesCompte = JSON.parse(localStorage.getItem('depenses_charges_compte') || '[]'); }catch(e){ chargesCompte = []; }
+  }
+  afficherCompteMois();
+  afficherListeCompte();
+}
+function sauvegarderChargesCompteLocal(){
+  localStorage.setItem('depenses_charges_compte', JSON.stringify(chargesCompte));
+}
+
+/* Multiplicateur annuel (nombre d'occurrences par année) selon la fréquence */
+function multiplicateurAnnuel(frequence){
+  if(frequence==='semaine') return 52;
+  if(frequence==='2semaines') return 26;
+  if(frequence==='annee') return 1;
+  return 12; /* mois */
+}
+const PAIES_PAR_ANNEE = 26; /* aux 2 semaines */
+
+function rafraichirAffichageRepartition(sliderId, spanP2Id){
+  const p1 = Number(document.getElementById(sliderId).value) || 0;
+  const p2 = 100 - p1;
+  document.getElementById(spanP2Id).textContent = `${nomsPersonnes.p2} : ${p2}%`;
+}
+document.getElementById('compte-repartition').addEventListener('input', ()=>
+  rafraichirAffichageRepartition('compte-repartition','compte-repartition-p2'));
+document.getElementById('edit-compte-repartition').addEventListener('input', ()=>
+  rafraichirAffichageRepartition('edit-compte-repartition','edit-compte-repartition-p2'));
+
+/* Remplit les libellés qui affichent les vrais prénoms (label de part, en-têtes de tableau) */
+function initialiserLabelsCompte(){
+  document.getElementById('compte-repartition-nom-p1').textContent = nomsPersonnes.p1;
+  document.getElementById('edit-compte-repartition-nom-p1').textContent = nomsPersonnes.p1;
+  document.getElementById('compte-mois-th-p1').textContent = nomsPersonnes.p1;
+  document.getElementById('compte-mois-th-p2').textContent = nomsPersonnes.p2;
+  document.getElementById('compte-annee-th-p1').textContent = nomsPersonnes.p1;
+  document.getElementById('compte-annee-th-p2').textContent = nomsPersonnes.p2;
+}
+initialiserLabelsCompte();
+rafraichirAffichageRepartition('compte-repartition','compte-repartition-p2');
+
+function appliquerAffichageTypeCompte(selectId, frequenceFieldId){
+  const estRecurrente = document.getElementById(selectId).value === 'oui';
+  document.getElementById(frequenceFieldId).style.display = estRecurrente ? '' : 'none';
+}
+document.getElementById('compte-recurrente').addEventListener('change', ()=>
+  appliquerAffichageTypeCompte('compte-recurrente','compte-frequence-field'));
+document.getElementById('edit-compte-recurrente').addEventListener('change', ()=>
+  appliquerAffichageTypeCompte('edit-compte-recurrente','edit-compte-frequence-field'));
+
+document.getElementById('mobile-add-compte').addEventListener('click',()=>document.getElementById('form-card-compte').classList.add('mobile-add-open'));
+document.getElementById('close-add-compte').addEventListener('click',()=>document.getElementById('form-card-compte').classList.remove('mobile-add-open'));
+
+/* Rafraîchit la vue actuellement affichée du Compte conjoint (Mois / Année / Budget / Récurrent) */
+function rafraichirCompteActif(){
+  rafraichirSousOnglet('compte', activeSubtab.compte);
+}
+
+async function ajouterChargeCompte(){
+  const nom = document.getElementById('compte-nom').value.trim();
+  const montant = parseFloat(document.getElementById('compte-montant').value);
+  const recurrente = document.getElementById('compte-recurrente').value === 'oui';
+  const frequence = document.getElementById('compte-frequence').value;
+  const pourcentageP1 = Number(document.getElementById('compte-repartition').value);
+
+  if(!nom || !montant || montant<=0){
+    alert("Merci d'entrer un nom et un montant valides.");
+    return;
+  }
+
+  const id = uid();
+  const nouvelleChargeDB = {
+    id, Nom: nom, Montant: montant, Recurrente: recurrente,
+    Frequence: recurrente ? frequence : null, PourcentageP1: pourcentageP1, Actif: true
+  };
+
+  try{
+    const { error } = await supabaseClient.from('ChargesCompte').insert([nouvelleChargeDB]);
+    if(error) throw error;
+    chargesCompteSupabaseDisponible = true;
+  } catch(err){
+    console.warn("Impossible d'enregistrer la charge dans Supabase, sauvegarde locale seulement.", err);
+    chargesCompteSupabaseDisponible = false;
+  }
+
+  chargesCompte.push({ id, nom, montant, recurrente, frequence, pourcentageP1, actif:true });
+  if(!chargesCompteSupabaseDisponible) sauvegarderChargesCompteLocal();
+
+  document.getElementById('compte-nom').value = '';
+  document.getElementById('compte-montant').value = '';
+  document.getElementById('compte-recurrente').value = 'oui';
+  document.getElementById('compte-frequence').value = 'mois';
+  document.getElementById('compte-repartition').value = 50;
+  rafraichirAffichageRepartition('compte-repartition','compte-repartition-p2');
+  appliquerAffichageTypeCompte('compte-recurrente','compte-frequence-field');
+  document.getElementById('form-card-compte').classList.remove('mobile-add-open');
+
+  rafraichirCompteActif();
+}
+document.getElementById('btn-add-compte').addEventListener('click', ajouterChargeCompte);
+
+async function basculerActifCharge(id){
+  const c = chargesCompte.find(x=>x.id===id); if(!c) return;
+  c.actif = !c.actif;
+  try{
+    const { error } = await supabaseClient.from('ChargesCompte').update({Actif:c.actif}).eq('id', id);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de mettre à jour la charge dans Supabase, sauvegarde locale seulement.", err);
+    sauvegarderChargesCompteLocal();
+  }
+  rafraichirCompteActif();
+}
+
+async function supprimerChargeCompte(id, sansConfirmation){
+  if(!sansConfirmation && !confirm('Supprimer cette charge du compte conjoint ?')) return;
+  try{
+    const { error } = await supabaseClient.from('ChargesCompte').delete().eq('id', id);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de supprimer la charge dans Supabase.", err);
+  }
+  chargesCompte = chargesCompte.filter(c=>c.id!==id);
+  sauvegarderChargesCompteLocal();
+  rafraichirCompteActif();
+}
+
+/* ----- Sous-onglet MOIS : combien déposer aux 2 semaines, avec détail par charge ----- */
+function afficherCompteMois(){
+  const actifs = chargesCompte.filter(c=>c.actif);
+  const recurrentes = actifs.filter(c=>c.recurrente);
+  const uniques = actifs.filter(c=>!c.recurrente);
+
+  const totalMensuel = recurrentes.reduce((s,c)=>s+c.montant*multiplicateurMensuel(c.frequence),0);
+  const p1Annuel = recurrentes.reduce((s,c)=>s+c.montant*multiplicateurAnnuel(c.frequence)*(c.pourcentageP1/100),0);
+  const totalAnnuel = recurrentes.reduce((s,c)=>s+c.montant*multiplicateurAnnuel(c.frequence),0);
+  const p2Annuel = totalAnnuel - p1Annuel;
+  const p1ParPaie = p1Annuel / PAIES_PAR_ANNEE;
+  const p2ParPaie = p2Annuel / PAIES_PAR_ANNEE;
+
+  document.getElementById('compte-stats').innerHTML = `
+    <div class="stat-card"><div class="label">Total<span class="mobile-line"> mensuel récurrent</span></div><div class="value">${formaterMonnaie(totalMensuel)}</div></div>
+    <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> par paie (2 sem.)</span></div><div class="value p1">${formaterMonnaie(p1ParPaie)}</div></div>
+    <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> par paie (2 sem.)</span></div><div class="value p2">${formaterMonnaie(p2ParPaie)}</div></div>
+  `;
+
+  const totalUnique = uniques.reduce((s,c)=>s+c.montant,0);
+  const uniqueEl = document.getElementById('compte-unique-stats');
+  if(totalUnique > 0.005){
+    const p1Unique = uniques.reduce((s,c)=>s+c.montant*(c.pourcentageP1/100),0);
+    const p2Unique = totalUnique - p1Unique;
+    uniqueEl.style.display = '';
+    uniqueEl.innerHTML = `
+      <div class="stat-card"><div class="label">Ponctuelles<span class="mobile-line"> à régler</span></div><div class="value">${formaterMonnaie(totalUnique)}</div></div>
+      <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> doit</span></div><div class="value p1">${formaterMonnaie(p1Unique)}</div></div>
+      <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> doit</span></div><div class="value p2">${formaterMonnaie(p2Unique)}</div></div>
+    `;
+  } else {
+    uniqueEl.style.display = 'none';
+    uniqueEl.innerHTML = '';
+  }
+
+  const tbody = document.getElementById('compte-mois-body');
+  if(!actifs.length){
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:16px;">Aucune charge active.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = actifs.slice().sort((a,b)=>a.nom.localeCompare(b.nom)).map(c=>{
+    const mensuel = c.recurrente ? c.montant*multiplicateurMensuel(c.frequence) : c.montant;
+    const p1 = mensuel*(c.pourcentageP1/100);
+    const p2 = mensuel-p1;
+    return `<tr>
+      <td>${c.nom}</td>
+      <td>${c.recurrente ? libelleFrequence(c.frequence) : 'Unique'}</td>
+      <td style="text-align:right;">${c.recurrente ? formaterMonnaie(mensuel) : formaterMonnaie(c.montant)+' (unique)'}</td>
+      <td style="text-align:right;">${formaterMonnaie(p1)}</td>
+      <td style="text-align:right;">${formaterMonnaie(p2)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ----- Sous-onglet ANNÉE : projection annuelle et répartition par charge ----- */
+function afficherCompteAnnee(){
+  const actifs = chargesCompte.filter(c=>c.actif && c.recurrente);
+  const totalAnnuel = actifs.reduce((s,c)=>s+c.montant*multiplicateurAnnuel(c.frequence),0);
+  const p1Annuel = actifs.reduce((s,c)=>s+c.montant*multiplicateurAnnuel(c.frequence)*(c.pourcentageP1/100),0);
+  const p2Annuel = totalAnnuel - p1Annuel;
+
+  document.getElementById('compte-annee-stats').innerHTML = `
+    <div class="stat-card"><div class="label">Total<span class="mobile-line"> annuel récurrent</span></div><div class="value">${formaterMonnaie(totalAnnuel)}</div></div>
+    <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> par année</span></div><div class="value p1">${formaterMonnaie(p1Annuel)}</div></div>
+    <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> par année</span></div><div class="value p2">${formaterMonnaie(p2Annuel)}</div></div>
+  `;
+
+  const tbody = document.getElementById('compte-annee-body');
+  const actifsTries = actifs.slice().sort((a,b)=>a.nom.localeCompare(b.nom));
+  if(!actifsTries.length){
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);padding:16px;">Aucune charge récurrente active.</td></tr>`;
+  } else {
+    tbody.innerHTML = actifsTries.map(c=>{
+      const annuel = c.montant*multiplicateurAnnuel(c.frequence);
+      const p1 = annuel*(c.pourcentageP1/100);
+      const p2 = annuel-p1;
+      return `<tr><td>${c.nom}</td><td style="text-align:right;">${formaterMonnaie(annuel)}</td><td style="text-align:right;">${formaterMonnaie(p1)}</td><td style="text-align:right;">${formaterMonnaie(p2)}</td></tr>`;
+    }).join('');
+  }
+
+  detruireGraphique('compte-annee');
+  if(actifsTries.length){
+    const couleurs = Object.values(COULEURS_CATEGORIES);
+    const labels = actifsTries.map(c=>c.nom);
+    const data = actifsTries.map(c=>c.montant*multiplicateurAnnuel(c.frequence));
+    charts['compte-annee'] = new Chart(document.getElementById('chart-compte-annee'), {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor: labels.map((_,i)=>couleurs[i % couleurs.length]), borderWidth:0, borderColor:'transparent' }] },
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+        plugins:{ legend:{position:'bottom', labels:{boxWidth:10, font:{family:'Roboto', size:12}}},
+          tooltip:{ callbacks:{ label:(c)=> `${c.label}: ${formaterMonnaie(c.raw)}` } } } }
+    });
+  }
+}
+
+/* ----- Sous-onglet BUDGET : objectif mensuel visé pour le compte conjoint ----- */
+let compteObjectifBudget = 0;
+async function chargerObjectifCompte(){
+  try{
+    const { data, error } = await supabaseClient.from('ParametresCompte').select('*').eq('id','objectif_mensuel').maybeSingle();
+    if(error) throw error;
+    compteObjectifBudget = data ? Number(data.Valeur || 0) : 0;
+  } catch(err){
+    console.warn("Table 'ParametresCompte' introuvable, utilisation du stockage local pour l'objectif.", err);
+    compteObjectifBudget = Number(localStorage.getItem('depenses_compte_objectif') || 0);
+  }
+}
+async function sauvegarderObjectifCompte(valeur){
+  compteObjectifBudget = valeur;
+  try{
+    const { error } = await supabaseClient.from('ParametresCompte').upsert([{ id:'objectif_mensuel', Valeur: valeur }], { onConflict:'id' });
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible d'enregistrer l'objectif dans Supabase, sauvegarde locale seulement.", err);
+    localStorage.setItem('depenses_compte_objectif', String(valeur));
+  }
+}
+function afficherCompteBudget(){
+  const totalMensuel = chargesCompte.filter(c=>c.actif && c.recurrente).reduce((s,c)=>s+c.montant*multiplicateurMensuel(c.frequence),0);
+  const objectif = compteObjectifBudget || 0;
+  const ecart = totalMensuel - objectif;
+  document.getElementById('compte-budget-stats').innerHTML = `
+    <div class="stat-card"><div class="label">Charges<span class="mobile-line"> mensuelles actuelles</span></div><div class="value">${formaterMonnaie(totalMensuel)}</div></div>
+    <div class="stat-card"><div class="label">Objectif<span class="mobile-line"> mensuel</span></div><div class="value">${objectif>0 ? formaterMonnaie(objectif) : '—'}</div></div>
+    <div class="stat-card"><div class="label">Écart</div><div class="value" style="color:${objectif>0 ? (ecart>0?'var(--red)':'var(--green)') : 'inherit'}">${objectif>0 ? (ecart>=0?'+':'')+formaterMonnaie(ecart) : '—'}</div></div>
+  `;
+  document.getElementById('compte-budget-input').value = objectif || '';
+}
+document.getElementById('save-compte-budget').addEventListener('click', async ()=>{
+  const valeur = parseFloat(document.getElementById('compte-budget-input').value) || 0;
+  const statusEl = document.getElementById('compte-budget-status');
+  await sauvegarderObjectifCompte(valeur);
+  afficherCompteBudget();
+  statusEl.textContent = 'Objectif sauvegardé ✓';
+  setTimeout(()=>{ statusEl.textContent=''; }, 2000);
+});
+
+function afficherListeCompte(){
+  const listEl = document.getElementById('compte-list');
+  if(!chargesCompte.length){
+    listEl.innerHTML = `<div class="budget-empty">Aucune charge ajoutée pour l'instant. Utilisez le formulaire ci-dessus pour en ajouter une.</div>`;
+    return;
+  }
+  const trie = chargesCompte.slice().sort((a,b)=> (b.actif - a.actif) || a.nom.localeCompare(b.nom));
+  listEl.innerHTML = trie.map(c=>{
+    const partP1 = c.pourcentageP1;
+    const partP2 = 100 - partP1;
+    return `
+      <div class="recurrent-row ${c.actif?'':'inactive'}" onclick="ouvrirEditionCompte('${c.id}')" style="cursor:pointer;">
+        <div class="recurrent-info">
+          <div class="recurrent-nom">${c.nom}</div>
+          <div class="recurrent-meta">
+            <span class="freq-pill">${c.recurrente ? libelleFrequence(c.frequence) : 'Unique'}</span>
+            <span class="freq-pill">${nomsPersonnes.p1} ${partP1}% / ${nomsPersonnes.p2} ${partP2}%</span>
+          </div>
+        </div>
+        <div class="recurrent-actions">
+          <div class="recurrent-montant">${formaterMonnaie(c.montant)}</div>
+          <label class="switch small" title="${c.actif ? 'Actif' : 'Inactif'}" onclick="event.stopPropagation()">
+            <input type="checkbox" ${c.actif?'checked':''} onchange="basculerActifCharge('${c.id}')">
+            <span class="switch-track"></span>
+          </label>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function ouvrirEditionCompte(id){
+  const c = chargesCompte.find(x=>x.id===id); if(!c) return;
+  chargeCompteEnEdition = c;
+  document.getElementById('edit-compte-nom').value = c.nom;
+  document.getElementById('edit-compte-montant').value = c.montant;
+  document.getElementById('edit-compte-recurrente').value = c.recurrente ? 'oui' : 'non';
+  document.getElementById('edit-compte-frequence').value = c.frequence;
+  document.getElementById('edit-compte-repartition').value = c.pourcentageP1;
+  document.getElementById('edit-compte-actif').checked = c.actif;
+  appliquerAffichageTypeCompte('edit-compte-recurrente','edit-compte-frequence-field');
+  rafraichirAffichageRepartition('edit-compte-repartition','edit-compte-repartition-p2');
+  document.getElementById('edit-compte-modal').style.display = 'flex';
+}
+document.getElementById('close-edit-compte').addEventListener('click', ()=>document.getElementById('edit-compte-modal').style.display='none');
+document.getElementById('delete-edit-compte').addEventListener('click', async ()=>{
+  if(chargeCompteEnEdition && confirm('Supprimer cette charge du compte conjoint ?')){
+    document.getElementById('edit-compte-modal').style.display='none';
+    await supprimerChargeCompte(chargeCompteEnEdition.id, true);
+  }
+});
+document.getElementById('save-edit-compte').addEventListener('click', async ()=>{
+  if(!chargeCompteEnEdition) return;
+  const nom = document.getElementById('edit-compte-nom').value.trim();
+  const montant = parseFloat(document.getElementById('edit-compte-montant').value);
+  if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
+  const recurrente = document.getElementById('edit-compte-recurrente').value === 'oui';
+  const frequence = document.getElementById('edit-compte-frequence').value;
+  const pourcentageP1 = Number(document.getElementById('edit-compte-repartition').value);
+  const actif = document.getElementById('edit-compte-actif').checked;
+
+  const update = {
+    Nom: nom, Montant: montant, Recurrente: recurrente,
+    Frequence: recurrente ? frequence : null, PourcentageP1: pourcentageP1, Actif: actif
+  };
+
+  try{
+    const { error } = await supabaseClient.from('ChargesCompte').update(update).eq('id', chargeCompteEnEdition.id);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de mettre à jour la charge dans Supabase, sauvegarde locale seulement.", err);
+  }
+
+  Object.assign(chargeCompteEnEdition, { nom, montant, recurrente, frequence, pourcentageP1, actif });
+  sauvegarderChargesCompteLocal();
+  document.getElementById('edit-compte-modal').style.display = 'none';
+  rafraichirCompteActif();
+});
+
 function libellePersonne(who){ return nomsPersonnes[who] || who; }
 function clePersonne(who){ return who === 'Mélissa' || who === 'p2' ? 'p2' : 'p1'; }
 function nomPersonneSupabase(who){ return clePersonne(who) === 'p2' ? 'Mélissa' : 'Gabriel'; }
@@ -2130,6 +2649,13 @@ document.querySelectorAll('#compare-scope-toggle button').forEach(bouton=>{
 });
 
 function rafraichirSousOnglet(scope, sub){
+  if(scope === 'compte'){
+    if(sub==='mois') afficherCompteMois();
+    else if(sub==='annee') afficherCompteAnnee();
+    else if(sub==='budget') afficherCompteBudget();
+    else if(sub==='recurrent') afficherListeCompte();
+    return;
+  }
   if(sub==='mois'){
     afficherStatsMoisScope(scope);
     afficherGraphiqueEvolutionScope(scope);
@@ -2157,6 +2683,8 @@ function rafraichirActif(){
     rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   } else if(activeMainTab==='comparer'){
     afficherComparaison();
+  } else if(activeMainTab==='compte'){
+    rafraichirSousOnglet('compte', activeSubtab.compte);
   }
   afficherNavigationPeriode();
 }
@@ -2192,7 +2720,7 @@ document.querySelectorAll('.compare-toggle button[data-mode]').forEach(button=>b
 document.getElementById('compare-a').addEventListener('change',afficherComparaison);
 document.getElementById('compare-b').addEventListener('change',afficherComparaison);
 
-/* Gestion des onglets principaux (Conjoint / Personnel / Comparer) */
+/* Gestion des onglets principaux (Conjoint / Personnel / Compte / Comparer) */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -2204,6 +2732,8 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
       rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
     } else if(activeMainTab==='comparer'){
       afficherComparaison();
+    } else if(activeMainTab==='compte'){
+      rafraichirSousOnglet('compte', activeSubtab.compte);
     }
     afficherNavigationPeriode();
   });
