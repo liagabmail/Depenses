@@ -246,6 +246,7 @@
   @media (max-width:760px){
     .app{width:100%;overflow-x:hidden;}
     .tabs{justify-content:center;}
+    .subtabs{justify-content:center;}
     .tab-btn[data-tab="comparer"]{display:none;}
     .grid-2{grid-template-columns:minmax(0,1fr);}
     .grid-2 .card{min-width:0;}
@@ -596,14 +597,14 @@
   <section class="tab-panel active" id="tab-conjoint">
     <div class="section-header">
       <h2>👥 Dépenses conjointes</h2>
-      <p>Dépenses partagées, visibles et modifiables par vous deux.</p>
+      <p>Dépenses partagées.</p>
     </div>
 
     <nav class="subtabs">
       <button class="subtab-btn active" data-scope="conjoint" data-sub="mois">Mois</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="annee">Année</button>
-      <button class="subtab-btn" data-scope="conjoint" data-sub="recurrent">Récurrent</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="budget">Budget</button>
+      <button class="subtab-btn" data-scope="conjoint" data-sub="recurrent">Récurrent</button>
     </nav>
 
     <!-- Sous-onglet : MOIS -->
@@ -799,8 +800,8 @@
     <nav class="subtabs">
       <button class="subtab-btn active" data-scope="personnel" data-sub="mois">Mois</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="annee">Année</button>
-      <button class="subtab-btn" data-scope="personnel" data-sub="recurrent">Récurrent</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="budget">Budget</button>
+      <button class="subtab-btn" data-scope="personnel" data-sub="recurrent">Récurrent</button>
     </nav>
 
     <!-- Sous-onglet : MOIS -->
@@ -2084,8 +2085,12 @@ function rafraichirOptionsFormulaires(){
   }
 }
 
+function capitaliser(mot){
+  return mot.charAt(0).toUpperCase() + mot.slice(1);
+}
+
 function afficherNavigationPeriode(){
-  document.getElementById('month-label').textContent = `${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
+  document.getElementById('month-label').textContent = `${capitaliser(NOMS_MOIS[moisActif.month])} ${moisActif.year}`;
   document.getElementById('year-label').textContent = anneeActive;
   ['conjoint','personnel'].forEach(scope=>{
     const el = document.getElementById(`month-evolution-title-${scope}`);
