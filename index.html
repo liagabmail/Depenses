@@ -157,6 +157,8 @@
   }
   .period-nav button:hover,.icon-btn:hover{border-color:var(--blue);color:var(--blue);}
   .period-label{min-width:150px;text-align:center;font-weight:500;}
+  #month-label{cursor:pointer;border-radius:6px;padding:4px 6px;}
+  #month-label:hover{color:var(--blue);text-decoration:underline;}
   .tab-btn{
     background:none;border:none;cursor:pointer;
     font-family:inherit;font-size:14px;font-weight:500;
@@ -244,11 +246,13 @@
   @media (max-width:760px){
     .app{width:100%;overflow-x:hidden;}
     .tabs{justify-content:center;}
+    .tab-btn[data-tab="comparer"]{display:none;}
     .grid-2{grid-template-columns:minmax(0,1fr);}
     .grid-2 .card{min-width:0;}
     .chart-wrap canvas{max-width:100%!important;}
     .form-grid{grid-template-columns:minmax(0,1fr);}
     .stats-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+    #donnees-section{display:none;}
   }
   .stat-card{
     background:var(--surface);
@@ -408,16 +412,6 @@
   .amount-cell{font-weight:500;text-align:right;}
   .recurring-icon{display:inline-block;font-size:13px;color:var(--blue);margin-left:2px;cursor:default;}
   body.dark .recurring-icon{color:#8ab4f8;}
-  .del-btn{
-    background:none;border:none;cursor:pointer;
-    color:var(--text-secondary);
-    font-size:16px;
-    padding:4px 8px;
-    border-radius:6px;
-  }
-  .del-btn:hover{background:#fce8e6;color:var(--red);}
-  .edit-btn{background:none;border:none;cursor:pointer;color:var(--blue);font-size:14px;padding:4px 8px;border-radius:6px;}
-  .edit-btn:hover{background:#e8f0fe;}
   .empty-state{
     padding:40px 20px;
     text-align:center;
@@ -456,7 +450,7 @@
   .switch input:checked + .switch-track::after{transform:translateX(20px);}
   body.dark{--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
   body.dark tbody tr:hover{background:#2b3035;} body.dark tbody td{border-bottom-color:#343a40;}
-  body.dark .cat-pill{background:#303b4a;color:#b8d1f5;} body.dark .del-btn:hover{background:#4a2927;}
+  body.dark .cat-pill{background:#303b4a;color:#b8d1f5;}
   .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
   .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:20px;cursor:pointer;}
   .compare-toggle button.active{background:var(--blue);color:#fff;}
@@ -478,28 +472,16 @@
   .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
   .btn-danger{background:#d93025;color:#fff;border-color:#d93025;}
   .btn-danger:hover{background:#b0261a;border-color:#b0261a;}
-  .user-choice{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
-  .user-choice.active{border-color:var(--blue);box-shadow:0 0 0 2px color-mix(in srgb,var(--blue) 20%,transparent);}
-  .user-choice.p2.active{border-color:var(--red);box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 20%,transparent);}
   #save-edit{background:var(--blue);}
   .edit-actions{grid-column:1 / -1;display:flex;justify-content:flex-end;gap:12px;}
   @media (max-width:760px){
-    .edit-modal{align-items:stretch;}
-    .edit-card{width:100%;min-height:100%;border-radius:0;padding:24px 20px;}
+    .edit-modal{align-items:stretch;justify-content:stretch;background:var(--surface);}
+    .edit-card{width:100%;height:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;padding:24px 20px;}
     .edit-card .edit-actions{grid-column:1 / -1;align-items:stretch;}
     .edit-card .edit-actions button{flex:1;padding-left:8px;padding-right:8px;}
   }
-  body.dark .edit-btn:hover{background:#303b4a;}
-  .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
-  .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:20px;cursor:pointer;}
-  .compare-toggle button.active{background:var(--blue);color:#fff;}
-  .compare-selects{display:flex;gap:16px;align-items:center;margin-bottom:24px;flex-wrap:wrap;}
-  .compare-selects .field{min-width:180px;}
-  .vs-label{font-size:13px;color:var(--text-secondary);font-weight:500;padding-top:18px;}
-  .edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:900;}
-  .edit-card{background:var(--surface);padding:24px;border-radius:var(--radius);width:min(92%,760px);box-shadow:var(--shadow-2);}
-  .edit-card h2{margin:0 0 18px;font-size:20px;font-weight:500;}.edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
-  .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
+  #table-personnel th:first-child,
+  #table-personnel td:first-child{display:none;}
   @media (max-width:760px){
     .table-card>div[style]{overflow:visible!important;}
     .table-card table,.table-card tbody,.table-card tr,.table-card td{display:block;width:100%;}
@@ -518,10 +500,6 @@
     .desktop-date,.desktop-who{display:none;}
     .mobile-date{display:inline;}
     .mobile-who{display:inline-flex;}
-  }
-  @media (max-width:760px){
-    .edit-modal{align-items:stretch;justify-content:stretch;background:var(--surface);}
-    .edit-card{width:100%;height:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;padding:24px 20px;}
   }
 </style>
 </head>
@@ -605,9 +583,8 @@
 
   <div class="period-nav" id="month-nav">
     <button id="month-prev" aria-label="Mois précédent">&lsaquo;</button>
-    <span class="period-label" id="month-label"></span>
+    <span class="period-label" id="month-label" role="button" tabindex="0" title="Revenir au mois actuel" aria-label="Revenir au mois actuel"></span>
     <button id="month-next" aria-label="Mois suivant">&rsaquo;</button>
-    <button id="month-today" aria-label="Revenir au mois actuel" style="margin-left:6px;color:var(--blue);border-color:var(--blue);">Maintenant</button>
   </div>
   <div class="period-nav" id="year-nav" style="display:none;">
     <button id="year-prev" aria-label="Année précédente">&lsaquo;</button>
@@ -721,7 +698,8 @@
     <!-- Sous-onglet : RÉCURRENT -->
     <div class="subtab-panel" data-scope="conjoint" data-sub="recurrent">
       <div class="stats-row" id="recurrent-stats-conjoint"></div>
-      <div class="card form-card">
+      <div class="card form-card" id="form-card-recurrent-conjoint">
+        <button class="mobile-close-btn" id="close-add-recurrent-conjoint" aria-label="Fermer">&times;</button>
         <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
         <div class="recurrent-form-grid">
           <div class="field"><label>Nom</label><input type="text" id="rec-nom-conjoint" placeholder="Netflix, Loyer..."></div>
@@ -767,6 +745,7 @@
           <button class="btn-add" id="btn-add-recurrent-conjoint" style="grid-column:1/-1;">Ajouter</button>
         </div>
       </div>
+      <button class="mobile-add-btn" id="mobile-add-recurrent-conjoint" aria-label="Ajouter un paiement récurrent conjoint">+</button>
       <div class="card">
         <h3 style="margin-bottom:12px;">Paiements récurrents conjoints</h3>
         <div id="recurrent-list-conjoint"></div>
@@ -843,10 +822,6 @@
         <h3 style="margin-bottom:14px;">Ajouter une dépense personnelle</h3>
         <div class="form-grid">
           <div class="field">
-            <label>Qui</label>
-            <select id="f-who-personnel" disabled></select>
-          </div>
-          <div class="field">
             <label>Date</label>
             <input type="date" id="f-date-personnel">
           </div>
@@ -916,7 +891,8 @@
     <!-- Sous-onglet : RÉCURRENT -->
     <div class="subtab-panel" data-scope="personnel" data-sub="recurrent">
       <div class="stats-row" id="recurrent-stats-personnel"></div>
-      <div class="card form-card">
+      <div class="card form-card" id="form-card-recurrent-personnel">
+        <button class="mobile-close-btn" id="close-add-recurrent-personnel" aria-label="Fermer">&times;</button>
         <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
         <div class="recurrent-form-grid">
           <div class="field"><label>Nom</label><input type="text" id="rec-nom-personnel" placeholder="Netflix, Abonnement..."></div>
@@ -958,6 +934,7 @@
           <button class="btn-add" id="btn-add-recurrent-personnel" style="grid-column:1/-1;">Ajouter</button>
         </div>
       </div>
+      <button class="mobile-add-btn" id="mobile-add-recurrent-personnel" aria-label="Ajouter un paiement récurrent personnel">+</button>
       <div class="card">
         <h3 style="margin-bottom:12px;">Mes paiements récurrents</h3>
         <div id="recurrent-list-personnel"></div>
@@ -1052,7 +1029,7 @@
       <h3>Apparence</h3>
       <div class="theme-toggle"><span>Mode sombre</span><label class="switch" for="dark-mode"><input type="checkbox" id="dark-mode"><span class="switch-track"></span></label></div>
     </div>
-    <div class="card settings-section">
+    <div class="card settings-section" id="donnees-section">
       <h3>Données</h3>
       <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">
         Exportez vos dépenses d'un mois ou d'une année vers un fichier Excel, ou importez-en depuis un fichier CSV ou Excel.
@@ -1136,15 +1113,11 @@
   <button class="modal-close-btn" id="close-edit" aria-label="Fermer">&times;</button>
   <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Modifier une dépense</h3>
   <div class="form-grid">
-    <div class="field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select></div>
+    <div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select></div>
     <div class="field"><label>Date</label><input type="date" id="edit-date"></div>
     <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0"></div>
     <div class="field"><label>Catégorie</label><select id="edit-category"></select></div>
     <div class="field"><label>Note</label><input type="text" id="edit-note"></div>
-    <div class="field">
-      <label>Type</label>
-      <select id="edit-type"><option value="conjointe">👥 Conjointe</option><option value="personnelle">👤 Personnelle</option></select>
-    </div>
     <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit">Supprimer</button><button class="btn-add" id="save-edit">Sauvegarder</button></div>
   </div>
 </div></div>
@@ -1474,6 +1447,10 @@ document.getElementById('mobile-add-conjoint').addEventListener('click',()=>docu
 document.getElementById('close-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.remove('mobile-add-open'));
 document.getElementById('mobile-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.add('mobile-add-open'));
 document.getElementById('close-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.remove('mobile-add-open'));
+document.getElementById('mobile-add-recurrent-conjoint').addEventListener('click',()=>document.getElementById('form-card-recurrent-conjoint').classList.add('mobile-add-open'));
+document.getElementById('close-add-recurrent-conjoint').addEventListener('click',()=>document.getElementById('form-card-recurrent-conjoint').classList.remove('mobile-add-open'));
+document.getElementById('mobile-add-recurrent-personnel').addEventListener('click',()=>document.getElementById('form-card-recurrent-personnel').classList.add('mobile-add-open'));
+document.getElementById('close-add-recurrent-personnel').addEventListener('click',()=>document.getElementById('form-card-recurrent-personnel').classList.remove('mobile-add-open'));
 
 /* Chargement initial depuis Supabase (avec les noms exacts des colonnes) */
 async function chargerDepensesSupabase() {
@@ -1870,6 +1847,7 @@ async function ajouterRecurrence(scope){
   document.getElementById(`rec-fin-nombre-${scope}`).value = '';
   document.getElementById(`rec-fin-date-${scope}`).value = '';
   appliquerAffichageFinRecurrence(`rec-fin-type-${scope}`, `rec-fin-nombre-field-${scope}`, `rec-fin-date-field-${scope}`);
+  document.getElementById(`form-card-recurrent-${scope}`).classList.remove('mobile-add-open');
 
   afficherRecurrencesScope(scope);
   await genererDepensesRecurrentes();
@@ -2104,13 +2082,6 @@ function rafraichirOptionsFormulaires(){
     recWhoConjoint.innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
     recWhoConjoint.value = Object.values(nomsPersonnes).includes(valeurRecActuelle) ? valeurRecActuelle : (nomsPersonnes[currentUser] || nomsPersonnes.p1);
   }
-
-  /* Une dépense personnelle ne peut être attribuée qu'à soi-même : c'est ce qui permet à
-     Supabase de savoir à qui elle appartient et de la garder privée. */
-  const whoPersonnel = document.getElementById('f-who-personnel');
-  const nomActuel = nomsPersonnes[currentUser] || nomsPersonnes.p1;
-  whoPersonnel.innerHTML = `<option value="${nomActuel}">${nomActuel}</option>`;
-  whoPersonnel.value = nomActuel;
 }
 
 function afficherNavigationPeriode(){
@@ -2198,7 +2169,10 @@ function allerAuMoisActuel(){
 }
 document.getElementById('month-prev').addEventListener('click',()=>changerMois(-1));
 document.getElementById('month-next').addEventListener('click',()=>changerMois(1));
-document.getElementById('month-today').addEventListener('click', allerAuMoisActuel);
+document.getElementById('month-label').addEventListener('click', allerAuMoisActuel);
+document.getElementById('month-label').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' || e.key===' '){ e.preventDefault(); allerAuMoisActuel(); }
+});
 document.getElementById('year-prev').addEventListener('click',()=>{
   anneeActive--;
   if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab,'annee');
@@ -2308,14 +2282,19 @@ async function ajouterDepense(scope){
 document.getElementById('btn-add-conjoint').addEventListener('click', ()=>ajouterDepense('conjoint'));
 document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajouterDepense('personnel'));
 
-function appliquerVerrouEditType(){
-  const type = document.getElementById('edit-type').value;
+/* Affiche ou cache le champ "Qui" selon le type de la dépense en cours d'édition. Le type
+   lui-même n'est plus modifiable ici : passer une dépense de conjointe à personnelle (ou
+   l'inverse) changerait sa visibilité/son propriétaire, ce qu'on préfère éviter par erreur. */
+function appliquerVerrouEditType(type){
   const whoSelect = document.getElementById('edit-who');
+  const whoField = document.getElementById('edit-who-field');
   if(type === 'personnelle'){
     whoSelect.value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
     whoSelect.disabled = true;
+    whoField.style.display = 'none';
   } else {
     whoSelect.disabled = false;
+    whoField.style.display = '';
   }
 }
 
@@ -2329,18 +2308,16 @@ function ouvrirEdition(id){
   document.getElementById('edit-note').value=depense.note;
   document.getElementById('edit-category').innerHTML=categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
   document.getElementById('edit-category').value=depense.category;
-  document.getElementById('edit-type').value=depense.type==='personnelle'?'personnelle':'conjointe';
-  appliquerVerrouEditType();
+  appliquerVerrouEditType(depense.type);
   document.getElementById('edit-modal').style.display='flex';
 }
-document.getElementById('edit-type').addEventListener('change', appliquerVerrouEditType);
 document.getElementById('close-edit').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
 document.getElementById('delete-edit').addEventListener('click',async()=>{if(depenseEnEdition && confirm('Supprimer cette dépense ?')){document.getElementById('edit-modal').style.display='none';await supprimerDepense(depenseEnEdition.id);}});
 document.getElementById('save-edit').addEventListener('click',async()=>{
   const amount=parseFloat(document.getElementById('edit-amount').value),date=document.getElementById('edit-date').value;
   if(!depenseEnEdition||!amount||amount<=0||!date){alert('Merci d’entrer un montant et une date valides.');return;}
   const who=clePersonne(document.getElementById('edit-who').value);
-  const type=document.getElementById('edit-type').value==='personnelle'?'personnelle':'conjointe';
+  const type=depenseEnEdition.type==='personnelle'?'personnelle':'conjointe';
   const update={
     Qui:nomPersonneSupabase(who),
     Montant:amount,
@@ -2394,6 +2371,22 @@ document.getElementById('save-budgets-personnel').addEventListener('click', ()=>
 document.getElementById('save-budgets-conjoint').addEventListener('click', ()=>sauvegarderBudget('conjoint'));
 
 /* ===================== RENDU : SOUS-ONGLET MOIS (par section) ===================== */
+/* Calcule, du point de vue de la personne connectée, combien elle doit encore payer
+   (ou a payé en trop) pour arriver à égalité avec l'autre sur les dépenses conjointes. */
+function carteEcartEqualisation(t1, t2){
+  const moi = currentUser==='p2' ? t2 : t1;
+  const autre = currentUser==='p2' ? t1 : t2;
+  const autreCle = currentUser==='p2' ? 'p1' : 'p2';
+  const ecart = (autre - moi) / 2; /* positif = je dois payer plus ; négatif = j'ai payé en trop */
+  if(Math.abs(ecart) < 0.005){
+    return `<div class="label">Équilibré<span class="mobile-line"> avec ${nomsPersonnes[autreCle]}</span></div><div class="value">${formaterMonnaie(0)}</div>`;
+  }
+  if(ecart > 0){
+    return `<div class="label">Reste à payer<span class="mobile-line"> pour être égal</span></div><div class="value" style="color:var(--red)">${formaterMonnaie(ecart)}</div>`;
+  }
+  return `<div class="label">Payé en trop<span class="mobile-line"> (à récupérer)</span></div><div class="value" style="color:var(--green)">${formaterMonnaie(Math.abs(ecart))}</div>`;
+}
+
 function afficherStatsMoisScope(scope){
   const liste = depenses.filter(filtreMoisScope(scope));
   const total = liste.reduce((s,e)=>s+e.amount,0);
@@ -2401,18 +2394,28 @@ function afficherStatsMoisScope(scope){
   if(scope==='conjoint'){
     const t1 = liste.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
     const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
+    const moi = currentUser==='p2' ? t2 : t1;
+    const periode = periodeActive();
+    const budgetTotal = (budgets.conjoint && budgets.conjoint[periode] && budgets.conjoint[periode].__total__) || 0;
+    const ecartBudget = total - budgetTotal;
     el.innerHTML = `
-      <div class="stat-card"><div class="label">Total<span class="mobile-line"> conjoint</span></div><div class="value">${formaterMonnaie(total)}</div></div>
-      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> ${nomsPersonnes.p1}</span></div><div class="value p1">${formaterMonnaie(t1)}</div></div>
-      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> ${nomsPersonnes.p2}</span></div><div class="value p2">${formaterMonnaie(t2)}</div></div>
+      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> moi</span></div><div class="value ${currentUser}">${formaterMonnaie(moi)}</div></div>
+      <div class="stat-card">
+        <div class="label">Total<span class="mobile-line"> conjoint</span></div>
+        <div class="value">${formaterMonnaie(total)}</div>
+        ${budgetTotal > 0 ? `<div style="font-size:11px;margin-top:4px;color:${ecartBudget>0?'var(--red)':'var(--green)'}">${ecartBudget>0?'+':''}${formaterMonnaie(ecartBudget)} vs budget</div>` : ''}
+      </div>
+      <div class="stat-card">${carteEcartEqualisation(t1, t2)}</div>
     `;
   } else {
     const nb = liste.length;
-    const moyenne = nb ? total/nb : 0;
+    const periode = periodeActive();
+    const budgetTotal = (budgets[currentUser] && budgets[currentUser][periode] && budgets[currentUser][periode].__total__) || 0;
+    const restant = budgetTotal - total;
     el.innerHTML = `
       <div class="stat-card"><div class="label">Total<span class="mobile-line"> personnel</span></div><div class="value ${currentUser}">${formaterMonnaie(total)}</div></div>
       <div class="stat-card"><div class="label">Nombre<span class="mobile-line"> de dépenses</span></div><div class="value">${nb}</div></div>
-      <div class="stat-card"><div class="label">Dépense<span class="mobile-line"> moyenne</span></div><div class="value">${formaterMonnaie(moyenne)}</div></div>
+      <div class="stat-card"><div class="label">Restant<span class="mobile-line"> à dépenser</span></div><div class="value" style="color:${budgetTotal>0 ? (restant<0?'var(--red)':'var(--green)') : 'inherit'}">${budgetTotal>0 ? formaterMonnaie(restant) : '—'}</div></div>
     `;
   }
 }
@@ -2537,10 +2540,11 @@ function afficherAnneeScope(scope){
   if(scope==='conjoint'){
     const t1 = liste.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
     const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
+    const moi = currentUser==='p2' ? t2 : t1;
     el.innerHTML = `
+      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> moi</span></div><div class="value ${currentUser}">${formaterMonnaie(moi)}</div></div>
       <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${anneeActive}</span></div><div class="value">${formaterMonnaie(total)}</div></div>
-      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> ${nomsPersonnes.p1}</span></div><div class="value p1">${formaterMonnaie(t1)}</div></div>
-      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> ${nomsPersonnes.p2}</span></div><div class="value p2">${formaterMonnaie(t2)}</div></div>
+      <div class="stat-card">${carteEcartEqualisation(t1, t2)}</div>
     `;
   } else {
     const nb = liste.length;
