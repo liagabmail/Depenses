@@ -32,6 +32,8 @@
   :root{
     --blue:#1a73e8;
     --blue-dark:#174ea6;
+    --mauve:#8e5ba6;
+    --mauve-dark:#6a4380;
     --red:#ea4335;
     --yellow:#fbbc04;
     --green:#34a853;
@@ -132,6 +134,7 @@
   .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .dot.p1{background:var(--blue);}
   .dot.p2{background:var(--red);}
+  .dot.compte{background:var(--green);}
   .change-user-btn {
     background: none; border: 1px solid var(--border); border-radius: 8px;
     padding: 6px 10px; font-family: inherit; font-size: 12px; cursor: pointer; color: var(--text-secondary);
@@ -267,6 +270,7 @@
   .stat-card .value{font-size:24px;font-weight:500;}
   .stat-card .value.p1{color:var(--blue-dark);}
   .stat-card .value.p2{color:var(--red);}
+  .stat-card .value.compte{color:var(--green);}
   .mobile-line{display:inline;}
   @media (max-width:760px){
     .stat-card{padding:10px 8px;min-width:0;}
@@ -414,6 +418,8 @@
   .amount-cell{font-weight:500;text-align:right;}
   .recurring-icon{display:inline-block;font-size:13px;color:var(--blue);margin-left:2px;cursor:default;}
   body.dark .recurring-icon{color:#8ab4f8;}
+  .row-icons{display:inline-flex;align-items:center;gap:2px;}
+  .row-icons:empty{display:none;}
   .empty-state{
     padding:40px 20px;
     text-align:center;
@@ -428,6 +434,7 @@
   .budget-row-cat .swatch{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .budget-row-amounts{font-size:12px;color:var(--text-secondary);white-space:nowrap;}
   .budget-row-amounts strong{color:var(--text);font-weight:500;}
+  .budget-row-conjoint{font-size:11px;color:var(--text-secondary);text-align:right;margin:-2px 0 6px;}
   .budget-bar{height:8px;border-radius:6px;background:#eef0f3;overflow:hidden;}
   body.dark .budget-bar{background:#2c3136;}
   .budget-bar-fill{height:100%;border-radius:6px;transition:width .25s ease;}
@@ -444,16 +451,19 @@
   .settings-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
   .settings-row input[type="color"]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:var(--surface);}
   .theme-toggle{display:flex;align-items:center;gap:10px;}
-  .switch{position:relative;display:inline-flex;width:48px;height:28px;cursor:pointer;}
+  .toggle-field{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .toggle-field-label{font-size:14px;}
+  .switch{position:relative;display:inline-flex;width:48px;height:28px;cursor:pointer;flex-shrink:0;}
   .switch input{position:absolute;opacity:0;width:0;height:0;}
   .switch-track{position:absolute;inset:0;border-radius:18px;background:#9aa0a6;transition:background .2s;}
   .switch-track::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s;}
   .switch input:checked + .switch-track{background:var(--blue);}
   .switch input:checked + .switch-track::after{transform:translateX(20px);}
-  body.dark{--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
+  body.dark{--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
   body.dark tbody tr:hover{background:#2b3035;} body.dark tbody td{border-bottom-color:#343a40;}
   body.dark .cat-pill{background:#303b4a;color:#b8d1f5;}
   .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
+  .toggle-perso-scope{display:flex;width:fit-content;margin-left:auto;margin-right:auto;}
   .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:20px;cursor:pointer;}
   .compare-toggle button.active{background:var(--blue);color:#fff;}
   .compare-selects{display:flex;gap:16px;align-items:center;margin-bottom:24px;flex-wrap:wrap;}
@@ -470,6 +480,10 @@
   }
   .edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:900;}
   .edit-card{background:var(--surface);padding:24px;border-radius:var(--radius);width:min(92%,760px);box-shadow:var(--shadow-2);}
+  .edit-card.type-conjointe{background:color-mix(in srgb, var(--mauve) 7%, var(--surface));}
+  .edit-card.type-compte{background:color-mix(in srgb, var(--yellow) 10%, var(--surface));}
+  .edit-card.type-revenu{background:color-mix(in srgb, var(--green) 8%, var(--surface));}
+  #edit-who:disabled{opacity:.55;cursor:not-allowed;background:var(--bg);}
   .edit-card h2{margin:0 0 18px;font-size:20px;font-weight:500;}.edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
   .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
   .btn-danger{background:#d93025;color:#fff;border-color:#d93025;}
@@ -482,26 +496,39 @@
     .edit-card .edit-actions{grid-column:1 / -1;align-items:stretch;}
     .edit-card .edit-actions button{flex:1;padding-left:8px;padding-right:8px;}
   }
-  #table-personnel th:first-child,
-  #table-personnel td:first-child{display:none;}
+  #table-personnel.hide-qui-column th:first-child,
+  #table-personnel.hide-qui-column td:first-child{display:none;}
+  #tab-conjoint .card,
+  #tab-conjoint .stat-card{background:color-mix(in srgb, var(--mauve) 5%, var(--surface));}
+  .row-conjoint-share{background:color-mix(in srgb, var(--mauve) 8%, transparent);}
+  body.dark .row-conjoint-share{background:color-mix(in srgb, var(--mauve) 16%, transparent);}
+  .row-compte-item{background:color-mix(in srgb, var(--yellow) 16%, transparent);}
+  body.dark .row-compte-item{background:color-mix(in srgb, var(--yellow) 22%, transparent);}
+  .row-revenu-item{background:color-mix(in srgb, var(--green) 10%, transparent);}
+  body.dark .row-revenu-item{background:color-mix(in srgb, var(--green) 18%, transparent);}
+  .badge-compte{background:color-mix(in srgb, var(--yellow) 25%, transparent);color:#8a6d00;}
+  body.dark .badge-compte{background:color-mix(in srgb, var(--yellow) 30%, transparent);color:#f4d35e;}
+  .badge-revenu{background:color-mix(in srgb, var(--green) 18%, transparent);color:var(--green);}
+  body.dark .badge-revenu{color:#81c995;}
   @media (max-width:760px){
     .table-card>div[style]{overflow:visible!important;}
     .table-card table,.table-card tbody,.table-card tr,.table-card td{display:block;width:100%;}
     .table-card thead{display:none;}
-    .table-card tbody tr{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:3px 8px;padding:9px 12px;border-bottom:1px solid var(--border);}
+    .table-card tbody tr{display:grid;grid-template-columns:minmax(0,1fr) max-content max-content;align-items:center;gap:4px 8px;padding:9px 12px;border-bottom:1px solid var(--border);}
     .table-card tbody tr:last-child{border-bottom:0;}
     .table-card .table-head-row{padding:14px 12px 8px;gap:8px;}
     .mobile-sort{display:flex;}
     .table-card tbody td{display:block;padding:0;border:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .table-card tbody td::before{display:none;}
-    .table-card tbody td:nth-child(2){grid-column:2;grid-row:1;}
-    .table-card tbody td:nth-child(3){grid-column:3;grid-row:1;text-align:right;}
-    .table-card tbody td:nth-child(4){grid-column:3;grid-row:2;text-align:right;}
-    .table-card tbody td:nth-child(5){grid-column:1 / 3;grid-row:2;min-width:0;font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .table-card tbody td:nth-child(1){grid-column:1;grid-row:1;}
+    .table-card tbody td:nth-child(2){grid-column:2;grid-row:1;text-align:right;}
+    .table-card tbody td:nth-child(5){grid-column:3;grid-row:1;text-align:right;}
+    .table-card tbody td:nth-child(4){grid-column:1 / -1;grid-row:2;display:flex;justify-content:flex-end;align-items:center;gap:6px;white-space:normal;overflow:visible;text-overflow:clip;}
+    .table-card tbody td:nth-child(3){grid-column:1 / -1;grid-row:3;min-width:0;font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .table-card .amount-cell{font-size:13px;}
     .desktop-date,.desktop-who{display:none;}
     .mobile-date{display:inline;}
-    .mobile-who{display:inline-flex;}
+    .mobile-who{display:inline-flex;font-size:12px;}
   }
 </style>
 </head>
@@ -580,7 +607,6 @@
   <nav class="tabs">
     <button class="tab-btn active" data-tab="conjoint">👥 Conjoint</button>
     <button class="tab-btn" data-tab="personnel">👤 Personnel</button>
-    <button class="tab-btn" data-tab="compte">🏦 Compte</button>
     <button class="tab-btn" data-tab="comparer">Comparer</button>
   </nav>
 
@@ -627,9 +653,13 @@
         <button class="mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
         <h3 style="margin-bottom:14px;">Ajouter une dépense conjointe</h3>
         <div class="form-grid">
-          <div class="field">
+          <div class="field" id="f-who-field-conjoint">
             <label>Qui</label>
             <select id="f-who-conjoint"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select>
+          </div>
+          <div class="field" id="f-compte-repartition-field-conjoint" style="display:none;">
+            <label>Part de <span id="f-compte-nom-p1-conjoint"></span> (%)</label>
+            <input type="number" id="f-compte-repartition-conjoint" min="0" max="100" step="0.1" value="50">
           </div>
           <div class="field">
             <label>Date</label>
@@ -639,17 +669,25 @@
             <label>Montant</label>
             <input type="number" id="f-amount-conjoint" step="0.01" min="0" placeholder="0,00 $">
           </div>
-          <div class="field">
+          <div class="field" id="f-category-field-conjoint">
             <label>Catégorie</label>
             <select id="f-category-conjoint">
               <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
               <option>Maison</option><option>Loisirs</option><option>Santé</option>
-              <option>Vêtements</option><option>Abonnements</option><option>Autre</option>
+              <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
             </select>
           </div>
           <div class="field">
             <label>Note</label>
             <input type="text" id="f-note-conjoint" placeholder="Optionnel">
+          </div>
+          <div class="field toggle-field" style="grid-column:1/-1;">
+            <span class="toggle-field-label">🏦 Payée automatiquement par le compte conjoint</span>
+            <label class="switch"><input type="checkbox" id="f-est-compte-conjoint"><span class="switch-track"></span></label>
+          </div>
+          <div class="field toggle-field" id="f-est-revenu-field-conjoint" style="grid-column:1/-1;display:none;">
+            <span class="toggle-field-label">💰 Est un revenu</span>
+            <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
           <button class="btn-add" id="btn-add-conjoint">Ajouter</button>
         </div>
@@ -671,9 +709,9 @@
               <tr>
                 <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
                 <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
-                <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
-                <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
                 <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
+                <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
+                <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
               </tr>
             </thead>
             <tbody id="table-body-conjoint"></tbody>
@@ -701,18 +739,20 @@
     <!-- Sous-onglet : RÉCURRENT -->
     <div class="subtab-panel" data-scope="conjoint" data-sub="recurrent">
       <div class="stats-row" id="recurrent-stats-conjoint"></div>
+      <div class="stats-row" id="recurrent-compte-stats-conjoint" style="display:none;margin-top:-8px;"></div>
+      <div class="stats-row" id="recurrent-compte-unique-stats-conjoint" style="display:none;margin-top:-8px;"></div>
       <div class="card form-card" id="form-card-recurrent-conjoint">
         <button class="mobile-close-btn" id="close-add-recurrent-conjoint" aria-label="Fermer">&times;</button>
         <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
         <div class="recurrent-form-grid">
           <div class="field"><label>Nom</label><input type="text" id="rec-nom-conjoint" placeholder="Netflix, Loyer..."></div>
           <div class="field"><label>Montant</label><input type="number" id="rec-montant-conjoint" step="0.01" min="0" placeholder="0,00 $"></div>
-          <div class="field">
+          <div class="field" id="rec-categorie-field-conjoint">
             <label>Catégorie</label>
             <select id="rec-categorie-conjoint">
               <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
               <option>Maison</option><option>Loisirs</option><option>Santé</option>
-              <option>Vêtements</option><option>Abonnements</option><option>Autre</option>
+              <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
             </select>
           </div>
           <div class="field">
@@ -724,9 +764,13 @@
               <option value="annee">Chaque année</option>
             </select>
           </div>
-          <div class="field">
+          <div class="field" id="rec-who-field-conjoint">
             <label>Qui</label>
             <select id="rec-who-conjoint"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select>
+          </div>
+          <div class="field" id="rec-compte-repartition-field-conjoint" style="display:none;">
+            <label>Part de <span id="rec-compte-nom-p1-conjoint"></span> (%)</label>
+            <input type="number" id="rec-compte-repartition-conjoint" min="0" max="100" step="0.1" value="50">
           </div>
           <div class="field"><label>Depuis le</label><input type="date" id="rec-date-conjoint"></div>
           <div class="field">
@@ -745,6 +789,14 @@
             <label>Date de fin</label>
             <input type="date" id="rec-fin-date-conjoint">
           </div>
+          <div class="field toggle-field" style="grid-column:1/-1;">
+            <span class="toggle-field-label">🏦 Payé automatiquement par le compte conjoint</span>
+            <label class="switch"><input type="checkbox" id="rec-est-compte-conjoint"><span class="switch-track"></span></label>
+          </div>
+          <div class="field toggle-field" id="rec-est-revenu-field-conjoint" style="grid-column:1/-1;display:none;">
+            <span class="toggle-field-label">💰 Est un revenu</span>
+            <label class="switch"><input type="checkbox" id="rec-est-revenu-conjoint"><span class="switch-track"></span></label>
+          </div>
           <button class="btn-add" id="btn-add-recurrent-conjoint" style="grid-column:1/-1;">Ajouter</button>
         </div>
       </div>
@@ -758,6 +810,10 @@
     <!-- Sous-onglet : BUDGET -->
     <div class="subtab-panel" data-scope="conjoint" data-sub="budget">
       <div class="stats-row" id="stats-conjoint"></div>
+      <div class="card" id="budget-revenus-card-conjoint" style="display:none;">
+        <h3 style="margin-bottom:12px;">💰 Revenus de <span id="budget-revenus-periode-conjoint"></span></h3>
+        <div id="budget-revenus-list-conjoint"></div>
+      </div>
       <div class="grid-2">
         <div class="card">
           <h3>Budget par catégorie</h3>
@@ -771,15 +827,6 @@
       <div class="card">
         <h3 style="margin-bottom:12px;">Gérer le budget conjoint de <span id="periode-label-conjoint"></span></h3>
         <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ce budget est partagé : vous et votre partenaire pouvez tous les deux le consulter et le modifier. Il concerne seulement les dépenses <em>conjointes</em>. Le budget est propre à chaque mois.</p>
-
-        <div class="field budget-input-field" style="max-width:280px;margin-bottom:8px;">
-          <label><strong>Budget total du mois</strong> (toutes catégories)</label>
-          <div class="input-money">
-            <input type="number" id="budget-total-input-conjoint" step="1" min="0" placeholder="0">
-            <span class="suffix">$ / mois</span>
-          </div>
-        </div>
-        <p id="budget-total-ecart-conjoint" style="font-size:13px;margin:0 0 18px;"></p>
 
         <div style="padding-top:14px;border-top:1px solid var(--border);">
           <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
@@ -808,6 +855,10 @@
 
     <!-- Sous-onglet : MOIS -->
     <div class="subtab-panel active" data-scope="personnel" data-sub="mois">
+      <div class="compare-toggle toggle-perso-scope" style="margin-bottom:14px;">
+        <button data-include="non">Perso seulement</button>
+        <button data-include="oui">+ Conjoint</button>
+      </div>
       <div class="stats-row" id="mois-stats-personnel"></div>
       <div class="grid-2">
         <div class="card">
@@ -832,17 +883,21 @@
             <label>Montant</label>
             <input type="number" id="f-amount-personnel" step="0.01" min="0" placeholder="0,00 $">
           </div>
-          <div class="field">
+          <div class="field" id="f-category-field-personnel">
             <label>Catégorie</label>
             <select id="f-category-personnel">
               <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
               <option>Maison</option><option>Loisirs</option><option>Santé</option>
-              <option>Vêtements</option><option>Abonnements</option><option>Autre</option>
+              <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
             </select>
           </div>
           <div class="field">
             <label>Note</label>
             <input type="text" id="f-note-personnel" placeholder="Optionnel">
+          </div>
+          <div class="field toggle-field" style="grid-column:1/-1;">
+            <span class="toggle-field-label">💰 Est un revenu</span>
+            <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
           <button class="btn-add" id="btn-add-personnel">Ajouter</button>
         </div>
@@ -859,14 +914,14 @@
           <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
         </select><button type="button" class="sort-direction" id="mobile-sort-dir-personnel" aria-label="Tri croissant">↑</button></div></div>
         <div style="overflow-x:auto;">
-          <table id="table-personnel" data-scope="personnel">
+          <table id="table-personnel" data-scope="personnel" class="hide-qui-column">
             <thead>
               <tr>
                 <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
                 <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
-                <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
-                <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
                 <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
+                <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
+                <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
               </tr>
             </thead>
             <tbody id="table-body-personnel"></tbody>
@@ -878,6 +933,10 @@
 
     <!-- Sous-onglet : ANNÉE -->
     <div class="subtab-panel" data-scope="personnel" data-sub="annee">
+      <div class="compare-toggle toggle-perso-scope" style="margin-bottom:14px;">
+        <button data-include="non">Perso seulement</button>
+        <button data-include="oui">+ Conjoint</button>
+      </div>
       <div class="stats-row" id="annee-stats-personnel"></div>
       <div class="grid-2">
         <div class="card">
@@ -893,6 +952,10 @@
 
     <!-- Sous-onglet : RÉCURRENT -->
     <div class="subtab-panel" data-scope="personnel" data-sub="recurrent">
+      <div class="compare-toggle toggle-perso-scope" style="margin-bottom:14px;">
+        <button data-include="non">Perso seulement</button>
+        <button data-include="oui">+ Conjoint</button>
+      </div>
       <div class="stats-row" id="recurrent-stats-personnel"></div>
       <div class="card form-card" id="form-card-recurrent-personnel">
         <button class="mobile-close-btn" id="close-add-recurrent-personnel" aria-label="Fermer">&times;</button>
@@ -900,12 +963,12 @@
         <div class="recurrent-form-grid">
           <div class="field"><label>Nom</label><input type="text" id="rec-nom-personnel" placeholder="Netflix, Abonnement..."></div>
           <div class="field"><label>Montant</label><input type="number" id="rec-montant-personnel" step="0.01" min="0" placeholder="0,00 $"></div>
-          <div class="field">
+          <div class="field" id="rec-categorie-field-personnel">
             <label>Catégorie</label>
             <select id="rec-categorie-personnel">
               <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
               <option>Maison</option><option>Loisirs</option><option>Santé</option>
-              <option>Vêtements</option><option>Abonnements</option><option>Autre</option>
+              <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
             </select>
           </div>
           <div class="field">
@@ -934,6 +997,10 @@
             <label>Date de fin</label>
             <input type="date" id="rec-fin-date-personnel">
           </div>
+          <div class="field toggle-field" style="grid-column:1/-1;">
+            <span class="toggle-field-label">💰 Est un revenu</span>
+            <label class="switch"><input type="checkbox" id="rec-est-revenu-personnel"><span class="switch-track"></span></label>
+          </div>
           <button class="btn-add" id="btn-add-recurrent-personnel" style="grid-column:1/-1;">Ajouter</button>
         </div>
       </div>
@@ -946,7 +1013,15 @@
 
     <!-- Sous-onglet : BUDGET -->
     <div class="subtab-panel" data-scope="personnel" data-sub="budget">
+      <div class="compare-toggle toggle-perso-scope" style="margin-bottom:14px;">
+        <button data-include="non">Perso seulement</button>
+        <button data-include="oui">+ Conjoint</button>
+      </div>
       <div class="stats-row" id="stats-personnel"></div>
+      <div class="card" id="budget-revenus-card-personnel" style="display:none;">
+        <h3 style="margin-bottom:12px;">💰 Revenus de <span id="budget-revenus-periode-personnel"></span></h3>
+        <div id="budget-revenus-list-personnel"></div>
+      </div>
       <div class="grid-2">
         <div class="card">
           <h3>Budget par catégorie</h3>
@@ -961,15 +1036,6 @@
         <h3 style="margin-bottom:12px;">Gérer mon budget de <span id="periode-label-personnel"></span></h3>
         <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ces montants ne concernent que vous et servent à suivre vos dépenses <em>personnelles</em> (pas les dépenses conjointes). Cette section n'est visible que par vous. Le budget est propre à chaque mois.</p>
 
-        <div class="field budget-input-field" style="max-width:280px;margin-bottom:8px;">
-          <label><strong>Budget total du mois</strong> (toutes catégories)</label>
-          <div class="input-money">
-            <input type="number" id="budget-total-input-personnel" step="1" min="0" placeholder="0">
-            <span class="suffix">$ / mois</span>
-          </div>
-        </div>
-        <p id="budget-total-ecart-personnel" style="font-size:13px;margin:0 0 18px;"></p>
-
         <div style="padding-top:14px;border-top:1px solid var(--border);">
           <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
           <div id="budget-form-personnel" class="settings-grid"></div>
@@ -977,117 +1043,6 @@
 
         <button class="btn-add" id="save-budgets-personnel" style="margin-top:16px;">Sauvegarder mon budget</button>
         <p id="budget-save-status-personnel" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;"></p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== SECTION : COMPTE CONJOINT ===================== -->
-  <section class="tab-panel" id="tab-compte">
-    <div class="section-header">
-      <h2>🏦 Compte conjoint</h2>
-      <p>Calcule combien chacun doit déposer aux 2 semaines.</p>
-    </div>
-
-    <nav class="subtabs">
-      <button class="subtab-btn active" data-scope="compte" data-sub="mois">Mois</button>
-      <button class="subtab-btn" data-scope="compte" data-sub="annee">Année</button>
-      <button class="subtab-btn" data-scope="compte" data-sub="budget">Budget</button>
-      <button class="subtab-btn" data-scope="compte" data-sub="recurrent">Récurrent</button>
-    </nav>
-
-    <!-- Sous-onglet : MOIS -->
-    <div class="subtab-panel active" data-scope="compte" data-sub="mois">
-      <div class="stats-row" id="compte-stats"></div>
-      <div class="stats-row" id="compte-unique-stats" style="display:none;margin-top:-8px;"></div>
-      <div class="card">
-        <h3 style="margin-bottom:12px;">Détail mensuel</h3>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead>
-              <tr><th>Charge</th><th>Fréquence</th><th style="text-align:right;">Équiv. mensuel</th><th style="text-align:right;">Part <span id="compte-mois-th-p1"></span></th><th style="text-align:right;">Part <span id="compte-mois-th-p2"></span></th></tr>
-            </thead>
-            <tbody id="compte-mois-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sous-onglet : ANNÉE -->
-    <div class="subtab-panel" data-scope="compte" data-sub="annee">
-      <div class="stats-row" id="compte-annee-stats"></div>
-      <div class="grid-2">
-        <div class="card">
-          <h3>Répartition annuelle par charge</h3>
-          <div class="chart-wrap"><canvas id="chart-compte-annee"></canvas></div>
-        </div>
-        <div class="card">
-          <h3 style="margin-bottom:12px;">Détail annuel</h3>
-          <div style="overflow-x:auto;">
-            <table>
-              <thead>
-                <tr><th>Charge</th><th style="text-align:right;">Équiv. annuel</th><th style="text-align:right;">Part <span id="compte-annee-th-p1"></span></th><th style="text-align:right;">Part <span id="compte-annee-th-p2"></span></th></tr>
-              </thead>
-              <tbody id="compte-annee-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sous-onglet : BUDGET -->
-    <div class="subtab-panel" data-scope="compte" data-sub="budget">
-      <div class="stats-row" id="compte-budget-stats"></div>
-      <div class="card">
-        <h3 style="margin-bottom:12px;">Objectif mensuel du compte conjoint</h3>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Fixez un montant total visé par mois pour le compte conjoint, pour voir si les charges actuelles le respectent.</p>
-        <div class="field budget-input-field" style="max-width:280px;margin-bottom:8px;">
-          <label><strong>Budget mensuel visé</strong></label>
-          <div class="input-money"><input type="number" id="compte-budget-input" step="1" min="0" placeholder="0"><span class="suffix">$ / mois</span></div>
-        </div>
-        <button class="btn-add" id="save-compte-budget" style="margin-top:8px;">Sauvegarder l'objectif</button>
-        <p id="compte-budget-status" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;"></p>
-      </div>
-    </div>
-
-    <!-- Sous-onglet : RÉCURRENT -->
-    <div class="subtab-panel" data-scope="compte" data-sub="recurrent">
-      <div class="card form-card" id="form-card-compte">
-        <button class="mobile-close-btn" id="close-add-compte" aria-label="Fermer">&times;</button>
-        <h3 style="margin-bottom:14px;">Ajouter une charge</h3>
-        <div class="recurrent-form-grid">
-          <div class="field"><label>Nom</label><input type="text" id="compte-nom" placeholder="Assurance, Électricité..."></div>
-          <div class="field"><label>Montant</label><input type="number" id="compte-montant" step="0.01" min="0" placeholder="0,00 $"></div>
-          <div class="field">
-            <label>Type</label>
-            <select id="compte-recurrente">
-              <option value="oui">Récurrente</option>
-              <option value="non">Unique (ponctuelle)</option>
-            </select>
-          </div>
-          <div class="field" id="compte-frequence-field">
-            <label>Fréquence</label>
-            <select id="compte-frequence">
-              <option value="semaine">Chaque semaine</option>
-              <option value="2semaines">Chaque 2 semaines</option>
-              <option value="mois" selected>Chaque mois</option>
-              <option value="annee">Chaque année</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Part de <span id="compte-repartition-nom-p1"></span> (%)</label>
-            <input type="number" id="compte-repartition" min="0" max="100" step="1" value="50">
-          </div>
-          <div class="field" style="align-self:end;">
-            <div id="compte-repartition-p2" style="font-size:13px;color:var(--text-secondary);padding-bottom:10px;"></div>
-          </div>
-          <button class="btn-add" id="btn-add-compte" style="grid-column:1/-1;">Ajouter</button>
-        </div>
-      </div>
-      <button class="mobile-add-btn" id="mobile-add-compte" aria-label="Ajouter une charge du compte conjoint">+</button>
-
-      <div class="card">
-        <h3 style="margin-bottom:12px;">Charges du compte conjoint</h3>
-        <div id="compte-list"></div>
       </div>
     </div>
   </section>
@@ -1228,10 +1183,25 @@
   <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Modifier une dépense</h3>
   <div class="form-grid">
     <div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select></div>
+    <div class="field" id="edit-compte-repartition-field" style="display:none;">
+      <label>Part de <span id="edit-compte-nom-p1"></span> (%)</label>
+      <input type="number" id="edit-compte-repartition" min="0" max="100" step="0.1" value="50">
+    </div>
     <div class="field"><label>Date</label><input type="date" id="edit-date"></div>
     <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0"></div>
-    <div class="field"><label>Catégorie</label><select id="edit-category"></select></div>
+    <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
     <div class="field"><label>Note</label><input type="text" id="edit-note"></div>
+    <div class="field toggle-field" id="edit-est-compte-field" style="grid-column:1/-1;display:none;">
+      <span class="toggle-field-label">🏦 Payée automatiquement par le compte conjoint</span>
+      <label class="switch"><input type="checkbox" id="edit-est-compte"><span class="switch-track"></span></label>
+    </div>
+    <div class="field toggle-field" id="edit-est-revenu-field" style="grid-column:1/-1;display:none;">
+      <span class="toggle-field-label" id="edit-est-revenu-label">💰 Est un revenu</span>
+      <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
+    </div>
+    <div class="field" style="grid-column:1/-1;">
+      <button type="button" class="btn-secondary" id="edit-toggle-type" style="width:100%;"></button>
+    </div>
     <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit">Supprimer</button><button class="btn-add" id="save-edit">Sauvegarder</button></div>
   </div>
 </div></div>
@@ -1242,7 +1212,7 @@
   <div class="form-grid">
     <div class="field"><label>Nom</label><input type="text" id="edit-rec-nom"></div>
     <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" step="0.01" min="0"></div>
-    <div class="field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
+    <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
     <div class="field">
       <label>Fréquence</label>
       <select id="edit-rec-frequence">
@@ -1255,6 +1225,10 @@
     <div class="field" id="edit-rec-qui-field">
       <label>Qui</label>
       <select id="edit-rec-qui"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select>
+    </div>
+    <div class="field" id="edit-rec-compte-repartition-field" style="display:none;">
+      <label>Part de <span id="edit-rec-compte-nom-p1"></span> (%)</label>
+      <input type="number" id="edit-rec-compte-repartition" min="0" max="100" step="0.1" value="50">
     </div>
     <div class="field"><label>Depuis le</label><input type="date" id="edit-rec-date-debut"></div>
     <div class="field">
@@ -1273,46 +1247,19 @@
       <label>Date de fin</label>
       <input type="date" id="edit-rec-fin-date">
     </div>
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="edit-rec-actif" style="width:auto;"> Actif</label>
+    <div class="field toggle-field" id="edit-rec-est-compte-field" style="grid-column:1/-1;display:none;">
+      <span class="toggle-field-label">🏦 Payé automatiquement par le compte conjoint</span>
+      <label class="switch"><input type="checkbox" id="edit-rec-est-compte"><span class="switch-track"></span></label>
+    </div>
+    <div class="field toggle-field" id="edit-rec-est-revenu-field" style="grid-column:1/-1;display:none;">
+      <span class="toggle-field-label" id="edit-rec-est-revenu-label">💰 Est un revenu</span>
+      <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
+    </div>
+    <div class="field toggle-field">
+      <span class="toggle-field-label">Actif</span>
+      <label class="switch"><input type="checkbox" id="edit-rec-actif"><span class="switch-track"></span></label>
     </div>
     <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit-recurrent">Supprimer</button><button class="btn-add" id="save-edit-recurrent">Sauvegarder</button></div>
-  </div>
-</div></div>
-
-<div class="edit-modal" id="edit-compte-modal"><div class="edit-card">
-  <button class="modal-close-btn" id="close-edit-compte" aria-label="Fermer">&times;</button>
-  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Modifier une charge du compte conjoint</h3>
-  <div class="form-grid">
-    <div class="field"><label>Nom</label><input type="text" id="edit-compte-nom"></div>
-    <div class="field"><label>Montant</label><input type="number" id="edit-compte-montant" step="0.01" min="0"></div>
-    <div class="field">
-      <label>Type</label>
-      <select id="edit-compte-recurrente">
-        <option value="oui">Récurrente</option>
-        <option value="non">Unique (ponctuelle)</option>
-      </select>
-    </div>
-    <div class="field" id="edit-compte-frequence-field">
-      <label>Fréquence</label>
-      <select id="edit-compte-frequence">
-        <option value="semaine">Chaque semaine</option>
-        <option value="2semaines">Chaque 2 semaines</option>
-        <option value="mois">Chaque mois</option>
-        <option value="annee">Chaque année</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Part de <span id="edit-compte-repartition-nom-p1"></span> (%)</label>
-      <input type="number" id="edit-compte-repartition" min="0" max="100" step="1">
-    </div>
-    <div class="field" style="align-self:end;">
-      <div id="edit-compte-repartition-p2" style="font-size:13px;color:var(--text-secondary);padding-bottom:10px;"></div>
-    </div>
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="edit-compte-actif" style="width:auto;"> Actif</label>
-    </div>
-    <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit-compte">Supprimer</button><button class="btn-add" id="save-edit-compte">Sauvegarder</button></div>
   </div>
 </div></div>
 
@@ -1345,8 +1292,8 @@ const EMAIL_PERSONNES = {
 
 let currentUser = null;
 let currentSession = null;
-const nomsPersonnes = { p1: "Gabriel", p2: "Mélissa" };
-const couleursPersonnes = { p1: "#1a73e8", p2: "#e91e63" };
+const nomsPersonnes = { p1: "Gabriel", p2: "Mélissa", compte: "Compte conjoint" };
+const couleursPersonnes = { p1: "#1a73e8", p2: "#e91e63", compte: "#34a853" };
 
 /* Détecte si on arrive depuis un lien d'invitation ou de réinitialisation de mot de passe
    (Supabase ajoute ces informations dans le fragment #... de l'URL au retour du courriel). */
@@ -1398,7 +1345,7 @@ async function gererSession(session){
   if(nomEl) nomEl.textContent = nomsPersonnes[currentUser];
   mettreAJourInterfaceUtilisateur();
   rafraichirOptionsFormulaires();
-  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerChargesCompteSupabase(), chargerObjectifCompte() ]);
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase() ]);
   await genererDepensesRecurrentes();
 }
 
@@ -1562,7 +1509,7 @@ function mettreAJourInterfaceUtilisateur() {
 let COULEURS_CATEGORIES = {
   "Épicerie":"#1a73e8","Restaurant":"#ea4335","Transport":"#fbbc04",
   "Maison":"#34a853","Loisirs":"#a142f4","Santé":"#00acc1",
-  "Vêtements":"#f06292","Abonnements":"#ff7043","Autre":"#9aa0a6"
+  "Vêtements":"#f06292","Abonnements":"#ff7043","Épargne":"#009688","Autre":"#9aa0a6"
 };
 const NOMS_MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 
@@ -1578,9 +1525,51 @@ let moisActif = {year:aujourdhui.getFullYear(), month:aujourdhui.getMonth()};
 let anneeActive = aujourdhui.getFullYear();
 let modeComparaison = 'mois';
 let modeCompareScope = 'tout';
+
+/* Onglet Personnel : possibilité d'inclure 50% des dépenses conjointes (peu importe qui a
+   payé) dans le total et la répartition par catégorie, pour voir le vrai portrait de ce
+   qu'on dépense au quotidien. Le tableau des transactions reste toujours 100% personnel. */
+let inclureConjointDansPersonnel = localStorage.getItem('depenses_inclure_conjoint_perso') === 'oui';
+
+/* Part de la personne connectée dans une dépense conjointe affichée dans Personnel :
+   50/50 pour une dépense conjointe normale, mais le vrai % pour une dépense "compte"
+   (puisque celle-là n'est pas forcément partagée moitié-moitié). */
+function partPersonnelle(e){
+  if(e.estCompte){
+    const p1Pct = (e.pourcentageP1 != null ? e.pourcentageP1 : 50) / 100;
+    return currentUser==='p1' ? p1Pct : (1 - p1Pct);
+  }
+  return 0.5;
+}
+function totalConjointPourInclusion(filtrePeriode){
+  if(!inclureConjointDansPersonnel) return 0;
+  return depenses.filter(e=>e.type==='conjointe' && !e.estRevenu && filtrePeriode(e)).reduce((s,e)=>s+e.amount*partPersonnelle(e),0);
+}
+function parCategorieConjointPourInclusion(filtrePeriode){
+  if(!inclureConjointDansPersonnel) return {};
+  const parCat = {};
+  depenses.filter(e=>e.type==='conjointe' && !e.estRevenu && filtrePeriode(e)).forEach(e=>{
+    parCat[e.category] = (parCat[e.category]||0) + e.amount*partPersonnelle(e);
+  });
+  return parCat;
+}
+function appliquerToggleInclusionConjoint(){
+  document.querySelectorAll('.toggle-perso-scope button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.include === (inclureConjointDansPersonnel ? 'oui' : 'non'));
+  });
+}
+document.querySelectorAll('.toggle-perso-scope button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    inclureConjointDansPersonnel = b.dataset.include === 'oui';
+    localStorage.setItem('depenses_inclure_conjoint_perso', inclureConjointDansPersonnel ? 'oui' : 'non');
+    appliquerToggleInclusionConjoint();
+    rafraichirSousOnglet('personnel', activeSubtab.personnel);
+  });
+});
+appliquerToggleInclusionConjoint();
 let depenseEnEdition = null;
 let activeMainTab = 'conjoint';
-let activeSubtab = { conjoint:'mois', personnel:'mois', compte:'mois' };
+let activeSubtab = { conjoint:'mois', personnel:'mois' };
 let charts = {};
 function detruireGraphique(cle){ if(charts[cle]){ charts[cle].destroy(); delete charts[cle]; } }
 
@@ -1611,13 +1600,16 @@ async function chargerDepensesSupabase() {
   }
   depenses = (data || []).map(e => ({
     id: e.id,
-    who: e.Qui === nomsPersonnes.p2 || e.Qui === 'p2' ? 'p2' : 'p1',
+    who: clePersonne(e.Qui),
     amount: Number(e.Montant || 0),
     date: e.Date,
     category: e.Categorie || 'Autre',
     note: e.Note || '',
     type: e.Type === 'personnelle' ? 'personnelle' : 'conjointe',
-    recurrenceId: e.RecurrenceId || null
+    recurrenceId: e.RecurrenceId || null,
+    estCompte: e.EstCompte === true,
+    estRevenu: e.EstRevenu === true,
+    pourcentageP1: e.PourcentageP1 != null ? Number(e.PourcentageP1) : 50
   }));
   await Promise.all([
     supabaseClient.from('Depenses').update({Qui:nomsPersonnes.p1}).eq('Qui','p1'),
@@ -1690,9 +1682,6 @@ async function sauvegarderBudget(scope){
     const input = document.getElementById(`budget-input-${scope}-${cat}`);
     if(input){ valeurs[cat] = Math.max(0, parseFloat(input.value) || 0); }
   });
-  const totalInput = document.getElementById(`budget-total-input-${scope}`);
-  const totalSaisi = totalInput ? Math.max(0, parseFloat(totalInput.value) || 0) : 0;
-  valeurs['__total__'] = totalSaisi;
 
   if(!budgets[cfg.budgetKey]) budgets[cfg.budgetKey] = {};
   budgets[cfg.budgetKey][periode] = valeurs;
@@ -1708,14 +1697,6 @@ async function sauvegarderBudget(scope){
       Montant: valeurs[cat] || 0,
       user_id: scope === 'personnel' ? (currentSession?.user?.id || null) : null
     }));
-    lignes.push({
-      id: `${cfg.budgetKey}-${periode}-TOTAL`,
-      Personne: cfg.personneSupabase,
-      Categorie: 'TOTAL',
-      Periode: periode,
-      Montant: totalSaisi,
-      user_id: scope === 'personnel' ? (currentSession?.user?.id || null) : null
-    });
     const { error } = await supabaseClient.from('Budgets').upsert(lignes, { onConflict:'id' });
     if(error){
       /* La colonne user_id n'existe peut-être pas encore sur Budgets : on réessaie sans elle
@@ -1736,32 +1717,11 @@ async function sauvegarderBudget(scope){
   afficherSectionBudget(scope);
 }
 
-/* Recalcule en direct l'écart entre le budget total saisi et la somme des catégories,
-   pendant que l'utilisateur tape (avant même de sauvegarder). */
-function recalculerEcartBudget(scope){
-  const totalInput = document.getElementById(`budget-total-input-${scope}`);
-  const ecartEl = document.getElementById(`budget-total-ecart-${scope}`);
-  if(!totalInput || !ecartEl) return;
-  const total = Math.max(0, parseFloat(totalInput.value) || 0);
-  let somme = 0;
-  categories.forEach(cat=>{
-    const input = document.getElementById(`budget-input-${scope}-${cat}`);
-    if(input) somme += Math.max(0, parseFloat(input.value) || 0);
-  });
-  const diff = total - somme;
-  if(total <= 0){
-    ecartEl.textContent = "Entrez un budget total pour voir la répartition par catégorie se comparer à celui-ci.";
-    ecartEl.style.color = 'var(--text-secondary)';
-  } else if(Math.abs(diff) < 0.01){
-    ecartEl.textContent = `Répartition complète : ${formaterMonnaie(somme)} sur ${formaterMonnaie(total)}. ✓`;
-    ecartEl.style.color = 'var(--green)';
-  } else if(diff > 0){
-    ecartEl.textContent = `Il reste ${formaterMonnaie(diff)} non assigné à une catégorie (${formaterMonnaie(somme)} sur ${formaterMonnaie(total)}).`;
-    ecartEl.style.color = 'var(--text-secondary)';
-  } else {
-    ecartEl.textContent = `Vos catégories dépassent le budget total de ${formaterMonnaie(Math.abs(diff))} (${formaterMonnaie(somme)} sur ${formaterMonnaie(total)}).`;
-    ecartEl.style.color = 'var(--red)';
-  }
+/* Le budget total d'une période est toujours la somme des catégories : il n'y a plus de
+   montant total saisi séparément (ça ne faisait pas de sens d'avoir les deux). */
+function budgetTotalCalcule(budgetKey, periode){
+  const budgetActuel = (budgets[budgetKey] && budgets[budgetKey][periode]) || {};
+  return categories.reduce((s,c)=>s+(budgetActuel[c]||0),0);
 }
 
 /* ===================== DÉPENSES RÉCURRENTES (abonnements, paiements réguliers) ===================== */
@@ -1792,6 +1752,9 @@ async function chargerRecurrencesSupabase(){
       finDate: r.FinDate || null,
       who: r.Qui ? clePersonne(r.Qui) : null,
       type: r.Type === 'personnelle' ? 'personnelle' : 'conjointe',
+      estCompte: r.EstCompte === true,
+      estRevenu: r.EstRevenu === true,
+      pourcentageP1: r.PourcentageP1 != null ? Number(r.PourcentageP1) : 50,
       actif: r.Actif !== false
     }));
     recurrencesSupabaseDisponible = true;
@@ -1904,6 +1867,9 @@ async function genererDepensesRecurrentes(limiteDate){
             Note: rec.nom,
             Type: rec.type,
             RecurrenceId: rec.id,
+            EstCompte: !!rec.estCompte,
+            EstRevenu: !!rec.estRevenu,
+            PourcentageP1: rec.estCompte ? (rec.pourcentageP1 != null ? rec.pourcentageP1 : 50) : null,
             user_id: rec.type === 'personnelle' ? (currentSession?.user?.id || null) : null
           });
         }
@@ -1918,12 +1884,20 @@ async function genererDepensesRecurrentes(limiteDate){
       console.warn("Insertion avec RecurrenceId impossible (avez-vous ajouté la colonne ? voir les instructions), nouvel essai sans cette colonne.", error);
       const sansRecurrenceId = aInserer.map(({RecurrenceId, ...reste}) => reste);
       const retry = await supabaseClient.from('Depenses').insert(sansRecurrenceId);
-      if(retry.error){ console.warn("Échec de la génération des dépenses récurrentes.", retry.error); return; }
+      if(retry.error){
+        /* Toujours en échec : les colonnes EstCompte/EstRevenu/PourcentageP1 manquent
+           peut-être aussi. Dernier essai avec seulement les colonnes de base. */
+        console.warn("Toujours en échec, nouvel essai sans EstCompte/EstRevenu/PourcentageP1 non plus.", retry.error);
+        const minimal = sansRecurrenceId.map(({EstCompte, EstRevenu, PourcentageP1, ...reste}) => reste);
+        const retry2 = await supabaseClient.from('Depenses').insert(minimal);
+        if(retry2.error){ console.warn("Échec de la génération des dépenses récurrentes.", retry2.error); return; }
+      }
     }
 
     aInserer.forEach(d => depenses.push({
       id: d.id, who: clePersonne(d.Qui), amount: d.Montant, date: d.Date,
-      category: d.Categorie, note: d.Note, type: d.Type, recurrenceId: d.RecurrenceId
+      category: d.Categorie, note: d.Note, type: d.Type, recurrenceId: d.RecurrenceId,
+      estCompte: d.EstCompte, estRevenu: d.EstRevenu, pourcentageP1: d.PourcentageP1 != null ? d.PourcentageP1 : 50
     }));
     rafraichirActif();
   } finally {
@@ -1944,14 +1918,21 @@ function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
 document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field'));
 
+document.getElementById('rec-compte-nom-p1-conjoint').textContent = nomsPersonnes.p1;
+document.getElementById('rec-est-compte-conjoint').addEventListener('change', ()=>
+  appliquerAffichageEstCompte('rec-est-compte-conjoint','rec-who-field-conjoint','rec-compte-repartition-field-conjoint','rec-est-revenu-field-conjoint'));
+
 async function ajouterRecurrence(scope){
   const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
   const nom = document.getElementById(`rec-nom-${scope}`).value.trim();
   const montant = parseFloat(document.getElementById(`rec-montant-${scope}`).value);
-  const categorie = document.getElementById(`rec-categorie-${scope}`).value;
   const frequence = document.getElementById(`rec-frequence-${scope}`).value;
   const dateDebut = document.getElementById(`rec-date-${scope}`).value || aujourdhui.toISOString().slice(0,10);
-  const who = scope==='conjoint' ? clePersonne(document.getElementById('rec-who-conjoint').value) : currentUser;
+  const estCompte = scope==='conjoint' && document.getElementById('rec-est-compte-conjoint').checked;
+  const estRevenu = scope==='conjoint' ? (estCompte && document.getElementById('rec-est-revenu-conjoint').checked) : document.getElementById('rec-est-revenu-personnel').checked;
+  const categorie = estRevenu ? 'Revenu' : document.getElementById(`rec-categorie-${scope}`).value;
+  const who = estCompte ? 'compte' : (scope==='conjoint' ? clePersonne(document.getElementById('rec-who-conjoint').value) : currentUser);
+  const pourcentageP1 = estCompte ? Number(document.getElementById('rec-compte-repartition-conjoint').value) : null;
   const finType = document.getElementById(`rec-fin-type-${scope}`).value;
   const finNombreRaw = document.getElementById(`rec-fin-nombre-${scope}`).value;
   const finNombre = finType==='nombre' ? (parseInt(finNombreRaw,10) || null) : null;
@@ -1976,19 +1957,29 @@ async function ajouterRecurrence(scope){
     id, Nom: nom, Montant: montant, Categorie: categorie, Frequence: frequence,
     DateDebut: dateDebut, FinType: finType, FinNombre: finNombre, FinDate: finDate,
     Qui: nomPersonneSupabase(who), Type: type, Actif: true,
+    EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1,
     user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
 
   try{
-    const { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
-    if(error) throw error;
+    let { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
+    if(error){
+      /* Les colonnes EstCompte/EstRevenu/PourcentageP1 n'existent peut-être pas encore
+         (voir les instructions pour les ajouter) : on réessaie sans elles pour que la
+         récurrence soit tout de même enregistrée, plutôt que de rester locale seulement
+         et disparaître au prochain rechargement. */
+      console.warn("Insertion avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
+      const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
+      const retry = await supabaseClient.from('Recurrences').insert([sansColonnesRecentes]);
+      if(retry.error) throw retry.error;
+    }
     recurrencesSupabaseDisponible = true;
   } catch(err){
     console.warn("Impossible d'enregistrer la récurrence dans Supabase, sauvegarde locale seulement.", err);
     recurrencesSupabaseDisponible = false;
   }
 
-  recurrences.push({ id, nom, montant, categorie, frequence, dateDebut, finType, finNombre, finDate, who, type, actif:true });
+  recurrences.push({ id, nom, montant, categorie, frequence, dateDebut, finType, finNombre, finDate, who, type, estCompte, estRevenu, pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50, actif:true });
   if(!recurrencesSupabaseDisponible) sauvegarderRecurrencesLocal();
 
   document.getElementById(`rec-nom-${scope}`).value = '';
@@ -1998,6 +1989,14 @@ async function ajouterRecurrence(scope){
   document.getElementById(`rec-fin-date-${scope}`).value = '';
   appliquerAffichageFinRecurrence(`rec-fin-type-${scope}`, `rec-fin-nombre-field-${scope}`, `rec-fin-date-field-${scope}`);
   document.getElementById(`form-card-recurrent-${scope}`).classList.remove('mobile-add-open');
+  if(scope==='conjoint'){
+    document.getElementById('rec-est-compte-conjoint').checked = false;
+    document.getElementById('rec-est-revenu-conjoint').checked = false;
+    document.getElementById('rec-compte-repartition-conjoint').value = 50;
+    appliquerAffichageEstCompte('rec-est-compte-conjoint','rec-who-field-conjoint','rec-compte-repartition-field-conjoint','rec-est-revenu-field-conjoint');
+  } else {
+    document.getElementById('rec-est-revenu-personnel').checked = false;
+  }
 
   afficherRecurrencesScope(scope);
   await genererDepensesRecurrentes();
@@ -2064,47 +2063,137 @@ async function supprimerRecurrence(id, sansConfirmation){
   rafraichirActif();
 }
 
+/* Part de la personne connectée dans une récurrence conjointe affichée dans Personnel :
+   50/50 normalement, vrai % pour une récurrence "compte". */
+function partPersonnelleRecurrence(r){
+  if(r.estCompte){
+    const p1Pct = (r.pourcentageP1 != null ? r.pourcentageP1 : 50) / 100;
+    return currentUser==='p1' ? p1Pct : (1 - p1Pct);
+  }
+  return 0.5;
+}
+
 function afficherRecurrencesScope(scope){
   const liste = recurrences.filter(r => scope==='conjoint' ? r.type==='conjointe' : (r.type==='personnelle' && r.who===currentUser));
-  const actifs = liste.filter(r=>r.actif);
+  const listeSansRevenu = liste.filter(r=>!r.estRevenu);
+  const actifs = listeSansRevenu.filter(r=>r.actif);
   const totalMensuel = actifs.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r.frequence),0);
+
+  /* Dans Personnel, "+ Conjoint" ajoute aussi les paiements récurrents conjoints à la
+     liste (en lecture seule, clairement identifiés) : leur vrai % pour les récurrences
+     "compte", 50/50 pour les autres. Le formulaire d'ajout reste réservé aux perso. */
+  const inclusionActive = scope==='personnel' && inclureConjointDansPersonnel;
+  const recurrentesConjointes = inclusionActive ? recurrences.filter(r=>r.type==='conjointe' && !r.estRevenu) : [];
+  const actifsConjoints = recurrentesConjointes.filter(r=>r.actif);
+  const totalMensuelConjointPart = actifsConjoints.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r.frequence)*partPersonnelleRecurrence(r),0);
 
   const statsEl = document.getElementById(`recurrent-stats-${scope}`);
   if(statsEl){
     statsEl.innerHTML = `
-      <div class="stat-card"><div class="label">Total<span class="mobile-line"> mensuel équiv.</span></div><div class="value">${formaterMonnaie(totalMensuel)}</div></div>
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> mensuel${inclusionActive ? ' (+ conjoint)' : ' équiv.'}</span></div><div class="value">${formaterMonnaie(totalMensuel + totalMensuelConjointPart)}</div></div>
       <div class="stat-card"><div class="label">Paiements<span class="mobile-line"> actifs</span></div><div class="value">${actifs.length}</div></div>
-      <div class="stat-card"><div class="label">Total<span class="mobile-line"> (incl. inactifs)</span></div><div class="value">${liste.length}</div></div>
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> (incl. inactifs)</span></div><div class="value">${listeSansRevenu.length}</div></div>
     `;
+  }
+
+  /* Dans Conjoint : boîtes supplémentaires indiquant combien chacun doit déposer au compte
+     conjoint aux 2 semaines, à partir des paiements "compte" actifs. Les paiements "compte"
+     marqués comme revenu (argent qui entre) sont soustraits plutôt qu'additionnés. */
+  if(scope==='conjoint'){
+    const compteActifs = liste.filter(r=>r.actif && r.estCompte);
+    const chargesCompte = compteActifs.filter(r=>!r.estRevenu);
+    const revenusCompteActifs = compteActifs.filter(r=>r.estRevenu);
+
+    const totalAnnuelCharges = chargesCompte.reduce((s,r)=>s+r.montant*multiplicateurAnnuel(r.frequence),0);
+    const p1AnnuelCharges = chargesCompte.reduce((s,r)=>s+r.montant*multiplicateurAnnuel(r.frequence)*((r.pourcentageP1!=null?r.pourcentageP1:50)/100),0);
+    const p2AnnuelCharges = totalAnnuelCharges - p1AnnuelCharges;
+
+    const totalAnnuelRevenus = revenusCompteActifs.reduce((s,r)=>s+r.montant*multiplicateurAnnuel(r.frequence),0);
+    const p1AnnuelRevenus = revenusCompteActifs.reduce((s,r)=>s+r.montant*multiplicateurAnnuel(r.frequence)*((r.pourcentageP1!=null?r.pourcentageP1:50)/100),0);
+    const p2AnnuelRevenus = totalAnnuelRevenus - p1AnnuelRevenus;
+
+    const totalAnnuelNet = totalAnnuelCharges - totalAnnuelRevenus;
+    const p1AnnuelNet = p1AnnuelCharges - p1AnnuelRevenus;
+    const p2AnnuelNet = p2AnnuelCharges - p2AnnuelRevenus;
+
+    const depotEl = document.getElementById('recurrent-compte-stats-conjoint');
+    if(compteActifs.length){
+      depotEl.style.display = '';
+      depotEl.innerHTML = `
+        <div class="stat-card"><div class="label">🏦 À déposer<span class="mobile-line"> net / mois</span></div><div class="value" style="color:var(--green)">${formaterMonnaie(totalAnnuelNet/12)}</div></div>
+        <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> par paie (2 sem.)</span></div><div class="value p1">${formaterMonnaie(p1AnnuelNet/PAIES_PAR_ANNEE)}</div></div>
+        <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> par paie (2 sem.)</span></div><div class="value p2">${formaterMonnaie(p2AnnuelNet/PAIES_PAR_ANNEE)}</div></div>
+      `;
+    } else {
+      depotEl.style.display = 'none';
+      depotEl.innerHTML = '';
+    }
+
+    const uniquesCompte = depenses.filter(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId);
+    const uniquesCharges = uniquesCompte.filter(e=>!e.estRevenu);
+    const uniquesRevenus = uniquesCompte.filter(e=>e.estRevenu);
+    const totalUniqueCharges = uniquesCharges.reduce((s,e)=>s+e.amount,0);
+    const totalUniqueRevenus = uniquesRevenus.reduce((s,e)=>s+e.amount,0);
+    const totalUniqueNet = totalUniqueCharges - totalUniqueRevenus;
+    const uniqueEl = document.getElementById('recurrent-compte-unique-stats-conjoint');
+    if(uniquesCompte.length){
+      const p1UniqueCharges = uniquesCharges.reduce((s,e)=>s+e.amount*((e.pourcentageP1!=null?e.pourcentageP1:50)/100),0);
+      const p1UniqueRevenus = uniquesRevenus.reduce((s,e)=>s+e.amount*((e.pourcentageP1!=null?e.pourcentageP1:50)/100),0);
+      const p1UniqueNet = p1UniqueCharges - p1UniqueRevenus;
+      const p2UniqueNet = totalUniqueNet - p1UniqueNet;
+      uniqueEl.style.display = '';
+      uniqueEl.innerHTML = `
+        <div class="stat-card"><div class="label">🏦 Ponctuelles<span class="mobile-line"> net à régler</span></div><div class="value" style="color:var(--green)">${formaterMonnaie(totalUniqueNet)}</div></div>
+        <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> doit</span></div><div class="value p1">${formaterMonnaie(p1UniqueNet)}</div></div>
+        <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> doit</span></div><div class="value p2">${formaterMonnaie(p2UniqueNet)}</div></div>
+      `;
+    } else {
+      uniqueEl.style.display = 'none';
+      uniqueEl.innerHTML = '';
+    }
   }
 
   const listEl = document.getElementById(`recurrent-list-${scope}`);
   if(!listEl) return;
-  if(!liste.length){
+  const listeComplete = liste.map(r=>({...r, estConjoint:false})).concat(recurrentesConjointes.map(r=>({...r, estConjoint:true})));
+  if(!listeComplete.length){
     listEl.innerHTML = `<div class="budget-empty">Aucun paiement récurrent pour l'instant. Utilisez le formulaire ci-dessus pour en ajouter un.</div>`;
     return;
   }
-  const listeTriee = liste.slice().sort((a,b)=> (b.actif - a.actif) || a.nom.localeCompare(b.nom));
-  listEl.innerHTML = listeTriee.map(r=>`
-    <div class="recurrent-row ${r.actif?'':'inactive'}" onclick="ouvrirEditionRecurrence('${r.id}')" style="cursor:pointer;">
+  const listeTriee = listeComplete.sort((a,b)=> (b.actif - a.actif) || a.nom.localeCompare(b.nom));
+  listEl.innerHTML = listeTriee.map(r=>{
+    const partPct = Math.round(partPersonnelleRecurrence(r)*100);
+    const badgeType = r.estRevenu
+      ? `<span class="freq-pill badge-revenu" title="Revenu">💰</span>`
+      : (r.estCompte
+          ? `<span class="freq-pill badge-compte" title="Payé automatiquement par le compte conjoint">🏦</span>`
+          : (r.estConjoint ? `<span class="freq-pill" style="background:var(--mauve)22;color:var(--mauve);" title="Récurrence conjointe">👥</span>` : ''));
+    const sousMontant = r.estConjoint
+      ? `<div style="font-size:11px;color:var(--text-secondary);font-weight:400;white-space:nowrap;">${partPct}%: ${formaterMonnaie(r.montant*partPersonnelleRecurrence(r))}</div>`
+      : '';
+    const montantAffiche = r.estRevenu ? `+${formaterMonnaie(r.montant)}` : formaterMonnaie(r.montant);
+    return `
+    <div class="recurrent-row ${r.actif?'':'inactive'} ${r.estRevenu?'row-revenu-item':(r.estCompte?'row-compte-item':(r.estConjoint?'row-conjoint-share':''))}" onclick="ouvrirEditionRecurrence('${r.id}')" style="cursor:pointer;">
       <div class="recurrent-info">
-        <div class="recurrent-nom">${r.nom}${scope==='conjoint' ? ` <span class="who-badge"><span class="dot ${r.who}"></span>${libellePersonne(r.who)}</span>` : ''}</div>
+        <div class="recurrent-nom">${r.nom}${(scope==='conjoint' || r.estConjoint) ? ` <span class="who-badge"><span class="dot ${r.who}"></span>${libellePersonne(r.who)}</span>` : ''}</div>
         <div class="recurrent-meta">
-          <span class="cat-pill" style="background:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}">${r.categorie}</span>
+          ${badgeType}
+          ${r.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}">${r.categorie}</span>`}
           <span class="freq-pill">${libelleFrequence(r.frequence)}</span>
           ${r.finType==='nombre' ? `<span class="freq-pill">${r.finNombre} paiement${r.finNombre>1?'s':''} max</span>` : ''}
           ${r.finType==='date' ? `<span class="freq-pill">Jusqu'au ${r.finDate}</span>` : ''}
         </div>
       </div>
       <div class="recurrent-actions">
-        <div class="recurrent-montant">${formaterMonnaie(r.montant)}</div>
+        <div class="recurrent-montant" style="${r.estRevenu?'color:var(--green);':''}">${montantAffiche}${sousMontant}</div>
         <label class="switch small" title="${r.actif ? 'Actif' : 'Inactif'}" onclick="event.stopPropagation()">
           <input type="checkbox" ${r.actif?'checked':''} onchange="basculerActifRecurrence('${r.id}')">
           <span class="switch-track"></span>
         </label>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 /* Modal d'édition d'un paiement récurrent */
@@ -2124,16 +2213,64 @@ function ouvrirEditionRecurrence(id){
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field');
 
   const quiField = document.getElementById('edit-rec-qui-field');
+  const compteField = document.getElementById('edit-rec-compte-repartition-field');
+  const estCompteField = document.getElementById('edit-rec-est-compte-field');
+  const estCompteCheckbox = document.getElementById('edit-rec-est-compte');
+  const estRevenuField = document.getElementById('edit-rec-est-revenu-field');
+  const estRevenuCheckbox = document.getElementById('edit-rec-est-revenu');
+  document.getElementById('edit-rec-compte-nom-p1').textContent = nomsPersonnes.p1;
+  document.getElementById('edit-rec-compte-repartition').value = rec.pourcentageP1 != null ? rec.pourcentageP1 : 50;
+  estCompteCheckbox.checked = !!rec.estCompte;
+  estRevenuCheckbox.checked = !!rec.estRevenu;
+
   if(rec.type==='conjointe'){
-    quiField.style.display = '';
-    document.getElementById('edit-rec-qui').innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
-    document.getElementById('edit-rec-qui').value = libellePersonne(rec.who);
+    estCompteField.style.display = '';
+    document.getElementById('edit-rec-qui').innerHTML = ['p1','p2'].map(key=>[key,nomsPersonnes[key]]).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
+    document.getElementById('edit-rec-qui').value = libellePersonne(rec.who==='compte' ? 'p1' : rec.who);
+    if(rec.estCompte){
+      quiField.style.display = 'none';
+      compteField.style.display = '';
+      estRevenuField.style.display = '';
+    } else {
+      quiField.style.display = '';
+      compteField.style.display = 'none';
+      estRevenuField.style.display = 'none';
+    }
   } else {
+    estCompteField.style.display = 'none';
+    compteField.style.display = 'none';
     quiField.style.display = 'none';
+    estRevenuField.style.display = '';
   }
+
+  appliquerTeinteEditRecurrent();
+  appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
 
   document.getElementById('edit-recurrent-modal').style.display = 'flex';
 }
+/* Teinte le modal de récurrence : vert pour un revenu, jaune pour une charge payée par le
+   compte conjoint, mauve pour une récurrence conjointe normale. */
+function appliquerTeinteEditRecurrent(){
+  const editRecCard = document.querySelector('#edit-recurrent-modal .edit-card');
+  if(!editRecCard || !recurrenceEnEdition) return;
+  const type = recurrenceEnEdition.type;
+  const estCompte = type==='conjointe' && document.getElementById('edit-rec-est-compte').checked;
+  const estRevenu = document.getElementById('edit-rec-est-revenu').checked;
+  editRecCard.classList.toggle('type-revenu', estRevenu);
+  editRecCard.classList.toggle('type-compte', estCompte && !estRevenu);
+  editRecCard.classList.toggle('type-conjointe', type==='conjointe' && !estCompte && !estRevenu);
+}
+document.getElementById('edit-rec-est-compte').addEventListener('change', ()=>{
+  const coche = document.getElementById('edit-rec-est-compte').checked;
+  document.getElementById('edit-rec-qui-field').style.display = coche ? 'none' : '';
+  document.getElementById('edit-rec-compte-repartition-field').style.display = coche ? '' : 'none';
+  const estRevenuField = document.getElementById('edit-rec-est-revenu-field');
+  estRevenuField.style.display = coche ? '' : 'none';
+  if(!coche) document.getElementById('edit-rec-est-revenu').checked = false;
+  appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
+  appliquerTeinteEditRecurrent();
+});
+document.getElementById('edit-rec-est-revenu').addEventListener('change', appliquerTeinteEditRecurrent);
 document.getElementById('close-edit-recurrent').addEventListener('click', ()=>document.getElementById('edit-recurrent-modal').style.display='none');
 document.getElementById('delete-edit-recurrent').addEventListener('click', async ()=>{
   if(recurrenceEnEdition && confirm("Supprimer ce paiement récurrent ? Toutes les dépenses générées automatiquement pour lui (passées et futures) seront aussi supprimées.")){
@@ -2158,24 +2295,39 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
 
   let who = recurrenceEnEdition.who;
+  let estCompte = false;
+  let pourcentageP1 = null;
   if(recurrenceEnEdition.type==='conjointe'){
-    who = clePersonne(document.getElementById('edit-rec-qui').value);
+    estCompte = document.getElementById('edit-rec-est-compte').checked;
+    if(estCompte){
+      who = 'compte';
+      pourcentageP1 = Number(document.getElementById('edit-rec-compte-repartition').value);
+    } else {
+      who = clePersonne(document.getElementById('edit-rec-qui').value);
+    }
   }
+  const estRevenu = (recurrenceEnEdition.type==='personnelle' || estCompte) && document.getElementById('edit-rec-est-revenu').checked;
+  const categorieFinale = estRevenu ? 'Revenu' : categorie;
 
   const update = {
-    Nom: nom, Montant: montant, Categorie: categorie, Frequence: frequence,
+    Nom: nom, Montant: montant, Categorie: categorieFinale, Frequence: frequence,
     DateDebut: dateDebut, FinType: finType, FinNombre: finNombre, FinDate: finDate,
-    Qui: nomPersonneSupabase(who), Actif: actif
+    Qui: nomPersonneSupabase(who), Actif: actif, EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1
   };
 
   try{
-    const { error } = await supabaseClient.from('Recurrences').update(update).eq('id', recurrenceEnEdition.id);
-    if(error) throw error;
+    let { error } = await supabaseClient.from('Recurrences').update(update).eq('id', recurrenceEnEdition.id);
+    if(error){
+      console.warn("Mise à jour avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
+      const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = update;
+      const retry = await supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', recurrenceEnEdition.id);
+      if(retry.error) throw retry.error;
+    }
   } catch(err){
     console.warn("Impossible de mettre à jour la récurrence dans Supabase, sauvegarde locale seulement.", err);
   }
 
-  Object.assign(recurrenceEnEdition, { nom, montant, categorie, frequence, dateDebut, finType, finNombre, finDate, who, actif });
+  Object.assign(recurrenceEnEdition, { nom, montant, categorie: categorieFinale, frequence, dateDebut, finType, finNombre, finDate, who, actif, estCompte, estRevenu, pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50 });
   sauvegarderRecurrencesLocal();
   document.getElementById('edit-recurrent-modal').style.display = 'none';
   afficherRecurrencesScope(recurrenceEnEdition.type==='personnelle' ? 'personnel' : 'conjoint');
@@ -2186,44 +2338,9 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   rafraichirActif();
 });
 
-/* ===================== COMPTE CONJOINT (calcul des dépôts aux 2 semaines) ===================== */
-/* Outil séparé des dépenses : on y liste les charges payées à partir du compte commun
-   (assurance, électricité, etc.), chacune avec sa propre répartition (pas toujours 50/50),
-   et on calcule combien chaque personne doit y déposer à chaque paie (aux 2 semaines).
-   Stocké dans la table Supabase "ChargesCompte", visible et modifiable par les deux
-   personnes (comme les dépenses conjointes). Repli sur le stockage local si la table
-   n'existe pas encore. */
-let chargesCompte = [];
-let chargesCompteSupabaseDisponible = true;
-let chargeCompteEnEdition = null;
-
-async function chargerChargesCompteSupabase(){
-  try{
-    const { data, error } = await supabaseClient.from('ChargesCompte').select('*');
-    if(error) throw error;
-    chargesCompte = (data || []).map(c => ({
-      id: c.id,
-      nom: c.Nom || '',
-      montant: Number(c.Montant || 0),
-      recurrente: c.Recurrente !== false,
-      frequence: ['semaine','2semaines','mois','annee'].includes(c.Frequence) ? c.Frequence : 'mois',
-      pourcentageP1: c.PourcentageP1 != null ? Number(c.PourcentageP1) : 50,
-      actif: c.Actif !== false
-    }));
-    chargesCompteSupabaseDisponible = true;
-  } catch(err){
-    chargesCompteSupabaseDisponible = false;
-    console.warn("Table 'ChargesCompte' introuvable ou incomplète dans Supabase, utilisation du stockage local.", err);
-    try{ chargesCompte = JSON.parse(localStorage.getItem('depenses_charges_compte') || '[]'); }catch(e){ chargesCompte = []; }
-  }
-  afficherCompteMois();
-  afficherListeCompte();
-}
-function sauvegarderChargesCompteLocal(){
-  localStorage.setItem('depenses_charges_compte', JSON.stringify(chargesCompte));
-}
-
-/* Multiplicateur annuel (nombre d'occurrences par année) selon la fréquence */
+/* Utilitaires réutilisés pour calculer les dépôts requis au compte conjoint (voir plus bas
+   dans le module Récurrent) : nombre d'occurrences par année selon la fréquence, et nombre
+   de paies aux 2 semaines par année. */
 function multiplicateurAnnuel(frequence){
   if(frequence==='semaine') return 52;
   if(frequence==='2semaines') return 26;
@@ -2232,333 +2349,16 @@ function multiplicateurAnnuel(frequence){
 }
 const PAIES_PAR_ANNEE = 26; /* aux 2 semaines */
 
-function rafraichirAffichageRepartition(sliderId, spanP2Id){
-  const p1 = Number(document.getElementById(sliderId).value) || 0;
-  const p2 = 100 - p1;
-  document.getElementById(spanP2Id).textContent = `${nomsPersonnes.p2} : ${p2}%`;
-}
-document.getElementById('compte-repartition').addEventListener('input', ()=>
-  rafraichirAffichageRepartition('compte-repartition','compte-repartition-p2'));
-document.getElementById('edit-compte-repartition').addEventListener('input', ()=>
-  rafraichirAffichageRepartition('edit-compte-repartition','edit-compte-repartition-p2'));
-
-/* Remplit les libellés qui affichent les vrais prénoms (label de part, en-têtes de tableau) */
-function initialiserLabelsCompte(){
-  document.getElementById('compte-repartition-nom-p1').textContent = nomsPersonnes.p1;
-  document.getElementById('edit-compte-repartition-nom-p1').textContent = nomsPersonnes.p1;
-  document.getElementById('compte-mois-th-p1').textContent = nomsPersonnes.p1;
-  document.getElementById('compte-mois-th-p2').textContent = nomsPersonnes.p2;
-  document.getElementById('compte-annee-th-p1').textContent = nomsPersonnes.p1;
-  document.getElementById('compte-annee-th-p2').textContent = nomsPersonnes.p2;
-}
-initialiserLabelsCompte();
-rafraichirAffichageRepartition('compte-repartition','compte-repartition-p2');
-
-function appliquerAffichageTypeCompte(selectId, frequenceFieldId){
-  const estRecurrente = document.getElementById(selectId).value === 'oui';
-  document.getElementById(frequenceFieldId).style.display = estRecurrente ? '' : 'none';
-}
-document.getElementById('compte-recurrente').addEventListener('change', ()=>
-  appliquerAffichageTypeCompte('compte-recurrente','compte-frequence-field'));
-document.getElementById('edit-compte-recurrente').addEventListener('change', ()=>
-  appliquerAffichageTypeCompte('edit-compte-recurrente','edit-compte-frequence-field'));
-
-document.getElementById('mobile-add-compte').addEventListener('click',()=>document.getElementById('form-card-compte').classList.add('mobile-add-open'));
-document.getElementById('close-add-compte').addEventListener('click',()=>document.getElementById('form-card-compte').classList.remove('mobile-add-open'));
-
-/* Rafraîchit la vue actuellement affichée du Compte conjoint (Mois / Année / Budget / Récurrent) */
-function rafraichirCompteActif(){
-  rafraichirSousOnglet('compte', activeSubtab.compte);
-}
-
-async function ajouterChargeCompte(){
-  const nom = document.getElementById('compte-nom').value.trim();
-  const montant = parseFloat(document.getElementById('compte-montant').value);
-  const recurrente = document.getElementById('compte-recurrente').value === 'oui';
-  const frequence = document.getElementById('compte-frequence').value;
-  const pourcentageP1 = Number(document.getElementById('compte-repartition').value);
-
-  if(!nom || !montant || montant<=0){
-    alert("Merci d'entrer un nom et un montant valides.");
-    return;
-  }
-
-  const id = uid();
-  const nouvelleChargeDB = {
-    id, Nom: nom, Montant: montant, Recurrente: recurrente,
-    Frequence: recurrente ? frequence : null, PourcentageP1: pourcentageP1, Actif: true
-  };
-
-  try{
-    const { error } = await supabaseClient.from('ChargesCompte').insert([nouvelleChargeDB]);
-    if(error) throw error;
-    chargesCompteSupabaseDisponible = true;
-  } catch(err){
-    console.warn("Impossible d'enregistrer la charge dans Supabase, sauvegarde locale seulement.", err);
-    chargesCompteSupabaseDisponible = false;
-  }
-
-  chargesCompte.push({ id, nom, montant, recurrente, frequence, pourcentageP1, actif:true });
-  if(!chargesCompteSupabaseDisponible) sauvegarderChargesCompteLocal();
-
-  document.getElementById('compte-nom').value = '';
-  document.getElementById('compte-montant').value = '';
-  document.getElementById('compte-recurrente').value = 'oui';
-  document.getElementById('compte-frequence').value = 'mois';
-  document.getElementById('compte-repartition').value = 50;
-  rafraichirAffichageRepartition('compte-repartition','compte-repartition-p2');
-  appliquerAffichageTypeCompte('compte-recurrente','compte-frequence-field');
-  document.getElementById('form-card-compte').classList.remove('mobile-add-open');
-
-  rafraichirCompteActif();
-}
-document.getElementById('btn-add-compte').addEventListener('click', ajouterChargeCompte);
-
-async function basculerActifCharge(id){
-  const c = chargesCompte.find(x=>x.id===id); if(!c) return;
-  c.actif = !c.actif;
-  try{
-    const { error } = await supabaseClient.from('ChargesCompte').update({Actif:c.actif}).eq('id', id);
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible de mettre à jour la charge dans Supabase, sauvegarde locale seulement.", err);
-    sauvegarderChargesCompteLocal();
-  }
-  rafraichirCompteActif();
-}
-
-async function supprimerChargeCompte(id, sansConfirmation){
-  if(!sansConfirmation && !confirm('Supprimer cette charge du compte conjoint ?')) return;
-  try{
-    const { error } = await supabaseClient.from('ChargesCompte').delete().eq('id', id);
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible de supprimer la charge dans Supabase.", err);
-  }
-  chargesCompte = chargesCompte.filter(c=>c.id!==id);
-  sauvegarderChargesCompteLocal();
-  rafraichirCompteActif();
-}
-
-/* ----- Sous-onglet MOIS : combien déposer aux 2 semaines, avec détail par charge ----- */
-function afficherCompteMois(){
-  const actifs = chargesCompte.filter(c=>c.actif);
-  const recurrentes = actifs.filter(c=>c.recurrente);
-  const uniques = actifs.filter(c=>!c.recurrente);
-
-  const totalMensuel = recurrentes.reduce((s,c)=>s+c.montant*multiplicateurMensuel(c.frequence),0);
-  const p1Annuel = recurrentes.reduce((s,c)=>s+c.montant*multiplicateurAnnuel(c.frequence)*(c.pourcentageP1/100),0);
-  const totalAnnuel = recurrentes.reduce((s,c)=>s+c.montant*multiplicateurAnnuel(c.frequence),0);
-  const p2Annuel = totalAnnuel - p1Annuel;
-  const p1ParPaie = p1Annuel / PAIES_PAR_ANNEE;
-  const p2ParPaie = p2Annuel / PAIES_PAR_ANNEE;
-
-  document.getElementById('compte-stats').innerHTML = `
-    <div class="stat-card"><div class="label">Total<span class="mobile-line"> mensuel récurrent</span></div><div class="value">${formaterMonnaie(totalMensuel)}</div></div>
-    <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> par paie (2 sem.)</span></div><div class="value p1">${formaterMonnaie(p1ParPaie)}</div></div>
-    <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> par paie (2 sem.)</span></div><div class="value p2">${formaterMonnaie(p2ParPaie)}</div></div>
-  `;
-
-  const totalUnique = uniques.reduce((s,c)=>s+c.montant,0);
-  const uniqueEl = document.getElementById('compte-unique-stats');
-  if(totalUnique > 0.005){
-    const p1Unique = uniques.reduce((s,c)=>s+c.montant*(c.pourcentageP1/100),0);
-    const p2Unique = totalUnique - p1Unique;
-    uniqueEl.style.display = '';
-    uniqueEl.innerHTML = `
-      <div class="stat-card"><div class="label">Ponctuelles<span class="mobile-line"> à régler</span></div><div class="value">${formaterMonnaie(totalUnique)}</div></div>
-      <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> doit</span></div><div class="value p1">${formaterMonnaie(p1Unique)}</div></div>
-      <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> doit</span></div><div class="value p2">${formaterMonnaie(p2Unique)}</div></div>
-    `;
-  } else {
-    uniqueEl.style.display = 'none';
-    uniqueEl.innerHTML = '';
-  }
-
-  const tbody = document.getElementById('compte-mois-body');
-  if(!actifs.length){
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:16px;">Aucune charge active.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = actifs.slice().sort((a,b)=>a.nom.localeCompare(b.nom)).map(c=>{
-    const mensuel = c.recurrente ? c.montant*multiplicateurMensuel(c.frequence) : c.montant;
-    const p1 = mensuel*(c.pourcentageP1/100);
-    const p2 = mensuel-p1;
-    return `<tr>
-      <td>${c.nom}</td>
-      <td>${c.recurrente ? libelleFrequence(c.frequence) : 'Unique'}</td>
-      <td style="text-align:right;">${c.recurrente ? formaterMonnaie(mensuel) : formaterMonnaie(c.montant)+' (unique)'}</td>
-      <td style="text-align:right;">${formaterMonnaie(p1)}</td>
-      <td style="text-align:right;">${formaterMonnaie(p2)}</td>
-    </tr>`;
-  }).join('');
-}
-
-/* ----- Sous-onglet ANNÉE : projection annuelle et répartition par charge ----- */
-function afficherCompteAnnee(){
-  const actifs = chargesCompte.filter(c=>c.actif && c.recurrente);
-  const totalAnnuel = actifs.reduce((s,c)=>s+c.montant*multiplicateurAnnuel(c.frequence),0);
-  const p1Annuel = actifs.reduce((s,c)=>s+c.montant*multiplicateurAnnuel(c.frequence)*(c.pourcentageP1/100),0);
-  const p2Annuel = totalAnnuel - p1Annuel;
-
-  document.getElementById('compte-annee-stats').innerHTML = `
-    <div class="stat-card"><div class="label">Total<span class="mobile-line"> annuel récurrent</span></div><div class="value">${formaterMonnaie(totalAnnuel)}</div></div>
-    <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> par année</span></div><div class="value p1">${formaterMonnaie(p1Annuel)}</div></div>
-    <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> par année</span></div><div class="value p2">${formaterMonnaie(p2Annuel)}</div></div>
-  `;
-
-  const tbody = document.getElementById('compte-annee-body');
-  const actifsTries = actifs.slice().sort((a,b)=>a.nom.localeCompare(b.nom));
-  if(!actifsTries.length){
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);padding:16px;">Aucune charge récurrente active.</td></tr>`;
-  } else {
-    tbody.innerHTML = actifsTries.map(c=>{
-      const annuel = c.montant*multiplicateurAnnuel(c.frequence);
-      const p1 = annuel*(c.pourcentageP1/100);
-      const p2 = annuel-p1;
-      return `<tr><td>${c.nom}</td><td style="text-align:right;">${formaterMonnaie(annuel)}</td><td style="text-align:right;">${formaterMonnaie(p1)}</td><td style="text-align:right;">${formaterMonnaie(p2)}</td></tr>`;
-    }).join('');
-  }
-
-  detruireGraphique('compte-annee');
-  if(actifsTries.length){
-    const couleurs = Object.values(COULEURS_CATEGORIES);
-    const labels = actifsTries.map(c=>c.nom);
-    const data = actifsTries.map(c=>c.montant*multiplicateurAnnuel(c.frequence));
-    charts['compte-annee'] = new Chart(document.getElementById('chart-compte-annee'), {
-      type:'doughnut',
-      data:{ labels, datasets:[{ data, backgroundColor: labels.map((_,i)=>couleurs[i % couleurs.length]), borderWidth:0, borderColor:'transparent' }] },
-      options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
-        plugins:{ legend:{position:'bottom', labels:{boxWidth:10, font:{family:'Roboto', size:12}}},
-          tooltip:{ callbacks:{ label:(c)=> `${c.label}: ${formaterMonnaie(c.raw)}` } } } }
-    });
-  }
-}
-
-/* ----- Sous-onglet BUDGET : objectif mensuel visé pour le compte conjoint ----- */
-let compteObjectifBudget = 0;
-async function chargerObjectifCompte(){
-  try{
-    const { data, error } = await supabaseClient.from('ParametresCompte').select('*').eq('id','objectif_mensuel').maybeSingle();
-    if(error) throw error;
-    compteObjectifBudget = data ? Number(data.Valeur || 0) : 0;
-  } catch(err){
-    console.warn("Table 'ParametresCompte' introuvable, utilisation du stockage local pour l'objectif.", err);
-    compteObjectifBudget = Number(localStorage.getItem('depenses_compte_objectif') || 0);
-  }
-}
-async function sauvegarderObjectifCompte(valeur){
-  compteObjectifBudget = valeur;
-  try{
-    const { error } = await supabaseClient.from('ParametresCompte').upsert([{ id:'objectif_mensuel', Valeur: valeur }], { onConflict:'id' });
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible d'enregistrer l'objectif dans Supabase, sauvegarde locale seulement.", err);
-    localStorage.setItem('depenses_compte_objectif', String(valeur));
-  }
-}
-function afficherCompteBudget(){
-  const totalMensuel = chargesCompte.filter(c=>c.actif && c.recurrente).reduce((s,c)=>s+c.montant*multiplicateurMensuel(c.frequence),0);
-  const objectif = compteObjectifBudget || 0;
-  const ecart = totalMensuel - objectif;
-  document.getElementById('compte-budget-stats').innerHTML = `
-    <div class="stat-card"><div class="label">Charges<span class="mobile-line"> mensuelles actuelles</span></div><div class="value">${formaterMonnaie(totalMensuel)}</div></div>
-    <div class="stat-card"><div class="label">Objectif<span class="mobile-line"> mensuel</span></div><div class="value">${objectif>0 ? formaterMonnaie(objectif) : '—'}</div></div>
-    <div class="stat-card"><div class="label">Écart</div><div class="value" style="color:${objectif>0 ? (ecart>0?'var(--red)':'var(--green)') : 'inherit'}">${objectif>0 ? (ecart>=0?'+':'')+formaterMonnaie(ecart) : '—'}</div></div>
-  `;
-  document.getElementById('compte-budget-input').value = objectif || '';
-}
-document.getElementById('save-compte-budget').addEventListener('click', async ()=>{
-  const valeur = parseFloat(document.getElementById('compte-budget-input').value) || 0;
-  const statusEl = document.getElementById('compte-budget-status');
-  await sauvegarderObjectifCompte(valeur);
-  afficherCompteBudget();
-  statusEl.textContent = 'Objectif sauvegardé ✓';
-  setTimeout(()=>{ statusEl.textContent=''; }, 2000);
-});
-
-function afficherListeCompte(){
-  const listEl = document.getElementById('compte-list');
-  if(!chargesCompte.length){
-    listEl.innerHTML = `<div class="budget-empty">Aucune charge ajoutée pour l'instant. Utilisez le formulaire ci-dessus pour en ajouter une.</div>`;
-    return;
-  }
-  const trie = chargesCompte.slice().sort((a,b)=> (b.actif - a.actif) || a.nom.localeCompare(b.nom));
-  listEl.innerHTML = trie.map(c=>{
-    const partP1 = c.pourcentageP1;
-    const partP2 = 100 - partP1;
-    return `
-      <div class="recurrent-row ${c.actif?'':'inactive'}" onclick="ouvrirEditionCompte('${c.id}')" style="cursor:pointer;">
-        <div class="recurrent-info">
-          <div class="recurrent-nom">${c.nom}</div>
-          <div class="recurrent-meta">
-            <span class="freq-pill">${c.recurrente ? libelleFrequence(c.frequence) : 'Unique'}</span>
-            <span class="freq-pill">${nomsPersonnes.p1} ${partP1}% / ${nomsPersonnes.p2} ${partP2}%</span>
-          </div>
-        </div>
-        <div class="recurrent-actions">
-          <div class="recurrent-montant">${formaterMonnaie(c.montant)}</div>
-          <label class="switch small" title="${c.actif ? 'Actif' : 'Inactif'}" onclick="event.stopPropagation()">
-            <input type="checkbox" ${c.actif?'checked':''} onchange="basculerActifCharge('${c.id}')">
-            <span class="switch-track"></span>
-          </label>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function ouvrirEditionCompte(id){
-  const c = chargesCompte.find(x=>x.id===id); if(!c) return;
-  chargeCompteEnEdition = c;
-  document.getElementById('edit-compte-nom').value = c.nom;
-  document.getElementById('edit-compte-montant').value = c.montant;
-  document.getElementById('edit-compte-recurrente').value = c.recurrente ? 'oui' : 'non';
-  document.getElementById('edit-compte-frequence').value = c.frequence;
-  document.getElementById('edit-compte-repartition').value = c.pourcentageP1;
-  document.getElementById('edit-compte-actif').checked = c.actif;
-  appliquerAffichageTypeCompte('edit-compte-recurrente','edit-compte-frequence-field');
-  rafraichirAffichageRepartition('edit-compte-repartition','edit-compte-repartition-p2');
-  document.getElementById('edit-compte-modal').style.display = 'flex';
-}
-document.getElementById('close-edit-compte').addEventListener('click', ()=>document.getElementById('edit-compte-modal').style.display='none');
-document.getElementById('delete-edit-compte').addEventListener('click', async ()=>{
-  if(chargeCompteEnEdition && confirm('Supprimer cette charge du compte conjoint ?')){
-    document.getElementById('edit-compte-modal').style.display='none';
-    await supprimerChargeCompte(chargeCompteEnEdition.id, true);
-  }
-});
-document.getElementById('save-edit-compte').addEventListener('click', async ()=>{
-  if(!chargeCompteEnEdition) return;
-  const nom = document.getElementById('edit-compte-nom').value.trim();
-  const montant = parseFloat(document.getElementById('edit-compte-montant').value);
-  if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
-  const recurrente = document.getElementById('edit-compte-recurrente').value === 'oui';
-  const frequence = document.getElementById('edit-compte-frequence').value;
-  const pourcentageP1 = Number(document.getElementById('edit-compte-repartition').value);
-  const actif = document.getElementById('edit-compte-actif').checked;
-
-  const update = {
-    Nom: nom, Montant: montant, Recurrente: recurrente,
-    Frequence: recurrente ? frequence : null, PourcentageP1: pourcentageP1, Actif: actif
-  };
-
-  try{
-    const { error } = await supabaseClient.from('ChargesCompte').update(update).eq('id', chargeCompteEnEdition.id);
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible de mettre à jour la charge dans Supabase, sauvegarde locale seulement.", err);
-  }
-
-  Object.assign(chargeCompteEnEdition, { nom, montant, recurrente, frequence, pourcentageP1, actif });
-  sauvegarderChargesCompteLocal();
-  document.getElementById('edit-compte-modal').style.display = 'none';
-  rafraichirCompteActif();
-});
-
 function libellePersonne(who){ return nomsPersonnes[who] || who; }
-function clePersonne(who){ return who === 'Mélissa' || who === 'p2' ? 'p2' : 'p1'; }
-function nomPersonneSupabase(who){ return clePersonne(who) === 'p2' ? 'Mélissa' : 'Gabriel'; }
+function clePersonne(who){
+  if(who === 'compte' || who === 'Compte') return 'compte';
+  return who === 'Mélissa' || who === 'p2' ? 'p2' : 'p1';
+}
+function nomPersonneSupabase(who){
+  const cle = clePersonne(who);
+  if(cle === 'compte') return 'Compte';
+  return cle === 'p2' ? 'Mélissa' : 'Gabriel';
+}
 
 function dansMoisActif(dateStr){ return dansMois(dateStr, moisActif.year, moisActif.month); }
 function dansAnnee(dateStr, year){ return new Date(dateStr+"T00:00:00").getFullYear()===year; }
@@ -2593,13 +2393,13 @@ function rafraichirOptionsFormulaires(){
 
   const whoConjoint = document.getElementById('f-who-conjoint');
   const valeurActuelle = whoConjoint.value;
-  whoConjoint.innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
+  whoConjoint.innerHTML = ['p1','p2'].map(key=>[key,nomsPersonnes[key]]).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
   whoConjoint.value = Object.values(nomsPersonnes).includes(valeurActuelle) ? valeurActuelle : (nomsPersonnes[currentUser] || nomsPersonnes.p1);
 
   const recWhoConjoint = document.getElementById('rec-who-conjoint');
   if(recWhoConjoint){
     const valeurRecActuelle = recWhoConjoint.value;
-    recWhoConjoint.innerHTML = Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
+    recWhoConjoint.innerHTML = ['p1','p2'].map(key=>[key,nomsPersonnes[key]]).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
     recWhoConjoint.value = Object.values(nomsPersonnes).includes(valeurRecActuelle) ? valeurRecActuelle : (nomsPersonnes[currentUser] || nomsPersonnes.p1);
   }
 }
@@ -2649,13 +2449,6 @@ document.querySelectorAll('#compare-scope-toggle button').forEach(bouton=>{
 });
 
 function rafraichirSousOnglet(scope, sub){
-  if(scope === 'compte'){
-    if(sub==='mois') afficherCompteMois();
-    else if(sub==='annee') afficherCompteAnnee();
-    else if(sub==='budget') afficherCompteBudget();
-    else if(sub==='recurrent') afficherListeCompte();
-    return;
-  }
   if(sub==='mois'){
     afficherStatsMoisScope(scope);
     afficherGraphiqueEvolutionScope(scope);
@@ -2683,8 +2476,6 @@ function rafraichirActif(){
     rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   } else if(activeMainTab==='comparer'){
     afficherComparaison();
-  } else if(activeMainTab==='compte'){
-    rafraichirSousOnglet('compte', activeSubtab.compte);
   }
   afficherNavigationPeriode();
 }
@@ -2720,7 +2511,7 @@ document.querySelectorAll('.compare-toggle button[data-mode]').forEach(button=>b
 document.getElementById('compare-a').addEventListener('change',afficherComparaison);
 document.getElementById('compare-b').addEventListener('change',afficherComparaison);
 
-/* Gestion des onglets principaux (Conjoint / Personnel / Compte / Comparer) */
+/* Gestion des onglets principaux (Conjoint / Personnel / Comparer) */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -2732,8 +2523,6 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
       rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
     } else if(activeMainTab==='comparer'){
       afficherComparaison();
-    } else if(activeMainTab==='compte'){
-      rafraichirSousOnglet('compte', activeSubtab.compte);
     }
     afficherNavigationPeriode();
   });
@@ -2768,10 +2557,13 @@ function determinerQui(scope){
 
 async function ajouterDepense(scope){
   const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
-  const who = determinerQui(scope);
+  const estCompte = scope==='conjoint' && document.getElementById('f-est-compte-conjoint').checked;
+  const estRevenu = scope==='conjoint' ? (estCompte && document.getElementById('f-est-revenu-conjoint').checked) : document.getElementById('f-est-revenu-personnel').checked;
+  const who = estCompte ? 'compte' : determinerQui(scope);
+  const pourcentageP1 = estCompte ? Number(document.getElementById('f-compte-repartition-conjoint').value) : null;
   const amount = parseFloat(document.getElementById(`f-amount-${scope}`).value);
   const date = document.getElementById(`f-date-${scope}`).value;
-  const category = document.getElementById(`f-category-${scope}`).value;
+  const category = estRevenu ? 'Revenu' : document.getElementById(`f-category-${scope}`).value;
   const note = document.getElementById(`f-note-${scope}`).value.trim();
 
   if(!amount || amount<=0 || !date){
@@ -2787,16 +2579,26 @@ async function ajouterDepense(scope){
     Categorie: category,
     Note: note,
     Type: type,
+    EstCompte: estCompte,
+    EstRevenu: estRevenu,
+    PourcentageP1: pourcentageP1,
     /* Pour une dépense personnelle, on l'associe à l'utilisateur connecté : c'est ce qui
        permet à Supabase de la garder invisible pour l'autre personne (RLS). */
     user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
 
-  const { error } = await supabaseClient.from('Depenses').insert([nouvelleDepenseDB]);
+  let { error } = await supabaseClient.from('Depenses').insert([nouvelleDepenseDB]);
   if(error){
-    alert("Erreur lors de l'enregistrement sur Supabase.");
-    console.error(error);
-    return;
+    /* Les colonnes EstCompte/EstRevenu/PourcentageP1 n'existent peut-être pas encore : on
+       réessaie sans elles pour que la dépense soit tout de même enregistrée. */
+    console.warn("Insertion avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
+    const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleDepenseDB;
+    const retry = await supabaseClient.from('Depenses').insert([sansColonnesRecentes]);
+    if(retry.error){
+      alert("Erreur lors de l'enregistrement sur Supabase.");
+      console.error(retry.error);
+      return;
+    }
   }
 
   depenses.push({
@@ -2806,44 +2608,169 @@ async function ajouterDepense(scope){
     date: nouvelleDepenseDB.Date,
     category: nouvelleDepenseDB.Categorie,
     note: nouvelleDepenseDB.Note,
-    type: nouvelleDepenseDB.Type
+    type: nouvelleDepenseDB.Type,
+    estCompte: nouvelleDepenseDB.EstCompte,
+    estRevenu: nouvelleDepenseDB.EstRevenu,
+    pourcentageP1: nouvelleDepenseDB.PourcentageP1 != null ? nouvelleDepenseDB.PourcentageP1 : 50
   });
 
   document.getElementById(`f-amount-${scope}`).value = '';
   document.getElementById(`f-note-${scope}`).value = '';
   document.getElementById(`form-card-${scope}`).classList.remove('mobile-add-open');
+  if(scope==='conjoint'){
+    document.getElementById('f-est-compte-conjoint').checked = false;
+    document.getElementById('f-est-revenu-conjoint').checked = false;
+    document.getElementById('f-compte-repartition-conjoint').value = 50;
+    appliquerAffichageEstCompte('f-est-compte-conjoint','f-who-field-conjoint','f-compte-repartition-field-conjoint','f-est-revenu-field-conjoint');
+  } else {
+    document.getElementById('f-est-revenu-personnel').checked = false;
+  }
   rafraichirActif();
 }
 document.getElementById('btn-add-conjoint').addEventListener('click', ()=>ajouterDepense('conjoint'));
 document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajouterDepense('personnel'));
 
-/* Affiche ou cache le champ "Qui" selon le type de la dépense en cours d'édition. Le type
-   lui-même n'est plus modifiable ici : passer une dépense de conjointe à personnelle (ou
-   l'inverse) changerait sa visibilité/son propriétaire, ce qu'on préfère éviter par erreur. */
+/* Bascule générique : quand la case "payé par le compte conjoint" est cochée, on cache le
+   sélecteur "Qui" et on montre le champ de répartition en %, et vice-versa. */
+/* Une entrée "revenu" n'a pas besoin de catégorie (ce n'est pas une dépense classée) :
+   on cache simplement le champ pendant qu'elle est cochée. */
+function appliquerAffichageCategoriePourRevenu(checkboxId, categoryFieldId){
+  document.getElementById(categoryFieldId).style.display = document.getElementById(checkboxId).checked ? 'none' : '';
+}
+document.getElementById('f-est-revenu-conjoint').addEventListener('change', ()=>
+  appliquerAffichageCategoriePourRevenu('f-est-revenu-conjoint','f-category-field-conjoint'));
+document.getElementById('f-est-revenu-personnel').addEventListener('change', ()=>
+  appliquerAffichageCategoriePourRevenu('f-est-revenu-personnel','f-category-field-personnel'));
+document.getElementById('rec-est-revenu-conjoint').addEventListener('change', ()=>
+  appliquerAffichageCategoriePourRevenu('rec-est-revenu-conjoint','rec-categorie-field-conjoint'));
+document.getElementById('rec-est-revenu-personnel').addEventListener('change', ()=>
+  appliquerAffichageCategoriePourRevenu('rec-est-revenu-personnel','rec-categorie-field-personnel'));
+document.getElementById('edit-est-revenu').addEventListener('change', ()=>
+  appliquerAffichageCategoriePourRevenu('edit-est-revenu','edit-category-field'));
+document.getElementById('edit-rec-est-revenu').addEventListener('change', ()=>
+  appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field'));
+
+function appliquerAffichageEstCompte(checkboxId, whoFieldId, repartitionFieldId, revenuFieldId){
+  const coche = document.getElementById(checkboxId).checked;
+  document.getElementById(whoFieldId).style.display = coche ? 'none' : '';
+  document.getElementById(repartitionFieldId).style.display = coche ? '' : 'none';
+  if(revenuFieldId){
+    const revenuField = document.getElementById(revenuFieldId);
+    revenuField.style.display = coche ? '' : 'none';
+    if(!coche){
+      const revenuCheckbox = revenuField.querySelector('input[type="checkbox"]');
+      if(revenuCheckbox && revenuCheckbox.checked){
+        revenuCheckbox.checked = false;
+        revenuCheckbox.dispatchEvent(new Event('change'));
+      }
+    }
+  }
+}
+document.getElementById('f-compte-nom-p1-conjoint').textContent = nomsPersonnes.p1;
+document.getElementById('f-est-compte-conjoint').addEventListener('change', ()=>
+  appliquerAffichageEstCompte('f-est-compte-conjoint','f-who-field-conjoint','f-compte-repartition-field-conjoint','f-est-revenu-field-conjoint'));
+
+/* Affiche ou cache le champ "Qui" selon le type actuellement sélectionné dans le modal
+   d'édition (le type peut être basculé via le bouton "↔ Rendre..." avant de sauvegarder). */
 function appliquerVerrouEditType(type){
   const whoSelect = document.getElementById('edit-who');
   const whoField = document.getElementById('edit-who-field');
+  const estCompteField = document.getElementById('edit-est-compte-field');
+  const compteField = document.getElementById('edit-compte-repartition-field');
+  const estCompteCheckbox = document.getElementById('edit-est-compte');
+  const estRevenuField = document.getElementById('edit-est-revenu-field');
+  const estRevenuCheckbox = document.getElementById('edit-est-revenu');
+
   if(type === 'personnelle'){
+    estCompteField.style.display = 'none';
+    compteField.style.display = 'none';
+    whoField.style.display = '';
     whoSelect.value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
     whoSelect.disabled = true;
-    whoField.style.display = 'none';
+    estRevenuField.style.display = '';
   } else {
-    whoSelect.disabled = false;
-    whoField.style.display = '';
+    estCompteField.style.display = '';
+    if(estCompteCheckbox.checked){
+      whoField.style.display = 'none';
+      compteField.style.display = '';
+      estRevenuField.style.display = '';
+    } else {
+      whoField.style.display = '';
+      compteField.style.display = 'none';
+      whoSelect.disabled = false;
+      estRevenuField.style.display = 'none';
+      estRevenuCheckbox.checked = false;
+    }
   }
+
+  const estCompte = type==='conjointe' && estCompteCheckbox.checked;
+  const editCard = document.querySelector('#edit-modal .edit-card');
+  if(editCard){
+    const estRevenu = estRevenuCheckbox.checked && (type==='personnelle' || estCompte);
+    editCard.classList.toggle('type-revenu', estRevenu);
+    editCard.classList.toggle('type-compte', estCompte && !estRevenu);
+    editCard.classList.toggle('type-conjointe', type==='conjointe' && !estCompte && !estRevenu);
+  }
+  appliquerAffichageCategoriePourRevenu('edit-est-revenu','edit-category-field');
+}
+document.getElementById('edit-est-compte').addEventListener('change', ()=> appliquerVerrouEditType(editTypeActuel));
+document.getElementById('edit-est-revenu').addEventListener('change', ()=> appliquerVerrouEditType(editTypeActuel));
+
+/* Type actuellement sélectionné dans le modal d'édition (peut différer du type d'origine
+   de la dépense tant que "Sauvegarder" n'a pas été cliqué). */
+let editTypeActuel = 'conjointe';
+function mettreAJourBoutonType(){
+  const bouton = document.getElementById('edit-toggle-type');
+  if(editTypeActuel === 'personnelle'){
+    bouton.textContent = '↔ Rendre conjointe';
+    bouton.title = 'Sera visible par vous deux';
+  } else {
+    bouton.textContent = '↔ Rendre personnelle';
+    bouton.title = 'Sera privée, juste pour moi';
+  }
+}
+document.getElementById('edit-toggle-type').addEventListener('click', ()=>{
+  editTypeActuel = editTypeActuel === 'personnelle' ? 'conjointe' : 'personnelle';
+  appliquerVerrouEditType(editTypeActuel);
+  mettreAJourBoutonType();
+});
+
+/* Une dépense générée automatiquement par une récurrence ne doit pas être modifiée comme
+   une dépense normale (ça désynchroniserait la récurrence et provoquerait des doublons au
+   prochain rechargement) : on ouvre plutôt directement l'édition de sa récurrence d'origine. */
+function ouvrirEditionOuRecurrence(id){
+  const depense = depenses.find(e=>e.id===id);
+  if(!depense) return;
+  if(depense.recurrenceId){
+    const recurrenceExiste = recurrences.some(r=>r.id===depense.recurrenceId);
+    if(recurrenceExiste){
+      ouvrirEditionRecurrence(depense.recurrenceId);
+      return;
+    }
+    /* La récurrence d'origine est introuvable (ex: elle n'a pas pu être enregistrée dans
+       Supabase). On modifie alors cette dépense directement plutôt que de ne rien faire. */
+    console.warn("Récurrence introuvable pour cette dépense, modification directe.", depense.recurrenceId);
+  }
+  ouvrirEdition(id);
 }
 
 function ouvrirEdition(id){
   const depense=depenses.find(e=>e.id===id); if(!depense) return;
   depenseEnEdition=depense;
   document.getElementById('edit-amount').value=depense.amount;
-  document.getElementById('edit-who').innerHTML=Object.entries(nomsPersonnes).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
-  document.getElementById('edit-who').value=libellePersonne(depense.who);
+  document.getElementById('edit-who').innerHTML=['p1','p2'].map(key=>[key,nomsPersonnes[key]]).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
+  document.getElementById('edit-who').value=libellePersonne(depense.who==='compte' ? currentUser : depense.who);
   document.getElementById('edit-date').value=depense.date;
   document.getElementById('edit-note').value=depense.note;
   document.getElementById('edit-category').innerHTML=categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
   document.getElementById('edit-category').value=depense.category;
-  appliquerVerrouEditType(depense.type);
+  document.getElementById('edit-compte-nom-p1').textContent = nomsPersonnes.p1;
+  document.getElementById('edit-compte-repartition').value = depense.pourcentageP1 != null ? depense.pourcentageP1 : 50;
+  document.getElementById('edit-est-compte').checked = !!depense.estCompte;
+  document.getElementById('edit-est-revenu').checked = !!depense.estRevenu;
+  editTypeActuel = depense.type==='personnelle' ? 'personnelle' : 'conjointe';
+  appliquerVerrouEditType(editTypeActuel);
+  mettreAJourBoutonType();
   document.getElementById('edit-modal').style.display='flex';
 }
 document.getElementById('close-edit').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
@@ -2851,20 +2778,31 @@ document.getElementById('delete-edit').addEventListener('click',async()=>{if(dep
 document.getElementById('save-edit').addEventListener('click',async()=>{
   const amount=parseFloat(document.getElementById('edit-amount').value),date=document.getElementById('edit-date').value;
   if(!depenseEnEdition||!amount||amount<=0||!date){alert('Merci d’entrer un montant et une date valides.');return;}
-  const who=clePersonne(document.getElementById('edit-who').value);
-  const type=depenseEnEdition.type==='personnelle'?'personnelle':'conjointe';
+  const type=editTypeActuel==='personnelle'?'personnelle':'conjointe';
+  const estCompte = type==='conjointe' && document.getElementById('edit-est-compte').checked;
+  const estRevenu = (type==='personnelle' || estCompte) && document.getElementById('edit-est-revenu').checked;
+  const pourcentageP1 = estCompte ? Number(document.getElementById('edit-compte-repartition').value) : null;
+  const who = estCompte ? 'compte' : clePersonne(document.getElementById('edit-who').value);
   const update={
     Qui:nomPersonneSupabase(who),
     Montant:amount,
     Date:date,
-    Categorie:document.getElementById('edit-category').value,
+    Categorie: estRevenu ? 'Revenu' : document.getElementById('edit-category').value,
     Note:document.getElementById('edit-note').value.trim(),
     Type:type,
+    EstCompte: estCompte,
+    EstRevenu: estRevenu,
+    PourcentageP1: pourcentageP1,
     user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
-  const {error}=await supabaseClient.from('Depenses').update(update).eq('id',depenseEnEdition.id);
-  if(error){alert('Erreur lors de la modification.');console.error(error);return;}
-  Object.assign(depenseEnEdition,{who,amount,date,category:update.Categorie,note:update.Note,type:update.Type});
+  let {error}=await supabaseClient.from('Depenses').update(update).eq('id',depenseEnEdition.id);
+  if(error){
+    console.warn("Mise à jour avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
+    const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = update;
+    const retry = await supabaseClient.from('Depenses').update(sansColonnesRecentes).eq('id',depenseEnEdition.id);
+    if(retry.error){alert('Erreur lors de la modification.');console.error(retry.error);return;}
+  }
+  Object.assign(depenseEnEdition,{who,amount,date,category:update.Categorie,note:update.Note,type:update.Type,estCompte,estRevenu,pourcentageP1});
   document.getElementById('edit-modal').style.display='none';
   rafraichirActif();
 });
@@ -2923,7 +2861,7 @@ function carteEcartEqualisation(t1, t2){
 }
 
 function afficherStatsMoisScope(scope){
-  const liste = depenses.filter(filtreMoisScope(scope));
+  const liste = depenses.filter(filtreMoisScope(scope)).filter(e=>!e.estRevenu);
   const total = liste.reduce((s,e)=>s+e.amount,0);
   const el = document.getElementById(`mois-stats-${scope}`);
   if(scope==='conjoint'){
@@ -2931,7 +2869,7 @@ function afficherStatsMoisScope(scope){
     const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
     const moi = currentUser==='p2' ? t2 : t1;
     const periode = periodeActive();
-    const budgetTotal = (budgets.conjoint && budgets.conjoint[periode] && budgets.conjoint[periode].__total__) || 0;
+    const budgetTotal = budgetTotalCalcule('conjoint', periode);
     const ecartBudget = total - budgetTotal;
     el.innerHTML = `
       <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> moi</span></div><div class="value ${currentUser}">${formaterMonnaie(moi)}</div></div>
@@ -2943,12 +2881,14 @@ function afficherStatsMoisScope(scope){
       <div class="stat-card">${carteEcartEqualisation(t1, t2)}</div>
     `;
   } else {
-    const nb = liste.length;
+    const nbConjoint = inclureConjointDansPersonnel ? depenses.filter(e=>e.type==='conjointe' && dansMoisActif(e.date)).length : 0;
+    const nb = liste.length + nbConjoint;
     const periode = periodeActive();
-    const budgetTotal = (budgets[currentUser] && budgets[currentUser][periode] && budgets[currentUser][periode].__total__) || 0;
+    const budgetTotal = budgetTotalCalcule(currentUser, periode);
     const restant = budgetTotal - total;
+    const totalAffiche = total + totalConjointPourInclusion(e=>dansMoisActif(e.date));
     el.innerHTML = `
-      <div class="stat-card"><div class="label">Total<span class="mobile-line"> personnel</span></div><div class="value ${currentUser}">${formaterMonnaie(total)}</div></div>
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${inclureConjointDansPersonnel ? '(+ conjoint)' : 'personnel'}</span></div><div class="value ${currentUser}">${formaterMonnaie(totalAffiche)}</div></div>
       <div class="stat-card"><div class="label">Nombre<span class="mobile-line"> de dépenses</span></div><div class="value">${nb}</div></div>
       <div class="stat-card"><div class="label">Restant<span class="mobile-line"> à dépenser</span></div><div class="value" style="color:${budgetTotal>0 ? (restant<0?'var(--red)':'var(--green)') : 'inherit'}">${budgetTotal>0 ? formaterMonnaie(restant) : '—'}</div></div>
     `;
@@ -2968,7 +2908,8 @@ function afficherGraphiqueEvolutionScope(scope){
     const cum2 = new Array(joursDansMois).fill(0);
     liste.forEach(e=>{
       const jour = new Date(e.date+"T00:00:00").getDate()-1;
-      if(e.who==='p1') cum1[jour]+=e.amount; else cum2[jour]+=e.amount;
+      if(e.who==='p1') cum1[jour]+=e.amount;
+      else if(e.who==='p2') cum2[jour]+=e.amount;
     });
     for(let i=1;i<joursDansMois;i++){ cum1[i]+=cum1[i-1]; cum2[i]+=cum2[i-1]; }
     datasets = [
@@ -3001,9 +2942,13 @@ function afficherGraphiqueEvolutionScope(scope){
 }
 
 function afficherGraphiqueCategoriesMoisScope(scope){
-  const liste = depenses.filter(filtreMoisScope(scope));
+  const liste = depenses.filter(filtreMoisScope(scope)).filter(e=>!e.estRevenu);
   const parCat = {};
   liste.forEach(e=> parCat[e.category] = (parCat[e.category]||0) + e.amount);
+  if(scope==='personnel'){
+    const parCatConjoint = parCategorieConjointPourInclusion(e=>dansMoisActif(e.date));
+    Object.entries(parCatConjoint).forEach(([cat,montant])=>{ parCat[cat] = (parCat[cat]||0) + montant; });
+  }
   const labels = Object.keys(parCat);
   const data = Object.values(parCat);
   const colors = labels.map(l=>COULEURS_CATEGORIES[l]||'#9aa0a6');
@@ -3036,7 +2981,19 @@ function afficherTableauScope(scope){
     directionButton.setAttribute('aria-label', tri.dir==='asc' ? 'Tri croissant' : 'Tri décroissant');
   }
 
-  let liste = depenses.filter(filtreMoisScope(scope));
+  /* Dans Personnel, quand "+ Conjoint" est activé, on affiche aussi les dépenses
+     conjointes du mois (à 50% de leur montant), clairement identifiées, en plus des vraies
+     dépenses perso. La colonne "Qui" redevient utile dans ce cas (ce n'est plus toujours
+     la même personne), donc on la réaffiche. */
+  const inclusionActive = scope==='personnel' && inclureConjointDansPersonnel;
+  table.classList.toggle('hide-qui-column', scope==='personnel' && !inclusionActive);
+
+  let liste = depenses.filter(filtreMoisScope(scope)).map(e=>({...e, partagee:false}));
+  if(inclusionActive){
+    const conjoints = depenses.filter(e=>e.type==='conjointe' && !e.estRevenu && dansMoisActif(e.date));
+    liste = liste.concat(conjoints.map(e=>({...e, amount:e.amount*partPersonnelle(e), partagee:true})));
+  }
+
   liste.sort((a,b)=>{
     let key = tri.key === 'Date' ? 'date' : tri.key === 'Qui' ? 'who' : tri.key === 'Categorie' ? 'category' : tri.key === 'Note' ? 'note' : 'amount';
     let va = a[key], vb = b[key];
@@ -3049,16 +3006,27 @@ function afficherTableauScope(scope){
 
   const tbody = document.getElementById(`table-body-${scope}`);
   tbody.innerHTML = liste.map(e=>{
-    const dotClass = e.who==='p1' ? 'p1' : 'p2';
+    const dotClass = e.who;
     const date = new Date(e.date+"T00:00:00");
     const dateFmt = date.toLocaleDateString('fr-CA', {day:'numeric', month:'long', year:'numeric'});
     const dateMobile = date.toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
-    return `<tr onclick="ouvrirEdition('${e.id}')" style="cursor:pointer">
+    const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
+    let iconeConjointe = '';
+    if(e.estRevenu){
+      iconeConjointe = '<span class="freq-pill badge-revenu" title="Revenu">💰</span>';
+    } else if(e.estCompte){
+      const pct = Math.round(partPersonnelle(e)*100);
+      iconeConjointe = e.partagee ? `<span class="freq-pill badge-compte" title="Part de cette dépense payée par le compte conjoint">${pct}% 🏦</span>` : '<span class="badge-compte" style="display:inline-block;font-size:13px;padding:1px 4px;border-radius:8px;" title="Payée automatiquement par le compte conjoint">🏦</span>';
+    } else if(e.partagee){
+      iconeConjointe = '<span class="freq-pill" style="background:var(--mauve)22;color:var(--mauve);" title="50% de cette dépense conjointe">50% 👥</span>';
+    }
+    const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
+    return `<tr class="${e.estRevenu?'row-revenu-item':(e.estCompte?'row-compte-item':(e.partagee?'row-conjoint-share':''))}" onclick="ouvrirEditionOuRecurrence('${e.id}')" style="cursor:pointer">
       <td data-label="Qui"><span class="who-badge desktop-who"><span class="dot ${dotClass}"></span>${libellePersonne(e.who)}</span><span class="mobile-who" title="${libellePersonne(e.who)}"><span class="dot ${dotClass}"></span>${libellePersonne(e.who)}</span></td>
       <td data-label="Date"><span class="desktop-date">${dateFmt}</span><span class="mobile-date">${dateMobile}</span></td>
-      <td class="amount-cell" data-label="Montant">${formaterMonnaie(e.amount)}</td>
-      <td data-label="Catégorie"><span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]}22;color:${COULEURS_CATEGORIES[e.category]}">${e.category}</span>${e.recurrenceId ? ' <span class="recurring-icon" title="Dépense récurrente">↻</span>' : ''}</td>
       <td data-label="Note">${e.note ? e.note : '<span style="color:#9aa0a6">—</span>'}</td>
+      <td data-label="Catégorie">${e.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]}22;color:${COULEURS_CATEGORIES[e.category]}">${e.category}</span>`}<span class="row-icons">${iconeRecurrente}${iconeConjointe}</span></td>
+      <td class="amount-cell" data-label="Montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</td>
     </tr>`;
   }).join('');
 
@@ -3069,7 +3037,7 @@ function afficherTableauScope(scope){
 
 /* ===================== RENDU : SOUS-ONGLET ANNÉE (par section) ===================== */
 function afficherAnneeScope(scope){
-  const liste = depenses.filter(filtreAnneeScope(scope));
+  const liste = depenses.filter(filtreAnneeScope(scope)).filter(e=>!e.estRevenu);
   const total = liste.reduce((s,e)=>s+e.amount,0);
   const el = document.getElementById(`annee-stats-${scope}`);
   if(scope==='conjoint'){
@@ -3082,10 +3050,12 @@ function afficherAnneeScope(scope){
       <div class="stat-card">${carteEcartEqualisation(t1, t2)}</div>
     `;
   } else {
-    const nb = liste.length;
-    const moyenne = nb ? total/nb : 0;
+    const nbConjoint = inclureConjointDansPersonnel ? depenses.filter(e=>e.type==='conjointe' && dansAnnee(e.date, anneeActive)).length : 0;
+    const nb = liste.length + nbConjoint;
+    const moyenne = nb ? (total + totalConjointPourInclusion(e=>dansAnnee(e.date, anneeActive))) / nb : 0;
+    const totalAffiche = total + totalConjointPourInclusion(e=>dansAnnee(e.date, anneeActive));
     el.innerHTML = `
-      <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${anneeActive}</span></div><div class="value ${currentUser}">${formaterMonnaie(total)}</div></div>
+      <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${inclureConjointDansPersonnel ? '(+ conjoint)' : anneeActive}</span></div><div class="value ${currentUser}">${formaterMonnaie(totalAffiche)}</div></div>
       <div class="stat-card"><div class="label">Nombre<span class="mobile-line"> de dépenses</span></div><div class="value">${nb}</div></div>
       <div class="stat-card"><div class="label">Dépense<span class="mobile-line"> moyenne</span></div><div class="value">${formaterMonnaie(moyenne)}</div></div>
     `;
@@ -3103,6 +3073,10 @@ function afficherAnneeScope(scope){
 
   const parCat = {};
   liste.forEach(e=> parCat[e.category] = (parCat[e.category]||0) + e.amount);
+  if(scope==='personnel'){
+    const parCatConjoint = parCategorieConjointPourInclusion(e=>dansAnnee(e.date, anneeActive));
+    Object.entries(parCatConjoint).forEach(([cat,montant])=>{ parCat[cat] = (parCat[cat]||0) + montant; });
+  }
   const labels = Object.keys(parCat);
   const data = Object.values(parCat);
   const colors = labels.map(l=>COULEURS_CATEGORIES[l]||'#9aa0a6');
@@ -3121,25 +3095,90 @@ function afficherSectionBudget(scope){
   const periodeLabelEl = document.getElementById(`periode-label-${scope}`);
   if(periodeLabelEl) periodeLabelEl.textContent = `${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
 
-  const liste = depenses.filter(cfg.filtre);
+  const listeComplete = depenses.filter(cfg.filtre);
+  const liste = listeComplete.filter(e=>!e.estRevenu);
   const total = liste.reduce((s,e)=>s+e.amount,0);
+  const revenuMois = listeComplete.filter(e=>e.estRevenu).reduce((s,e)=>s+e.amount,0);
+
+  /* Liste des revenus du mois, bien visible, pour qu'on voie clairement ce qui a été
+     comptabilisé (et pas juste un chiffre agrégé dans les statistiques). */
+  const revenusCardEl = document.getElementById(`budget-revenus-card-${scope}`);
+  const revenusListEl = document.getElementById(`budget-revenus-list-${scope}`);
+  const revenusPeriodeEl = document.getElementById(`budget-revenus-periode-${scope}`);
+  if(revenusCardEl && revenusListEl){
+    const revenusListe = listeComplete.filter(e=>e.estRevenu);
+    if(revenusListe.length){
+      revenusCardEl.style.display = '';
+      if(revenusPeriodeEl) revenusPeriodeEl.textContent = `${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
+      const revenusTries = revenusListe.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+      revenusListEl.innerHTML = revenusTries.map(e=>{
+        const dateFmt = new Date(e.date+"T00:00:00").toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
+        return `
+          <div class="recurrent-row row-revenu-item" onclick="ouvrirEditionOuRecurrence('${e.id}')" style="cursor:pointer;">
+            <div class="recurrent-info">
+              <div class="recurrent-nom">${e.note ? e.note : 'Revenu'}</div>
+              <div class="recurrent-meta">
+                <span class="freq-pill badge-revenu">💰</span>
+                <span class="freq-pill">${dateFmt}</span>
+                ${e.recurrenceId ? '<span class="recurring-icon" title="Revenu récurrent">↻</span>' : ''}
+              </div>
+            </div>
+            <div class="recurrent-actions">
+              <div class="recurrent-montant" style="color:var(--green);">+${formaterMonnaie(e.amount)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      revenusCardEl.style.display = 'none';
+      revenusListEl.innerHTML = '';
+    }
+  }
+
   const budgetActuel = (budgets[cfg.budgetKey] && budgets[cfg.budgetKey][periode]) || {};
   const sommeCategories = categories.reduce((s,c)=>s+(budgetActuel[c]||0),0);
-  const budgetSaisiTotal = budgetActuel['__total__'] || 0;
-  const budgetAffiche = budgetSaisiTotal > 0 ? budgetSaisiTotal : sommeCategories;
-  const restant = budgetAffiche - total;
+  const budgetAffiche = sommeCategories;
+  const restant = budgetAffiche - total + revenuMois;
   const libelleDepense = scope === 'conjoint' ? 'ce mois (conjoint)' : 'ce mois (perso)';
 
+  /* Dans Personnel, quand "+ Conjoint" est activé, on affiche AUSSI le budget conjoint
+     entre parenthèses à côté du budget perso, sans jamais les fusionner en un seul chiffre :
+     ce sont deux budgets distincts qu'on veut pouvoir comparer d'un coup d'œil. */
+  let conjointInfo = null;
+  if(scope === 'personnel' && inclureConjointDansPersonnel){
+    const cfgC = configSection('conjoint');
+    const listeCompleteC = depenses.filter(cfgC.filtre);
+    const listeC = listeCompleteC.filter(e=>!e.estRevenu);
+    const totalC = listeC.reduce((s,e)=>s+e.amount,0);
+    const revenuMoisC = listeCompleteC.filter(e=>e.estRevenu).reduce((s,e)=>s+e.amount,0);
+    const budgetActuelC = (budgets.conjoint && budgets.conjoint[periode]) || {};
+    const sommeCategoriesC = categories.reduce((s,c)=>s+(budgetActuelC[c]||0),0);
+    const budgetAfficheC = sommeCategoriesC;
+    const restantC = budgetAfficheC - totalC + revenuMoisC;
+    const parCatC = {};
+    listeC.forEach(e=> parCatC[e.category] = (parCatC[e.category]||0) + e.amount);
+    conjointInfo = { total: totalC, budget: budgetAfficheC, restant: restantC, budgetParCat: budgetActuelC, parCat: parCatC };
+  }
+  const parenthese = (val) => conjointInfo ? `<div style="font-size:11px;margin-top:4px;color:var(--text-secondary);">(conjoint : ${val})</div>` : '';
+
+  const carteRevenu = revenuMois > 0.005 ? `
+    <div class="stat-card"><div class="label">💰 Revenu<span class="mobile-line"> ce mois</span></div><div class="value" style="color:var(--green)">+${formaterMonnaie(revenuMois)}</div></div>
+  ` : '';
+
   document.getElementById(`stats-${scope}`).innerHTML = `
-    <div class="stat-card"><div class="label">Dépensé<span class="mobile-line"> ${libelleDepense}</span></div><div class="value ${cfg.valueClass}">${formaterMonnaie(total)}</div></div>
-    <div class="stat-card"><div class="label">Budget<span class="mobile-line"> total du mois</span></div><div class="value">${formaterMonnaie(budgetAffiche)}</div></div>
-    <div class="stat-card"><div class="label">Restant<span class="mobile-line"> à dépenser</span></div><div class="value ${restant>=0?'p1':'p2'}">${restant>=0?'':'-'}${formaterMonnaie(Math.abs(restant))}</div></div>
+    <div class="stat-card"><div class="label">Dépensé<span class="mobile-line"> ${libelleDepense}</span></div><div class="value ${cfg.valueClass}">${formaterMonnaie(total)}</div>${parenthese(conjointInfo && formaterMonnaie(conjointInfo.total))}</div>
+    <div class="stat-card"><div class="label">Budget<span class="mobile-line"> total du mois</span></div><div class="value">${formaterMonnaie(budgetAffiche)}</div>${parenthese(conjointInfo && formaterMonnaie(conjointInfo.budget))}</div>
+    <div class="stat-card"><div class="label">Restant<span class="mobile-line"> à dépenser</span></div><div class="value ${restant>=0?'p1':'p2'}">${restant>=0?'':'-'}${formaterMonnaie(Math.abs(restant))}</div>${parenthese(conjointInfo && (conjointInfo.restant>=0?'':'-')+formaterMonnaie(Math.abs(conjointInfo.restant)))}</div>
+    ${carteRevenu}
   `;
 
   /* Liste des barres de progression par catégorie */
   const parCat = {};
   liste.forEach(e=> parCat[e.category] = (parCat[e.category]||0) + e.amount);
-  const catAvecBudgetOuDepense = categories.filter(c => (budgetActuel[c]||0) > 0 || (parCat[c]||0) > 0);
+  const catAvecBudgetOuDepense = categories.filter(c =>
+    (budgetActuel[c]||0) > 0 || (parCat[c]||0) > 0 ||
+    (conjointInfo && ((conjointInfo.budgetParCat[c]||0) > 0 || (conjointInfo.parCat[c]||0) > 0))
+  );
   const budgetListEl = document.getElementById(`budget-list-${scope}`);
   if(!catAvecBudgetOuDepense.length){
     budgetListEl.innerHTML = `<div class="budget-empty">Aucun budget défini pour ${NOMS_MOIS[moisActif.month]}. Utilisez le formulaire ci-dessous pour en ajouter un par catégorie.</div>`;
@@ -3150,11 +3189,13 @@ function afficherSectionBudget(scope){
       const pct = budget>0 ? Math.min(100, (depense/budget)*100) : (depense>0 ? 100 : 0);
       const depasse = budget>0 && depense>budget;
       const couleur = depasse ? 'var(--red)' : (COULEURS_CATEGORIES[cat]||'#9aa0a6');
+      const conjointTxt = conjointInfo ? `(conjoint : ${formaterMonnaie(conjointInfo.parCat[cat]||0)}${(conjointInfo.budgetParCat[cat]||0)>0 ? ' / '+formaterMonnaie(conjointInfo.budgetParCat[cat]) : ''})` : '';
       return `<div class="budget-row">
         <div class="budget-row-top">
           <div class="budget-row-cat"><span class="swatch" style="background:${COULEURS_CATEGORIES[cat]||'#9aa0a6'}"></span>${cat}</div>
           <div class="budget-row-amounts"><strong>${formaterMonnaie(depense)}</strong>${budget>0 ? ' / '+formaterMonnaie(budget) : ' (pas de budget)'}</div>
         </div>
+        ${conjointTxt ? `<div class="budget-row-conjoint">${conjointTxt}</div>` : ''}
         <div class="budget-bar"><div class="budget-bar-fill" style="width:${pct}%;background:${couleur};"></div></div>
       </div>`;
     }).join('');
@@ -3179,10 +3220,6 @@ function afficherSectionBudget(scope){
     });
   }
 
-  /* Champ de budget total du mois */
-  const totalInput = document.getElementById(`budget-total-input-${scope}`);
-  if(totalInput) totalInput.value = budgetSaisiTotal || '';
-
   /* Formulaire de gestion du budget par catégorie */
   const formEl = document.getElementById(`budget-form-${scope}`);
   formEl.innerHTML = categories.map(cat=>`
@@ -3194,14 +3231,6 @@ function afficherSectionBudget(scope){
       </div>
     </div>
   `).join('');
-
-  /* Recalcul en direct de l'écart quand on tape dans le total ou une catégorie */
-  if(totalInput) totalInput.oninput = ()=>recalculerEcartBudget(scope);
-  categories.forEach(cat=>{
-    const input = document.getElementById(`budget-input-${scope}-${cat}`);
-    if(input) input.oninput = ()=>recalculerEcartBudget(scope);
-  });
-  recalculerEcartBudget(scope);
 }
 
 /* ===================== EXPORT / IMPORT EXCEL & CSV (import seulement) ===================== */
