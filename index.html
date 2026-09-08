@@ -739,8 +739,24 @@
     <!-- Sous-onglet : RÉCURRENT -->
     <div class="subtab-panel" data-scope="conjoint" data-sub="recurrent">
       <div class="stats-row" id="recurrent-stats-conjoint"></div>
-      <div class="stats-row" id="recurrent-compte-stats-conjoint" style="display:none;margin-top:-8px;"></div>
-      <div class="stats-row" id="recurrent-compte-unique-stats-conjoint" style="display:none;margin-top:-8px;"></div>
+
+      <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
+        <div class="table-head-row">
+          <h3>🏦 Prochains dépôts au compte conjoint</h3>
+          <button type="button" class="btn-secondary" id="btn-config-paie-conjoint" style="font-size:12px;padding:6px 10px;">⚙️ Calendrier de paie</button>
+        </div>
+        <div class="recurrent-form-grid" id="config-paie-conjoint" style="display:none;margin-bottom:14px;">
+          <div class="field">
+            <label>Date d'une paie connue (aux 2 semaines)</label>
+            <input type="date" id="input-paie-ancrage-conjoint">
+          </div>
+          <button class="btn-add" id="btn-save-paie-ancrage-conjoint" style="align-self:end;">Enregistrer</button>
+          <div style="grid-column:1/-1;font-size:12px;color:var(--text-secondary);">
+            Choisissez n'importe quelle date où une paie tombe (passée ou future) : le calendrier des 2 semaines se calcule à partir d'elle. Commune à Gabriel et Mélissa.
+          </div>
+        </div>
+        <div id="recurrent-compte-echeancier-conjoint"></div>
+      </div>
       <div class="card form-card" id="form-card-recurrent-conjoint">
         <button class="mobile-close-btn" id="close-add-recurrent-conjoint" aria-label="Fermer">&times;</button>
         <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
@@ -1345,7 +1361,7 @@ async function gererSession(session){
   if(nomEl) nomEl.textContent = nomsPersonnes[currentUser];
   mettreAJourInterfaceUtilisateur();
   rafraichirOptionsFormulaires();
-  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase() ]);
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerParametresSupabase() ]);
   await genererDepensesRecurrentes();
 }
 
@@ -1724,6 +1740,56 @@ function budgetTotalCalcule(budgetKey, periode){
   return categories.reduce((s,c)=>s+(budgetActuel[c]||0),0);
 }
 
+/* ===================== PARAMÈTRES PARTAGÉS (calendrier de paie aux 2 semaines) ===================== */
+/* Stockés dans la table Supabase "Parametres" (Cle, Valeur), commune à Gabriel et Mélissa
+   (pas de user_id : comme les données conjointes, elle est partagée). Si la table n'existe
+   pas encore chez l'utilisateur, on retombe sur le stockage local de l'appareil, comme pour
+   les budgets et les récurrences. La valeur stockée est une date ISO (YYYY-MM-DD) sur
+   laquelle une paie tombe réellement ; le calendrier des 2 semaines se déduit d'elle. */
+let paieAncrage = null;
+let parametresSupabaseDisponible = true;
+
+async function chargerParametresSupabase(){
+  try{
+    const { data, error } = await supabaseClient.from('Parametres').select('*').eq('Cle','paie_ancrage').maybeSingle();
+    if(error) throw error;
+    paieAncrage = data ? data.Valeur : null;
+    parametresSupabaseDisponible = true;
+  } catch(err){
+    parametresSupabaseDisponible = false;
+    console.warn("Table 'Parametres' introuvable ou incomplète dans Supabase, utilisation du stockage local.", err);
+    paieAncrage = localStorage.getItem('depenses_paie_ancrage') || null;
+  }
+  const input = document.getElementById('input-paie-ancrage-conjoint');
+  if(input) input.value = paieAncrage || '';
+  afficherRecurrencesScope('conjoint');
+}
+
+async function sauvegarderPaieAncrage(dateStr){
+  paieAncrage = dateStr;
+  try{
+    const { error } = await supabaseClient.from('Parametres').upsert({ Cle:'paie_ancrage', Valeur: dateStr }, { onConflict:'Cle' });
+    if(error) throw error;
+    parametresSupabaseDisponible = true;
+  } catch(err){
+    parametresSupabaseDisponible = false;
+    console.warn("Impossible de sauvegarder la date d'ancrage dans Supabase, sauvegarde locale seulement.", err);
+    localStorage.setItem('depenses_paie_ancrage', dateStr);
+  }
+  afficherRecurrencesScope('conjoint');
+}
+
+document.getElementById('btn-config-paie-conjoint').addEventListener('click', ()=>{
+  const panneau = document.getElementById('config-paie-conjoint');
+  panneau.style.display = panneau.style.display === 'none' ? '' : 'none';
+});
+document.getElementById('btn-save-paie-ancrage-conjoint').addEventListener('click', async ()=>{
+  const val = document.getElementById('input-paie-ancrage-conjoint').value;
+  if(!val){ alert("Merci d'entrer une date."); return; }
+  await sauvegarderPaieAncrage(val);
+  document.getElementById('config-paie-conjoint').style.display = 'none';
+});
+
 /* ===================== DÉPENSES RÉCURRENTES (abonnements, paiements réguliers) ===================== */
 /* Stockées dans la table Supabase "Recurrences" (Nom, Montant, Categorie, Frequence, DateDebut,
    FinType, FinNombre, FinDate, Qui, Type, Actif). Si la table n'existe pas encore chez
@@ -1840,6 +1906,169 @@ function genererOccurrences(rec, limiteDate){
 }
 function formaterDateISO(d){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+/* ===================== ÉCHÉANCIER RÉEL DES DÉPÔTS AU COMPTE CONJOINT ===================== */
+/* Remplace l'ancien calcul par moyenne annuelle / 26. Ici, chaque dépense/récurrence "compte"
+   a une date d'échéance (= date où l'argent doit être dans le compte), et son montant se
+   répartit également sur les vraies paies (aux 2 semaines) qui la précèdent :
+     - Dépense/revenu unique : sur les paies entre aujourd'hui et sa date d'échéance (incluses).
+     - Récurrence (chaque occurrence) : sur les paies entre l'occurrence précédente (exclue)
+       et celle-ci (incluse) — sauf la toute première occurrence d'une récurrence sans
+       précédente, qui se comporte comme un item unique (part d'aujourd'hui).
+   Un revenu (EstRevenu) fonctionne pareil mais soustrait au lieu d'additionner. Si la fenêtre
+   d'une part est déjà entièrement passée (ou trop étroite pour contenir une paie), cette part
+   est automatiquement reportée sur la toute première paie à venir affichée — c'est ainsi que
+   se gère un écart de paiement, sans concept séparé : un dépôt réel (ou un ajustement) est
+   simplement une dépense/revenu "compte" daté au bon jour avec le bon %. */
+
+function debutJour(date){ const d = new Date(date); d.setHours(0,0,0,0); return d; }
+function dateLocaleDepuisISO(dateStr){ return new Date(dateStr+"T00:00:00"); }
+function ajouterJours(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+function joursEntreDates(a, b){
+  const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((utcB - utcA) / 86400000);
+}
+/* Indice entier (peut être négatif) de la période de 2 semaines de `date` par rapport à
+   l'ancrage : indexPaie(ancrage)===0, indexPaie(ancrage+14j)===1, indexPaie(ancrage-14j)===-1. */
+function indexPaiePourDate(ancrage, date){ return Math.floor(joursEntreDates(ancrage, date) / 14); }
+function paieDate(ancrage, n){ return ajouterJours(ancrage, n*14); }
+
+/* Liste triée de toutes les dates de paie tombant dans [debut, finInclusive] (bornes incluses). */
+function paiesDansIntervalle(ancrage, debut, finInclusive){
+  const res = [];
+  if(finInclusive < debut) return res;
+  let n = indexPaiePourDate(ancrage, debut);
+  let d = paieDate(ancrage, n);
+  while(d < debut){ n++; d = paieDate(ancrage, n); }
+  while(d <= finInclusive){ res.push(new Date(d)); n++; d = paieDate(ancrage, n); }
+  return res;
+}
+
+/* Les nbPaies prochaines paies à partir d'aujourd'hui (aujourd'hui inclus si c'est une paie). */
+function prochainesPaies(ancrage, nbPaies){
+  const aujourdhui = debutJour(new Date());
+  const paies = [];
+  let n = indexPaiePourDate(ancrage, aujourdhui);
+  let d = paieDate(ancrage, n);
+  while(d < aujourdhui){ n++; d = paieDate(ancrage, n); }
+  for(let i=0;i<nbPaies;i++){ paies.push(new Date(d)); n++; d = paieDate(ancrage, n); }
+  return paies;
+}
+
+const NB_PAIES_ECHEANCIER = 8; /* ~3-4 mois, aux 2 semaines */
+
+/* Calcule, pour les prochaines paies, le vrai montant net dû par p1 et p2. Retourne null si
+   le calendrier de paie n'est pas encore configuré. */
+function calculerEcheancierCompte(nbPaies){
+  nbPaies = nbPaies || NB_PAIES_ECHEANCIER;
+  if(!paieAncrage) return null;
+  const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
+  const aujourdhui = debutJour(new Date());
+  const paies = prochainesPaies(ancrage, nbPaies);
+  if(!paies.length) return null;
+  const derniere = paies[paies.length-1];
+  const totaux = {};
+  paies.forEach(p => totaux[formaterDateISO(p)] = {p1:0, p2:0});
+  const premierePaieIso = formaterDateISO(paies[0]);
+
+  function ajouterPart(dueDate, montant, pourcentageP1, signe, previousDate, inclusifFin){
+    const p1Pct = (pourcentageP1 != null ? pourcentageP1 : 50) / 100;
+    const debut = previousDate ? previousDate : aujourdhui;
+    const finBorne = inclusifFin ? dueDate : ajouterJours(dueDate, -1);
+    const reporterSurPremierePaie = (montantPart)=>{
+      totaux[premierePaieIso].p1 += signe*montantPart*p1Pct;
+      totaux[premierePaieIso].p2 += signe*montantPart*(1-p1Pct);
+    };
+    if(finBorne < debut){ reporterSurPremierePaie(montant); return; }
+    const slots = paiesDansIntervalle(ancrage, debut, finBorne);
+    if(!slots.length){ reporterSurPremierePaie(montant); return; }
+    const part = montant / slots.length;
+    slots.forEach(s=>{
+      const sIso = formaterDateISO(s);
+      if(s < aujourdhui){
+        reporterSurPremierePaie(part); /* fenêtre déjà passée : report automatique */
+      } else if(totaux[sIso]){
+        totaux[sIso].p1 += signe*part*p1Pct;
+        totaux[sIso].p2 += signe*part*(1-p1Pct);
+      }
+      /* sinon : paie à venir mais au-delà de l'horizon affiché -> ignorée pour l'instant,
+         sera recalculée dynamiquement quand on avancera dans le temps. */
+    });
+  }
+
+  /* 1) Dépenses/revenus "compte" ponctuels (sans récurrence) */
+  depenses.filter(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId).forEach(e=>{
+    const due = debutJour(dateLocaleDepuisISO(e.date));
+    ajouterPart(due, e.amount, e.pourcentageP1, e.estRevenu ? -1 : 1, null, true);
+  });
+
+  /* 2) Récurrences "compte" actives : chaque occurrence répartie entre l'occurrence
+     précédente et elle-même (voir en-tête de section pour le détail des règles). */
+  recurrences.filter(r=>r.type==='conjointe' && r.estCompte && r.actif).forEach(rec=>{
+    const limite = ajouterJours(derniere, 366); /* assez loin pour couvrir même les récurrences annuelles */
+    const occs = genererOccurrences(rec, limite);
+    if(!occs.length) return;
+    const k = occs.findIndex(d => debutJour(d) >= aujourdhui);
+    if(k === -1) return; /* récurrence entièrement terminée dans le passé */
+    for(let i=k;i<occs.length;i++){
+      const due = debutJour(occs[i]);
+      const prev = i>0 ? debutJour(occs[i-1]) : null;
+      if(prev && prev > derniere) break; /* fenêtre hors de notre horizon affiché */
+      ajouterPart(due, rec.montant, rec.pourcentageP1, rec.estRevenu ? -1 : 1, prev, prev===null);
+    }
+  });
+
+  return paies.map(p=>({ date:p, iso:formaterDateISO(p), p1: totaux[formaterDateISO(p)].p1, p2: totaux[formaterDateISO(p)].p2 }));
+}
+
+/* Affiche l'échéancier calculé dans la carte "🏦 Prochains dépôts au compte conjoint". */
+function afficherEcheancierCompteConjoint(){
+  const carte = document.getElementById('recurrent-compte-echeancier-card-conjoint');
+  const conteneur = document.getElementById('recurrent-compte-echeancier-conjoint');
+  if(!carte || !conteneur) return;
+
+  const compteActifsExistent =
+    recurrences.some(r=>r.type==='conjointe' && r.estCompte && r.actif) ||
+    depenses.some(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId);
+
+  if(!compteActifsExistent){
+    carte.style.display = 'none';
+    conteneur.innerHTML = '';
+    return;
+  }
+  carte.style.display = '';
+
+  if(!paieAncrage){
+    conteneur.innerHTML = `<div class="budget-empty">Configurez d'abord votre calendrier de paie (bouton "⚙️ Calendrier de paie" ci-dessus) pour voir l'échéancier réel des dépôts.</div>`;
+    return;
+  }
+
+  const echeancier = calculerEcheancierCompte();
+  if(!echeancier || !echeancier.length){
+    conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
+    return;
+  }
+
+  const formatDate = d => d.toLocaleDateString('fr-CA', {weekday:'short', day:'numeric', month:'short'});
+  conteneur.innerHTML = `
+    <div class="recurrent-row" style="font-size:12px;color:var(--text-secondary);font-weight:500;">
+      <div>Paie</div>
+      <div style="display:flex;gap:18px;">
+        <span style="min-width:70px;text-align:right;">${nomsPersonnes.p1}</span>
+        <span style="min-width:70px;text-align:right;">${nomsPersonnes.p2}</span>
+      </div>
+    </div>
+  ` + echeancier.map(ligne => `
+    <div class="recurrent-row">
+      <div class="recurrent-nom">${formatDate(ligne.date)}</div>
+      <div style="display:flex;gap:18px;">
+        <span class="value p1" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p1)}</span>
+        <span class="value p2" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p2)}</span>
+      </div>
+    </div>
+  `).join('');
 }
 
 /* Génère dans Depenses toute échéance (passée ou future, jusqu'à limiteDate) qui n'a pas
@@ -2096,62 +2325,10 @@ function afficherRecurrencesScope(scope){
     `;
   }
 
-  /* Dans Conjoint : boîtes supplémentaires indiquant combien chacun doit déposer au compte
-     conjoint aux 2 semaines, à partir des paiements "compte" actifs. Les paiements "compte"
-     marqués comme revenu (argent qui entre) sont soustraits plutôt qu'additionnés. */
-  if(scope==='conjoint'){
-    const compteActifs = liste.filter(r=>r.actif && r.estCompte);
-    const chargesCompte = compteActifs.filter(r=>!r.estRevenu);
-    const revenusCompteActifs = compteActifs.filter(r=>r.estRevenu);
-
-    const totalAnnuelCharges = chargesCompte.reduce((s,r)=>s+r.montant*multiplicateurAnnuel(r.frequence),0);
-    const p1AnnuelCharges = chargesCompte.reduce((s,r)=>s+r.montant*multiplicateurAnnuel(r.frequence)*((r.pourcentageP1!=null?r.pourcentageP1:50)/100),0);
-    const p2AnnuelCharges = totalAnnuelCharges - p1AnnuelCharges;
-
-    const totalAnnuelRevenus = revenusCompteActifs.reduce((s,r)=>s+r.montant*multiplicateurAnnuel(r.frequence),0);
-    const p1AnnuelRevenus = revenusCompteActifs.reduce((s,r)=>s+r.montant*multiplicateurAnnuel(r.frequence)*((r.pourcentageP1!=null?r.pourcentageP1:50)/100),0);
-    const p2AnnuelRevenus = totalAnnuelRevenus - p1AnnuelRevenus;
-
-    const totalAnnuelNet = totalAnnuelCharges - totalAnnuelRevenus;
-    const p1AnnuelNet = p1AnnuelCharges - p1AnnuelRevenus;
-    const p2AnnuelNet = p2AnnuelCharges - p2AnnuelRevenus;
-
-    const depotEl = document.getElementById('recurrent-compte-stats-conjoint');
-    if(compteActifs.length){
-      depotEl.style.display = '';
-      depotEl.innerHTML = `
-        <div class="stat-card"><div class="label">🏦 À déposer<span class="mobile-line"> net / mois</span></div><div class="value" style="color:var(--green)">${formaterMonnaie(totalAnnuelNet/12)}</div></div>
-        <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> par paie (2 sem.)</span></div><div class="value p1">${formaterMonnaie(p1AnnuelNet/PAIES_PAR_ANNEE)}</div></div>
-        <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> par paie (2 sem.)</span></div><div class="value p2">${formaterMonnaie(p2AnnuelNet/PAIES_PAR_ANNEE)}</div></div>
-      `;
-    } else {
-      depotEl.style.display = 'none';
-      depotEl.innerHTML = '';
-    }
-
-    const uniquesCompte = depenses.filter(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId);
-    const uniquesCharges = uniquesCompte.filter(e=>!e.estRevenu);
-    const uniquesRevenus = uniquesCompte.filter(e=>e.estRevenu);
-    const totalUniqueCharges = uniquesCharges.reduce((s,e)=>s+e.amount,0);
-    const totalUniqueRevenus = uniquesRevenus.reduce((s,e)=>s+e.amount,0);
-    const totalUniqueNet = totalUniqueCharges - totalUniqueRevenus;
-    const uniqueEl = document.getElementById('recurrent-compte-unique-stats-conjoint');
-    if(uniquesCompte.length){
-      const p1UniqueCharges = uniquesCharges.reduce((s,e)=>s+e.amount*((e.pourcentageP1!=null?e.pourcentageP1:50)/100),0);
-      const p1UniqueRevenus = uniquesRevenus.reduce((s,e)=>s+e.amount*((e.pourcentageP1!=null?e.pourcentageP1:50)/100),0);
-      const p1UniqueNet = p1UniqueCharges - p1UniqueRevenus;
-      const p2UniqueNet = totalUniqueNet - p1UniqueNet;
-      uniqueEl.style.display = '';
-      uniqueEl.innerHTML = `
-        <div class="stat-card"><div class="label">🏦 Ponctuelles<span class="mobile-line"> net à régler</span></div><div class="value" style="color:var(--green)">${formaterMonnaie(totalUniqueNet)}</div></div>
-        <div class="stat-card"><div class="label">${nomsPersonnes.p1}<span class="mobile-line"> doit</span></div><div class="value p1">${formaterMonnaie(p1UniqueNet)}</div></div>
-        <div class="stat-card"><div class="label">${nomsPersonnes.p2}<span class="mobile-line"> doit</span></div><div class="value p2">${formaterMonnaie(p2UniqueNet)}</div></div>
-      `;
-    } else {
-      uniqueEl.style.display = 'none';
-      uniqueEl.innerHTML = '';
-    }
-  }
+  /* Dans Conjoint : échéancier réel de ce que chacun doit déposer au compte conjoint,
+     paie par paie (aux 2 semaines), calculé à partir des vraies dates d'échéance des
+     paiements/revenus "compte" (voir calculerEcheancierCompte plus bas). */
+  if(scope==='conjoint') afficherEcheancierCompteConjoint();
 
   const listEl = document.getElementById(`recurrent-list-${scope}`);
   if(!listEl) return;
