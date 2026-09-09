@@ -743,17 +743,6 @@
       <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
         <div class="table-head-row">
           <h3>🏦 Prochains dépôts au compte conjoint</h3>
-          <button type="button" class="btn-secondary" id="btn-config-paie-conjoint" style="font-size:12px;padding:6px 10px;">⚙️ Calendrier de paie</button>
-        </div>
-        <div class="recurrent-form-grid" id="config-paie-conjoint" style="display:none;margin-bottom:14px;">
-          <div class="field">
-            <label>Date d'une paie connue (aux 2 semaines)</label>
-            <input type="date" id="input-paie-ancrage-conjoint">
-          </div>
-          <button class="btn-add" id="btn-save-paie-ancrage-conjoint" style="align-self:end;">Enregistrer</button>
-          <div style="grid-column:1/-1;font-size:12px;color:var(--text-secondary);">
-            Choisissez n'importe quelle date où une paie tombe (passée ou future) : le calendrier des 2 semaines se calcule à partir d'elle. Commune à Gabriel et Mélissa.
-          </div>
         </div>
         <div id="recurrent-compte-echeancier-conjoint"></div>
       </div>
@@ -1361,7 +1350,7 @@ async function gererSession(session){
   if(nomEl) nomEl.textContent = nomsPersonnes[currentUser];
   mettreAJourInterfaceUtilisateur();
   rafraichirOptionsFormulaires();
-  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerParametresSupabase() ]);
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase() ]);
   await genererDepensesRecurrentes();
 }
 
@@ -1740,55 +1729,10 @@ function budgetTotalCalcule(budgetKey, periode){
   return categories.reduce((s,c)=>s+(budgetActuel[c]||0),0);
 }
 
-/* ===================== PARAMÈTRES PARTAGÉS (calendrier de paie aux 2 semaines) ===================== */
-/* Stockés dans la table Supabase "Parametres" (Cle, Valeur), commune à Gabriel et Mélissa
-   (pas de user_id : comme les données conjointes, elle est partagée). Si la table n'existe
-   pas encore chez l'utilisateur, on retombe sur le stockage local de l'appareil, comme pour
-   les budgets et les récurrences. La valeur stockée est une date ISO (YYYY-MM-DD) sur
-   laquelle une paie tombe réellement ; le calendrier des 2 semaines se déduit d'elle. */
-let paieAncrage = null;
-let parametresSupabaseDisponible = true;
-
-async function chargerParametresSupabase(){
-  try{
-    const { data, error } = await supabaseClient.from('Parametres').select('*').eq('Cle','paie_ancrage').maybeSingle();
-    if(error) throw error;
-    paieAncrage = data ? data.Valeur : null;
-    parametresSupabaseDisponible = true;
-  } catch(err){
-    parametresSupabaseDisponible = false;
-    console.warn("Table 'Parametres' introuvable ou incomplète dans Supabase, utilisation du stockage local.", err);
-    paieAncrage = localStorage.getItem('depenses_paie_ancrage') || null;
-  }
-  const input = document.getElementById('input-paie-ancrage-conjoint');
-  if(input) input.value = paieAncrage || '';
-  afficherRecurrencesScope('conjoint');
-}
-
-async function sauvegarderPaieAncrage(dateStr){
-  paieAncrage = dateStr;
-  try{
-    const { error } = await supabaseClient.from('Parametres').upsert({ Cle:'paie_ancrage', Valeur: dateStr }, { onConflict:'Cle' });
-    if(error) throw error;
-    parametresSupabaseDisponible = true;
-  } catch(err){
-    parametresSupabaseDisponible = false;
-    console.warn("Impossible de sauvegarder la date d'ancrage dans Supabase, sauvegarde locale seulement.", err);
-    localStorage.setItem('depenses_paie_ancrage', dateStr);
-  }
-  afficherRecurrencesScope('conjoint');
-}
-
-document.getElementById('btn-config-paie-conjoint').addEventListener('click', ()=>{
-  const panneau = document.getElementById('config-paie-conjoint');
-  panneau.style.display = panneau.style.display === 'none' ? '' : 'none';
-});
-document.getElementById('btn-save-paie-ancrage-conjoint').addEventListener('click', async ()=>{
-  const val = document.getElementById('input-paie-ancrage-conjoint').value;
-  if(!val){ alert("Merci d'entrer une date."); return; }
-  await sauvegarderPaieAncrage(val);
-  document.getElementById('config-paie-conjoint').style.display = 'none';
-});
+/* ===================== CALENDRIER DE PAIE (aux 2 semaines) ===================== */
+/* Fixe et commun à Gabriel et Mélissa : le 17 septembre 2026 tombe sur une paie, et les
+   paies se répètent aux 2 semaines à partir de cette date (passé et futur). */
+const paieAncrage = '2026-09-17';
 
 /* ===================== DÉPENSES RÉCURRENTES (abonnements, paiements réguliers) ===================== */
 /* Stockées dans la table Supabase "Recurrences" (Nom, Montant, Categorie, Frequence, DateDebut,
@@ -2092,11 +2036,6 @@ function afficherEcheancierCompteConjoint(){
     return;
   }
   carte.style.display = '';
-
-  if(!paieAncrage){
-    conteneur.innerHTML = `<div class="budget-empty">Configurez d'abord votre calendrier de paie (bouton "⚙️ Calendrier de paie" ci-dessus) pour voir l'échéancier réel des dépôts.</div>`;
-    return;
-  }
 
   const echeancier = calculerEcheancierCompte();
   if(!echeancier || !echeancier.length){
