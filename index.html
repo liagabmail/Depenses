@@ -213,6 +213,41 @@
     .recurrent-actions{margin-left:auto;}
   }
 
+  /* ===================== Calendrier récurrent (façon Outlook) ===================== */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .cal-view-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-wrap:wrap;}
+  body.dark .cal-view-switch{background:#2c3136;}
+  .cal-view-switch button{border:none;background:transparent;color:var(--text-secondary);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
+  .cal-view-switch button.active{background:var(--surface);color:var(--blue);font-weight:600;box-shadow:var(--shadow-1);}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .cal-nav-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;}
+  .cal-titre{font-weight:600;font-size:14px;text-align:center;text-transform:capitalize;flex:1;}
+
+  .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-month-dow{font-size:10px;color:var(--text-secondary);text-align:center;padding-bottom:4px;}
+  .cal-month-cell{min-height:64px;border:1px solid var(--border);border-radius:8px;padding:4px;display:flex;flex-direction:column;gap:2px;overflow:hidden;}
+  .cal-month-cell.outside{opacity:.35;}
+  .cal-month-cell.today{border-color:var(--blue);}
+  .cal-month-daynum{font-size:11px;color:var(--text-secondary);}
+  .cal-month-cell.today .cal-month-daynum{color:var(--blue);font-weight:700;}
+  .cal-pill{font-size:10px;padding:2px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5;}
+  .cal-more{font-size:10px;color:var(--text-secondary);cursor:pointer;}
+
+  .cal-agenda-day{margin-bottom:14px;}
+  .cal-agenda-day-header{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:capitalize;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border);}
+  .cal-agenda-day-header.today{color:var(--blue);}
+  .cal-agenda-empty{font-size:12px;color:var(--text-secondary);padding:4px 0 10px;}
+  .cal-agenda-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
+  body.dark .cal-agenda-item{background:#2c3136;}
+  .cal-agenda-item-nom{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cal-agenda-item-montant{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+
+  /* Couleurs des pastilles/items par type, cohérentes avec le reste de l'app */
+  .cal-pill.cal-p1,.cal-agenda-item.cal-p1{background:color-mix(in srgb, var(--blue-dark) 16%, transparent);}
+  .cal-pill.cal-p2,.cal-agenda-item.cal-p2{background:color-mix(in srgb, var(--red) 16%, transparent);}
+  .cal-pill.cal-compte,.cal-agenda-item.cal-compte{background:color-mix(in srgb, #c9a227 20%, transparent);}
+  .cal-pill.cal-revenu,.cal-agenda-item.cal-revenu{background:color-mix(in srgb, var(--green) 18%, transparent);}
+
   /* Cartes / Grille */
   .grid-2{
     display:grid;
@@ -746,6 +781,23 @@
         </div>
         <div id="recurrent-compte-echeancier-conjoint"></div>
       </div>
+      <div class="card" id="calendrier-recurrent-card-conjoint">
+        <div class="table-head-row cal-head">
+          <h3>📅 Calendrier</h3>
+          <div class="cal-view-switch" data-scope="conjoint">
+            <button data-vue="jour">Jour</button>
+            <button data-vue="semaine">Semaine</button>
+            <button data-vue="paie">Paie</button>
+            <button data-vue="mois" class="active">Mois</button>
+          </div>
+        </div>
+        <div class="cal-nav">
+          <button type="button" class="cal-nav-btn" data-nav="prev" data-scope="conjoint" aria-label="Période précédente">‹</button>
+          <div class="cal-titre" id="cal-titre-conjoint"></div>
+          <button type="button" class="cal-nav-btn" data-nav="next" data-scope="conjoint" aria-label="Période suivante">›</button>
+        </div>
+        <div id="cal-corps-conjoint"></div>
+      </div>
       <div class="card form-card" id="form-card-recurrent-conjoint">
         <button class="mobile-close-btn" id="close-add-recurrent-conjoint" aria-label="Fermer">&times;</button>
         <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
@@ -806,10 +858,10 @@
         </div>
       </div>
       <button class="mobile-add-btn" id="mobile-add-recurrent-conjoint" aria-label="Ajouter un paiement récurrent conjoint">+</button>
-      <div class="card">
-        <h3 style="margin-bottom:12px;">Paiements récurrents conjoints</h3>
-        <div id="recurrent-list-conjoint"></div>
-      </div>
+      <details class="card">
+        <summary style="cursor:pointer;color:var(--text-secondary);font-weight:500;">⚙️ Gérer les règles récurrentes conjointes</summary>
+        <div id="recurrent-list-conjoint" style="margin-top:12px;"></div>
+      </details>
     </div>
 
     <!-- Sous-onglet : BUDGET -->
@@ -962,6 +1014,23 @@
         <button data-include="oui">+ Conjoint</button>
       </div>
       <div class="stats-row" id="recurrent-stats-personnel"></div>
+      <div class="card" id="calendrier-recurrent-card-personnel">
+        <div class="table-head-row cal-head">
+          <h3>📅 Calendrier</h3>
+          <div class="cal-view-switch" data-scope="personnel">
+            <button data-vue="jour">Jour</button>
+            <button data-vue="semaine">Semaine</button>
+            <button data-vue="paie">Paie</button>
+            <button data-vue="mois" class="active">Mois</button>
+          </div>
+        </div>
+        <div class="cal-nav">
+          <button type="button" class="cal-nav-btn" data-nav="prev" data-scope="personnel" aria-label="Période précédente">‹</button>
+          <div class="cal-titre" id="cal-titre-personnel"></div>
+          <button type="button" class="cal-nav-btn" data-nav="next" data-scope="personnel" aria-label="Période suivante">›</button>
+        </div>
+        <div id="cal-corps-personnel"></div>
+      </div>
       <div class="card form-card" id="form-card-recurrent-personnel">
         <button class="mobile-close-btn" id="close-add-recurrent-personnel" aria-label="Fermer">&times;</button>
         <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
@@ -1010,10 +1079,10 @@
         </div>
       </div>
       <button class="mobile-add-btn" id="mobile-add-recurrent-personnel" aria-label="Ajouter un paiement récurrent personnel">+</button>
-      <div class="card">
-        <h3 style="margin-bottom:12px;">Mes paiements récurrents</h3>
-        <div id="recurrent-list-personnel"></div>
-      </div>
+      <details class="card">
+        <summary style="cursor:pointer;color:var(--text-secondary);font-weight:500;">⚙️ Gérer mes règles récurrentes</summary>
+        <div id="recurrent-list-personnel" style="margin-top:12px;"></div>
+      </details>
     </div>
 
     <!-- Sous-onglet : BUDGET -->
@@ -1266,6 +1335,11 @@
     </div>
     <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit-recurrent">Supprimer</button><button class="btn-add" id="save-edit-recurrent">Sauvegarder</button></div>
   </div>
+</div></div>
+
+<div class="edit-modal" id="occurrence-modal"><div class="edit-card" id="occurrence-modal-card">
+  <button class="modal-close-btn" id="close-occurrence-modal" aria-label="Fermer">&times;</button>
+  <div id="occurrence-modal-content"></div>
 </div></div>
 
 
@@ -1765,7 +1839,10 @@ async function chargerRecurrencesSupabase(){
       estCompte: r.EstCompte === true,
       estRevenu: r.EstRevenu === true,
       pourcentageP1: r.PourcentageP1 != null ? Number(r.PourcentageP1) : 50,
-      actif: r.Actif !== false
+      actif: r.Actif !== false,
+      /* Dates d'occurrences individuelles explicitement supprimées ("cette dépense
+         seulement") : à ne jamais régénérer, même si leur date n'a plus de dépense liée. */
+      datesExclues: r.DatesExclues ? String(r.DatesExclues).split(',').map(s=>s.trim()).filter(Boolean) : []
     }));
     recurrencesSupabaseDisponible = true;
   } catch(err){
@@ -2100,9 +2177,10 @@ async function genererDepensesRecurrentes(limiteDate){
     const aInserer = [];
     recurrences.filter(r=>r.actif).forEach(rec=>{
       const datesExistantes = new Set(depenses.filter(e=>e.recurrenceId===rec.id).map(e=>e.date));
+      const datesExclues = new Set(rec.datesExclues || []);
       genererOccurrences(rec, limite).forEach(dateObj=>{
         const dateStr = formaterDateISO(dateObj);
-        if(!datesExistantes.has(dateStr)){
+        if(!datesExistantes.has(dateStr) && !datesExclues.has(dateStr)){
           aInserer.push({
             id: uid(),
             Qui: nomPersonneSupabase(rec.who),
@@ -2308,6 +2386,227 @@ async function supprimerRecurrence(id, sansConfirmation){
   rafraichirActif();
 }
 
+/* ===================== PORTÉE D'ÉDITION/SUPPRESSION D'UNE OCCURRENCE (façon Outlook) =====================
+   Trois portées possibles quand on touche à une dépense générée par une récurrence :
+   - "Cette dépense seulement" : on modifie/supprime juste cette ligne, sans toucher au reste
+     de la série (une suppression est mémorisée dans DatesExclues pour ne jamais être recréée).
+   - "Cette dépense et les suivantes" : on met fin à l'ancienne récurrence juste avant cette
+     date, et (pour une modification) on crée une nouvelle récurrence à partir d'ici avec les
+     nouvelles valeurs.
+   - "Toute la série" : on modifie/supprime la récurrence elle-même (comportement historique :
+     l'édition régénère les échéances futures, sans réécrire les échéances déjà passées). */
+
+function veilleISO(dateStr){ return formaterDateISO(ajouterJours(dateLocaleDepuisISO(dateStr), -1)); }
+
+/* Supprime les dépenses générées par une récurrence à partir d'une date donnée (incluse),
+   passées ou futures - généralisation de supprimerDepensesFuturesRecurrence à une date
+   arbitraire plutôt qu'aujourd'hui seulement. */
+async function supprimerDepensesDepuisDate(id, dateStr){
+  try{
+    const { error } = await supabaseClient.from('Depenses').delete().eq('RecurrenceId', id).gte('Date', dateStr);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de supprimer les dépenses depuis cette date dans Supabase.", err);
+  }
+  depenses = depenses.filter(e => !(e.recurrenceId === id && e.date >= dateStr));
+}
+
+/* Fait se terminer une récurrence la veille de `dateStr` (utilisé pour "fractionner" une
+   série en deux au moment d'un "cette dépense et les suivantes"). */
+async function tronquerRecurrenceAvant(id, dateStr){
+  const rec = recurrences.find(r=>r.id===id); if(!rec) return;
+  const finDate = veilleISO(dateStr);
+  rec.finType = 'date'; rec.finDate = finDate; rec.finNombre = null;
+  try{
+    const { error } = await supabaseClient.from('Recurrences').update({ FinType:'date', FinDate: finDate, FinNombre:null }).eq('id', id);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de tronquer la récurrence dans Supabase, sauvegarde locale seulement.", err);
+    sauvegarderRecurrencesLocal();
+  }
+}
+
+/* Ajoute une date à la liste des occurrences explicitement exclues d'une récurrence, pour
+   qu'une occurrence supprimée individuellement ("cette dépense seulement") ne soit jamais
+   régénérée automatiquement au prochain chargement. */
+async function exclureOccurrence(recurrenceId, dateStr){
+  const rec = recurrences.find(r=>r.id===recurrenceId); if(!rec) return;
+  if(!rec.datesExclues) rec.datesExclues = [];
+  if(!rec.datesExclues.includes(dateStr)) rec.datesExclues.push(dateStr);
+  try{
+    const { error } = await supabaseClient.from('Recurrences').update({ DatesExclues: rec.datesExclues.join(',') }).eq('id', recurrenceId);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Colonne 'DatesExclues' absente ou erreur Supabase (voir les instructions pour l'ajouter à Recurrences) ; l'exclusion restera locale seulement pour cet appareil.", err);
+    sauvegarderRecurrencesLocal();
+  }
+}
+
+/* Crée une nouvelle récurrence à partir de valeurs déjà calculées (pas d'un formulaire) :
+   utilisé pour fractionner une série lors d'un "cette dépense et les suivantes". */
+async function creerRecurrenceDepuisValeurs(champs){
+  const id = uid();
+  const nouvelleRecurrenceDB = {
+    id, Nom: champs.nom, Montant: champs.montant, Categorie: champs.categorie, Frequence: champs.frequence,
+    DateDebut: champs.dateDebut, FinType: champs.finType, FinNombre: champs.finNombre, FinDate: champs.finDate,
+    Qui: nomPersonneSupabase(champs.who), Type: champs.type, Actif: true,
+    EstCompte: champs.estCompte, EstRevenu: champs.estRevenu, PourcentageP1: champs.pourcentageP1,
+    user_id: champs.type === 'personnelle' ? (currentSession?.user?.id || null) : null
+  };
+  try{
+    let { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
+    if(error){
+      const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
+      const retry = await supabaseClient.from('Recurrences').insert([sansColonnesRecentes]);
+      if(retry.error) throw retry.error;
+    }
+  } catch(err){
+    console.warn("Impossible d'enregistrer la nouvelle récurrence (fractionnement de série) dans Supabase, sauvegarde locale seulement.", err);
+  }
+  recurrences.push({
+    id, nom:champs.nom, montant:champs.montant, categorie:champs.categorie, frequence:champs.frequence,
+    dateDebut:champs.dateDebut, finType:champs.finType, finNombre:champs.finNombre, finDate:champs.finDate,
+    who:champs.who, type:champs.type, estCompte:champs.estCompte, estRevenu:champs.estRevenu,
+    pourcentageP1: champs.pourcentageP1 != null ? champs.pourcentageP1 : 50, actif:true, datesExclues: []
+  });
+  sauvegarderRecurrencesLocal();
+  return id;
+}
+
+/* "Cette dépense seulement" (suppression) : supprime juste cette occurrence et l'exclut
+   définitivement de la régénération automatique de sa récurrence. */
+async function supprimerOccurrenceSeule(depense){
+  if(depense.recurrenceId) await exclureOccurrence(depense.recurrenceId, depense.date);
+  await supprimerDepense(depense.id);
+}
+
+/* "Cette dépense et les suivantes" (suppression) : coupe la série à cette date. */
+async function supprimerDepuisOccurrence(depense){
+  const rec = recurrences.find(r=>r.id===depense.recurrenceId);
+  await supprimerDepensesDepuisDate(depense.recurrenceId, depense.date);
+  if(rec && rec.dateDebut === depense.date){
+    await supprimerRecurrence(rec.id, true); /* plus rien avant cette date : elle n'a plus lieu d'être */
+  } else if(rec){
+    await tronquerRecurrenceAvant(rec.id, depense.date);
+  }
+  rafraichirActif();
+}
+
+/* "Cette dépense et les suivantes" (modification) : termine l'ancienne récurrence juste avant
+   cette date et démarre une nouvelle récurrence ici avec les valeurs éditées. Les paramètres
+   de fin (nombre de paiements restants, ou date de fin) sont hérités de l'originale. */
+async function diviserRecurrenceAPartirDe(depense, nv){
+  const dateCharniere = depense.date;
+  const recOriginale = recurrences.find(r=>r.id===depense.recurrenceId);
+  if(!recOriginale){
+    console.warn("Récurrence introuvable pour cette dépense, modification directe.", depense.recurrenceId);
+    const update = {
+      Montant: nv.amount, Categorie: nv.category, Note: nv.note, Qui: nomPersonneSupabase(nv.who),
+      EstCompte: nv.estCompte, EstRevenu: nv.estRevenu, PourcentageP1: nv.pourcentageP1
+    };
+    await supabaseClient.from('Depenses').update(update).eq('id', depense.id);
+    Object.assign(depense, { amount: nv.amount, category: nv.category, note: nv.note, who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1 });
+    return;
+  }
+
+  await supprimerDepensesDepuisDate(recOriginale.id, dateCharniere);
+  const estPremiereOccurrence = recOriginale.dateDebut === dateCharniere;
+  if(estPremiereOccurrence){
+    await supprimerRecurrence(recOriginale.id, true);
+  } else {
+    await tronquerRecurrenceAvant(recOriginale.id, dateCharniere);
+  }
+
+  let finType = recOriginale.finType, finNombre = recOriginale.finNombre, finDate = recOriginale.finDate;
+  if(finType === 'nombre' && finNombre != null){
+    const dejaEcoulees = genererOccurrences(recOriginale, horizonMaximal()).filter(d => formaterDateISO(d) < dateCharniere).length;
+    finNombre = Math.max(1, finNombre - dejaEcoulees);
+  }
+
+  await creerRecurrenceDepuisValeurs({
+    type: recOriginale.type, nom: nv.note || recOriginale.nom, montant: nv.amount, categorie: nv.category,
+    frequence: recOriginale.frequence, dateDebut: dateCharniere, finType, finNombre, finDate,
+    who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1
+  });
+  await genererDepensesRecurrentes();
+}
+
+/* ===================== MODAL DE DÉTAIL D'UNE OCCURRENCE (clic sur une dépense) =====================
+   Point d'entrée unique pour éditer/supprimer une dépense, que ce soit depuis le calendrier
+   récurrent ou une liste de dépenses. Affiche d'abord un résumé avec deux boutons ; si la
+   dépense fait partie d'une série récurrente, ces boutons ouvrent le choix de portée. */
+let occurrenceCourante = null;
+
+function fermerOccurrenceModal(){
+  document.getElementById('occurrence-modal').style.display = 'none';
+  occurrenceCourante = null;
+}
+document.getElementById('close-occurrence-modal').addEventListener('click', fermerOccurrenceModal);
+
+function ouvrirDetailOccurrence(id){
+  const depense = depenses.find(e=>e.id===id);
+  if(!depense) return;
+  occurrenceCourante = depense;
+  rendreVueDetailOccurrence();
+  document.getElementById('occurrence-modal').style.display = 'flex';
+}
+
+function rendreVueDetailOccurrence(){
+  const d = occurrenceCourante;
+  if(!d) return;
+  const contenu = document.getElementById('occurrence-modal-content');
+  const qui = d.estCompte ? '🏦 Compte conjoint' : (nomsPersonnes[d.who] || d.who);
+  const repartition = d.estCompte ? ` (${d.pourcentageP1!=null?d.pourcentageP1:50}% ${nomsPersonnes.p1})` : '';
+  const badge = d.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente" style="margin-left:6px;">↻</span>' : '';
+  const dateLisible = dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  contenu.innerHTML = `
+    <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">${d.note || d.category}${badge}</h3>
+    <div style="font-size:26px;font-weight:600;margin-bottom:6px;">${formaterMonnaie(d.amount)}</div>
+    <div style="color:var(--text-secondary);font-size:13px;margin-bottom:2px;text-transform:capitalize;">${dateLisible}</div>
+    <div style="color:var(--text-secondary);font-size:13px;margin-bottom:18px;">${d.category} · ${qui}${repartition}</div>
+    <div class="edit-actions">
+      <button class="btn-secondary btn-danger" id="occ-btn-supprimer">Supprimer</button>
+      <button class="btn-add" id="occ-btn-modifier">Modifier</button>
+    </div>
+  `;
+  document.getElementById('occ-btn-modifier').addEventListener('click', ()=>{
+    if(d.recurrenceId) rendreChoixPortee('modifier');
+    else { fermerOccurrenceModal(); ouvrirEdition(d.id); }
+  });
+  document.getElementById('occ-btn-supprimer').addEventListener('click', ()=>{
+    if(d.recurrenceId) rendreChoixPortee('supprimer');
+    else if(confirm('Supprimer cette dépense ?')){ fermerOccurrenceModal(); supprimerDepense(d.id); }
+  });
+}
+
+function rendreChoixPortee(action){
+  const d = occurrenceCourante;
+  const contenu = document.getElementById('occurrence-modal-content');
+  const verbe = action==='modifier' ? 'Modifier' : 'Supprimer';
+  contenu.innerHTML = `
+    <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">${verbe} — cette dépense fait partie d'une série récurrente</h3>
+    <div class="form-grid" style="gap:10px;">
+      <button class="btn-secondary" style="width:100%;text-align:left;" id="portee-seulement">Cette dépense seulement</button>
+      <button class="btn-secondary" style="width:100%;text-align:left;" id="portee-suivantes">Cette dépense et les suivantes</button>
+      <button class="btn-secondary" style="width:100%;text-align:left;" id="portee-serie">Toute la série</button>
+      <button class="btn-secondary" style="width:100%;text-align:center;margin-top:6px;" id="portee-annuler">Annuler</button>
+    </div>
+  `;
+  document.getElementById('portee-annuler').addEventListener('click', rendreVueDetailOccurrence);
+  document.getElementById('portee-seulement').addEventListener('click', ()=>{
+    if(action==='modifier'){ fermerOccurrenceModal(); ouvrirEdition(d.id); }
+    else if(confirm('Supprimer seulement cette occurrence ? Le reste de la série ne sera pas touché.')){ fermerOccurrenceModal(); supprimerOccurrenceSeule(d); }
+  });
+  document.getElementById('portee-suivantes').addEventListener('click', ()=>{
+    if(action==='modifier'){ fermerOccurrenceModal(); ouvrirEdition(d.id, 'suivantes'); }
+    else if(confirm('Supprimer cette dépense et toutes celles qui suivent dans la série ?')){ fermerOccurrenceModal(); supprimerDepuisOccurrence(d); }
+  });
+  document.getElementById('portee-serie').addEventListener('click', ()=>{
+    if(action==='modifier'){ fermerOccurrenceModal(); ouvrirEditionRecurrence(d.recurrenceId); }
+    else { fermerOccurrenceModal(); supprimerRecurrence(d.recurrenceId); }
+  });
+}
+
 /* Part de la personne connectée dans une récurrence conjointe affichée dans Personnel :
    50/50 normalement, vrai % pour une récurrence "compte". */
 function partPersonnelleRecurrence(r){
@@ -2345,6 +2644,9 @@ function afficherRecurrencesScope(scope){
      paie par paie (aux 2 semaines), calculé à partir des vraies dates d'échéance des
      paiements/revenus "compte" (voir calculerEcheancierCompte plus bas). */
   if(scope==='conjoint') afficherEcheancierCompteConjoint();
+
+  /* Calendrier des dépenses (récurrentes ou non) façon Outlook, voir plus bas. */
+  afficherCalendrierRecurrent(scope);
 
   const listEl = document.getElementById(`recurrent-list-${scope}`);
   if(!listEl) return;
@@ -2388,6 +2690,156 @@ function afficherRecurrencesScope(scope){
   `;
   }).join('');
 }
+
+/* ===================== CALENDRIER DES DÉPENSES (façon Outlook) =====================
+   Affiche, pour un scope (conjoint/personnel), toutes les dépenses (récurrentes ou non)
+   qui tombent dans la période choisie (jour, semaine, période de paie ou mois), avec
+   navigation ‹ › et clic sur une entrée pour ouvrir son détail (voir ouvrirDetailOccurrence). */
+let etatCalendrier = {
+  conjoint: { vue: 'mois', dateRef: debutJour(new Date()) },
+  personnel: { vue: 'mois', dateRef: debutJour(new Date()) }
+};
+
+const JOURS_SEMAINE_LUN_DIM = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const MOIS_NOMS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+/* Lundi de la semaine contenant `date` (la semaine commence le lundi, convention FR-CA usuelle). */
+function lundiDeSemaine(date){
+  const d = debutJour(date);
+  const jour = d.getDay(); /* 0=dimanche..6=samedi */
+  const decalage = jour===0 ? -6 : 1-jour;
+  return ajouterJours(d, decalage);
+}
+function borneMois(dateRef){
+  return { debut: new Date(dateRef.getFullYear(), dateRef.getMonth(), 1), fin: new Date(dateRef.getFullYear(), dateRef.getMonth()+1, 0) };
+}
+function bornePeriodePaie(dateRef){
+  const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
+  const debut = paieDate(ancrage, indexPaiePourDate(ancrage, dateRef));
+  return { debut, fin: ajouterJours(debut, 13) };
+}
+function bornePeriode(vue, dateRef){
+  if(vue==='jour') return { debut: debutJour(dateRef), fin: debutJour(dateRef) };
+  if(vue==='semaine'){ const debut = lundiDeSemaine(dateRef); return { debut, fin: ajouterJours(debut,6) }; }
+  if(vue==='paie') return bornePeriodePaie(dateRef);
+  return borneMois(dateRef);
+}
+function avancerPeriode(vue, dateRef, direction){
+  if(vue==='jour') return ajouterJours(dateRef, direction);
+  if(vue==='semaine') return ajouterJours(dateRef, direction*7);
+  if(vue==='paie') return ajouterJours(dateRef, direction*14);
+  const d = new Date(dateRef); d.setMonth(d.getMonth()+direction); return d;
+}
+function formatCourtDate(d){ return `${d.getDate()} ${MOIS_NOMS[d.getMonth()].slice(0,3)}`; }
+function libellePeriodeCalendrier(vue, debut, fin){
+  if(vue==='jour') return debut.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  if(vue==='mois') return `${MOIS_NOMS[debut.getMonth()]} ${debut.getFullYear()}`;
+  return `${formatCourtDate(debut)} – ${formatCourtDate(fin)} ${fin.getFullYear()}`;
+}
+function classeTypeDepense(e){
+  if(e.estRevenu) return 'cal-revenu';
+  if(e.estCompte) return 'cal-compte';
+  if(e.who==='p2') return 'cal-p2';
+  return 'cal-p1';
+}
+function depensesPourCalendrier(scope, debut, fin){
+  const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
+  const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
+  return depenses
+    .filter(e => e.type===type && e.date>=debutStr && e.date<=finStr)
+    .sort((a,b)=> a.date.localeCompare(b.date));
+}
+
+function afficherCalendrierRecurrent(scope){
+  const titreEl = document.getElementById(`cal-titre-${scope}`);
+  const corpsEl = document.getElementById(`cal-corps-${scope}`);
+  if(!titreEl || !corpsEl) return;
+  const etat = etatCalendrier[scope];
+  const { debut, fin } = bornePeriode(etat.vue, etat.dateRef);
+  titreEl.textContent = libellePeriodeCalendrier(etat.vue, debut, fin);
+  document.querySelectorAll(`.cal-view-switch[data-scope="${scope}"] button`).forEach(b=>{
+    b.classList.toggle('active', b.dataset.vue===etat.vue);
+  });
+  corpsEl.innerHTML = etat.vue==='mois' ? rendreGrilleMoisCalendrier(scope, etat.dateRef) : rendreAgendaCalendrier(scope, debut, fin);
+}
+
+function rendreGrilleMoisCalendrier(scope, dateRef){
+  const { debut, fin } = borneMois(dateRef);
+  const premierJourGrille = lundiDeSemaine(debut);
+  const dernierJourGrille = ajouterJours(lundiDeSemaine(fin), 6);
+  const items = depensesPourCalendrier(scope, premierJourGrille, dernierJourGrille);
+  const parJour = {};
+  items.forEach(e => { (parJour[e.date] = parJour[e.date] || []).push(e); });
+  const aujourdhuiStr = formaterDateISO(debutJour(new Date()));
+
+  let html = '<div class="cal-month-grid">';
+  JOURS_SEMAINE_LUN_DIM.forEach(j => html += `<div class="cal-month-dow">${j}</div>`);
+  let curseur = new Date(premierJourGrille);
+  while(curseur <= dernierJourGrille){
+    const iso = formaterDateISO(curseur);
+    const dansLeMois = curseur.getMonth()===dateRef.getMonth();
+    const jourItems = parJour[iso] || [];
+    const visibles = jourItems.slice(0,3);
+    const reste = jourItems.length - visibles.length;
+    html += `<div class="cal-month-cell ${dansLeMois?'':'outside'} ${iso===aujourdhuiStr?'today':''}">
+      <div class="cal-month-daynum">${curseur.getDate()}</div>
+      ${visibles.map(e=>`<div class="cal-pill ${classeTypeDepense(e)}" onclick="ouvrirDetailOccurrence('${e.id}')" title="${(e.note||e.category).replace(/"/g,'')}">${e.estRevenu?'+':''}${formaterMonnaie(e.amount)}</div>`).join('')}
+      ${reste>0 ? `<div class="cal-more" onclick="ouvrirJourDepuisMoisCalendrier('${scope}','${iso}')">+${reste} de plus</div>` : ''}
+    </div>`;
+    curseur = ajouterJours(curseur, 1);
+  }
+  html += '</div>';
+  return html;
+}
+
+function ouvrirJourDepuisMoisCalendrier(scope, iso){
+  etatCalendrier[scope].vue = 'jour';
+  etatCalendrier[scope].dateRef = dateLocaleDepuisISO(iso);
+  afficherCalendrierRecurrent(scope);
+}
+
+function rendreAgendaCalendrier(scope, debut, fin){
+  const items = depensesPourCalendrier(scope, debut, fin);
+  const parJour = {};
+  items.forEach(e => { (parJour[e.date] = parJour[e.date] || []).push(e); });
+  const aujourdhuiStr = formaterDateISO(debutJour(new Date()));
+  let html = '';
+  let curseur = new Date(debut);
+  while(curseur <= fin){
+    const iso = formaterDateISO(curseur);
+    const jourItems = parJour[iso] || [];
+    const labelJour = curseur.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long'});
+    html += `<div class="cal-agenda-day">
+      <div class="cal-agenda-day-header ${iso===aujourdhuiStr?'today':''}">${labelJour}</div>
+      ${jourItems.length ? jourItems.map(e=>`
+        <div class="cal-agenda-item ${classeTypeDepense(e)}" onclick="ouvrirDetailOccurrence('${e.id}')">
+          <div class="cal-agenda-item-nom">${e.recurrenceId?'↻ ':''}${e.note || e.category}</div>
+          <div class="cal-agenda-item-montant">${e.estRevenu?'+':''}${formaterMonnaie(e.amount)}</div>
+        </div>`).join('') : '<div class="cal-agenda-empty">Aucune dépense</div>'}
+    </div>`;
+    curseur = ajouterJours(curseur, 1);
+  }
+  return html;
+}
+
+document.querySelectorAll('.cal-view-switch').forEach(sw=>{
+  const scope = sw.dataset.scope;
+  sw.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      etatCalendrier[scope].vue = b.dataset.vue;
+      afficherCalendrierRecurrent(scope);
+    });
+  });
+});
+document.querySelectorAll('.cal-nav-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    const scope = b.dataset.scope;
+    const direction = b.dataset.nav==='prev' ? -1 : 1;
+    const etat = etatCalendrier[scope];
+    etat.dateRef = avancerPeriode(etat.vue, etat.dateRef, direction);
+    afficherCalendrierRecurrent(scope);
+  });
+});
 
 /* Modal d'édition d'un paiement récurrent */
 function ouvrirEditionRecurrence(id){
@@ -2928,32 +3380,20 @@ document.getElementById('edit-toggle-type').addEventListener('click', ()=>{
   mettreAJourBoutonType();
 });
 
-/* Une dépense générée automatiquement par une récurrence ne doit pas être modifiée comme
-   une dépense normale (ça désynchroniserait la récurrence et provoquerait des doublons au
-   prochain rechargement) : on ouvre plutôt directement l'édition de sa récurrence d'origine. */
-function ouvrirEditionOuRecurrence(id){
-  const depense = depenses.find(e=>e.id===id);
-  if(!depense) return;
-  if(depense.recurrenceId){
-    const recurrenceExiste = recurrences.some(r=>r.id===depense.recurrenceId);
-    if(recurrenceExiste){
-      ouvrirEditionRecurrence(depense.recurrenceId);
-      return;
-    }
-    /* La récurrence d'origine est introuvable (ex: elle n'a pas pu être enregistrée dans
-       Supabase). On modifie alors cette dépense directement plutôt que de ne rien faire. */
-    console.warn("Récurrence introuvable pour cette dépense, modification directe.", depense.recurrenceId);
-  }
-  ouvrirEdition(id);
-}
+/* Mode d'édition en cours pour le formulaire de dépense : 'normal' modifie juste cette
+   ligne (comportement historique) ; 'suivantes' déclenche un fractionnement de la série au
+   moment de la sauvegarde (voir diviserRecurrenceAPartirDe). */
+let modeEditionDepense = 'normal';
 
-function ouvrirEdition(id){
+function ouvrirEdition(id, mode){
   const depense=depenses.find(e=>e.id===id); if(!depense) return;
+  modeEditionDepense = mode || 'normal';
   depenseEnEdition=depense;
   document.getElementById('edit-amount').value=depense.amount;
   document.getElementById('edit-who').innerHTML=['p1','p2'].map(key=>[key,nomsPersonnes[key]]).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
   document.getElementById('edit-who').value=libellePersonne(depense.who==='compte' ? currentUser : depense.who);
   document.getElementById('edit-date').value=depense.date;
+  document.getElementById('edit-date').disabled = modeEditionDepense === 'suivantes';
   document.getElementById('edit-note').value=depense.note;
   document.getElementById('edit-category').innerHTML=categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
   document.getElementById('edit-category').value=depense.category;
@@ -2964,9 +3404,12 @@ function ouvrirEdition(id){
   editTypeActuel = depense.type==='personnelle' ? 'personnelle' : 'conjointe';
   appliquerVerrouEditType(editTypeActuel);
   mettreAJourBoutonType();
+  document.querySelector('#edit-modal h3').textContent = modeEditionDepense === 'suivantes'
+    ? 'Modifier cette dépense et les suivantes'
+    : 'Modifier une dépense';
   document.getElementById('edit-modal').style.display='flex';
 }
-document.getElementById('close-edit').addEventListener('click',()=>document.getElementById('edit-modal').style.display='none');
+document.getElementById('close-edit').addEventListener('click',()=>{document.getElementById('edit-modal').style.display='none'; modeEditionDepense='normal'; document.getElementById('edit-date').disabled=false;});
 document.getElementById('delete-edit').addEventListener('click',async()=>{if(depenseEnEdition && confirm('Supprimer cette dépense ?')){document.getElementById('edit-modal').style.display='none';await supprimerDepense(depenseEnEdition.id);}});
 document.getElementById('save-edit').addEventListener('click',async()=>{
   const amount=parseFloat(document.getElementById('edit-amount').value),date=document.getElementById('edit-date').value;
@@ -2976,12 +3419,26 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
   const estRevenu = (type==='personnelle' || estCompte) && document.getElementById('edit-est-revenu').checked;
   const pourcentageP1 = estCompte ? Number(document.getElementById('edit-compte-repartition').value) : null;
   const who = estCompte ? 'compte' : clePersonne(document.getElementById('edit-who').value);
+  const categorieFinale = estRevenu ? 'Revenu' : document.getElementById('edit-category').value;
+  const noteFinale = document.getElementById('edit-note').value.trim();
+
+  if(modeEditionDepense === 'suivantes' && depenseEnEdition.recurrenceId){
+    await diviserRecurrenceAPartirDe(depenseEnEdition, {
+      amount, category: categorieFinale, note: noteFinale, who, estCompte, estRevenu, pourcentageP1
+    });
+    modeEditionDepense = 'normal';
+    document.getElementById('edit-date').disabled = false;
+    document.getElementById('edit-modal').style.display='none';
+    rafraichirActif();
+    return;
+  }
+
   const update={
     Qui:nomPersonneSupabase(who),
     Montant:amount,
     Date:date,
-    Categorie: estRevenu ? 'Revenu' : document.getElementById('edit-category').value,
-    Note:document.getElementById('edit-note').value.trim(),
+    Categorie: categorieFinale,
+    Note:noteFinale,
     Type:type,
     EstCompte: estCompte,
     EstRevenu: estRevenu,
@@ -2996,6 +3453,8 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
     if(retry.error){alert('Erreur lors de la modification.');console.error(retry.error);return;}
   }
   Object.assign(depenseEnEdition,{who,amount,date,category:update.Categorie,note:update.Note,type:update.Type,estCompte,estRevenu,pourcentageP1});
+  modeEditionDepense = 'normal';
+  document.getElementById('edit-date').disabled = false;
   document.getElementById('edit-modal').style.display='none';
   rafraichirActif();
 });
@@ -3214,7 +3673,7 @@ function afficherTableauScope(scope){
       iconeConjointe = '<span class="freq-pill" style="background:var(--mauve)22;color:var(--mauve);" title="50% de cette dépense conjointe">50% 👥</span>';
     }
     const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
-    return `<tr class="${e.estRevenu?'row-revenu-item':(e.estCompte?'row-compte-item':(e.partagee?'row-conjoint-share':''))}" onclick="ouvrirEditionOuRecurrence('${e.id}')" style="cursor:pointer">
+    return `<tr class="${e.estRevenu?'row-revenu-item':(e.estCompte?'row-compte-item':(e.partagee?'row-conjoint-share':''))}" onclick="ouvrirDetailOccurrence('${e.id}')" style="cursor:pointer">
       <td data-label="Qui"><span class="who-badge desktop-who"><span class="dot ${dotClass}"></span>${libellePersonne(e.who)}</span><span class="mobile-who" title="${libellePersonne(e.who)}"><span class="dot ${dotClass}"></span>${libellePersonne(e.who)}</span></td>
       <td data-label="Date"><span class="desktop-date">${dateFmt}</span><span class="mobile-date">${dateMobile}</span></td>
       <td data-label="Note">${e.note ? e.note : '<span style="color:#9aa0a6">—</span>'}</td>
@@ -3307,7 +3766,7 @@ function afficherSectionBudget(scope){
       revenusListEl.innerHTML = revenusTries.map(e=>{
         const dateFmt = new Date(e.date+"T00:00:00").toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
         return `
-          <div class="recurrent-row row-revenu-item" onclick="ouvrirEditionOuRecurrence('${e.id}')" style="cursor:pointer;">
+          <div class="recurrent-row row-revenu-item" onclick="ouvrirDetailOccurrence('${e.id}')" style="cursor:pointer;">
             <div class="recurrent-info">
               <div class="recurrent-nom">${e.note ? e.note : 'Revenu'}</div>
               <div class="recurrent-meta">
