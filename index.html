@@ -721,6 +721,32 @@
             <label>Note</label>
             <input type="text" id="f-note-conjoint" placeholder="Optionnel">
           </div>
+          <div class="field">
+            <label>Se répète</label>
+            <select id="f-repete-conjoint">
+              <option value="jamais" selected>Jamais</option>
+              <option value="semaine">Chaque semaine</option>
+              <option value="2semaines">Chaque 2 semaines</option>
+              <option value="mois">Chaque mois</option>
+              <option value="annee">Chaque année</option>
+            </select>
+          </div>
+          <div class="field" id="f-fin-type-field-conjoint" style="display:none;">
+            <label>Se termine</label>
+            <select id="f-fin-type-conjoint">
+              <option value="jamais">Jamais</option>
+              <option value="nombre">Après un nombre de paiements</option>
+              <option value="date">À une date précise</option>
+            </select>
+          </div>
+          <div class="field" id="f-fin-nombre-field-conjoint" style="display:none;">
+            <label>Nombre de paiements</label>
+            <input type="number" id="f-fin-nombre-conjoint" min="1" step="1" placeholder="ex: 12">
+          </div>
+          <div class="field" id="f-fin-date-field-conjoint" style="display:none;">
+            <label>Date de fin</label>
+            <input type="date" id="f-fin-date-conjoint">
+          </div>
           <div class="field toggle-field" style="grid-column:1/-1;">
             <span class="toggle-field-label">🏦 Payée automatiquement par le compte conjoint</span>
             <label class="switch"><input type="checkbox" id="f-est-compte-conjoint"><span class="switch-track"></span></label>
@@ -803,66 +829,6 @@
         </div>
         <div id="cal-corps-conjoint"></div>
       </div>
-      <div class="card form-card" id="form-card-recurrent-conjoint">
-        <button class="mobile-close-btn" id="close-add-recurrent-conjoint" aria-label="Fermer">&times;</button>
-        <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
-        <div class="recurrent-form-grid">
-          <div class="field"><label>Nom</label><input type="text" id="rec-nom-conjoint" placeholder="Netflix, Loyer..."></div>
-          <div class="field"><label>Montant</label><input type="number" id="rec-montant-conjoint" step="0.01" min="0" placeholder="0,00 $"></div>
-          <div class="field" id="rec-categorie-field-conjoint">
-            <label>Catégorie</label>
-            <select id="rec-categorie-conjoint">
-              <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
-              <option>Maison</option><option>Loisirs</option><option>Santé</option>
-              <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Fréquence</label>
-            <select id="rec-frequence-conjoint">
-              <option value="semaine">Chaque semaine</option>
-              <option value="2semaines">Chaque 2 semaines</option>
-              <option value="mois" selected>Chaque mois</option>
-              <option value="annee">Chaque année</option>
-            </select>
-          </div>
-          <div class="field" id="rec-who-field-conjoint">
-            <label>Qui</label>
-            <select id="rec-who-conjoint"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option></select>
-          </div>
-          <div class="field" id="rec-compte-repartition-field-conjoint" style="display:none;">
-            <label>Part de <span id="rec-compte-nom-p1-conjoint"></span> (%)</label>
-            <input type="number" id="rec-compte-repartition-conjoint" min="0" max="100" step="0.1" value="50">
-          </div>
-          <div class="field"><label>Depuis le</label><input type="date" id="rec-date-conjoint"></div>
-          <div class="field">
-            <label>Se termine</label>
-            <select id="rec-fin-type-conjoint">
-              <option value="jamais">Jamais</option>
-              <option value="nombre">Après un nombre de paiements</option>
-              <option value="date">À une date précise</option>
-            </select>
-          </div>
-          <div class="field" id="rec-fin-nombre-field-conjoint" style="display:none;">
-            <label>Nombre de paiements</label>
-            <input type="number" id="rec-fin-nombre-conjoint" min="1" step="1" placeholder="ex: 12">
-          </div>
-          <div class="field" id="rec-fin-date-field-conjoint" style="display:none;">
-            <label>Date de fin</label>
-            <input type="date" id="rec-fin-date-conjoint">
-          </div>
-          <div class="field toggle-field" style="grid-column:1/-1;">
-            <span class="toggle-field-label">🏦 Payé automatiquement par le compte conjoint</span>
-            <label class="switch"><input type="checkbox" id="rec-est-compte-conjoint"><span class="switch-track"></span></label>
-          </div>
-          <div class="field toggle-field" id="rec-est-revenu-field-conjoint" style="grid-column:1/-1;display:none;">
-            <span class="toggle-field-label">💰 Est un revenu</span>
-            <label class="switch"><input type="checkbox" id="rec-est-revenu-conjoint"><span class="switch-track"></span></label>
-          </div>
-          <button class="btn-add" id="btn-add-recurrent-conjoint" style="grid-column:1/-1;">Ajouter</button>
-        </div>
-      </div>
-      <button class="mobile-add-btn" id="mobile-add-recurrent-conjoint" aria-label="Ajouter un paiement récurrent conjoint">+</button>
       <details class="card">
         <summary style="cursor:pointer;color:var(--text-secondary);font-weight:500;">⚙️ Gérer les règles récurrentes conjointes</summary>
         <div id="recurrent-list-conjoint" style="margin-top:12px;"></div>
@@ -957,6 +923,32 @@
             <label>Note</label>
             <input type="text" id="f-note-personnel" placeholder="Optionnel">
           </div>
+          <div class="field">
+            <label>Se répète</label>
+            <select id="f-repete-personnel">
+              <option value="jamais" selected>Jamais</option>
+              <option value="semaine">Chaque semaine</option>
+              <option value="2semaines">Chaque 2 semaines</option>
+              <option value="mois">Chaque mois</option>
+              <option value="annee">Chaque année</option>
+            </select>
+          </div>
+          <div class="field" id="f-fin-type-field-personnel" style="display:none;">
+            <label>Se termine</label>
+            <select id="f-fin-type-personnel">
+              <option value="jamais">Jamais</option>
+              <option value="nombre">Après un nombre de paiements</option>
+              <option value="date">À une date précise</option>
+            </select>
+          </div>
+          <div class="field" id="f-fin-nombre-field-personnel" style="display:none;">
+            <label>Nombre de paiements</label>
+            <input type="number" id="f-fin-nombre-personnel" min="1" step="1" placeholder="ex: 12">
+          </div>
+          <div class="field" id="f-fin-date-field-personnel" style="display:none;">
+            <label>Date de fin</label>
+            <input type="date" id="f-fin-date-personnel">
+          </div>
           <div class="field toggle-field" style="grid-column:1/-1;">
             <span class="toggle-field-label">💰 Est un revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
@@ -1036,54 +1028,6 @@
         </div>
         <div id="cal-corps-personnel"></div>
       </div>
-      <div class="card form-card" id="form-card-recurrent-personnel">
-        <button class="mobile-close-btn" id="close-add-recurrent-personnel" aria-label="Fermer">&times;</button>
-        <h3 style="margin-bottom:14px;">Ajouter un paiement récurrent</h3>
-        <div class="recurrent-form-grid">
-          <div class="field"><label>Nom</label><input type="text" id="rec-nom-personnel" placeholder="Netflix, Abonnement..."></div>
-          <div class="field"><label>Montant</label><input type="number" id="rec-montant-personnel" step="0.01" min="0" placeholder="0,00 $"></div>
-          <div class="field" id="rec-categorie-field-personnel">
-            <label>Catégorie</label>
-            <select id="rec-categorie-personnel">
-              <option>Épicerie</option><option>Restaurant</option><option>Transport</option>
-              <option>Maison</option><option>Loisirs</option><option>Santé</option>
-              <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Fréquence</label>
-            <select id="rec-frequence-personnel">
-              <option value="semaine">Chaque semaine</option>
-              <option value="2semaines">Chaque 2 semaines</option>
-              <option value="mois" selected>Chaque mois</option>
-              <option value="annee">Chaque année</option>
-            </select>
-          </div>
-          <div class="field"><label>Depuis le</label><input type="date" id="rec-date-personnel"></div>
-          <div class="field">
-            <label>Se termine</label>
-            <select id="rec-fin-type-personnel">
-              <option value="jamais">Jamais</option>
-              <option value="nombre">Après un nombre de paiements</option>
-              <option value="date">À une date précise</option>
-            </select>
-          </div>
-          <div class="field" id="rec-fin-nombre-field-personnel" style="display:none;">
-            <label>Nombre de paiements</label>
-            <input type="number" id="rec-fin-nombre-personnel" min="1" step="1" placeholder="ex: 12">
-          </div>
-          <div class="field" id="rec-fin-date-field-personnel" style="display:none;">
-            <label>Date de fin</label>
-            <input type="date" id="rec-fin-date-personnel">
-          </div>
-          <div class="field toggle-field" style="grid-column:1/-1;">
-            <span class="toggle-field-label">💰 Est un revenu</span>
-            <label class="switch"><input type="checkbox" id="rec-est-revenu-personnel"><span class="switch-track"></span></label>
-          </div>
-          <button class="btn-add" id="btn-add-recurrent-personnel" style="grid-column:1/-1;">Ajouter</button>
-        </div>
-      </div>
-      <button class="mobile-add-btn" id="mobile-add-recurrent-personnel" aria-label="Ajouter un paiement récurrent personnel">+</button>
       <details class="card">
         <summary style="cursor:pointer;color:var(--text-secondary);font-weight:500;">⚙️ Gérer mes règles récurrentes</summary>
         <div id="recurrent-list-personnel" style="margin-top:12px;"></div>
@@ -1675,10 +1619,6 @@ document.getElementById('mobile-add-conjoint').addEventListener('click',()=>docu
 document.getElementById('close-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.remove('mobile-add-open'));
 document.getElementById('mobile-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.add('mobile-add-open'));
 document.getElementById('close-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.remove('mobile-add-open'));
-document.getElementById('mobile-add-recurrent-conjoint').addEventListener('click',()=>document.getElementById('form-card-recurrent-conjoint').classList.add('mobile-add-open'));
-document.getElementById('close-add-recurrent-conjoint').addEventListener('click',()=>document.getElementById('form-card-recurrent-conjoint').classList.remove('mobile-add-open'));
-document.getElementById('mobile-add-recurrent-personnel').addEventListener('click',()=>document.getElementById('form-card-recurrent-personnel').classList.add('mobile-add-open'));
-document.getElementById('close-add-recurrent-personnel').addEventListener('click',()=>document.getElementById('form-card-recurrent-personnel').classList.remove('mobile-add-open'));
 
 /* Chargement initial depuis Supabase (avec les noms exacts des colonnes) */
 async function chargerDepensesSupabase() {
@@ -2244,98 +2184,8 @@ function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
   document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
   document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
 }
-['conjoint','personnel'].forEach(scope=>{
-  document.getElementById(`rec-fin-type-${scope}`).addEventListener('change', ()=>
-    appliquerAffichageFinRecurrence(`rec-fin-type-${scope}`, `rec-fin-nombre-field-${scope}`, `rec-fin-date-field-${scope}`));
-});
 document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field'));
-
-document.getElementById('rec-compte-nom-p1-conjoint').textContent = nomsPersonnes.p1;
-document.getElementById('rec-est-compte-conjoint').addEventListener('change', ()=>
-  appliquerAffichageEstCompte('rec-est-compte-conjoint','rec-who-field-conjoint','rec-compte-repartition-field-conjoint','rec-est-revenu-field-conjoint'));
-
-async function ajouterRecurrence(scope){
-  const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
-  const nom = document.getElementById(`rec-nom-${scope}`).value.trim();
-  const montant = parseFloat(document.getElementById(`rec-montant-${scope}`).value);
-  const frequence = document.getElementById(`rec-frequence-${scope}`).value;
-  const dateDebut = document.getElementById(`rec-date-${scope}`).value || aujourdhui.toISOString().slice(0,10);
-  const estCompte = scope==='conjoint' && document.getElementById('rec-est-compte-conjoint').checked;
-  const estRevenu = scope==='conjoint' ? (estCompte && document.getElementById('rec-est-revenu-conjoint').checked) : document.getElementById('rec-est-revenu-personnel').checked;
-  const categorie = estRevenu ? 'Revenu' : document.getElementById(`rec-categorie-${scope}`).value;
-  const who = estCompte ? 'compte' : (scope==='conjoint' ? clePersonne(document.getElementById('rec-who-conjoint').value) : currentUser);
-  const pourcentageP1 = estCompte ? Number(document.getElementById('rec-compte-repartition-conjoint').value) : null;
-  const finType = document.getElementById(`rec-fin-type-${scope}`).value;
-  const finNombreRaw = document.getElementById(`rec-fin-nombre-${scope}`).value;
-  const finNombre = finType==='nombre' ? (parseInt(finNombreRaw,10) || null) : null;
-  const finDateRaw = document.getElementById(`rec-fin-date-${scope}`).value;
-  const finDate = finType==='date' ? (finDateRaw || null) : null;
-
-  if(!nom || !montant || montant<=0){
-    alert("Merci d'entrer un nom et un montant valides.");
-    return;
-  }
-  if(finType==='nombre' && !finNombre){
-    alert("Merci d'entrer un nombre de paiements valide.");
-    return;
-  }
-  if(finType==='date' && !finDate){
-    alert("Merci d'entrer une date de fin.");
-    return;
-  }
-
-  const id = uid();
-  const nouvelleRecurrenceDB = {
-    id, Nom: nom, Montant: montant, Categorie: categorie, Frequence: frequence,
-    DateDebut: dateDebut, FinType: finType, FinNombre: finNombre, FinDate: finDate,
-    Qui: nomPersonneSupabase(who), Type: type, Actif: true,
-    EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1,
-    user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
-  };
-
-  try{
-    let { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
-    if(error){
-      /* Les colonnes EstCompte/EstRevenu/PourcentageP1 n'existent peut-être pas encore
-         (voir les instructions pour les ajouter) : on réessaie sans elles pour que la
-         récurrence soit tout de même enregistrée, plutôt que de rester locale seulement
-         et disparaître au prochain rechargement. */
-      console.warn("Insertion avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
-      const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
-      const retry = await supabaseClient.from('Recurrences').insert([sansColonnesRecentes]);
-      if(retry.error) throw retry.error;
-    }
-    recurrencesSupabaseDisponible = true;
-  } catch(err){
-    console.warn("Impossible d'enregistrer la récurrence dans Supabase, sauvegarde locale seulement.", err);
-    recurrencesSupabaseDisponible = false;
-  }
-
-  recurrences.push({ id, nom, montant, categorie, frequence, dateDebut, finType, finNombre, finDate, who, type, estCompte, estRevenu, pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50, actif:true });
-  if(!recurrencesSupabaseDisponible) sauvegarderRecurrencesLocal();
-
-  document.getElementById(`rec-nom-${scope}`).value = '';
-  document.getElementById(`rec-montant-${scope}`).value = '';
-  document.getElementById(`rec-fin-type-${scope}`).value = 'jamais';
-  document.getElementById(`rec-fin-nombre-${scope}`).value = '';
-  document.getElementById(`rec-fin-date-${scope}`).value = '';
-  appliquerAffichageFinRecurrence(`rec-fin-type-${scope}`, `rec-fin-nombre-field-${scope}`, `rec-fin-date-field-${scope}`);
-  document.getElementById(`form-card-recurrent-${scope}`).classList.remove('mobile-add-open');
-  if(scope==='conjoint'){
-    document.getElementById('rec-est-compte-conjoint').checked = false;
-    document.getElementById('rec-est-revenu-conjoint').checked = false;
-    document.getElementById('rec-compte-repartition-conjoint').value = 50;
-    appliquerAffichageEstCompte('rec-est-compte-conjoint','rec-who-field-conjoint','rec-compte-repartition-field-conjoint','rec-est-revenu-field-conjoint');
-  } else {
-    document.getElementById('rec-est-revenu-personnel').checked = false;
-  }
-
-  afficherRecurrencesScope(scope);
-  await genererDepensesRecurrentes();
-}
-document.getElementById('btn-add-recurrent-conjoint').addEventListener('click', ()=>ajouterRecurrence('conjoint'));
-document.getElementById('btn-add-recurrent-personnel').addEventListener('click', ()=>ajouterRecurrence('personnel'));
 
 /* Supprime les dépenses déjà générées pour une récurrence qui tombent aujourd'hui ou
    plus tard (garde intact l'historique passé). Utilisé quand on modifie une récurrence
@@ -2853,7 +2703,7 @@ document.querySelectorAll('.cal-nav-btn').forEach(b=>{
 
 /* ===================== MODAL "JOUR" (façon Google Agenda) =====================
    Cliquer une date dans le calendrier ouvre la liste des dépenses de ce jour-là, avec un
-   bouton pour en ajouter une nouvelle (dépense ou récurrence) directement datée à ce jour. */
+   bouton pour en ajouter une nouvelle (le formulaire unifié gère "Se répète" lui-même). */
 function fermerJourModal(){ document.getElementById('jour-modal').style.display = 'none'; }
 document.getElementById('close-jour-modal').addEventListener('click', fermerJourModal);
 
@@ -2872,35 +2722,22 @@ function ouvrirJourModal(scope, iso){
         </div>`).join('') : '<div class="cal-agenda-empty">Aucune dépense ce jour-là</div>'}
     </div>
     <div class="edit-actions" style="margin-top:14px;">
-      <button class="btn-secondary" style="width:100%;" id="jour-btn-ajouter-recurrence">+ Récurrence</button>
-      <button class="btn-add" style="width:100%;" id="jour-btn-ajouter-depense">+ Dépense</button>
+      <button class="btn-add" style="width:100%;" id="jour-btn-ajouter-depense">+ Ajouter</button>
     </div>
   `;
   document.getElementById('jour-btn-ajouter-depense').addEventListener('click', ()=>{ fermerJourModal(); ouvrirAjoutDepensePourDate(scope, iso); });
-  document.getElementById('jour-btn-ajouter-recurrence').addEventListener('click', ()=>{ fermerJourModal(); ouvrirAjoutRecurrencePourDate(scope, iso); });
   document.getElementById('jour-modal').style.display = 'flex';
 }
 
-/* Bascule vers le sous-onglet "Mois" (où vit le formulaire d'ajout d'une dépense), pré-remplit
-   la date avec celle cliquée dans le calendrier, puis ouvre le formulaire. */
+/* Bascule vers le sous-onglet "Mois" (où vit le formulaire d'ajout unifié — dépense simple ou
+   récurrente selon le champ "Se répète"), pré-remplit la date avec celle cliquée dans le
+   calendrier, puis ouvre le formulaire. */
 function ouvrirAjoutDepensePourDate(scope, iso){
   const btn = document.querySelector(`.subtab-btn[data-scope="${scope}"][data-sub="mois"]`);
   if(btn) btn.click();
   const champDate = document.getElementById(`f-date-${scope}`);
   if(champDate) champDate.value = iso;
   const formCard = document.getElementById(`form-card-${scope}`);
-  if(formCard){
-    formCard.classList.add('mobile-add-open');
-    formCard.scrollIntoView({behavior:'smooth', block:'center'});
-  }
-}
-/* Idem, mais vers le formulaire d'ajout d'une récurrence dans le sous-onglet "Récurrent". */
-function ouvrirAjoutRecurrencePourDate(scope, iso){
-  const btn = document.querySelector(`.subtab-btn[data-scope="${scope}"][data-sub="recurrent"]`);
-  if(btn) btn.click();
-  const champDate = document.getElementById(`rec-date-${scope}`);
-  if(champDate) champDate.value = iso;
-  const formCard = document.getElementById(`form-card-recurrent-${scope}`);
   if(formCard){
     formCard.classList.add('mobile-add-open');
     formCard.scrollIntoView({behavior:'smooth', block:'center'});
@@ -3276,9 +3113,33 @@ async function ajouterDepense(scope){
   const date = document.getElementById(`f-date-${scope}`).value;
   const category = estRevenu ? 'Revenu' : document.getElementById(`f-category-${scope}`).value;
   const note = document.getElementById(`f-note-${scope}`).value.trim();
+  const repete = document.getElementById(`f-repete-${scope}`).value;
 
   if(!amount || amount<=0 || !date){
     alert("Merci d'entrer un montant et une date valides.");
+    return;
+  }
+
+  /* "Se répète" != Jamais : au lieu d'une dépense ponctuelle, on crée une récurrence à
+     partir de cette date (façon "Se répète" de Google Agenda) — le calendrier matérialisera
+     ensuite ses occurrences comme n'importe quelle autre récurrence. */
+  if(repete !== 'jamais'){
+    const finType = document.getElementById(`f-fin-type-${scope}`).value;
+    const finNombreRaw = document.getElementById(`f-fin-nombre-${scope}`).value;
+    const finNombre = finType==='nombre' ? (parseInt(finNombreRaw,10) || null) : null;
+    const finDateRaw = document.getElementById(`f-fin-date-${scope}`).value;
+    const finDate = finType==='date' ? (finDateRaw || null) : null;
+    if(finType==='nombre' && !finNombre){ alert("Merci d'entrer un nombre de paiements valide."); return; }
+    if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
+
+    await creerRecurrenceDepuisValeurs({
+      type, nom: note || category, montant: amount, categorie: category, frequence: repete,
+      dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1
+    });
+    await genererDepensesRecurrentes();
+    reinitialiserFormulaireAjoutDepense(scope);
+    afficherRecurrencesScope(scope);
+    rafraichirActif();
     return;
   }
 
@@ -3325,8 +3186,20 @@ async function ajouterDepense(scope){
     pourcentageP1: nouvelleDepenseDB.PourcentageP1 != null ? nouvelleDepenseDB.PourcentageP1 : 50
   });
 
+  reinitialiserFormulaireAjoutDepense(scope);
+  rafraichirActif();
+}
+
+/* Remet le formulaire d'ajout à zéro après une insertion réussie (dépense ou récurrence). */
+function reinitialiserFormulaireAjoutDepense(scope){
   document.getElementById(`f-amount-${scope}`).value = '';
   document.getElementById(`f-note-${scope}`).value = '';
+  document.getElementById(`f-repete-${scope}`).value = 'jamais';
+  document.getElementById(`f-fin-type-${scope}`).value = 'jamais';
+  document.getElementById(`f-fin-nombre-${scope}`).value = '';
+  document.getElementById(`f-fin-date-${scope}`).value = '';
+  appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
+  document.getElementById(`f-fin-type-field-${scope}`).style.display = 'none';
   document.getElementById(`form-card-${scope}`).classList.remove('mobile-add-open');
   if(scope==='conjoint'){
     document.getElementById('f-est-compte-conjoint').checked = false;
@@ -3336,10 +3209,27 @@ async function ajouterDepense(scope){
   } else {
     document.getElementById('f-est-revenu-personnel').checked = false;
   }
-  rafraichirActif();
 }
 document.getElementById('btn-add-conjoint').addEventListener('click', ()=>ajouterDepense('conjoint'));
 document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajouterDepense('personnel'));
+
+/* Affiche les champs "Se termine" seulement quand "Se répète" n'est pas "Jamais", et les
+   champs nombre/date selon le sous-choix, comme le fait le sélecteur équivalent du modal
+   d'édition d'une récurrence. */
+['conjoint','personnel'].forEach(scope=>{
+  document.getElementById(`f-repete-${scope}`).addEventListener('change', ()=>{
+    const repete = document.getElementById(`f-repete-${scope}`).value;
+    document.getElementById(`f-fin-type-field-${scope}`).style.display = repete==='jamais' ? 'none' : '';
+    if(repete==='jamais'){
+      document.getElementById(`f-fin-nombre-field-${scope}`).style.display = 'none';
+      document.getElementById(`f-fin-date-field-${scope}`).style.display = 'none';
+    } else {
+      appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
+    }
+  });
+  document.getElementById(`f-fin-type-${scope}`).addEventListener('change', ()=>
+    appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`));
+});
 
 /* Bascule générique : quand la case "payé par le compte conjoint" est cochée, on cache le
    sélecteur "Qui" et on montre le champ de répartition en %, et vice-versa. */
@@ -3352,10 +3242,6 @@ document.getElementById('f-est-revenu-conjoint').addEventListener('change', ()=>
   appliquerAffichageCategoriePourRevenu('f-est-revenu-conjoint','f-category-field-conjoint'));
 document.getElementById('f-est-revenu-personnel').addEventListener('change', ()=>
   appliquerAffichageCategoriePourRevenu('f-est-revenu-personnel','f-category-field-personnel'));
-document.getElementById('rec-est-revenu-conjoint').addEventListener('change', ()=>
-  appliquerAffichageCategoriePourRevenu('rec-est-revenu-conjoint','rec-categorie-field-conjoint'));
-document.getElementById('rec-est-revenu-personnel').addEventListener('change', ()=>
-  appliquerAffichageCategoriePourRevenu('rec-est-revenu-personnel','rec-categorie-field-personnel'));
 document.getElementById('edit-est-revenu').addEventListener('change', ()=>
   appliquerAffichageCategoriePourRevenu('edit-est-revenu','edit-category-field'));
 document.getElementById('edit-rec-est-revenu').addEventListener('change', ()=>
