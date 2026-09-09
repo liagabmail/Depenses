@@ -1957,10 +1957,29 @@ function prochainesPaies(ancrage, nbPaies){
   return paies;
 }
 
+/* Première date de paie (sur la grille ancrée) qui tombe sur ou après `date`. */
+function premierePaieDepuis(ancrage, date){
+  let n = indexPaiePourDate(ancrage, date);
+  let d = paieDate(ancrage, n);
+  while(d < date){ n++; d = paieDate(ancrage, n); }
+  return d;
+}
+
 const NB_PAIES_ECHEANCIER = 8; /* ~3-4 mois, aux 2 semaines */
 
 /* Calcule, pour les prochaines paies, le vrai montant net dû par p1 et p2. Retourne null si
-   le calendrier de paie n'est pas encore configuré. */
+   le calendrier de paie n'est pas encore configuré.
+
+   Deux comportements bien distincts :
+   - Une DÉPENSE (charge à venir, EstRevenu=false) doit être ÉPARGNÉE À L'AVANCE : son montant
+     est étalé également sur toutes les paies entre l'occurrence précédente (ou aujourd'hui,
+     si c'est la toute première occurrence) et son échéance.
+   - Un REVENU (dépôt/argent qui entre, EstRevenu=true) N'EST JAMAIS ÉTALÉ : il n'existe pas
+     avant sa date, donc son montant plein s'applique d'un coup à la toute première paie sur
+     ou après cette date (pas de division entre plusieurs paies).
+   Dans les deux cas, si la paie visée par une part est déjà passée (la personne n'a pas
+   déposé/reçu ce qu'il fallait à temps), cette part est automatiquement reportée en bloc sur
+   la toute prochaine paie à venir (report des écarts, positif ou négatif). */
 function calculerEcheancierCompte(nbPaies){
   nbPaies = nbPaies || NB_PAIES_ECHEANCIER;
   if(!paieAncrage) return null;
@@ -1973,50 +1992,84 @@ function calculerEcheancierCompte(nbPaies){
   paies.forEach(p => totaux[formaterDateISO(p)] = {p1:0, p2:0});
   const premierePaieIso = formaterDateISO(paies[0]);
 
-  function ajouterPart(dueDate, montant, pourcentageP1, signe, previousDate, inclusifFin){
-    const p1Pct = (pourcentageP1 != null ? pourcentageP1 : 50) / 100;
-    const debut = previousDate ? previousDate : aujourdhui;
+  function pct(pourcentageP1){ return (pourcentageP1 != null ? pourcentageP1 : 50) / 100; }
+  function reporterSurPremierePaie(signe, montant, p1Pct){
+    totaux[premierePaieIso].p1 += signe*montant*p1Pct;
+    totaux[premierePaieIso].p2 += signe*montant*(1-p1Pct);
+  }
+
+  /* DÉPENSE : étalée entre `previousDate` (ou aujourd'hui si null) et `dueDate`. */
+  function ajouterDepense(dueDate, montant, pourcentageP1, previousDate, inclusifFin){
+    const p1Pct = pct(pourcentageP1);
+    const debut = previousDate || aujourdhui;
     const finBorne = inclusifFin ? dueDate : ajouterJours(dueDate, -1);
-    const reporterSurPremierePaie = (montantPart)=>{
-      totaux[premierePaieIso].p1 += signe*montantPart*p1Pct;
-      totaux[premierePaieIso].p2 += signe*montantPart*(1-p1Pct);
-    };
-    if(finBorne < debut){ reporterSurPremierePaie(montant); return; }
+    if(finBorne < debut){ reporterSurPremierePaie(1, montant, p1Pct); return; }
     const slots = paiesDansIntervalle(ancrage, debut, finBorne);
-    if(!slots.length){ reporterSurPremierePaie(montant); return; }
+    if(!slots.length){ reporterSurPremierePaie(1, montant, p1Pct); return; }
     const part = montant / slots.length;
     slots.forEach(s=>{
       const sIso = formaterDateISO(s);
       if(s < aujourdhui){
-        reporterSurPremierePaie(part); /* fenêtre déjà passée : report automatique */
+        reporterSurPremierePaie(1, part, p1Pct); /* paie déjà passée : report automatique */
       } else if(totaux[sIso]){
-        totaux[sIso].p1 += signe*part*p1Pct;
-        totaux[sIso].p2 += signe*part*(1-p1Pct);
+        totaux[sIso].p1 += part*p1Pct;
+        totaux[sIso].p2 += part*(1-p1Pct);
       }
-      /* sinon : paie à venir mais au-delà de l'horizon affiché -> ignorée pour l'instant,
-         sera recalculée dynamiquement quand on avancera dans le temps. */
+      /* sinon : paie à venir mais au-delà de l'horizon affiché -> ignorée pour l'instant. */
     });
+  }
+
+  /* REVENU : jamais étalé. Montant plein sur la première paie sur/après `dateArrivee`. */
+  function ajouterRevenu(dateArrivee, montant, pourcentageP1){
+    const p1Pct = pct(pourcentageP1);
+    const cible = premierePaieDepuis(ancrage, dateArrivee);
+    if(cible < aujourdhui){
+      reporterSurPremierePaie(-1, montant, p1Pct); /* paie visée déjà passée : report automatique */
+      return;
+    }
+    const cIso = formaterDateISO(cible);
+    if(totaux[cIso]){
+      totaux[cIso].p1 -= montant*p1Pct;
+      totaux[cIso].p2 -= montant*(1-p1Pct);
+    }
+    /* sinon : paie visée au-delà de l'horizon affiché -> ignorée pour l'instant. */
   }
 
   /* 1) Dépenses/revenus "compte" ponctuels (sans récurrence) */
   depenses.filter(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId).forEach(e=>{
     const due = debutJour(dateLocaleDepuisISO(e.date));
-    ajouterPart(due, e.amount, e.pourcentageP1, e.estRevenu ? -1 : 1, null, true);
+    if(e.estRevenu) ajouterRevenu(due, e.amount, e.pourcentageP1);
+    else ajouterDepense(due, e.amount, e.pourcentageP1, null, true);
   });
 
-  /* 2) Récurrences "compte" actives : chaque occurrence répartie entre l'occurrence
-     précédente et elle-même (voir en-tête de section pour le détail des règles). */
+  /* 2) Récurrences "compte" actives */
   recurrences.filter(r=>r.type==='conjointe' && r.estCompte && r.actif).forEach(rec=>{
-    const limite = ajouterJours(derniere, 366); /* assez loin pour couvrir même les récurrences annuelles */
-    const occs = genererOccurrences(rec, limite);
-    if(!occs.length) return;
-    const k = occs.findIndex(d => debutJour(d) >= aujourdhui);
-    if(k === -1) return; /* récurrence entièrement terminée dans le passé */
-    for(let i=k;i<occs.length;i++){
-      const due = debutJour(occs[i]);
-      const prev = i>0 ? debutJour(occs[i-1]) : null;
-      if(prev && prev > derniere) break; /* fenêtre hors de notre horizon affiché */
-      ajouterPart(due, rec.montant, rec.pourcentageP1, rec.estRevenu ? -1 : 1, prev, prev===null);
+    if(rec.estRevenu){
+      /* Chaque occurrence est indépendante (pas de fenêtre à fermer) : seules celles dont
+         la première paie visée n'est pas encore passée sont encore pertinentes. Les
+         occurrences plus anciennes sont considérées déjà réglées, pour ne jamais ré-empiler
+         de l'historique sur la prochaine paie. */
+      const occs = genererOccurrences(rec, derniere);
+      occs.forEach(occDate=>{
+        const due = debutJour(occDate);
+        const cible = premierePaieDepuis(ancrage, due);
+        if(cible < aujourdhui) return; /* déjà réglé dans le passé, on n'y retouche plus */
+        ajouterRevenu(due, rec.montant, rec.pourcentageP1);
+      });
+    } else {
+      /* Dépense récurrente : chaque occurrence répartie entre l'occurrence précédente et
+         elle-même (voir en-tête de fonction pour le détail des règles). */
+      const limite = ajouterJours(derniere, 366); /* assez loin pour couvrir même les récurrences annuelles */
+      const occs = genererOccurrences(rec, limite);
+      if(!occs.length) return;
+      const k = occs.findIndex(d => debutJour(d) >= aujourdhui);
+      if(k === -1) return; /* récurrence entièrement terminée dans le passé */
+      for(let i=k;i<occs.length;i++){
+        const due = debutJour(occs[i]);
+        const prev = i>0 ? debutJour(occs[i-1]) : null;
+        if(prev && prev > derniere) break; /* fenêtre hors de notre horizon affiché */
+        ajouterDepense(due, rec.montant, rec.pourcentageP1, prev, prev===null);
+      }
     }
   });
 
