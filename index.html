@@ -213,27 +213,32 @@
     .recurrent-actions{margin-left:auto;}
   }
 
-  /* ===================== Calendrier récurrent (façon Outlook) ===================== */
+  /* ===================== Calendrier des dépenses (façon Google Agenda) ===================== */
+  #calendrier-recurrent-card-conjoint, #calendrier-recurrent-card-personnel{padding:14px 0 16px;overflow:hidden;}
+  #calendrier-recurrent-card-conjoint .cal-head, #calendrier-recurrent-card-personnel .cal-head,
+  #calendrier-recurrent-card-conjoint .cal-nav, #calendrier-recurrent-card-personnel .cal-nav{padding:0 14px;}
   .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
   .cal-view-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-wrap:wrap;}
   body.dark .cal-view-switch{background:#2c3136;}
   .cal-view-switch button{border:none;background:transparent;color:var(--text-secondary);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
   .cal-view-switch button.active{background:var(--surface);color:var(--blue);font-weight:600;box-shadow:var(--shadow-1);}
-  .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
   .cal-nav-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;}
   .cal-titre{font-weight:600;font-size:14px;text-align:center;text-transform:capitalize;flex:1;}
 
-  .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-  .cal-month-dow{font-size:10px;color:var(--text-secondary);text-align:center;padding-bottom:4px;}
-  .cal-month-cell{min-height:64px;border:1px solid var(--border);border-radius:8px;padding:4px;display:flex;flex-direction:column;gap:2px;overflow:hidden;}
+  /* Grille mensuelle pleine largeur, style Google Agenda : pas de coins arrondis/bordures
+     entre cellules, juste une grille continue avec de fines séparations. */
+  .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border);border-left:1px solid var(--border);}
+  .cal-month-dow{font-size:10px;color:var(--text-secondary);text-align:center;padding:6px 0;text-transform:uppercase;}
+  .cal-month-cell{min-height:78px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:3px;display:flex;flex-direction:column;gap:2px;overflow:hidden;cursor:pointer;}
+  .cal-month-cell:active{background:color-mix(in srgb, var(--blue) 6%, transparent);}
   .cal-month-cell.outside{opacity:.35;}
-  .cal-month-cell.today{border-color:var(--blue);}
-  .cal-month-daynum{font-size:11px;color:var(--text-secondary);}
-  .cal-month-cell.today .cal-month-daynum{color:var(--blue);font-weight:700;}
-  .cal-pill{font-size:10px;padding:2px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5;}
-  .cal-more{font-size:10px;color:var(--text-secondary);cursor:pointer;}
+  .cal-month-daynum{font-size:11px;color:var(--text-secondary);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+  .cal-month-cell.today .cal-month-daynum{background:var(--blue);color:#fff;font-weight:700;}
+  .cal-pill{font-size:10px;padding:2px 4px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5;}
+  .cal-more{font-size:10px;color:var(--text-secondary);cursor:pointer;padding-left:2px;}
 
-  .cal-agenda-day{margin-bottom:14px;}
+  .cal-agenda-day{margin-bottom:14px;padding:0 14px;}
   .cal-agenda-day-header{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:capitalize;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border);}
   .cal-agenda-day-header.today{color:var(--blue);}
   .cal-agenda-empty{font-size:12px;color:var(--text-secondary);padding:4px 0 10px;}
@@ -1340,6 +1345,11 @@
 <div class="edit-modal" id="occurrence-modal"><div class="edit-card" id="occurrence-modal-card">
   <button class="modal-close-btn" id="close-occurrence-modal" aria-label="Fermer">&times;</button>
   <div id="occurrence-modal-content"></div>
+</div></div>
+
+<div class="edit-modal" id="jour-modal"><div class="edit-card" id="jour-modal-card">
+  <button class="modal-close-btn" id="close-jour-modal" aria-label="Fermer">&times;</button>
+  <div id="jour-modal-content"></div>
 </div></div>
 
 
@@ -2781,10 +2791,10 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
     const jourItems = parJour[iso] || [];
     const visibles = jourItems.slice(0,3);
     const reste = jourItems.length - visibles.length;
-    html += `<div class="cal-month-cell ${dansLeMois?'':'outside'} ${iso===aujourdhuiStr?'today':''}">
-      <div class="cal-month-daynum">${curseur.getDate()}</div>
-      ${visibles.map(e=>`<div class="cal-pill ${classeTypeDepense(e)}" onclick="ouvrirDetailOccurrence('${e.id}')" title="${(e.note||e.category).replace(/"/g,'')}">${e.estRevenu?'+':''}${formaterMonnaie(e.amount)}</div>`).join('')}
-      ${reste>0 ? `<div class="cal-more" onclick="ouvrirJourDepuisMoisCalendrier('${scope}','${iso}')">+${reste} de plus</div>` : ''}
+    html += `<div class="cal-month-cell ${dansLeMois?'':'outside'}" onclick="ouvrirJourModal('${scope}','${iso}')">
+      <div class="cal-month-daynum ${iso===aujourdhuiStr?'today':''}">${curseur.getDate()}</div>
+      ${visibles.map(e=>`<div class="cal-pill ${classeTypeDepense(e)}" onclick="event.stopPropagation();ouvrirDetailOccurrence('${e.id}')">${(e.note||e.category).replace(/</g,'')}</div>`).join('')}
+      ${reste>0 ? `<div class="cal-more">+${reste} de plus</div>` : ''}
     </div>`;
     curseur = ajouterJours(curseur, 1);
   }
@@ -2840,6 +2850,62 @@ document.querySelectorAll('.cal-nav-btn').forEach(b=>{
     afficherCalendrierRecurrent(scope);
   });
 });
+
+/* ===================== MODAL "JOUR" (façon Google Agenda) =====================
+   Cliquer une date dans le calendrier ouvre la liste des dépenses de ce jour-là, avec un
+   bouton pour en ajouter une nouvelle (dépense ou récurrence) directement datée à ce jour. */
+function fermerJourModal(){ document.getElementById('jour-modal').style.display = 'none'; }
+document.getElementById('close-jour-modal').addEventListener('click', fermerJourModal);
+
+function ouvrirJourModal(scope, iso){
+  const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
+  const items = depenses.filter(e=>e.type===type && e.date===iso).sort((a,b)=> b.amount-a.amount);
+  const dateLisible = dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  const contenu = document.getElementById('jour-modal-content');
+  contenu.innerHTML = `
+    <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;text-transform:capitalize;">${dateLisible}</h3>
+    <div id="jour-modal-liste">
+      ${items.length ? items.map(e=>`
+        <div class="cal-agenda-item ${classeTypeDepense(e)}" onclick="fermerJourModal();ouvrirDetailOccurrence('${e.id}')">
+          <div class="cal-agenda-item-nom">${e.recurrenceId?'↻ ':''}${e.note || e.category}</div>
+          <div class="cal-agenda-item-montant">${e.estRevenu?'+':''}${formaterMonnaie(e.amount)}</div>
+        </div>`).join('') : '<div class="cal-agenda-empty">Aucune dépense ce jour-là</div>'}
+    </div>
+    <div class="edit-actions" style="margin-top:14px;">
+      <button class="btn-secondary" style="width:100%;" id="jour-btn-ajouter-recurrence">+ Récurrence</button>
+      <button class="btn-add" style="width:100%;" id="jour-btn-ajouter-depense">+ Dépense</button>
+    </div>
+  `;
+  document.getElementById('jour-btn-ajouter-depense').addEventListener('click', ()=>{ fermerJourModal(); ouvrirAjoutDepensePourDate(scope, iso); });
+  document.getElementById('jour-btn-ajouter-recurrence').addEventListener('click', ()=>{ fermerJourModal(); ouvrirAjoutRecurrencePourDate(scope, iso); });
+  document.getElementById('jour-modal').style.display = 'flex';
+}
+
+/* Bascule vers le sous-onglet "Mois" (où vit le formulaire d'ajout d'une dépense), pré-remplit
+   la date avec celle cliquée dans le calendrier, puis ouvre le formulaire. */
+function ouvrirAjoutDepensePourDate(scope, iso){
+  const btn = document.querySelector(`.subtab-btn[data-scope="${scope}"][data-sub="mois"]`);
+  if(btn) btn.click();
+  const champDate = document.getElementById(`f-date-${scope}`);
+  if(champDate) champDate.value = iso;
+  const formCard = document.getElementById(`form-card-${scope}`);
+  if(formCard){
+    formCard.classList.add('mobile-add-open');
+    formCard.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+}
+/* Idem, mais vers le formulaire d'ajout d'une récurrence dans le sous-onglet "Récurrent". */
+function ouvrirAjoutRecurrencePourDate(scope, iso){
+  const btn = document.querySelector(`.subtab-btn[data-scope="${scope}"][data-sub="recurrent"]`);
+  if(btn) btn.click();
+  const champDate = document.getElementById(`rec-date-${scope}`);
+  if(champDate) champDate.value = iso;
+  const formCard = document.getElementById(`form-card-recurrent-${scope}`);
+  if(formCard){
+    formCard.classList.add('mobile-add-open');
+    formCard.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+}
 
 /* Modal d'édition d'un paiement récurrent */
 function ouvrirEditionRecurrence(id){
