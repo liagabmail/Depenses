@@ -2001,18 +2001,42 @@ function calculerEcheancierCompte(nbPaies){
         ajouterRevenu(due, rec.montant, rec.pourcentageP1);
       });
     } else {
-      /* Dépense récurrente : chaque occurrence répartie entre l'occurrence précédente et
-         elle-même (voir en-tête de fonction pour le détail des règles). */
-      const limite = ajouterJours(derniere, 366); /* assez loin pour couvrir même les récurrences annuelles */
-      const occs = genererOccurrences(rec, limite);
-      if(!occs.length) return;
-      const k = occs.findIndex(d => debutJour(d) >= aujourdhui);
-      if(k === -1) return; /* récurrence entièrement terminée dans le passé */
-      for(let i=k;i<occs.length;i++){
-        const due = debutJour(occs[i]);
-        const prev = i>0 ? debutJour(occs[i-1]) : null;
-        if(prev && prev > derniere) break; /* fenêtre hors de notre horizon affiché */
-        ajouterDepense(due, rec.montant, rec.pourcentageP1, prev, prev===null);
+      /* Dépense récurrente : pour obtenir un montant STABLE d'une paie à l'autre (plutôt que
+         des à-coups selon qu'un mois contienne 2 ou 3 paies), on ne répartit plus occurrence
+         par occurrence. On calcule plutôt le montant total qui reste à payer sur toute la
+         durée restante de la récurrence, et le nombre réel de paies qui tombent dans cette
+         même période, puis on divise l'un par l'autre : chaque paie reçoit exactement la
+         même part jusqu'à la fin de la récurrence.
+         Ex: 5 paiements de 200$ à venir, et 12 paies tombent d'ici le dernier paiement
+         => chaque paie reçoit 200$*5/12, tout du long. */
+      if(rec.finType === 'jamais'){
+        /* Récurrence sans fin connue : pas de "durée restante" à calculer, donc on garde une
+           moyenne annuelle stable (identique à chaque paie, indéfiniment). */
+        const totalAnnuel = rec.montant * multiplicateurAnnuel(rec.frequence);
+        const partParPaie = totalAnnuel / PAIES_PAR_ANNEE;
+        const p1Pct = pct(rec.pourcentageP1);
+        paies.forEach(p=>{
+          const pIso = formaterDateISO(p);
+          totaux[pIso].p1 += partParPaie*p1Pct;
+          totaux[pIso].p2 += partParPaie*(1-p1Pct);
+        });
+      } else {
+        const occs = genererOccurrences(rec, horizonMaximal());
+        const occsRestantes = occs.filter(d => debutJour(d) >= aujourdhui);
+        if(!occsRestantes.length) return; /* récurrence entièrement terminée */
+        const finRecurrence = debutJour(occsRestantes[occsRestantes.length-1]);
+        const montantTotalRestant = rec.montant * occsRestantes.length;
+        const paiesRestantes = paiesDansIntervalle(ancrage, aujourdhui, finRecurrence);
+        const nPaies = paiesRestantes.length || 1;
+        const partParPaie = montantTotalRestant / nPaies;
+        const p1Pct = pct(rec.pourcentageP1);
+        paies.forEach(p=>{
+          if(p >= aujourdhui && p <= finRecurrence){
+            const pIso = formaterDateISO(p);
+            totaux[pIso].p1 += partParPaie*p1Pct;
+            totaux[pIso].p2 += partParPaie*(1-p1Pct);
+          }
+        });
       }
     }
   });
