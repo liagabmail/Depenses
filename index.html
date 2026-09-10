@@ -224,6 +224,10 @@
   #calendrier-recurrent-card-conjoint .cal-head, #calendrier-recurrent-card-personnel .cal-head,
   #calendrier-recurrent-card-conjoint .cal-nav, #calendrier-recurrent-card-personnel .cal-nav{padding:0 14px;}
   .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+  .cal-mode-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-shrink:0;}
+  body.dark .cal-mode-switch{background:#2c3136;}
+  .cal-mode-switch button{border:none;background:transparent;color:var(--text-secondary);font-size:14px;padding:5px 9px;border-radius:6px;cursor:pointer;line-height:1;}
+  .cal-mode-switch button.active{background:var(--surface);box-shadow:var(--shadow-1);}
   .cal-hamburger-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:15px;cursor:pointer;flex-shrink:0;}
   .cal-menu-panel{margin:0 14px 12px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface);box-shadow:var(--shadow-1);}
   .cal-menu-section-title{font-size:11px;text-transform:uppercase;color:var(--text-secondary);font-weight:600;margin:10px 0 4px;}
@@ -688,7 +692,7 @@
     </div>
 
     <nav class="subtabs">
-      <button class="subtab-btn active" data-scope="conjoint" data-sub="mois">Mois</button>
+      <button class="subtab-btn active" data-scope="conjoint" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="resume">Résumé</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="annee">Année</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="budget">Budget</button>
@@ -706,7 +710,11 @@
       </div>
       <div class="card" id="calendrier-recurrent-card-conjoint">
         <div class="table-head-row cal-head">
-          <h3>📅 Calendrier</h3>
+          <h3 id="cal-mode-titre-conjoint">📅 Calendrier</h3>
+          <div class="cal-mode-switch" data-scope="conjoint">
+            <button type="button" class="active" data-mode="calendrier" aria-label="Vue calendrier">📅</button>
+            <button type="button" data-mode="liste" aria-label="Vue liste">📋</button>
+          </div>
         </div>
         <div class="cal-nav">
           <button type="button" class="cal-hamburger-btn" data-scope="conjoint" aria-label="Menu du calendrier">☰</button>
@@ -716,6 +724,27 @@
         </div>
         <div class="cal-menu-panel" id="cal-menu-panel-conjoint" style="display:none;"></div>
         <div id="cal-corps-conjoint"></div>
+        <div class="table-card" id="table-card-conjoint" style="display:none;padding:0 14px 8px;">
+          <div class="table-filters" style="padding-top:10px;">
+            <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-conjoint" aria-label="Trier les dépenses">
+            <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
+          </select><button type="button" class="sort-direction" id="mobile-sort-dir-conjoint" aria-label="Tri croissant">↑</button></div></div>
+          <div style="overflow-x:auto;">
+            <table id="table-conjoint" data-scope="conjoint">
+              <thead>
+                <tr>
+                  <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
+                  <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
+                  <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
+                  <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
+                  <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
+                </tr>
+              </thead>
+              <tbody id="table-body-conjoint"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="empty-state-conjoint" style="display:none;">Aucune dépense pour cette période.</div>
+        </div>
       </div>
 
       <div class="card form-card" id="form-card-conjoint">
@@ -784,32 +813,6 @@
         </div>
       </div>
       <button class="mobile-add-btn" id="mobile-add-conjoint" aria-label="Ajouter une dépense conjointe">+</button>
-
-      <div class="card table-card">
-        <div class="table-head-row">
-          <h3>Dépenses conjointes</h3>
-          <span class="row-count" id="row-count-conjoint">0 dépenses</span>
-        </div>
-        <div class="table-filters">
-          <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-conjoint" aria-label="Trier les dépenses">
-          <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
-        </select><button type="button" class="sort-direction" id="mobile-sort-dir-conjoint" aria-label="Tri croissant">↑</button></div></div>
-        <div style="overflow-x:auto;">
-          <table id="table-conjoint" data-scope="conjoint">
-            <thead>
-              <tr>
-                <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
-                <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
-                <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
-                <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
-                <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
-              </tr>
-            </thead>
-            <tbody id="table-body-conjoint"></tbody>
-          </table>
-        </div>
-        <div class="empty-state" id="empty-state-conjoint" style="display:none;">Aucune dépense conjointe pour l'instant — ajoutez-en une ci-dessus.</div>
-      </div>
     </div>
 
     <!-- Sous-onglet : ANNÉE -->
@@ -881,7 +884,7 @@
     </div>
 
     <nav class="subtabs">
-      <button class="subtab-btn active" data-scope="personnel" data-sub="mois">Mois</button>
+      <button class="subtab-btn active" data-scope="personnel" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="resume">Résumé</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="annee">Année</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="budget">Budget</button>
@@ -897,7 +900,11 @@
 
       <div class="card" id="calendrier-recurrent-card-personnel">
         <div class="table-head-row cal-head">
-          <h3>📅 Calendrier</h3>
+          <h3 id="cal-mode-titre-personnel">📅 Calendrier</h3>
+          <div class="cal-mode-switch" data-scope="personnel">
+            <button type="button" class="active" data-mode="calendrier" aria-label="Vue calendrier">📅</button>
+            <button type="button" data-mode="liste" aria-label="Vue liste">📋</button>
+          </div>
         </div>
         <div class="cal-nav">
           <button type="button" class="cal-hamburger-btn" data-scope="personnel" aria-label="Menu du calendrier">☰</button>
@@ -907,6 +914,27 @@
         </div>
         <div class="cal-menu-panel" id="cal-menu-panel-personnel" style="display:none;"></div>
         <div id="cal-corps-personnel"></div>
+        <div class="table-card" id="table-card-personnel" style="display:none;padding:0 14px 8px;">
+          <div class="table-filters" style="padding-top:10px;">
+            <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-personnel" aria-label="Trier les dépenses">
+            <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
+          </select><button type="button" class="sort-direction" id="mobile-sort-dir-personnel" aria-label="Tri croissant">↑</button></div></div>
+          <div style="overflow-x:auto;">
+            <table id="table-personnel" data-scope="personnel" class="hide-qui-column">
+              <thead>
+                <tr>
+                  <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
+                  <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
+                  <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
+                  <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
+                  <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
+                </tr>
+              </thead>
+              <tbody id="table-body-personnel"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="empty-state-personnel" style="display:none;">Aucune dépense pour cette période.</div>
+        </div>
       </div>
 
       <div class="card form-card" id="form-card-personnel">
@@ -967,32 +995,6 @@
         </div>
       </div>
       <button class="mobile-add-btn" id="mobile-add-personnel" aria-label="Ajouter une dépense personnelle">+</button>
-
-      <div class="card table-card">
-        <div class="table-head-row">
-          <h3>Mes dépenses personnelles</h3>
-          <span class="row-count" id="row-count-personnel">0 dépenses</span>
-        </div>
-        <div class="table-filters">
-          <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-personnel" aria-label="Trier les dépenses">
-          <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
-        </select><button type="button" class="sort-direction" id="mobile-sort-dir-personnel" aria-label="Tri croissant">↑</button></div></div>
-        <div style="overflow-x:auto;">
-          <table id="table-personnel" data-scope="personnel" class="hide-qui-column">
-            <thead>
-              <tr>
-                <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
-                <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
-                <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
-                <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
-                <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
-              </tr>
-            </thead>
-            <tbody id="table-body-personnel"></tbody>
-          </table>
-        </div>
-        <div class="empty-state" id="empty-state-personnel" style="display:none;">Aucune dépense personnelle pour l'instant — ajoutez-en une ci-dessus.</div>
-      </div>
     </div>
 
     <!-- Sous-onglet : ANNÉE -->
@@ -2081,6 +2083,7 @@ function calculerEcheancierCompte(nbPaies){
 }
 
 /* Affiche l'échéancier calculé dans la carte "🏦 Prochains dépôts au compte conjoint". */
+let nbPaiesEcheancierAffichees = 2;
 function afficherEcheancierCompteConjoint(){
   const carte = document.getElementById('recurrent-compte-echeancier-card-conjoint');
   const conteneur = document.getElementById('recurrent-compte-echeancier-conjoint');
@@ -2097,11 +2100,13 @@ function afficherEcheancierCompteConjoint(){
   }
   carte.style.display = '';
 
-  const echeancier = calculerEcheancierCompte();
-  if(!echeancier || !echeancier.length){
+  const echeancierComplet = calculerEcheancierCompte();
+  if(!echeancierComplet || !echeancierComplet.length){
     conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
     return;
   }
+  const echeancier = echeancierComplet.slice(0, nbPaiesEcheancierAffichees);
+  const resteAVenir = echeancierComplet.length - echeancier.length;
 
   const formatDate = d => d.toLocaleDateString('fr-CA', {weekday:'short', day:'numeric', month:'short'});
   conteneur.innerHTML = `
@@ -2120,7 +2125,16 @@ function afficherEcheancierCompteConjoint(){
         <span class="value p2" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p2)}</span>
       </div>
     </div>
-  `).join('');
+  `).join('') + (resteAVenir > 0 ? `
+    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir ${resteAVenir} de plus</div>
+  ` : (nbPaiesEcheancierAffichees > 2 ? `
+    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-moins">Voir moins</div>
+  ` : ''));
+
+  const boutonPlus = document.getElementById('echeancier-voir-plus');
+  if(boutonPlus) boutonPlus.addEventListener('click', ()=>{ nbPaiesEcheancierAffichees = echeancierComplet.length; afficherEcheancierCompteConjoint(); });
+  const boutonMoins = document.getElementById('echeancier-voir-moins');
+  if(boutonMoins) boutonMoins.addEventListener('click', ()=>{ nbPaiesEcheancierAffichees = 2; afficherEcheancierCompteConjoint(); });
 }
 
 /* Génère dans Depenses toute échéance (passée ou future, jusqu'à limiteDate) qui n'a pas
@@ -2565,8 +2579,8 @@ function afficherRecurrencesScope(scope){
    qui tombent dans la période choisie (jour, semaine, période de paie ou mois), avec
    navigation ‹ › et clic sur une entrée pour ouvrir son détail (voir ouvrirDetailOccurrence). */
 let etatCalendrier = {
-  conjoint: { vue: 'mois', dateRef: debutJour(new Date()) },
-  personnel: { vue: 'mois', dateRef: debutJour(new Date()) }
+  conjoint: { vue: 'mois', dateRef: debutJour(new Date()), mode: 'calendrier' },
+  personnel: { vue: 'mois', dateRef: debutJour(new Date()), mode: 'calendrier' }
 };
 
 /* Filtres d'affichage (façon Google Agenda : cases à cocher pour montrer/cacher certains
@@ -2644,15 +2658,39 @@ function depensesPourCalendrier(scope, debut, fin){
 function afficherCalendrierRecurrent(scope){
   const titreEl = document.getElementById(`cal-titre-${scope}`);
   const corpsEl = document.getElementById(`cal-corps-${scope}`);
+  const tableCardEl = document.getElementById(`table-card-${scope}`);
+  const modeTitreEl = document.getElementById(`cal-mode-titre-${scope}`);
   if(!titreEl || !corpsEl) return;
   const etat = etatCalendrier[scope];
   const { debut, fin } = bornePeriode(etat.vue, etat.dateRef);
   titreEl.textContent = libellePeriodeCalendrier(etat.vue, debut, fin);
-  corpsEl.innerHTML = etat.vue==='mois' ? rendreGrilleMoisCalendrier(scope, etat.dateRef) : rendreAgendaCalendrier(scope, debut, fin);
+
+  if(etat.mode === 'liste'){
+    corpsEl.style.display = 'none';
+    if(tableCardEl) tableCardEl.style.display = '';
+    if(modeTitreEl) modeTitreEl.textContent = '📋 Liste';
+    afficherTableauScope(scope);
+  } else {
+    corpsEl.style.display = '';
+    if(tableCardEl) tableCardEl.style.display = 'none';
+    if(modeTitreEl) modeTitreEl.textContent = '📅 Calendrier';
+    corpsEl.innerHTML = etat.vue==='mois' ? rendreGrilleMoisCalendrier(scope, etat.dateRef) : rendreAgendaCalendrier(scope, debut, fin);
+  }
+
   /* Si le menu ☰ est ouvert, on le re-rend pour refléter la vue active à jour. */
   const panneau = document.getElementById(`cal-menu-panel-${scope}`);
   if(panneau && panneau.style.display !== 'none') rendreMenuCalendrier(scope);
 }
+document.querySelectorAll('.cal-mode-switch').forEach(sw=>{
+  const scope = sw.dataset.scope;
+  sw.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      etatCalendrier[scope].mode = b.dataset.mode;
+      sw.querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+      afficherCalendrierRecurrent(scope);
+    });
+  });
+});
 
 /* ===================== MENU ☰ (vues + filtres d'affichage, façon Google Agenda) ===================== */
 function rendreMenuCalendrier(scope){
@@ -3061,7 +3099,10 @@ function afficherNavigationPeriode(){
   });
   const estSection = activeMainTab === 'conjoint' || activeMainTab === 'personnel';
   const sub = estSection ? activeSubtab[activeMainTab] : null;
-  document.getElementById('month-nav').style.display = (estSection && (sub==='mois' || sub==='resume' || sub==='budget')) ? 'flex' : 'none';
+  /* "Transactions" (ex-"Mois") a désormais son propre sélecteur de période (celui du
+     calendrier/liste) : on n'affiche plus ce sélecteur de mois global que pour Résumé et
+     Budget, pour éviter d'avoir deux navigateurs qui se chevauchent sur le même onglet. */
+  document.getElementById('month-nav').style.display = (estSection && (sub==='resume' || sub==='budget')) ? 'flex' : 'none';
   document.getElementById('year-nav').style.display = (estSection && sub==='annee') ? 'flex' : 'none';
 }
 
@@ -3095,8 +3136,8 @@ document.querySelectorAll('#compare-scope-toggle button').forEach(bouton=>{
 function rafraichirSousOnglet(scope, sub){
   if(sub==='mois'){
     afficherStatsMoisScope(scope);
-    afficherTableauScope(scope);
-    /* Le calendrier et l'échéancier du compte conjoint vivent maintenant dans "Mois". */
+    /* Le calendrier, l'échéancier du compte conjoint et la liste (mode "Liste" du
+       calendrier) vivent maintenant tous dans "Transactions" (ex-"Mois"). */
     afficherRecurrencesScope(scope);
     /* S'assure que les récurrences sont bien générées au moins jusqu'à la fin du mois
        consulté, même très loin dans le futur (aucune limite artificielle). */
@@ -3686,16 +3727,27 @@ function afficherTableauScope(scope){
     directionButton.setAttribute('aria-label', tri.dir==='asc' ? 'Tri croissant' : 'Tri décroissant');
   }
 
+  /* La liste (mode "Liste" du calendrier) suit désormais la période et les filtres du
+     calendrier — un seul sélecteur pour tout l'onglet, plutôt que le mois global. */
+  const { debut, fin } = bornePeriode(etatCalendrier[scope].vue, etatCalendrier[scope].dateRef);
+  const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
+  const dansPeriode = e => e.date>=debutStr && e.date<=finStr;
+  const filtres = filtresCalendrier[scope];
+  const appliquerFiltresAffichage = e => !(filtres.masquerRevenus && e.estRevenu) && !filtres.categoriesCachees.includes(e.category) && !filtres.quiCaches.includes(e.who);
+
   /* Dans Personnel, quand "+ Conjoint" est activé, on affiche aussi les dépenses
-     conjointes du mois (à 50% de leur montant), clairement identifiées, en plus des vraies
-     dépenses perso. La colonne "Qui" redevient utile dans ce cas (ce n'est plus toujours
-     la même personne), donc on la réaffiche. */
+     conjointes de la période (à 50% de leur montant), clairement identifiées, en plus des
+     vraies dépenses perso. La colonne "Qui" redevient utile dans ce cas (ce n'est plus
+     toujours la même personne), donc on la réaffiche. */
   const inclusionActive = scope==='personnel' && inclureConjointDansPersonnel;
   table.classList.toggle('hide-qui-column', scope==='personnel' && !inclusionActive);
 
-  let liste = depenses.filter(filtreMoisScope(scope)).map(e=>({...e, partagee:false}));
+  let liste = depenses
+    .filter(e => (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser)) && dansPeriode(e))
+    .filter(appliquerFiltresAffichage)
+    .map(e=>({...e, partagee:false}));
   if(inclusionActive){
-    const conjoints = depenses.filter(e=>e.type==='conjointe' && !e.estRevenu && dansMoisActif(e.date));
+    const conjoints = depenses.filter(e=>e.type==='conjointe' && !e.estRevenu && dansPeriode(e)).filter(appliquerFiltresAffichage);
     liste = liste.concat(conjoints.map(e=>({...e, amount:e.amount*partPersonnelle(e), partagee:true})));
   }
 
@@ -3735,7 +3787,8 @@ function afficherTableauScope(scope){
     </tr>`;
   }).join('');
 
-  document.getElementById(`row-count-${scope}`).textContent = `${liste.length} dépense${liste.length!==1?'s':''}`;
+  const compteurEl = document.getElementById(`row-count-${scope}`);
+  if(compteurEl) compteurEl.textContent = `${liste.length} dépense${liste.length!==1?'s':''}`;
   const emptyState = document.getElementById(`empty-state-${scope}`);
   if(emptyState) emptyState.style.display = liste.length ? 'none' : 'block';
 }
