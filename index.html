@@ -716,14 +716,6 @@
     <div class="subtab-panel active" data-scope="conjoint" data-sub="mois">
       <div class="card" id="calendrier-recurrent-card-conjoint" style="padding-top:14px;">
         <div id="cal-corps-conjoint"></div>
-        <div class="table-card" id="table-card-conjoint" style="display:none;padding:0 14px 8px;">
-          <div class="table-filters" style="padding-top:10px;">
-            <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-conjoint" aria-label="Trier les dépenses">
-            <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
-          </select><button type="button" class="sort-direction" id="mobile-sort-dir-conjoint" aria-label="Tri croissant">↑</button></div></div>
-          <div id="table-body-conjoint"></div>
-          <div class="empty-state" id="empty-state-conjoint" style="display:none;">Aucune dépense pour cette période.</div>
-        </div>
       </div>
 
       <div class="card form-card" id="form-card-conjoint">
@@ -877,14 +869,6 @@
 
       <div class="card" id="calendrier-recurrent-card-personnel" style="padding-top:14px;">
         <div id="cal-corps-personnel"></div>
-        <div class="table-card" id="table-card-personnel" style="display:none;padding:0 14px 8px;">
-          <div class="table-filters" style="padding-top:10px;">
-            <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-personnel" aria-label="Trier les dépenses">
-            <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
-          </select><button type="button" class="sort-direction" id="mobile-sort-dir-personnel" aria-label="Tri croissant">↑</button></div></div>
-          <div id="table-body-personnel"></div>
-          <div class="empty-state" id="empty-state-personnel" style="display:none;">Aucune dépense pour cette période.</div>
-        </div>
       </div>
 
       <div class="card form-card" id="form-card-personnel">
@@ -2556,7 +2540,6 @@ function afficherRecurrencesScope(scope){
    le mode d'affichage (calendrier ou liste) reste propre à chaque scope, puisque c'est une
    préférence d'affichage plutôt qu'une période. */
 let etatCalendrierPeriode = { vue: 'mois', dateRef: debutJour(new Date()) };
-let modeCalendrier = { conjoint: 'calendrier', personnel: 'calendrier' };
 
 /* Filtres d'affichage (façon Google Agenda : cases à cocher pour montrer/cacher certains
    types d'entrées). Persistés localement par appareil - un filtre d'affichage est une
@@ -2577,7 +2560,7 @@ function sauvegarderFiltresCalendrier(scope){
 
 const JOURS_SEMAINE_LUN_DIM = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MOIS_NOMS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-const VUES_CALENDRIER = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'] ];
+const VUES_CALENDRIER = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['grille','📅'] ];
 const VUES_RESUME = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['annee','Année'] ];
 
 /* Lundi de la semaine contenant `date` (la semaine commence le lundi, convention FR-CA usuelle). */
@@ -2610,7 +2593,7 @@ function avancerPeriode(vue, dateRef, direction){
 function formatCourtDate(d){ return `${d.getDate()} ${MOIS_NOMS[d.getMonth()].slice(0,3)}`; }
 function libellePeriodeCalendrier(vue, debut, fin){
   if(vue==='jour') return debut.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-  if(vue==='mois') return `${MOIS_NOMS[debut.getMonth()]} ${debut.getFullYear()}`;
+  if(vue==='mois' || vue==='grille') return `${MOIS_NOMS[debut.getMonth()]} ${debut.getFullYear()}`;
   return `${formatCourtDate(debut)} – ${formatCourtDate(fin)} ${fin.getFullYear()}`;
 }
 function classeTypeDepense(e){
@@ -2645,20 +2628,17 @@ function depensesPourCalendrier(scope, debut, fin){
 
 function afficherCalendrierRecurrent(scope){
   const corpsEl = document.getElementById(`cal-corps-${scope}`);
-  const tableCardEl = document.getElementById(`table-card-${scope}`);
   if(!corpsEl) return;
   const { vue, dateRef } = etatCalendrierPeriode;
   const { debut, fin } = bornePeriode(vue, dateRef);
-  const mode = modeCalendrier[scope];
 
-  if(mode === 'liste'){
-    corpsEl.style.display = 'none';
-    if(tableCardEl) tableCardEl.style.display = '';
-    afficherTableauScope(scope);
+  if(vue === 'grille'){
+    corpsEl.innerHTML = rendreGrilleMoisCalendrier(scope, dateRef);
   } else {
-    corpsEl.style.display = '';
-    if(tableCardEl) tableCardEl.style.display = 'none';
-    corpsEl.innerHTML = vue==='mois' ? rendreGrilleMoisCalendrier(scope, dateRef) : rendreAgendaCalendrier(scope, debut, fin);
+    /* Jour / Semaine / Paie / Mois partagent maintenant exactement le même visuel : une
+       liste triable (Date/Qui/Montant/Catégorie/Note), façon agenda. */
+    corpsEl.innerHTML = rendreAgendaCalendrier(scope, debut, fin);
+    wirerTriAgenda(scope);
   }
 
   /* Si la fenêtre de filtres est ouverte pour ce scope, on la re-rend pour refléter les
@@ -2816,24 +2796,82 @@ function rendreCarteDepenseHTML(e, scope, options){
     </div>`;
 }
 
+/* Trie une liste de dépenses selon l'état de tri d'un scope (même logique partout : Jour,
+   Semaine, Paie, Mois utilisent tous ce même contrôle, pour un visuel et un comportement
+   uniformes). */
+function trierListeDepenses(items, tri){
+  const cle = tri.key === 'Date' ? 'date' : tri.key === 'Qui' ? 'who' : tri.key === 'Categorie' ? 'category' : tri.key === 'Note' ? 'note' : 'amount';
+  const triees = [...items].sort((a,b)=>{
+    let va = a[cle], vb = b[cle];
+    if(cle==='who'){ va = libellePersonne(va); vb = libellePersonne(vb); }
+    if(cle==='amount'){ va = Number(va); vb = Number(vb); }
+    if(va<vb) return tri.dir==='asc' ? -1 : 1;
+    if(va>vb) return tri.dir==='asc' ? 1 : -1;
+    return 0;
+  });
+  return triees;
+}
+
+/* Contrôle de tri (même sélecteur partout : Jour/Semaine/Paie/Mois). */
+function rendreControleTriHTML(scope, tri){
+  return `
+    <div class="table-filters" style="padding:0 0 10px;">
+      <div class="mobile-sort" style="margin-left:auto;">
+        <select id="agenda-tri-${scope}" aria-label="Trier les dépenses">
+          <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
+        </select>
+        <button type="button" class="sort-direction" id="agenda-tri-dir-${scope}" aria-label="${tri.dir==='asc'?'Tri croissant':'Tri décroissant'}">${tri.dir==='asc'?'↑':'↓'}</button>
+      </div>
+    </div>`;
+}
+function wirerTriAgenda(scope){
+  const sel = document.getElementById(`agenda-tri-${scope}`);
+  const dir = document.getElementById(`agenda-tri-dir-${scope}`);
+  if(sel){
+    sel.value = etatTri[scope].key;
+    sel.addEventListener('change', ()=>{ etatTri[scope].key = sel.value; afficherCalendrierRecurrent(scope); });
+  }
+  if(dir) dir.addEventListener('click', ()=>{
+    etatTri[scope].dir = etatTri[scope].dir==='asc' ? 'desc' : 'asc';
+    afficherCalendrierRecurrent(scope);
+  });
+}
+
+/* Vue "agenda", utilisée pour Jour/Semaine/Paie/Mois — même contrôle de tri et même carte
+   partout (voir rendreCarteDepenseHTML). Si le tri est par Date, on regroupe par jour
+   (l'ordre des jours suit le sens du tri) ; sinon, liste plate triée avec un badge de date
+   sur chaque carte, puisque le regroupement par jour n'aurait plus de sens. */
 function rendreAgendaCalendrier(scope, debut, fin){
-  const items = depensesPourCalendrier(scope, debut, fin);
+  const tri = etatTri[scope];
+  const items = trierListeDepenses(depensesPourCalendrier(scope, debut, fin), tri);
+  const controle = rendreControleTriHTML(scope, tri);
+
+  if(tri.key !== 'Date'){
+    const corps = items.length
+      ? items.map(e=>rendreCarteDepenseHTML(e, scope, {montrerDate:true})).join('')
+      : '<div class="cal-agenda-empty">Aucune dépense pour cette période</div>';
+    return controle + corps;
+  }
+
   const parJour = {};
   items.forEach(e => { (parJour[e.date] = parJour[e.date] || []).push(e); });
   const aujourdhuiStr = formaterDateISO(debutJour(new Date()));
-  let html = '';
+  const jours = [];
   let curseur = new Date(debut);
-  while(curseur <= fin){
-    const iso = formaterDateISO(curseur);
+  while(curseur <= fin){ jours.push(new Date(curseur)); curseur = ajouterJours(curseur, 1); }
+  if(tri.dir === 'desc') jours.reverse();
+
+  const corps = jours.map(j=>{
+    const iso = formaterDateISO(j);
     const jourItems = parJour[iso] || [];
-    const labelJour = curseur.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long'});
-    html += `<div class="cal-agenda-day">
+    const labelJour = j.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long'});
+    return `<div class="cal-agenda-day">
       <div class="cal-agenda-day-header ${iso===aujourdhuiStr?'today':''}">${labelJour}</div>
       ${jourItems.length ? jourItems.map(e=>rendreCarteDepenseHTML(e, scope)).join('') : '<div class="cal-agenda-empty">Aucune dépense</div>'}
     </div>`;
-    curseur = ajouterJours(curseur, 1);
-  }
-  return html;
+  }).join('');
+
+  return controle + corps;
 }
 
 /* ===================== MODAL "JOUR" (façon Google Agenda) =====================
@@ -3132,30 +3170,14 @@ function afficherNavigationPeriode(){
       rafraichirSousOnglet(activeMainTab, 'mois');
       afficherNavigationPeriode();
     }));
-    /* Sur la même ligne que Jour/Semaine/Paie/Mois : le menu ☰ des filtres à gauche, la
-       vue Calendrier/Liste à droite (uniquement quand la vue est "Mois" — pour Jour/
-       Semaine/Paie, la vue est toujours une liste, ce choix n'a pas de sens). */
+    /* Jour / Semaine / Paie / Mois / 📅 (grille) sont maintenant 5 options d'un même
+       sélecteur — plus de choix séparé "calendrier ou liste" à côté. Seul le menu ☰ des
+       filtres reste, à gauche. */
     gauche.style.display = '';
     gauche.innerHTML = `<button type="button" class="cal-hamburger-btn" aria-label="Filtres d'affichage">☰</button>`;
     gauche.querySelector('button').addEventListener('click', ()=> ouvrirFiltresModal(activeMainTab));
+    droite.style.display = 'none';
 
-    if(etatCalendrierPeriode.vue === 'mois'){
-      droite.style.display = '';
-      droite.innerHTML = [['calendrier','📅'],['liste','📋']].map(([v,icone])=>
-        `<button type="button" data-mode="${v}" class="${modeCalendrier[activeMainTab]===v?'active':''}" aria-label="Vue ${v}">${icone}</button>`).join('');
-      droite.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
-        modeCalendrier[activeMainTab] = b.dataset.mode;
-        afficherCalendrierRecurrent(activeMainTab);
-        afficherNavigationPeriode();
-      }));
-    } else {
-      droite.style.display = 'none';
-      /* Jour/Semaine/Paie : toujours en vue "liste" (agenda), jamais en grille. */
-      if(modeCalendrier[activeMainTab] !== 'calendrier'){
-        modeCalendrier[activeMainTab] = 'calendrier';
-        afficherCalendrierRecurrent(activeMainTab);
-      }
-    }
     const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
     label.textContent = libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin);
   }
@@ -3701,26 +3723,6 @@ async function supprimerDepense(id){
   rafraichirActif();
 }
 
-/* Tri des tableaux (indépendant pour chaque section) */
-document.querySelectorAll('table[data-scope] thead th[data-sort]').forEach(th=>{
-  th.addEventListener('click', ()=>{
-    const scope = th.closest('table').dataset.scope;
-    const key = th.dataset.sort;
-    if(etatTri[scope].key===key){ etatTri[scope].dir = etatTri[scope].dir==='asc' ? 'desc' : 'asc'; }
-    else { etatTri[scope].key = key; etatTri[scope].dir = 'asc'; }
-    afficherTableauScope(scope);
-  });
-});
-['conjoint','personnel'].forEach(scope=>{
-  document.getElementById(`mobile-sort-${scope}`).addEventListener('change',e=>{
-    etatTri[scope].key = e.target.value;
-    afficherTableauScope(scope);
-  });
-  document.getElementById(`mobile-sort-dir-${scope}`).addEventListener('click',()=>{
-    etatTri[scope].dir = etatTri[scope].dir==='asc' ? 'desc' : 'asc';
-    afficherTableauScope(scope);
-  });
-});
 document.getElementById('save-budgets-personnel').addEventListener('click', ()=>sauvegarderBudget('personnel'));
 document.getElementById('save-budgets-conjoint').addEventListener('click', ()=>sauvegarderBudget('conjoint'));
 
@@ -3846,59 +3848,6 @@ function afficherGraphiqueCategoriesMoisScope(scope){
         tooltip:{ callbacks:{ label:(c)=> `${c.label}: ${formaterMonnaie(c.raw)}` } } }
     }
   });
-}
-
-/* Rendu unifié "façon agenda" pour le mode Liste (dans Transactions) : mêmes cartes que le
-   calendrier (Jour/Semaine/Paie) et que la fiche d'une journée, pour un visuel cohérent
-   partout plutôt qu'un tableau différent. Le tri (Date/Qui/Montant/Catégorie/Note, croissant
-   ou décroissant) reste le seul contrôle, via le sélecteur déjà présent. */
-function afficherTableauScope(scope){
-  const tri = etatTri[scope];
-  const mobileSort = document.getElementById(`mobile-sort-${scope}`);
-  if(mobileSort) mobileSort.value = tri.key;
-  const directionButton = document.getElementById(`mobile-sort-dir-${scope}`);
-  if(directionButton){
-    directionButton.textContent = tri.dir==='asc' ? '↑' : '↓';
-    directionButton.setAttribute('aria-label', tri.dir==='asc' ? 'Tri croissant' : 'Tri décroissant');
-  }
-
-  /* La liste (mode "Liste" du calendrier) suit désormais la période et les filtres du
-     calendrier — un seul sélecteur pour tout l'onglet, plutôt que le mois global. */
-  const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
-  const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
-  const dansPeriode = e => e.date>=debutStr && e.date<=finStr;
-  const filtres = filtresCalendrier[scope];
-  const appliquerFiltresAffichage = e => !(filtres.masquerRevenus && e.estRevenu) && !filtres.categoriesCachees.includes(e.category) && !filtres.quiCaches.includes(e.who);
-
-  /* Dans Personnel, quand "+ Conjoint" est activé, on affiche aussi les dépenses
-     conjointes de la période (à la part de l'utilisateur — voir partPersonnelle), en plus
-     des vraies dépenses perso. */
-  const inclusionActive = scope==='personnel' && inclureConjointDansPersonnel;
-
-  let liste = depenses
-    .filter(e => (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser)) && dansPeriode(e))
-    .filter(appliquerFiltresAffichage)
-    .map(e=>({...e, partagee:false}));
-  if(inclusionActive){
-    const conjoints = depenses.filter(e=>e.type==='conjointe' && !e.estRevenu && dansPeriode(e)).filter(appliquerFiltresAffichage);
-    liste = liste.concat(conjoints.map(e=>({...e, amount:e.amount*partPersonnelle(e), partagee:true})));
-  }
-
-  liste.sort((a,b)=>{
-    let key = tri.key === 'Date' ? 'date' : tri.key === 'Qui' ? 'who' : tri.key === 'Categorie' ? 'category' : tri.key === 'Note' ? 'note' : 'amount';
-    let va = a[key], vb = b[key];
-    if(key==='who'){ va = libellePersonne(va); vb = libellePersonne(vb); }
-    if(key==='amount'){ va = Number(va); vb = Number(vb); }
-    if(va<vb) return tri.dir==='asc' ? -1 : 1;
-    if(va>vb) return tri.dir==='asc' ? 1 : -1;
-    return 0;
-  });
-
-  const conteneur = document.getElementById(`table-body-${scope}`);
-  conteneur.innerHTML = liste.map(e => rendreCarteDepenseHTML(e, scope, {montrerDate:true})).join('');
-
-  const emptyState = document.getElementById(`empty-state-${scope}`);
-  if(emptyState) emptyState.style.display = liste.length ? 'none' : 'block';
 }
 
 /* ===================== RENDU : SOUS-ONGLET ANNÉE (par section) ===================== */
