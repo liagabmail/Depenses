@@ -155,6 +155,10 @@
     margin:16px 0 20px;
   }
   .period-nav-row{display:flex;align-items:center;justify-content:center;gap:12px;}
+  .period-type-row{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;}
+  .period-type-row .period-type-switch{flex:0 1 auto;}
+  .period-type-row .cal-mode-switch{margin-right:auto;}
+  .period-type-row .cal-hamburger-btn{margin-left:auto;}
   .period-nav button,.icon-btn{
     border:1px solid var(--border);background:var(--surface);color:var(--text);
     border-radius:8px;padding:8px 12px;font-family:inherit;cursor:pointer;
@@ -685,7 +689,11 @@
   </nav>
 
   <div class="period-nav" id="period-nav" style="display:none;">
-    <div class="period-type-switch" id="period-type-switch" style="display:none;"></div>
+    <div class="period-type-row">
+      <div class="cal-mode-switch" id="period-left-controls" style="display:none;"></div>
+      <div class="period-type-switch" id="period-type-switch" style="display:none;"></div>
+      <button type="button" class="cal-hamburger-btn" id="period-right-controls" style="display:none;" aria-label="Filtres d'affichage">☰</button>
+    </div>
     <div class="period-nav-row">
       <button id="period-prev" aria-label="Période précédente">&lsaquo;</button>
       <span class="period-label" id="period-label" role="button" tabindex="0" title="Revenir à aujourd'hui" aria-label="Revenir à aujourd'hui"></span>
@@ -704,24 +712,13 @@
 
     <!-- Sous-onglet : MOIS -->
     <div class="subtab-panel active" data-scope="conjoint" data-sub="mois">
-      <div class="stats-row" id="mois-stats-conjoint"></div>
-
       <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
         <div class="table-head-row">
           <h3>🏦 Prochains dépôts au compte conjoint</h3>
         </div>
         <div id="recurrent-compte-echeancier-conjoint"></div>
       </div>
-      <div class="card" id="calendrier-recurrent-card-conjoint">
-        <div class="table-head-row cal-head">
-          <button type="button" class="cal-hamburger-btn" data-scope="conjoint" aria-label="Menu du calendrier">☰</button>
-          <h3 id="cal-mode-titre-conjoint" style="flex:1;">📅 Calendrier</h3>
-          <div class="cal-mode-switch" data-scope="conjoint">
-            <button type="button" class="active" data-mode="calendrier" aria-label="Vue calendrier">📅</button>
-            <button type="button" data-mode="liste" aria-label="Vue liste">📋</button>
-          </div>
-        </div>
-        <div class="cal-menu-panel" id="cal-menu-panel-conjoint" style="display:none;"></div>
+      <div class="card" id="calendrier-recurrent-card-conjoint" style="padding-top:14px;">
         <div id="cal-corps-conjoint"></div>
         <div class="table-card" id="table-card-conjoint" style="display:none;padding:0 14px 8px;">
           <div class="table-filters" style="padding-top:10px;">
@@ -817,6 +814,7 @@
     <!-- Sous-onglet : RÉSUMÉ (fusionne les anciens "Résumé" et "Année" ; le choix Mois/Année
          se fait via le sélecteur de période commun, en haut de la page) -->
     <div class="subtab-panel" data-scope="conjoint" data-sub="resume">
+      <div class="stats-row" id="mois-stats-conjoint"></div>
       <div class="stats-row" id="annee-stats-conjoint" style="display:none;"></div>
       <div class="grid-2" id="resume-mois-conjoint">
         <div class="card">
@@ -887,18 +885,8 @@
         <button data-include="non">Perso seulement</button>
         <button data-include="oui">+ Conjoint</button>
       </div>
-      <div class="stats-row" id="mois-stats-personnel"></div>
 
-      <div class="card" id="calendrier-recurrent-card-personnel">
-        <div class="table-head-row cal-head">
-          <button type="button" class="cal-hamburger-btn" data-scope="personnel" aria-label="Menu du calendrier">☰</button>
-          <h3 id="cal-mode-titre-personnel" style="flex:1;">📅 Calendrier</h3>
-          <div class="cal-mode-switch" data-scope="personnel">
-            <button type="button" class="active" data-mode="calendrier" aria-label="Vue calendrier">📅</button>
-            <button type="button" data-mode="liste" aria-label="Vue liste">📋</button>
-          </div>
-        </div>
-        <div class="cal-menu-panel" id="cal-menu-panel-personnel" style="display:none;"></div>
+      <div class="card" id="calendrier-recurrent-card-personnel" style="padding-top:14px;">
         <div id="cal-corps-personnel"></div>
         <div class="table-card" id="table-card-personnel" style="display:none;padding:0 14px 8px;">
           <div class="table-filters" style="padding-top:10px;">
@@ -989,6 +977,7 @@
         <button data-include="non">Perso seulement</button>
         <button data-include="oui">+ Conjoint</button>
       </div>
+      <div class="stats-row" id="mois-stats-personnel"></div>
       <div class="stats-row" id="annee-stats-personnel" style="display:none;"></div>
       <div class="grid-2" id="resume-mois-personnel">
         <div class="card">
@@ -1264,6 +1253,12 @@
 <div class="edit-modal" id="jour-modal"><div class="edit-card" id="jour-modal-card">
   <button class="modal-close-btn" id="close-jour-modal" aria-label="Fermer">&times;</button>
   <div id="jour-modal-content"></div>
+</div></div>
+
+<div class="edit-modal" id="cal-filtres-modal"><div class="edit-card">
+  <button class="modal-close-btn" id="close-cal-filtres-modal" aria-label="Fermer">&times;</button>
+  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Filtres d'affichage</h3>
+  <div id="cal-filtres-modal-content"></div>
 </div></div>
 
 
@@ -2633,7 +2628,6 @@ function depensesPourCalendrier(scope, debut, fin){
 function afficherCalendrierRecurrent(scope){
   const corpsEl = document.getElementById(`cal-corps-${scope}`);
   const tableCardEl = document.getElementById(`table-card-${scope}`);
-  const modeTitreEl = document.getElementById(`cal-mode-titre-${scope}`);
   if(!corpsEl) return;
   const { vue, dateRef } = etatCalendrierPeriode;
   const { debut, fin } = bornePeriode(vue, dateRef);
@@ -2642,37 +2636,36 @@ function afficherCalendrierRecurrent(scope){
   if(mode === 'liste'){
     corpsEl.style.display = 'none';
     if(tableCardEl) tableCardEl.style.display = '';
-    if(modeTitreEl) modeTitreEl.textContent = '📋 Liste';
     afficherTableauScope(scope);
   } else {
     corpsEl.style.display = '';
     if(tableCardEl) tableCardEl.style.display = 'none';
-    if(modeTitreEl) modeTitreEl.textContent = '📅 Calendrier';
     corpsEl.innerHTML = vue==='mois' ? rendreGrilleMoisCalendrier(scope, dateRef) : rendreAgendaCalendrier(scope, debut, fin);
   }
 
-  /* Si le menu ☰ est ouvert, on le re-rend pour refléter les filtres actifs à jour. */
-  const panneau = document.getElementById(`cal-menu-panel-${scope}`);
-  if(panneau && panneau.style.display !== 'none') rendreMenuCalendrier(scope);
+  /* Si la fenêtre de filtres est ouverte pour ce scope, on la re-rend pour refléter les
+     filtres actifs à jour. */
+  const modal = document.getElementById('cal-filtres-modal');
+  if(modal.style.display !== 'none' && scopeFiltresCourant === scope) rendreMenuCalendrier(scope);
 }
-document.querySelectorAll('.cal-mode-switch').forEach(sw=>{
-  const scope = sw.dataset.scope;
-  sw.querySelectorAll('button').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      modeCalendrier[scope] = b.dataset.mode;
-      sw.querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
-      afficherCalendrierRecurrent(scope);
-    });
-  });
-});
 
-/* ===================== MENU ☰ (filtres d'affichage, façon Google Agenda) =====================
-   Le choix du type de période (Jour/Semaine/Paie/Mois) vit maintenant dans le sélecteur
-   commun en haut de la page (voir afficherNavigationPeriode) ; ce menu ne garde que les
-   filtres "Qui" / catégories / revenus. */
+/* ===================== FENÊTRE DE FILTRES D'AFFICHAGE (façon Google Agenda) =====================
+   Le choix du type de période (Jour/Semaine/Paie/Mois) et le mode Calendrier/Liste vivent
+   dans le sélecteur commun en haut de la page (voir afficherNavigationPeriode) ; cette
+   fenêtre ne garde que les filtres "Qui" / catégories / revenus, et s'ouvre en pop-up
+   plutôt que de se dérouler en ligne — plus facile à repérer et à fermer sur mobile. */
+let scopeFiltresCourant = 'conjoint';
+function fermerFiltresModal(){ document.getElementById('cal-filtres-modal').style.display = 'none'; }
+document.getElementById('close-cal-filtres-modal').addEventListener('click', fermerFiltresModal);
+function ouvrirFiltresModal(scope){
+  scopeFiltresCourant = scope;
+  rendreMenuCalendrier(scope);
+  document.getElementById('cal-filtres-modal').style.display = 'flex';
+}
+document.getElementById('period-right-controls').addEventListener('click', ()=> ouvrirFiltresModal(activeMainTab));
+
 function rendreMenuCalendrier(scope){
-  const panneau = document.getElementById(`cal-menu-panel-${scope}`);
-  if(!panneau) return;
+  const panneau = document.getElementById('cal-filtres-modal-content');
   const filtres = filtresCalendrier[scope];
   const catsPresentes = categories.filter(c => c!=='Revenu');
 
@@ -2732,19 +2725,6 @@ function rendreMenuCalendrier(scope){
     });
   });
 }
-document.querySelectorAll('.cal-hamburger-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const scope = btn.dataset.scope;
-    const panneau = document.getElementById(`cal-menu-panel-${scope}`);
-    const ouvert = panneau.style.display !== 'none';
-    /* Un seul menu ouvert à la fois, tous scopes confondus. */
-    document.querySelectorAll('.cal-menu-panel').forEach(p=>p.style.display='none');
-    if(!ouvert){
-      rendreMenuCalendrier(scope);
-      panneau.style.display = '';
-    }
-  });
-});
 
 function rendreGrilleMoisCalendrier(scope, dateRef){
   const { debut, fin } = borneMois(dateRef);
@@ -3075,6 +3055,8 @@ function afficherNavigationPeriode(){
   const sub = estSection ? activeSubtab[activeMainTab] : null;
   const nav = document.getElementById('period-nav');
   const switchEl = document.getElementById('period-type-switch');
+  const gauche = document.getElementById('period-left-controls');
+  const droite = document.getElementById('period-right-controls');
   const label = document.getElementById('period-label');
 
   /* Un seul sélecteur de période, toujours placé juste sous les onglets Transactions /
@@ -3093,6 +3075,8 @@ function afficherNavigationPeriode(){
     return;
   }
   nav.style.display = 'flex';
+  gauche.style.display = 'none';
+  droite.style.display = 'none';
 
   if(sub==='budget'){
     switchEl.style.display = 'none';
@@ -3116,6 +3100,17 @@ function afficherNavigationPeriode(){
       rafraichirSousOnglet(activeMainTab, 'mois');
       afficherNavigationPeriode();
     }));
+    /* Sur la même ligne que Jour/Semaine/Paie/Mois : vue Calendrier/Liste à gauche,
+       menu ☰ des filtres à droite. */
+    gauche.style.display = '';
+    gauche.innerHTML = [['calendrier','📅'],['liste','📋']].map(([v,icone])=>
+      `<button type="button" data-mode="${v}" class="${modeCalendrier[activeMainTab]===v?'active':''}" aria-label="Vue ${v}">${icone}</button>`).join('');
+    gauche.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+      modeCalendrier[activeMainTab] = b.dataset.mode;
+      afficherCalendrierRecurrent(activeMainTab);
+      afficherNavigationPeriode();
+    }));
+    droite.style.display = '';
     const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
     label.textContent = libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin);
   }
@@ -3150,9 +3145,9 @@ document.querySelectorAll('#compare-scope-toggle button').forEach(bouton=>{
 
 function rafraichirSousOnglet(scope, sub){
   if(sub==='mois'){
-    afficherStatsMoisScope(scope);
     /* Le calendrier, l'échéancier du compte conjoint et la liste (mode "Liste" du
-       calendrier) vivent maintenant tous dans "Transactions" (ex-"Mois"). */
+       calendrier) vivent maintenant tous dans "Transactions" (ex-"Mois"). Les tableaux de
+       chiffres (stats, graphiques) vivent dans "Résumé". */
     afficherRecurrencesScope(scope);
     /* S'assure que les récurrences sont bien générées au moins jusqu'à la fin de la
        période consultée dans le calendrier, même très loin dans le futur. */
@@ -3161,17 +3156,21 @@ function rafraichirSousOnglet(scope, sub){
   } else if(sub==='resume'){
     const moisBlock = document.getElementById(`resume-mois-${scope}`);
     const anneeBlock = document.getElementById(`resume-annee-${scope}`);
+    const moisStats = document.getElementById(`mois-stats-${scope}`);
     const anneeStats = document.getElementById(`annee-stats-${scope}`);
     if(periodeTypeResume==='annee'){
       if(moisBlock) moisBlock.style.display = 'none';
       if(anneeBlock) anneeBlock.style.display = '';
+      if(moisStats) moisStats.style.display = 'none';
       if(anneeStats) anneeStats.style.display = '';
       afficherAnneeScope(scope);
       genererDepensesRecurrentes(new Date(anneeActive, 11, 31));
     } else {
       if(moisBlock) moisBlock.style.display = '';
       if(anneeBlock) anneeBlock.style.display = 'none';
+      if(moisStats) moisStats.style.display = '';
       if(anneeStats) anneeStats.style.display = 'none';
+      afficherStatsMoisScope(scope);
       afficherGraphiqueEvolutionScope(scope);
       afficherGraphiqueCategoriesMoisScope(scope);
       genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
