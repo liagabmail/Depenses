@@ -244,16 +244,23 @@
   .cal-titre{font-weight:600;font-size:14px;text-align:center;text-transform:capitalize;flex:1;}
 
   /* Grille mensuelle pleine largeur, style Google Agenda : pas de coins arrondis/bordures
-     entre cellules, juste une grille continue avec de fines séparations. */
+     entre cellules, juste une grille continue avec de fines séparations. Cellules légères :
+     juste le numéro du jour et de petites pastilles de couleur (+ un chiffre à partir de 2
+     dépenses), plutôt que du texte qui alourdit la vue. */
   .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border);border-left:1px solid var(--border);}
   .cal-month-dow{font-size:10px;color:var(--text-secondary);text-align:center;padding:6px 0;text-transform:uppercase;}
-  .cal-month-cell{min-height:78px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:3px;display:flex;flex-direction:column;gap:2px;overflow:hidden;cursor:pointer;}
+  .cal-month-cell{min-height:46px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden;cursor:pointer;}
   .cal-month-cell:active{background:color-mix(in srgb, var(--blue) 6%, transparent);}
   .cal-month-cell.outside{opacity:.35;}
   .cal-month-daynum{font-size:11px;color:var(--text-secondary);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
   .cal-month-cell.today .cal-month-daynum{background:var(--blue);color:#fff;font-weight:700;}
-  .cal-pill{font-size:10px;padding:2px 4px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5;}
-  .cal-more{font-size:10px;color:var(--text-secondary);cursor:pointer;padding-left:2px;}
+  .cal-month-dots{display:flex;align-items:center;justify-content:center;gap:3px;min-height:6px;}
+  .cal-dot-mini{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .cal-dot-mini.cal-p1{background:var(--blue);}
+  .cal-dot-mini.cal-p2{background:var(--red);}
+  .cal-dot-mini.cal-compte{background:#c9a227;}
+  .cal-dot-mini.cal-revenu{background:var(--green);}
+  .cal-month-count{font-size:9px;color:var(--text-secondary);font-weight:700;line-height:1;margin-left:1px;}
 
   .cal-agenda-day{margin-bottom:14px;padding:0 14px;}
   .cal-agenda-day-header{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:capitalize;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border);}
@@ -2798,12 +2805,17 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
     const iso = formaterDateISO(curseur);
     const dansLeMois = curseur.getMonth()===dateRef.getMonth();
     const jourItems = parJour[iso] || [];
-    const visibles = jourItems.slice(0,3);
-    const reste = jourItems.length - visibles.length;
+    const nb = jourItems.length;
+    /* Une seule pastille par type présent ce jour-là (max 4), et un chiffre à côté
+       seulement s'il y a 2 dépenses ou plus (léger et lisible, façon Google Agenda en
+       vue compacte). */
+    const couleursPresentes = [...new Set(jourItems.map(classeTypeDepense))].slice(0,4);
     html += `<div class="cal-month-cell ${dansLeMois?'':'outside'}" onclick="ouvrirJourModal('${scope}','${iso}')">
       <div class="cal-month-daynum ${iso===aujourdhuiStr?'today':''}">${curseur.getDate()}</div>
-      ${visibles.map(e=>`<div class="cal-pill ${classeTypeDepense(e)}">${(e.note||e.category).replace(/</g,'')}</div>`).join('')}
-      ${reste>0 ? `<div class="cal-more">+${reste} de plus</div>` : ''}
+      ${nb>0 ? `<div class="cal-month-dots">
+        ${couleursPresentes.map(c=>`<span class="cal-dot-mini ${c}"></span>`).join('')}
+        ${nb>=2 ? `<span class="cal-month-count">${nb}</span>` : ''}
+      </div>` : ''}
     </div>`;
     curseur = ajouterJours(curseur, 1);
   }
@@ -2865,11 +2877,31 @@ function ouvrirJourModal(scope, iso){
   contenu.innerHTML = `
     <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;text-transform:capitalize;">${dateLisible}</h3>
     <div id="jour-modal-liste">
-      ${items.length ? items.map(e=>`
-        <div class="cal-agenda-item ${classeTypeDepense(e)}" onclick="fermerJourModal();ouvrirDetailOccurrence('${e.id}')">
-          <div class="cal-agenda-item-nom">${e.recurrenceId?'↻ ':''}${e.note || e.category}</div>
-          <div class="cal-agenda-item-montant">${e.estRevenu?'+':''}${formaterMonnaie(e.amount)}</div>
-        </div>`).join('') : '<div class="cal-agenda-empty">Aucune dépense ce jour-là</div>'}
+      ${items.length ? items.map(e=>{
+        const dotClass = e.who;
+        const quiLabel = e.estCompte ? '🏦 Compte conjoint' : libellePersonne(e.who);
+        const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
+        let iconeConjointe = '';
+        if(e.estRevenu){
+          iconeConjointe = '<span class="freq-pill badge-revenu" title="Revenu">💰 Revenu</span>';
+        } else if(e.estCompte){
+          iconeConjointe = `<span class="freq-pill badge-compte" title="Payée automatiquement par le compte conjoint">${e.pourcentageP1!=null?e.pourcentageP1:50}% ${nomsPersonnes.p1}</span>`;
+        }
+        const categoriePill = e.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}">${e.category}</span>`;
+        const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
+        return `
+        <div class="cal-agenda-item" onclick="fermerJourModal();ouvrirDetailOccurrence('${e.id}')">
+          <div style="min-width:0;flex:1;">
+            <div class="cal-agenda-item-nom">${iconeRecurrente} ${e.note || e.category}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
+              <span class="who-badge"><span class="dot ${dotClass}"></span>${quiLabel}</span>
+              ${categoriePill}
+              ${iconeConjointe}
+            </div>
+          </div>
+          <div class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</div>
+        </div>`;
+      }).join('') : '<div class="cal-agenda-empty">Aucune dépense ce jour-là</div>'}
     </div>
     <div class="edit-actions" style="margin-top:14px;">
       <button class="btn-add" style="width:100%;" id="jour-btn-ajouter-depense">+ Ajouter</button>
