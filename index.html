@@ -277,6 +277,7 @@
   .cal-agenda-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
   body.dark .cal-agenda-item{background:#2c3136;}
   .cal-agenda-item-nom{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cal-agenda-item-badges{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;}
   .cal-agenda-item-date{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--border);padding:2px 6px;border-radius:5px;flex-shrink:0;}
   .cal-agenda-item-montant{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;}
 
@@ -2028,7 +2029,10 @@ function calculerEcheancierCompte(nbPaies){
 }
 
 /* Affiche l'échéancier calculé dans la carte "🏦 Prochains dépôts au compte conjoint". */
-let nbPaiesEcheancierAffichees = 2;
+/* En mode "Année", l'échéancier montre par défaut les paies du mois civil en cours ; ce
+   drapeau bascule vers "voir plus" (jusqu'à 7 paies à venir, peu importe le mois). */
+let echeancierAnneeEtendu = false;
+
 function afficherEcheancierCompteConjoint(){
   const carte = document.getElementById('recurrent-compte-echeancier-card-conjoint');
   const conteneur = document.getElementById('recurrent-compte-echeancier-conjoint');
@@ -2045,13 +2049,44 @@ function afficherEcheancierCompteConjoint(){
   }
   carte.style.display = '';
 
-  const echeancierComplet = calculerEcheancierCompte();
+  const echeancierComplet = calculerEcheancierCompte(8);
   if(!echeancierComplet || !echeancierComplet.length){
     conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
     return;
   }
-  const echeancier = echeancierComplet.slice(0, nbPaiesEcheancierAffichees);
-  const resteAVenir = echeancierComplet.length - echeancier.length;
+
+  /* Le contenu de l'échéancier suit le type de période choisi dans Résumé : "Paie" ne
+     montre que le tout prochain dépôt, "Mois" (et Jour/Semaine) ne montrent que les paies
+     tombant dans la période choisie, "Année" montre par défaut le mois en cours avec un
+     "voir plus" vers les 7 prochaines paies. */
+  let echeancier;
+  let afficherVoirPlus = false;
+  let afficherVoirMoins = false;
+
+  if(periodeTypeResume === 'paie'){
+    echeancier = echeancierComplet.slice(0, 1);
+  } else if(periodeTypeResume === 'annee'){
+    if(!echeancierAnneeEtendu){
+      const debutMoisStr = formaterDateISO(new Date(moisActif.year, moisActif.month, 1));
+      const finMoisStr = formaterDateISO(new Date(moisActif.year, moisActif.month+1, 0));
+      echeancier = echeancierComplet.filter(l => l.iso >= debutMoisStr && l.iso <= finMoisStr);
+      afficherVoirPlus = echeancier.length < echeancierComplet.length;
+    } else {
+      echeancier = echeancierComplet.slice(0, 7);
+      afficherVoirMoins = true;
+    }
+  } else {
+    const { debut, fin } = periodeTypeResume === 'mois'
+      ? { debut: new Date(moisActif.year, moisActif.month, 1), fin: new Date(moisActif.year, moisActif.month+1, 0) }
+      : bornePeriode(periodeTypeResume, etatCalendrierPeriode.dateRef);
+    const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
+    echeancier = echeancierComplet.filter(l => l.iso >= debutStr && l.iso <= finStr);
+  }
+
+  if(!echeancier.length){
+    conteneur.innerHTML = `<div class="budget-empty">Aucun dépôt prévu pour cette période.</div>`;
+    return;
+  }
 
   const formatDate = d => d.toLocaleDateString('fr-CA', {weekday:'short', day:'numeric', month:'short'});
   conteneur.innerHTML = `
@@ -2070,16 +2105,16 @@ function afficherEcheancierCompteConjoint(){
         <span class="value p2" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p2)}</span>
       </div>
     </div>
-  `).join('') + (resteAVenir > 0 ? `
-    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir ${resteAVenir} de plus</div>
-  ` : (nbPaiesEcheancierAffichees > 2 ? `
+  `).join('') + (afficherVoirPlus ? `
+    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir plus (7 prochaines paies)</div>
+  ` : (afficherVoirMoins ? `
     <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-moins">Voir moins</div>
   ` : ''));
 
   const boutonPlus = document.getElementById('echeancier-voir-plus');
-  if(boutonPlus) boutonPlus.addEventListener('click', ()=>{ nbPaiesEcheancierAffichees = echeancierComplet.length; afficherEcheancierCompteConjoint(); });
+  if(boutonPlus) boutonPlus.addEventListener('click', ()=>{ echeancierAnneeEtendu = true; afficherEcheancierCompteConjoint(); });
   const boutonMoins = document.getElementById('echeancier-voir-moins');
-  if(boutonMoins) boutonMoins.addEventListener('click', ()=>{ nbPaiesEcheancierAffichees = 2; afficherEcheancierCompteConjoint(); });
+  if(boutonMoins) boutonMoins.addEventListener('click', ()=>{ echeancierAnneeEtendu = false; afficherEcheancierCompteConjoint(); });
 }
 
 /* Génère dans Depenses toute échéance (passée ou future, jusqu'à limiteDate) qui n'a pas
@@ -2543,6 +2578,7 @@ function sauvegarderFiltresCalendrier(scope){
 const JOURS_SEMAINE_LUN_DIM = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MOIS_NOMS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 const VUES_CALENDRIER = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'] ];
+const VUES_RESUME = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['annee','Année'] ];
 
 /* Lundi de la semaine contenant `date` (la semaine commence le lundi, convention FR-CA usuelle). */
 function lundiDeSemaine(date){
@@ -2757,16 +2793,21 @@ function rendreCarteDepenseHTML(e, scope, options){
     ? `<div style="margin-top:4px;"><span class="freq-pill badge-compte">${e.pourcentageP1}% ${nomsPersonnes.p1}</span></div>` : '';
   const dateBadge = options.montrerDate
     ? `<span class="cal-agenda-item-date">${dateLocaleDepuisISO(e.date).toLocaleDateString('fr-CA',{day:'numeric', month:'short'})}</span>` : '';
+  /* Deux rangées à emplacement FIXE, peu importe le type de dépense : date+qui toujours
+     ensemble sur la même ligne, catégorie/revenu toujours sur la ligne suivante — pour que
+     l'information soit toujours au même endroit, plutôt que de sauter de ligne selon la
+     longueur du texte ("Compte conjoint" vs "Gabriel", par exemple). */
+  const ligneBadges = (categoriePill || badgeRevenu)
+    ? `<div class="cal-agenda-item-badges">${categoriePill}${badgeRevenu}</div>` : '';
   return `
     <div class="cal-agenda-item" onclick="fermerJourModal();ouvrirDetailOccurrence('${e.id}')">
       <div style="min-width:0;flex:1;">
         <div class="cal-agenda-item-nom">${iconeRecurrente} ${e.note || e.category}</div>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
+        <div class="cal-agenda-item-badges">
           ${dateBadge}
           <span class="who-badge"><span class="dot ${dotClass}"></span>${quiLabel}</span>
-          ${categoriePill}
-          ${badgeRevenu}
         </div>
+        ${ligneBadges}
       </div>
       <div style="text-align:right;flex-shrink:0;margin-left:10px;">
         <div class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</div>
@@ -3066,14 +3107,22 @@ function afficherNavigationPeriode(){
     label.textContent = `${capitaliser(NOMS_MOIS[moisActif.month])} ${moisActif.year}`;
   } else if(sub==='resume'){
     switchEl.style.display = '';
-    switchEl.innerHTML = [['mois','Mois'],['annee','Année']].map(([v,lbl])=>
+    switchEl.innerHTML = VUES_RESUME.map(([v,lbl])=>
       `<button type="button" data-type="${v}" class="${periodeTypeResume===v?'active':''}">${lbl}</button>`).join('');
     switchEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
       periodeTypeResume = b.dataset.type;
+      echeancierAnneeEtendu = false;
       rafraichirSousOnglet(activeMainTab, 'resume');
       afficherNavigationPeriode();
     }));
-    label.textContent = periodeTypeResume==='mois' ? `${capitaliser(NOMS_MOIS[moisActif.month])} ${moisActif.year}` : String(anneeActive);
+    if(periodeTypeResume==='mois'){
+      label.textContent = `${capitaliser(NOMS_MOIS[moisActif.month])} ${moisActif.year}`;
+    } else if(periodeTypeResume==='annee'){
+      label.textContent = String(anneeActive);
+    } else {
+      const { debut, fin } = bornePeriode(periodeTypeResume, etatCalendrierPeriode.dateRef);
+      label.textContent = libellePeriodeCalendrier(periodeTypeResume, debut, fin);
+    }
   } else if(sub==='mois'){
     switchEl.style.display = '';
     switchEl.innerHTML = VUES_CALENDRIER.map(([v,lbl])=>
@@ -3139,6 +3188,22 @@ document.querySelectorAll('#compare-scope-toggle button').forEach(bouton=>{
   });
 });
 
+/* Petit total pour les vues Jour/Semaine/Paie de Résumé (pas de graphique à cette échelle,
+   mais un chiffre reste utile — surtout côté Personnel qui n'a pas d'échéancier). */
+function afficherStatsPeriodeCourte(scope, vue){
+  const el = document.getElementById(`mois-stats-${scope}`);
+  if(!el) return;
+  const { debut, fin } = bornePeriode(vue, etatCalendrierPeriode.dateRef);
+  const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
+  const liste = depenses.filter(e =>
+    (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser)) &&
+    !e.estRevenu && e.date>=debutStr && e.date<=finStr
+  );
+  const total = liste.reduce((s,e)=>s+e.amount,0);
+  el.style.display = '';
+  el.innerHTML = `<div class="stat-card"><div class="label">Total dépensé<span class="mobile-line"> cette période</span></div><div class="value">${formaterMonnaie(total)}</div></div>`;
+}
+
 function rafraichirSousOnglet(scope, sub){
   if(sub==='mois'){
     /* Le calendrier, l'échéancier du compte conjoint et la liste (mode "Liste" du
@@ -3154,26 +3219,39 @@ function rafraichirSousOnglet(scope, sub){
     const anneeBlock = document.getElementById(`resume-annee-${scope}`);
     const moisStats = document.getElementById(`mois-stats-${scope}`);
     const anneeStats = document.getElementById(`annee-stats-${scope}`);
+    const echeancierCard = scope==='conjoint' ? document.getElementById('recurrent-compte-echeancier-card-conjoint') : null;
+
     if(periodeTypeResume==='annee'){
       if(moisBlock) moisBlock.style.display = 'none';
       if(anneeBlock) anneeBlock.style.display = '';
       if(moisStats) moisStats.style.display = 'none';
       if(anneeStats) anneeStats.style.display = '';
-      if(scope==='conjoint') document.getElementById('recurrent-compte-echeancier-card-conjoint').style.display = 'none';
+      if(scope==='conjoint') afficherEcheancierCompteConjoint();
       afficherAnneeScope(scope);
       genererDepensesRecurrentes(new Date(anneeActive, 11, 31));
-    } else {
+    } else if(periodeTypeResume==='mois'){
       if(moisBlock) moisBlock.style.display = '';
       if(anneeBlock) anneeBlock.style.display = 'none';
       if(moisStats) moisStats.style.display = '';
       if(anneeStats) anneeStats.style.display = 'none';
       afficherStatsMoisScope(scope);
-      /* L'échéancier des prochains dépôts au compte conjoint vit ici (dans Résumé, en
-         mode Mois) plutôt que dans Transactions. */
+      /* L'échéancier des prochains dépôts au compte conjoint vit ici (dans Résumé) plutôt
+         que dans Transactions. */
       if(scope==='conjoint') afficherEcheancierCompteConjoint();
       afficherGraphiqueEvolutionScope(scope);
       afficherGraphiqueCategoriesMoisScope(scope);
       genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
+    } else {
+      /* Jour / Semaine / Paie : les graphiques d'évolution mensuelle n'ont pas de sens à
+         cette échelle. On montre plutôt un petit total pour la période (utile aussi côté
+         Personnel, qui n'a pas d'échéancier), et l'échéancier des dépôts pour Conjoint. */
+      if(moisBlock) moisBlock.style.display = 'none';
+      if(anneeBlock) anneeBlock.style.display = 'none';
+      if(anneeStats) anneeStats.style.display = 'none';
+      afficherStatsPeriodeCourte(scope, periodeTypeResume);
+      if(scope==='conjoint') afficherEcheancierCompteConjoint();
+      const { fin } = bornePeriode(periodeTypeResume, etatCalendrierPeriode.dateRef);
+      genererDepensesRecurrentes(fin);
     }
   } else if(sub==='budget'){
     afficherSectionBudget(scope);
@@ -3219,7 +3297,12 @@ function periodeNavigation(direction){
     changerMois(direction);
   } else if(sub==='resume'){
     if(periodeTypeResume==='mois') changerMois(direction);
-    else changerAnnee(direction);
+    else if(periodeTypeResume==='annee') changerAnnee(direction);
+    else {
+      etatCalendrierPeriode.dateRef = avancerPeriode(periodeTypeResume, etatCalendrierPeriode.dateRef, direction);
+      rafraichirSousOnglet(activeMainTab, 'resume');
+      afficherNavigationPeriode();
+    }
   } else if(sub==='mois'){
     etatCalendrierPeriode.dateRef = avancerPeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef, direction);
     rafraichirSousOnglet(activeMainTab, 'mois');
@@ -3234,9 +3317,9 @@ function periodeLabelClick(){
     anneeActive = aujourdhui.getFullYear();
     rafraichirSousOnglet(activeMainTab, 'resume');
     afficherNavigationPeriode();
-  } else if(sub==='mois'){
+  } else if(sub==='mois' || sub==='resume'){
     etatCalendrierPeriode.dateRef = debutJour(new Date());
-    rafraichirSousOnglet(activeMainTab, 'mois');
+    rafraichirSousOnglet(activeMainTab, sub);
     afficherNavigationPeriode();
   }
 }
