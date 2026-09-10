@@ -277,6 +277,7 @@
   .cal-agenda-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
   body.dark .cal-agenda-item{background:#2c3136;}
   .cal-agenda-item-nom{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cal-agenda-item-date{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--border);padding:2px 6px;border-radius:5px;flex-shrink:0;}
   .cal-agenda-item-montant{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;}
 
   /* Couleurs des pastilles/items par type, cohérentes avec le reste de l'app */
@@ -692,7 +693,7 @@
     <div class="period-type-row">
       <div class="cal-mode-switch" id="period-left-controls" style="display:none;"></div>
       <div class="period-type-switch" id="period-type-switch" style="display:none;"></div>
-      <button type="button" class="cal-hamburger-btn" id="period-right-controls" style="display:none;" aria-label="Filtres d'affichage">☰</button>
+      <div class="cal-mode-switch" id="period-right-controls" style="display:none;"></div>
     </div>
     <div class="period-nav-row">
       <button id="period-prev" aria-label="Période précédente">&lsaquo;</button>
@@ -712,12 +713,6 @@
 
     <!-- Sous-onglet : MOIS -->
     <div class="subtab-panel active" data-scope="conjoint" data-sub="mois">
-      <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
-        <div class="table-head-row">
-          <h3>🏦 Prochains dépôts au compte conjoint</h3>
-        </div>
-        <div id="recurrent-compte-echeancier-conjoint"></div>
-      </div>
       <div class="card" id="calendrier-recurrent-card-conjoint" style="padding-top:14px;">
         <div id="cal-corps-conjoint"></div>
         <div class="table-card" id="table-card-conjoint" style="display:none;padding:0 14px 8px;">
@@ -725,20 +720,7 @@
             <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-conjoint" aria-label="Trier les dépenses">
             <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
           </select><button type="button" class="sort-direction" id="mobile-sort-dir-conjoint" aria-label="Tri croissant">↑</button></div></div>
-          <div style="overflow-x:auto;">
-            <table id="table-conjoint" data-scope="conjoint">
-              <thead>
-                <tr>
-                  <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
-                  <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
-                  <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
-                  <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
-                  <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
-                </tr>
-              </thead>
-              <tbody id="table-body-conjoint"></tbody>
-            </table>
-          </div>
+          <div id="table-body-conjoint"></div>
           <div class="empty-state" id="empty-state-conjoint" style="display:none;">Aucune dépense pour cette période.</div>
         </div>
       </div>
@@ -816,6 +798,12 @@
     <div class="subtab-panel" data-scope="conjoint" data-sub="resume">
       <div class="stats-row" id="mois-stats-conjoint"></div>
       <div class="stats-row" id="annee-stats-conjoint" style="display:none;"></div>
+      <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
+        <div class="table-head-row">
+          <h3>🏦 Prochains dépôts au compte conjoint</h3>
+        </div>
+        <div id="recurrent-compte-echeancier-conjoint"></div>
+      </div>
       <div class="grid-2" id="resume-mois-conjoint">
         <div class="card">
           <h3 id="month-evolution-title-conjoint">Évolution des dépenses</h3>
@@ -893,20 +881,7 @@
             <div class="mobile-sort" style="margin-left:auto;"><select id="mobile-sort-personnel" aria-label="Trier les dépenses">
             <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
           </select><button type="button" class="sort-direction" id="mobile-sort-dir-personnel" aria-label="Tri croissant">↑</button></div></div>
-          <div style="overflow-x:auto;">
-            <table id="table-personnel" data-scope="personnel" class="hide-qui-column">
-              <thead>
-                <tr>
-                  <th data-sort="qui">Qui <span class="arrow" data-arrow="qui"></span></th>
-                  <th data-sort="date">Date <span class="arrow" data-arrow="date"></span></th>
-                  <th data-sort="note">Note <span class="arrow" data-arrow="note"></span></th>
-                  <th data-sort="categorie">Catégorie <span class="arrow" data-arrow="categorie"></span></th>
-                  <th data-sort="montant" style="text-align:right;">Montant <span class="arrow" data-arrow="montant"></span></th>
-                </tr>
-              </thead>
-              <tbody id="table-body-personnel"></tbody>
-            </table>
-          </div>
+          <div id="table-body-personnel"></div>
           <div class="empty-state" id="empty-state-personnel" style="display:none;">Aucune dépense pour cette période.</div>
         </div>
       </div>
@@ -2490,11 +2465,6 @@ function afficherRecurrencesScope(scope){
     `;
   }
 
-  /* Dans Conjoint : échéancier réel de ce que chacun doit déposer au compte conjoint,
-     paie par paie (aux 2 semaines), calculé à partir des vraies dates d'échéance des
-     paiements/revenus "compte" (voir calculerEcheancierCompte plus bas). */
-  if(scope==='conjoint') afficherEcheancierCompteConjoint();
-
   /* Calendrier des dépenses (récurrentes ou non) façon Outlook, voir plus bas. */
   afficherCalendrierRecurrent(scope);
 
@@ -2617,12 +2587,24 @@ function depensesPourCalendrier(scope, debut, fin){
   const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
   const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
   const filtres = filtresCalendrier[scope];
-  return depenses
+  const appliquerFiltres = e => !(filtres.masquerRevenus && e.estRevenu) && !filtres.categoriesCachees.includes(e.category) && !filtres.quiCaches.includes(e.who);
+
+  let liste = depenses
     .filter(e => e.type===type && e.date>=debutStr && e.date<=finStr)
-    .filter(e => !(filtres.masquerRevenus && e.estRevenu))
-    .filter(e => !filtres.categoriesCachees.includes(e.category))
-    .filter(e => !filtres.quiCaches.includes(e.who))
-    .sort((a,b)=> a.date.localeCompare(b.date));
+    .filter(appliquerFiltres)
+    .map(e=>({...e, partagee:false}));
+
+  /* "+ Conjoint" (Personnel uniquement) : on ajoute aussi les dépenses conjointes de la
+     période, à la part de l'utilisateur (voir partPersonnelle), comme le fait déjà le
+     tableau/mode Liste — pour que le calendrier reflète le même choix. */
+  if(scope==='personnel' && inclureConjointDansPersonnel){
+    const conjoints = depenses
+      .filter(e=>e.type==='conjointe' && !e.estRevenu && e.date>=debutStr && e.date<=finStr)
+      .filter(appliquerFiltres);
+    liste = liste.concat(conjoints.map(e=>({...e, amount:e.amount*partPersonnelle(e), partagee:true})));
+  }
+
+  return liste.sort((a,b)=> a.date.localeCompare(b.date));
 }
 
 function afficherCalendrierRecurrent(scope){
@@ -2662,7 +2644,6 @@ function ouvrirFiltresModal(scope){
   rendreMenuCalendrier(scope);
   document.getElementById('cal-filtres-modal').style.display = 'flex';
 }
-document.getElementById('period-right-controls').addEventListener('click', ()=> ouvrirFiltresModal(activeMainTab));
 
 function rendreMenuCalendrier(scope){
   const panneau = document.getElementById('cal-filtres-modal-content');
@@ -2760,6 +2741,40 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
   return html;
 }
 
+/* Carte de dépense unifiée, réutilisée partout où une liste de dépenses s'affiche (agenda
+   Jour/Semaine/Paie, fiche d'une journée, mode Liste) — même visuel partout plutôt qu'un
+   tableau différent selon l'endroit. `montrerDate` ajoute un petit badge de date (utile
+   seulement quand le regroupement par jour n'est pas déjà visible, comme en mode Liste). */
+function rendreCarteDepenseHTML(e, scope, options){
+  options = options || {};
+  const dotClass = e.who;
+  const quiLabel = e.estCompte ? '🏦 Compte conjoint' : libellePersonne(e.who);
+  const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
+  const categoriePill = e.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}">${e.category}</span>`;
+  const badgeRevenu = e.estRevenu ? '<span class="freq-pill badge-revenu">💰 Revenu</span>' : '';
+  const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
+  const badgePourcentage = scope==='conjoint' && e.pourcentageP1!=null
+    ? `<div style="margin-top:4px;"><span class="freq-pill badge-compte">${e.pourcentageP1}% ${nomsPersonnes.p1}</span></div>` : '';
+  const dateBadge = options.montrerDate
+    ? `<span class="cal-agenda-item-date">${dateLocaleDepuisISO(e.date).toLocaleDateString('fr-CA',{day:'numeric', month:'short'})}</span>` : '';
+  return `
+    <div class="cal-agenda-item" onclick="fermerJourModal();ouvrirDetailOccurrence('${e.id}')">
+      <div style="min-width:0;flex:1;">
+        <div class="cal-agenda-item-nom">${iconeRecurrente} ${e.note || e.category}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
+          ${dateBadge}
+          <span class="who-badge"><span class="dot ${dotClass}"></span>${quiLabel}</span>
+          ${categoriePill}
+          ${badgeRevenu}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+        <div class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</div>
+        ${badgePourcentage}
+      </div>
+    </div>`;
+}
+
 function rendreAgendaCalendrier(scope, debut, fin){
   const items = depensesPourCalendrier(scope, debut, fin);
   const parJour = {};
@@ -2773,11 +2788,7 @@ function rendreAgendaCalendrier(scope, debut, fin){
     const labelJour = curseur.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long'});
     html += `<div class="cal-agenda-day">
       <div class="cal-agenda-day-header ${iso===aujourdhuiStr?'today':''}">${labelJour}</div>
-      ${jourItems.length ? jourItems.map(e=>`
-        <div class="cal-agenda-item ${classeTypeDepense(e)}" onclick="ouvrirDetailOccurrence('${e.id}')">
-          <div class="cal-agenda-item-nom">${e.recurrenceId?'↻ ':''}${e.note || e.category}</div>
-          <div class="cal-agenda-item-montant">${e.estRevenu?'+':''}${formaterMonnaie(e.amount)}</div>
-        </div>`).join('') : '<div class="cal-agenda-empty">Aucune dépense</div>'}
+      ${jourItems.length ? jourItems.map(e=>rendreCarteDepenseHTML(e, scope)).join('') : '<div class="cal-agenda-empty">Aucune dépense</div>'}
     </div>`;
     curseur = ajouterJours(curseur, 1);
   }
@@ -2791,41 +2802,13 @@ function fermerJourModal(){ document.getElementById('jour-modal').style.display 
 document.getElementById('close-jour-modal').addEventListener('click', fermerJourModal);
 
 function ouvrirJourModal(scope, iso){
-  const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
-  const items = depenses.filter(e=>e.type===type && e.date===iso).sort((a,b)=> b.amount-a.amount);
+  const items = depensesPourCalendrier(scope, dateLocaleDepuisISO(iso), dateLocaleDepuisISO(iso)).sort((a,b)=> b.amount-a.amount);
   const dateLisible = dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   const contenu = document.getElementById('jour-modal-content');
   contenu.innerHTML = `
     <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;text-transform:capitalize;">${dateLisible}</h3>
     <div id="jour-modal-liste">
-      ${items.length ? items.map(e=>{
-        const dotClass = e.who;
-        const quiLabel = e.estCompte ? '🏦 Compte conjoint' : libellePersonne(e.who);
-        const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
-        const categoriePill = e.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}">${e.category}</span>`;
-        const badgeRevenu = e.estRevenu ? '<span class="freq-pill badge-revenu">💰 Revenu</span>' : '';
-        const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
-        /* Le % est maintenant actif peu importe qui paie (pas juste pour le compte
-           conjoint), donc on l'affiche systématiquement sous le montant pour toute
-           dépense conjointe. */
-        const badgePourcentage = scope==='conjoint' && e.pourcentageP1!=null
-          ? `<div style="margin-top:4px;"><span class="freq-pill badge-compte">${e.pourcentageP1}% ${nomsPersonnes.p1}</span></div>` : '';
-        return `
-        <div class="cal-agenda-item" onclick="fermerJourModal();ouvrirDetailOccurrence('${e.id}')">
-          <div style="min-width:0;flex:1;">
-            <div class="cal-agenda-item-nom">${iconeRecurrente} ${e.note || e.category}</div>
-            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
-              <span class="who-badge"><span class="dot ${dotClass}"></span>${quiLabel}</span>
-              ${categoriePill}
-              ${badgeRevenu}
-            </div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;margin-left:10px;">
-            <div class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</div>
-            ${badgePourcentage}
-          </div>
-        </div>`;
-      }).join('') : '<div class="cal-agenda-empty">Aucune dépense ce jour-là</div>'}
+      ${items.length ? items.map(e=>rendreCarteDepenseHTML(e, scope)).join('') : '<div class="cal-agenda-empty">Aucune dépense ce jour-là</div>'}
     </div>
     <div class="edit-actions" style="margin-top:14px;">
       <button class="btn-add" style="width:100%;" id="jour-btn-ajouter-depense">+ Ajouter</button>
@@ -3100,17 +3083,30 @@ function afficherNavigationPeriode(){
       rafraichirSousOnglet(activeMainTab, 'mois');
       afficherNavigationPeriode();
     }));
-    /* Sur la même ligne que Jour/Semaine/Paie/Mois : vue Calendrier/Liste à gauche,
-       menu ☰ des filtres à droite. */
+    /* Sur la même ligne que Jour/Semaine/Paie/Mois : le menu ☰ des filtres à gauche, la
+       vue Calendrier/Liste à droite (uniquement quand la vue est "Mois" — pour Jour/
+       Semaine/Paie, la vue est toujours une liste, ce choix n'a pas de sens). */
     gauche.style.display = '';
-    gauche.innerHTML = [['calendrier','📅'],['liste','📋']].map(([v,icone])=>
-      `<button type="button" data-mode="${v}" class="${modeCalendrier[activeMainTab]===v?'active':''}" aria-label="Vue ${v}">${icone}</button>`).join('');
-    gauche.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
-      modeCalendrier[activeMainTab] = b.dataset.mode;
-      afficherCalendrierRecurrent(activeMainTab);
-      afficherNavigationPeriode();
-    }));
-    droite.style.display = '';
+    gauche.innerHTML = `<button type="button" class="cal-hamburger-btn" aria-label="Filtres d'affichage">☰</button>`;
+    gauche.querySelector('button').addEventListener('click', ()=> ouvrirFiltresModal(activeMainTab));
+
+    if(etatCalendrierPeriode.vue === 'mois'){
+      droite.style.display = '';
+      droite.innerHTML = [['calendrier','📅'],['liste','📋']].map(([v,icone])=>
+        `<button type="button" data-mode="${v}" class="${modeCalendrier[activeMainTab]===v?'active':''}" aria-label="Vue ${v}">${icone}</button>`).join('');
+      droite.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+        modeCalendrier[activeMainTab] = b.dataset.mode;
+        afficherCalendrierRecurrent(activeMainTab);
+        afficherNavigationPeriode();
+      }));
+    } else {
+      droite.style.display = 'none';
+      /* Jour/Semaine/Paie : toujours en vue "liste" (agenda), jamais en grille. */
+      if(modeCalendrier[activeMainTab] !== 'calendrier'){
+        modeCalendrier[activeMainTab] = 'calendrier';
+        afficherCalendrierRecurrent(activeMainTab);
+      }
+    }
     const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
     label.textContent = libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin);
   }
@@ -3163,6 +3159,7 @@ function rafraichirSousOnglet(scope, sub){
       if(anneeBlock) anneeBlock.style.display = '';
       if(moisStats) moisStats.style.display = 'none';
       if(anneeStats) anneeStats.style.display = '';
+      if(scope==='conjoint') document.getElementById('recurrent-compte-echeancier-card-conjoint').style.display = 'none';
       afficherAnneeScope(scope);
       genererDepensesRecurrentes(new Date(anneeActive, 11, 31));
     } else {
@@ -3171,6 +3168,9 @@ function rafraichirSousOnglet(scope, sub){
       if(moisStats) moisStats.style.display = '';
       if(anneeStats) anneeStats.style.display = 'none';
       afficherStatsMoisScope(scope);
+      /* L'échéancier des prochains dépôts au compte conjoint vit ici (dans Résumé, en
+         mode Mois) plutôt que dans Transactions. */
+      if(scope==='conjoint') afficherEcheancierCompteConjoint();
       afficherGraphiqueEvolutionScope(scope);
       afficherGraphiqueCategoriesMoisScope(scope);
       genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
@@ -3765,12 +3765,12 @@ function afficherGraphiqueCategoriesMoisScope(scope){
   });
 }
 
+/* Rendu unifié "façon agenda" pour le mode Liste (dans Transactions) : mêmes cartes que le
+   calendrier (Jour/Semaine/Paie) et que la fiche d'une journée, pour un visuel cohérent
+   partout plutôt qu'un tableau différent. Le tri (Date/Qui/Montant/Catégorie/Note, croissant
+   ou décroissant) reste le seul contrôle, via le sélecteur déjà présent. */
 function afficherTableauScope(scope){
-  const table = document.getElementById(`table-${scope}`);
-  table.querySelectorAll('.arrow').forEach(a=>a.textContent='');
   const tri = etatTri[scope];
-  const arrow = table.querySelector(`.arrow[data-arrow="${tri.key.toLowerCase()}"]`);
-  if(arrow) arrow.textContent = tri.dir==='asc' ? '▲' : '▼';
   const mobileSort = document.getElementById(`mobile-sort-${scope}`);
   if(mobileSort) mobileSort.value = tri.key;
   const directionButton = document.getElementById(`mobile-sort-dir-${scope}`);
@@ -3788,11 +3788,9 @@ function afficherTableauScope(scope){
   const appliquerFiltresAffichage = e => !(filtres.masquerRevenus && e.estRevenu) && !filtres.categoriesCachees.includes(e.category) && !filtres.quiCaches.includes(e.who);
 
   /* Dans Personnel, quand "+ Conjoint" est activé, on affiche aussi les dépenses
-     conjointes de la période (à 50% de leur montant), clairement identifiées, en plus des
-     vraies dépenses perso. La colonne "Qui" redevient utile dans ce cas (ce n'est plus
-     toujours la même personne), donc on la réaffiche. */
+     conjointes de la période (à la part de l'utilisateur — voir partPersonnelle), en plus
+     des vraies dépenses perso. */
   const inclusionActive = scope==='personnel' && inclureConjointDansPersonnel;
-  table.classList.toggle('hide-qui-column', scope==='personnel' && !inclusionActive);
 
   let liste = depenses
     .filter(e => (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser)) && dansPeriode(e))
@@ -3813,34 +3811,9 @@ function afficherTableauScope(scope){
     return 0;
   });
 
-  const tbody = document.getElementById(`table-body-${scope}`);
-  tbody.innerHTML = liste.map(e=>{
-    const dotClass = e.who;
-    const date = new Date(e.date+"T00:00:00");
-    const dateFmt = date.toLocaleDateString('fr-CA', {day:'numeric', month:'long', year:'numeric'});
-    const dateMobile = date.toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
-    const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
-    let iconeConjointe = '';
-    if(e.estRevenu){
-      iconeConjointe = '<span class="freq-pill badge-revenu" title="Revenu">💰</span>';
-    } else if(e.estCompte){
-      const pct = Math.round(partPersonnelle(e)*100);
-      iconeConjointe = e.partagee ? `<span class="freq-pill badge-compte" title="Part de cette dépense payée par le compte conjoint">${pct}% 🏦</span>` : '<span class="badge-compte" style="display:inline-block;font-size:13px;padding:1px 4px;border-radius:8px;" title="Payée automatiquement par le compte conjoint">🏦</span>';
-    } else if(e.partagee){
-      iconeConjointe = '<span class="freq-pill" style="background:var(--mauve)22;color:var(--mauve);" title="50% de cette dépense conjointe">50% 👥</span>';
-    }
-    const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
-    return `<tr class="${e.estRevenu?'row-revenu-item':(e.estCompte?'row-compte-item':(e.partagee?'row-conjoint-share':''))}" onclick="ouvrirDetailOccurrence('${e.id}')" style="cursor:pointer">
-      <td data-label="Qui"><span class="who-badge desktop-who"><span class="dot ${dotClass}"></span>${libellePersonne(e.who)}</span><span class="mobile-who" title="${libellePersonne(e.who)}"><span class="dot ${dotClass}"></span>${libellePersonne(e.who)}</span></td>
-      <td data-label="Date"><span class="desktop-date">${dateFmt}</span><span class="mobile-date">${dateMobile}</span></td>
-      <td data-label="Note">${e.note ? e.note : '<span style="color:#9aa0a6">—</span>'}</td>
-      <td data-label="Catégorie">${e.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]}22;color:${COULEURS_CATEGORIES[e.category]}">${e.category}</span>`}<span class="row-icons">${iconeRecurrente}${iconeConjointe}</span></td>
-      <td class="amount-cell" data-label="Montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</td>
-    </tr>`;
-  }).join('');
+  const conteneur = document.getElementById(`table-body-${scope}`);
+  conteneur.innerHTML = liste.map(e => rendreCarteDepenseHTML(e, scope, {montrerDate:true})).join('');
 
-  const compteurEl = document.getElementById(`row-count-${scope}`);
-  if(compteurEl) compteurEl.textContent = `${liste.length} dépense${liste.length!==1?'s':''}`;
   const emptyState = document.getElementById(`empty-state-${scope}`);
   if(emptyState) emptyState.style.display = liste.length ? 'none' : 'block';
 }
