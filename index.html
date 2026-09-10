@@ -151,9 +151,10 @@
   }
   .tab-btn.settings-btn{margin-left:auto;font-size:20px;padding-left:14px;padding-right:14px;}
   .period-nav{
-    display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
-    margin:-10px 0 24px;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    margin:16px 0 20px;
   }
+  .period-nav-row{display:flex;align-items:center;justify-content:center;gap:12px;}
   .period-nav button,.icon-btn{
     border:1px solid var(--border);background:var(--surface);color:var(--text);
     border-radius:8px;padding:8px 12px;font-family:inherit;cursor:pointer;
@@ -161,7 +162,7 @@
   .period-nav button:hover,.icon-btn:hover{border-color:var(--blue);color:var(--blue);}
   .period-label{min-width:150px;text-align:center;font-weight:500;cursor:pointer;border-radius:6px;padding:4px 6px;}
   .period-label:hover{color:var(--blue);text-decoration:underline;}
-  .period-type-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;}
+  .period-type-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-wrap:wrap;justify-content:center;}
   body.dark .period-type-switch{background:#2c3136;}
   .period-type-switch button{border:none!important;background:transparent;color:var(--text-secondary);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
   .period-type-switch button.active{background:var(--surface);color:var(--blue);font-weight:600;box-shadow:var(--shadow-1);}
@@ -685,23 +686,21 @@
 
   <div class="period-nav" id="period-nav" style="display:none;">
     <div class="period-type-switch" id="period-type-switch" style="display:none;"></div>
-    <button id="period-prev" aria-label="Période précédente">&lsaquo;</button>
-    <span class="period-label" id="period-label" role="button" tabindex="0" title="Revenir à aujourd'hui" aria-label="Revenir à aujourd'hui"></span>
-    <button id="period-next" aria-label="Période suivante">&rsaquo;</button>
+    <div class="period-nav-row">
+      <button id="period-prev" aria-label="Période précédente">&lsaquo;</button>
+      <span class="period-label" id="period-label" role="button" tabindex="0" title="Revenir à aujourd'hui" aria-label="Revenir à aujourd'hui"></span>
+      <button id="period-next" aria-label="Période suivante">&rsaquo;</button>
+    </div>
   </div>
 
   <!-- ===================== SECTION : CONJOINT ===================== -->
   <section class="tab-panel active" id="tab-conjoint">
-    <div class="section-header">
-      <h2>👥 Dépenses conjointes</h2>
-      <p>Dépenses partagées.</p>
-    </div>
-
     <nav class="subtabs">
       <button class="subtab-btn active" data-scope="conjoint" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="resume">Résumé</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="budget">Budget</button>
     </nav>
+    <div id="period-nav-slot-conjoint"></div>
 
     <!-- Sous-onglet : MOIS -->
     <div class="subtab-panel active" data-scope="conjoint" data-sub="mois">
@@ -875,16 +874,12 @@
 
   <!-- ===================== SECTION : PERSONNEL ===================== -->
   <section class="tab-panel" id="tab-personnel">
-    <div class="section-header">
-      <h2>👤 Mes dépenses personnelles</h2>
-      <p>Visibles uniquement par vous.</p>
-    </div>
-
     <nav class="subtabs">
       <button class="subtab-btn active" data-scope="personnel" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="resume">Résumé</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="budget">Budget</button>
     </nav>
+    <div id="period-nav-slot-personnel"></div>
 
     <!-- Sous-onglet : MOIS -->
     <div class="subtab-panel active" data-scope="personnel" data-sub="mois">
@@ -3081,6 +3076,14 @@ function afficherNavigationPeriode(){
   const nav = document.getElementById('period-nav');
   const switchEl = document.getElementById('period-type-switch');
   const label = document.getElementById('period-label');
+
+  /* Un seul sélecteur de période, toujours placé juste sous les onglets Transactions /
+     Résumé / Budget (et nulle part ailleurs) : on déplace le même élément dans le bon
+     "emplacement" selon la section active, plutôt que d'en dupliquer un par section. */
+  if(estSection){
+    const emplacement = document.getElementById(`period-nav-slot-${activeMainTab}`);
+    if(emplacement && nav.parentElement !== emplacement) emplacement.appendChild(nav);
+  }
 
   /* Un seul sélecteur de période, toujours au même endroit (juste sous les onglets
      principaux), pour Transactions, Résumé et Budget — plus besoin de chercher où cliquer
