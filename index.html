@@ -2802,7 +2802,7 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
     const reste = jourItems.length - visibles.length;
     html += `<div class="cal-month-cell ${dansLeMois?'':'outside'}" onclick="ouvrirJourModal('${scope}','${iso}')">
       <div class="cal-month-daynum ${iso===aujourdhuiStr?'today':''}">${curseur.getDate()}</div>
-      ${visibles.map(e=>`<div class="cal-pill ${classeTypeDepense(e)}" onclick="event.stopPropagation();ouvrirDetailOccurrence('${e.id}')">${(e.note||e.category).replace(/</g,'')}</div>`).join('')}
+      ${visibles.map(e=>`<div class="cal-pill ${classeTypeDepense(e)}">${(e.note||e.category).replace(/</g,'')}</div>`).join('')}
       ${reste>0 ? `<div class="cal-more">+${reste} de plus</div>` : ''}
     </div>`;
     curseur = ajouterJours(curseur, 1);
