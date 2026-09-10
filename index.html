@@ -151,7 +151,7 @@
   }
   .tab-btn.settings-btn{margin-left:auto;font-size:20px;padding-left:14px;padding-right:14px;}
   .period-nav{
-    display:flex;align-items:center;justify-content:center;gap:12px;
+    display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
     margin:-10px 0 24px;
   }
   .period-nav button,.icon-btn{
@@ -159,9 +159,12 @@
     border-radius:8px;padding:8px 12px;font-family:inherit;cursor:pointer;
   }
   .period-nav button:hover,.icon-btn:hover{border-color:var(--blue);color:var(--blue);}
-  .period-label{min-width:150px;text-align:center;font-weight:500;}
-  #month-label{cursor:pointer;border-radius:6px;padding:4px 6px;}
-  #month-label:hover{color:var(--blue);text-decoration:underline;}
+  .period-label{min-width:150px;text-align:center;font-weight:500;cursor:pointer;border-radius:6px;padding:4px 6px;}
+  .period-label:hover{color:var(--blue);text-decoration:underline;}
+  .period-type-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;}
+  body.dark .period-type-switch{background:#2c3136;}
+  .period-type-switch button{border:none!important;background:transparent;color:var(--text-secondary);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
+  .period-type-switch button.active{background:var(--surface);color:var(--blue);font-weight:600;box-shadow:var(--shadow-1);}
   .tab-btn{
     background:none;border:none;cursor:pointer;
     font-family:inherit;font-size:14px;font-weight:500;
@@ -266,7 +269,7 @@
   .cal-agenda-day-header{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:capitalize;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border);}
   .cal-agenda-day-header.today{color:var(--blue);}
   .cal-agenda-empty{font-size:12px;color:var(--text-secondary);padding:4px 0 10px;}
-  .cal-agenda-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
+  .cal-agenda-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
   body.dark .cal-agenda-item{background:#2c3136;}
   .cal-agenda-item-nom{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .cal-agenda-item-montant{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;}
@@ -680,15 +683,11 @@
     <button class="tab-btn" data-tab="comparer">Comparer</button>
   </nav>
 
-  <div class="period-nav" id="month-nav">
-    <button id="month-prev" aria-label="Mois précédent">&lsaquo;</button>
-    <span class="period-label" id="month-label" role="button" tabindex="0" title="Revenir au mois actuel" aria-label="Revenir au mois actuel"></span>
-    <button id="month-next" aria-label="Mois suivant">&rsaquo;</button>
-  </div>
-  <div class="period-nav" id="year-nav" style="display:none;">
-    <button id="year-prev" aria-label="Année précédente">&lsaquo;</button>
-    <span class="period-label" id="year-label"></span>
-    <button id="year-next" aria-label="Année suivante">&rsaquo;</button>
+  <div class="period-nav" id="period-nav" style="display:none;">
+    <div class="period-type-switch" id="period-type-switch" style="display:none;"></div>
+    <button id="period-prev" aria-label="Période précédente">&lsaquo;</button>
+    <span class="period-label" id="period-label" role="button" tabindex="0" title="Revenir à aujourd'hui" aria-label="Revenir à aujourd'hui"></span>
+    <button id="period-next" aria-label="Période suivante">&rsaquo;</button>
   </div>
 
   <!-- ===================== SECTION : CONJOINT ===================== -->
@@ -701,7 +700,6 @@
     <nav class="subtabs">
       <button class="subtab-btn active" data-scope="conjoint" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="resume">Résumé</button>
-      <button class="subtab-btn" data-scope="conjoint" data-sub="annee">Année</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="budget">Budget</button>
     </nav>
 
@@ -717,17 +715,12 @@
       </div>
       <div class="card" id="calendrier-recurrent-card-conjoint">
         <div class="table-head-row cal-head">
-          <h3 id="cal-mode-titre-conjoint">📅 Calendrier</h3>
+          <button type="button" class="cal-hamburger-btn" data-scope="conjoint" aria-label="Menu du calendrier">☰</button>
+          <h3 id="cal-mode-titre-conjoint" style="flex:1;">📅 Calendrier</h3>
           <div class="cal-mode-switch" data-scope="conjoint">
             <button type="button" class="active" data-mode="calendrier" aria-label="Vue calendrier">📅</button>
             <button type="button" data-mode="liste" aria-label="Vue liste">📋</button>
           </div>
-        </div>
-        <div class="cal-nav">
-          <button type="button" class="cal-hamburger-btn" data-scope="conjoint" aria-label="Menu du calendrier">☰</button>
-          <button type="button" class="cal-nav-btn" data-nav="prev" data-scope="conjoint" aria-label="Période précédente">‹</button>
-          <div class="cal-titre" id="cal-titre-conjoint"></div>
-          <button type="button" class="cal-nav-btn" data-nav="next" data-scope="conjoint" aria-label="Période suivante">›</button>
         </div>
         <div class="cal-menu-panel" id="cal-menu-panel-conjoint" style="display:none;"></div>
         <div id="cal-corps-conjoint"></div>
@@ -764,7 +757,7 @@
           </div>
           <div class="field" id="f-compte-repartition-field-conjoint">
             <label>Part de <span id="f-compte-nom-p1-conjoint"></span> (%)</label>
-            <input type="number" id="f-compte-repartition-conjoint" min="0" max="100" step="0.1" value="50" disabled>
+            <input type="number" id="f-compte-repartition-conjoint" min="0" max="100" step="0.1" value="50">
           </div>
           <div class="field">
             <label>Date</label>
@@ -822,24 +815,11 @@
       <button class="mobile-add-btn" id="mobile-add-conjoint" aria-label="Ajouter une dépense conjointe">+</button>
     </div>
 
-    <!-- Sous-onglet : ANNÉE -->
-    <div class="subtab-panel" data-scope="conjoint" data-sub="annee">
-      <div class="stats-row" id="annee-stats-conjoint"></div>
-      <div class="grid-2">
-        <div class="card">
-          <h3>Dépenses par mois</h3>
-          <div class="chart-wrap"><canvas id="chart-annee-mensuel-conjoint"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>Répartition par catégorie (année)</h3>
-          <div class="chart-wrap"><canvas id="chart-annee-categories-conjoint"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sous-onglet : RÉSUMÉ -->
+    <!-- Sous-onglet : RÉSUMÉ (fusionne les anciens "Résumé" et "Année" ; le choix Mois/Année
+         se fait via le sélecteur de période commun, en haut de la page) -->
     <div class="subtab-panel" data-scope="conjoint" data-sub="resume">
-      <div class="grid-2">
+      <div class="stats-row" id="annee-stats-conjoint" style="display:none;"></div>
+      <div class="grid-2" id="resume-mois-conjoint">
         <div class="card">
           <h3 id="month-evolution-title-conjoint">Évolution des dépenses</h3>
           <div class="chart-wrap"><canvas id="chart-evolution-conjoint"></canvas></div>
@@ -847,6 +827,16 @@
         <div class="card">
           <h3>Répartition par catégorie</h3>
           <div class="chart-wrap"><canvas id="chart-categories-mois-conjoint"></canvas></div>
+        </div>
+      </div>
+      <div class="grid-2" id="resume-annee-conjoint" style="display:none;">
+        <div class="card">
+          <h3>Dépenses par mois</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-mensuel-conjoint"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Répartition par catégorie (année)</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-categories-conjoint"></canvas></div>
         </div>
       </div>
     </div>
@@ -893,7 +883,6 @@
     <nav class="subtabs">
       <button class="subtab-btn active" data-scope="personnel" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="resume">Résumé</button>
-      <button class="subtab-btn" data-scope="personnel" data-sub="annee">Année</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="budget">Budget</button>
     </nav>
 
@@ -907,17 +896,12 @@
 
       <div class="card" id="calendrier-recurrent-card-personnel">
         <div class="table-head-row cal-head">
-          <h3 id="cal-mode-titre-personnel">📅 Calendrier</h3>
+          <button type="button" class="cal-hamburger-btn" data-scope="personnel" aria-label="Menu du calendrier">☰</button>
+          <h3 id="cal-mode-titre-personnel" style="flex:1;">📅 Calendrier</h3>
           <div class="cal-mode-switch" data-scope="personnel">
             <button type="button" class="active" data-mode="calendrier" aria-label="Vue calendrier">📅</button>
             <button type="button" data-mode="liste" aria-label="Vue liste">📋</button>
           </div>
-        </div>
-        <div class="cal-nav">
-          <button type="button" class="cal-hamburger-btn" data-scope="personnel" aria-label="Menu du calendrier">☰</button>
-          <button type="button" class="cal-nav-btn" data-nav="prev" data-scope="personnel" aria-label="Période précédente">‹</button>
-          <div class="cal-titre" id="cal-titre-personnel"></div>
-          <button type="button" class="cal-nav-btn" data-nav="next" data-scope="personnel" aria-label="Période suivante">›</button>
         </div>
         <div class="cal-menu-panel" id="cal-menu-panel-personnel" style="display:none;"></div>
         <div id="cal-corps-personnel"></div>
@@ -1004,32 +988,14 @@
       <button class="mobile-add-btn" id="mobile-add-personnel" aria-label="Ajouter une dépense personnelle">+</button>
     </div>
 
-    <!-- Sous-onglet : ANNÉE -->
-    <div class="subtab-panel" data-scope="personnel" data-sub="annee">
-      <div class="compare-toggle toggle-perso-scope" style="margin-bottom:14px;">
-        <button data-include="non">Perso seulement</button>
-        <button data-include="oui">+ Conjoint</button>
-      </div>
-      <div class="stats-row" id="annee-stats-personnel"></div>
-      <div class="grid-2">
-        <div class="card">
-          <h3>Dépenses par mois</h3>
-          <div class="chart-wrap"><canvas id="chart-annee-mensuel-personnel"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>Répartition par catégorie (année)</h3>
-          <div class="chart-wrap"><canvas id="chart-annee-categories-personnel"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sous-onglet : RÉSUMÉ -->
+    <!-- Sous-onglet : RÉSUMÉ (fusionne les anciens "Résumé" et "Année") -->
     <div class="subtab-panel" data-scope="personnel" data-sub="resume">
       <div class="compare-toggle toggle-perso-scope" style="margin-bottom:14px;">
         <button data-include="non">Perso seulement</button>
         <button data-include="oui">+ Conjoint</button>
       </div>
-      <div class="grid-2">
+      <div class="stats-row" id="annee-stats-personnel" style="display:none;"></div>
+      <div class="grid-2" id="resume-mois-personnel">
         <div class="card">
           <h3 id="month-evolution-title-personnel">Évolution des dépenses</h3>
           <div class="chart-wrap"><canvas id="chart-evolution-personnel"></canvas></div>
@@ -1037,6 +1003,16 @@
         <div class="card">
           <h3>Répartition par catégorie</h3>
           <div class="chart-wrap"><canvas id="chart-categories-mois-personnel"></canvas></div>
+        </div>
+      </div>
+      <div class="grid-2" id="resume-annee-personnel" style="display:none;">
+        <div class="card">
+          <h3>Dépenses par mois</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-mensuel-personnel"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Répartition par catégorie (année)</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-categories-personnel"></canvas></div>
         </div>
       </div>
     </div>
@@ -1254,7 +1230,7 @@
     </div>
     <div class="field" id="edit-rec-compte-repartition-field">
       <label>Part de <span id="edit-rec-compte-nom-p1"></span> (%)</label>
-      <input type="number" id="edit-rec-compte-repartition" min="0" max="100" step="0.1" value="50" disabled>
+      <input type="number" id="edit-rec-compte-repartition" min="0" max="100" step="0.1" value="50">
     </div>
     <div class="field"><label>Depuis le</label><input type="date" id="edit-rec-date-debut"></div>
     <div class="field">
@@ -1567,11 +1543,8 @@ let inclureConjointDansPersonnel = localStorage.getItem('depenses_inclure_conjoi
    50/50 pour une dépense conjointe normale, mais le vrai % pour une dépense "compte"
    (puisque celle-là n'est pas forcément partagée moitié-moitié). */
 function partPersonnelle(e){
-  if(e.estCompte){
-    const p1Pct = (e.pourcentageP1 != null ? e.pourcentageP1 : 50) / 100;
-    return currentUser==='p1' ? p1Pct : (1 - p1Pct);
-  }
-  return 0.5;
+  const p1Pct = (e.pourcentageP1 != null ? e.pourcentageP1 : 50) / 100;
+  return currentUser==='p1' ? p1Pct : (1 - p1Pct);
 }
 function totalConjointPourInclusion(filtrePeriode){
   if(!inclureConjointDansPersonnel) return 0;
@@ -2500,11 +2473,8 @@ function rendreChoixPortee(action){
 /* Part de la personne connectée dans une récurrence conjointe affichée dans Personnel :
    50/50 normalement, vrai % pour une récurrence "compte". */
 function partPersonnelleRecurrence(r){
-  if(r.estCompte){
-    const p1Pct = (r.pourcentageP1 != null ? r.pourcentageP1 : 50) / 100;
-    return currentUser==='p1' ? p1Pct : (1 - p1Pct);
-  }
-  return 0.5;
+  const p1Pct = (r.pourcentageP1 != null ? r.pourcentageP1 : 50) / 100;
+  return currentUser==='p1' ? p1Pct : (1 - p1Pct);
 }
 
 function afficherRecurrencesScope(scope){
@@ -2585,10 +2555,13 @@ function afficherRecurrencesScope(scope){
    Affiche, pour un scope (conjoint/personnel), toutes les dépenses (récurrentes ou non)
    qui tombent dans la période choisie (jour, semaine, période de paie ou mois), avec
    navigation ‹ › et clic sur une entrée pour ouvrir son détail (voir ouvrirDetailOccurrence). */
-let etatCalendrier = {
-  conjoint: { vue: 'mois', dateRef: debutJour(new Date()), mode: 'calendrier' },
-  personnel: { vue: 'mois', dateRef: debutJour(new Date()), mode: 'calendrier' }
-};
+/* La période affichée (vue + date de référence) est PARTAGÉE entre Conjoint et Personnel,
+   tout comme le mois/l'année globaux ailleurs dans l'app : un seul sélecteur, toujours au
+   même endroit (en haut de la page), pilote la période peu importe l'onglet consulté. Seul
+   le mode d'affichage (calendrier ou liste) reste propre à chaque scope, puisque c'est une
+   préférence d'affichage plutôt qu'une période. */
+let etatCalendrierPeriode = { vue: 'mois', dateRef: debutJour(new Date()) };
+let modeCalendrier = { conjoint: 'calendrier', personnel: 'calendrier' };
 
 /* Filtres d'affichage (façon Google Agenda : cases à cocher pour montrer/cacher certains
    types d'entrées). Persistés localement par appareil - un filtre d'affichage est une
@@ -2663,16 +2636,15 @@ function depensesPourCalendrier(scope, debut, fin){
 }
 
 function afficherCalendrierRecurrent(scope){
-  const titreEl = document.getElementById(`cal-titre-${scope}`);
   const corpsEl = document.getElementById(`cal-corps-${scope}`);
   const tableCardEl = document.getElementById(`table-card-${scope}`);
   const modeTitreEl = document.getElementById(`cal-mode-titre-${scope}`);
-  if(!titreEl || !corpsEl) return;
-  const etat = etatCalendrier[scope];
-  const { debut, fin } = bornePeriode(etat.vue, etat.dateRef);
-  titreEl.textContent = libellePeriodeCalendrier(etat.vue, debut, fin);
+  if(!corpsEl) return;
+  const { vue, dateRef } = etatCalendrierPeriode;
+  const { debut, fin } = bornePeriode(vue, dateRef);
+  const mode = modeCalendrier[scope];
 
-  if(etat.mode === 'liste'){
+  if(mode === 'liste'){
     corpsEl.style.display = 'none';
     if(tableCardEl) tableCardEl.style.display = '';
     if(modeTitreEl) modeTitreEl.textContent = '📋 Liste';
@@ -2681,10 +2653,10 @@ function afficherCalendrierRecurrent(scope){
     corpsEl.style.display = '';
     if(tableCardEl) tableCardEl.style.display = 'none';
     if(modeTitreEl) modeTitreEl.textContent = '📅 Calendrier';
-    corpsEl.innerHTML = etat.vue==='mois' ? rendreGrilleMoisCalendrier(scope, etat.dateRef) : rendreAgendaCalendrier(scope, debut, fin);
+    corpsEl.innerHTML = vue==='mois' ? rendreGrilleMoisCalendrier(scope, dateRef) : rendreAgendaCalendrier(scope, debut, fin);
   }
 
-  /* Si le menu ☰ est ouvert, on le re-rend pour refléter la vue active à jour. */
+  /* Si le menu ☰ est ouvert, on le re-rend pour refléter les filtres actifs à jour. */
   const panneau = document.getElementById(`cal-menu-panel-${scope}`);
   if(panneau && panneau.style.display !== 'none') rendreMenuCalendrier(scope);
 }
@@ -2692,28 +2664,24 @@ document.querySelectorAll('.cal-mode-switch').forEach(sw=>{
   const scope = sw.dataset.scope;
   sw.querySelectorAll('button').forEach(b=>{
     b.addEventListener('click', ()=>{
-      etatCalendrier[scope].mode = b.dataset.mode;
+      modeCalendrier[scope] = b.dataset.mode;
       sw.querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
       afficherCalendrierRecurrent(scope);
     });
   });
 });
 
-/* ===================== MENU ☰ (vues + filtres d'affichage, façon Google Agenda) ===================== */
+/* ===================== MENU ☰ (filtres d'affichage, façon Google Agenda) =====================
+   Le choix du type de période (Jour/Semaine/Paie/Mois) vit maintenant dans le sélecteur
+   commun en haut de la page (voir afficherNavigationPeriode) ; ce menu ne garde que les
+   filtres "Qui" / catégories / revenus. */
 function rendreMenuCalendrier(scope){
   const panneau = document.getElementById(`cal-menu-panel-${scope}`);
   if(!panneau) return;
-  const etat = etatCalendrier[scope];
   const filtres = filtresCalendrier[scope];
-  const catsPresentes = scope==='conjoint'
-    ? categories.filter(c => c!=='Revenu')
-    : categories.filter(c => c!=='Revenu');
+  const catsPresentes = categories.filter(c => c!=='Revenu');
 
   panneau.innerHTML = `
-    <div class="cal-menu-section-title">Affichage</div>
-    ${VUES_CALENDRIER.map(([val,label])=>`
-      <div class="cal-menu-vue-option ${etat.vue===val?'active':''}" data-vue-choix="${val}">${etat.vue===val?'●':'○'} ${label}</div>
-    `).join('')}
     ${scope==='conjoint' ? `
     <div class="cal-menu-section-title">Qui</div>
     <label class="cal-menu-check">
@@ -2742,12 +2710,6 @@ function rendreMenuCalendrier(scope){
     `).join('')}
   `;
 
-  panneau.querySelectorAll('[data-vue-choix]').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      etatCalendrier[scope].vue = el.dataset.vueChoix;
-      afficherCalendrierRecurrent(scope);
-    });
-  });
   const caseRevenu = panneau.querySelector('[data-filtre-revenu]');
   if(caseRevenu) caseRevenu.addEventListener('change', (e)=>{
     filtres.masquerRevenus = !e.target.checked;
@@ -2823,12 +2785,6 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
   return html;
 }
 
-function ouvrirJourDepuisMoisCalendrier(scope, iso){
-  etatCalendrier[scope].vue = 'jour';
-  etatCalendrier[scope].dateRef = dateLocaleDepuisISO(iso);
-  afficherCalendrierRecurrent(scope);
-}
-
 function rendreAgendaCalendrier(scope, debut, fin){
   const items = depensesPourCalendrier(scope, debut, fin);
   const parJour = {};
@@ -2853,16 +2809,6 @@ function rendreAgendaCalendrier(scope, debut, fin){
   return html;
 }
 
-document.querySelectorAll('.cal-nav-btn').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    const scope = b.dataset.scope;
-    const direction = b.dataset.nav==='prev' ? -1 : 1;
-    const etat = etatCalendrier[scope];
-    etat.dateRef = avancerPeriode(etat.vue, etat.dateRef, direction);
-    afficherCalendrierRecurrent(scope);
-  });
-});
-
 /* ===================== MODAL "JOUR" (façon Google Agenda) =====================
    Cliquer une date dans le calendrier ouvre la liste des dépenses de ce jour-là, avec un
    bouton pour en ajouter une nouvelle (le formulaire unifié gère "Se répète" lui-même). */
@@ -2881,14 +2827,14 @@ function ouvrirJourModal(scope, iso){
         const dotClass = e.who;
         const quiLabel = e.estCompte ? '🏦 Compte conjoint' : libellePersonne(e.who);
         const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
-        let iconeConjointe = '';
-        if(e.estRevenu){
-          iconeConjointe = '<span class="freq-pill badge-revenu" title="Revenu">💰 Revenu</span>';
-        } else if(e.estCompte){
-          iconeConjointe = `<span class="freq-pill badge-compte" title="Payée automatiquement par le compte conjoint">${e.pourcentageP1!=null?e.pourcentageP1:50}% ${nomsPersonnes.p1}</span>`;
-        }
         const categoriePill = e.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}">${e.category}</span>`;
+        const badgeRevenu = e.estRevenu ? '<span class="freq-pill badge-revenu">💰 Revenu</span>' : '';
         const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
+        /* Le % est maintenant actif peu importe qui paie (pas juste pour le compte
+           conjoint), donc on l'affiche systématiquement sous le montant pour toute
+           dépense conjointe. */
+        const badgePourcentage = scope==='conjoint' && e.pourcentageP1!=null
+          ? `<div style="margin-top:4px;"><span class="freq-pill badge-compte">${e.pourcentageP1}% ${nomsPersonnes.p1}</span></div>` : '';
         return `
         <div class="cal-agenda-item" onclick="fermerJourModal();ouvrirDetailOccurrence('${e.id}')">
           <div style="min-width:0;flex:1;">
@@ -2896,10 +2842,13 @@ function ouvrirJourModal(scope, iso){
             <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
               <span class="who-badge"><span class="dot ${dotClass}"></span>${quiLabel}</span>
               ${categoriePill}
-              ${iconeConjointe}
+              ${badgeRevenu}
             </div>
           </div>
-          <div class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</div>
+          <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+            <div class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</div>
+            ${badgePourcentage}
+          </div>
         </div>`;
       }).join('') : '<div class="cal-agenda-empty">Aucune dépense ce jour-là</div>'}
     </div>
@@ -2956,7 +2905,6 @@ function ouvrirEditionRecurrence(id){
     document.getElementById('edit-rec-qui').value = rec.estCompte ? 'Compte conjoint' : libellePersonne(rec.who==='compte' ? 'p1' : rec.who);
     quiField.style.display = '';
     compteField.style.display = '';
-    repartitionInput.disabled = !rec.estCompte;
     estRevenuField.style.display = rec.estCompte ? '' : 'none';
   } else {
     compteField.style.display = 'none';
@@ -2983,7 +2931,6 @@ function appliquerTeinteEditRecurrent(){
 }
 document.getElementById('edit-rec-qui').addEventListener('change', ()=>{
   const estCompte = document.getElementById('edit-rec-qui').value === 'Compte conjoint';
-  document.getElementById('edit-rec-compte-repartition').disabled = !estCompte;
   const estRevenuField = document.getElementById('edit-rec-est-revenu-field');
   estRevenuField.style.display = estCompte ? '' : 'none';
   if(!estCompte) document.getElementById('edit-rec-est-revenu').checked = false;
@@ -3019,12 +2966,8 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   let pourcentageP1 = null;
   if(recurrenceEnEdition.type==='conjointe'){
     estCompte = document.getElementById('edit-rec-qui').value === 'Compte conjoint';
-    if(estCompte){
-      who = 'compte';
-      pourcentageP1 = Number(document.getElementById('edit-rec-compte-repartition').value);
-    } else {
-      who = clePersonne(document.getElementById('edit-rec-qui').value);
-    }
+    pourcentageP1 = Number(document.getElementById('edit-rec-compte-repartition').value);
+    who = estCompte ? 'compte' : clePersonne(document.getElementById('edit-rec-qui').value);
   }
   const estRevenu = (recurrenceEnEdition.type==='personnelle' || estCompte) && document.getElementById('edit-rec-est-revenu').checked;
   const categorieFinale = estRevenu ? 'Revenu' : categorie;
@@ -3122,20 +3065,57 @@ function capitaliser(mot){
   return mot.charAt(0).toUpperCase() + mot.slice(1);
 }
 
+/* Type de période affiché dans "Résumé" : 'mois' (évolution + catégories du mois) ou
+   'annee' (dépenses par mois + catégories de l'année) — choisi via le même sélecteur
+   commun que partout ailleurs, pour une navigation uniforme. */
+let periodeTypeResume = 'mois';
+
 function afficherNavigationPeriode(){
-  document.getElementById('month-label').textContent = `${capitaliser(NOMS_MOIS[moisActif.month])} ${moisActif.year}`;
-  document.getElementById('year-label').textContent = anneeActive;
   ['conjoint','personnel'].forEach(scope=>{
     const el = document.getElementById(`month-evolution-title-${scope}`);
     if(el) el.textContent = `Évolution des dépenses - ${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
   });
+
   const estSection = activeMainTab === 'conjoint' || activeMainTab === 'personnel';
   const sub = estSection ? activeSubtab[activeMainTab] : null;
-  /* "Transactions" (ex-"Mois") a désormais son propre sélecteur de période (celui du
-     calendrier/liste) : on n'affiche plus ce sélecteur de mois global que pour Résumé et
-     Budget, pour éviter d'avoir deux navigateurs qui se chevauchent sur le même onglet. */
-  document.getElementById('month-nav').style.display = (estSection && (sub==='resume' || sub==='budget')) ? 'flex' : 'none';
-  document.getElementById('year-nav').style.display = (estSection && sub==='annee') ? 'flex' : 'none';
+  const nav = document.getElementById('period-nav');
+  const switchEl = document.getElementById('period-type-switch');
+  const label = document.getElementById('period-label');
+
+  /* Un seul sélecteur de période, toujours au même endroit (juste sous les onglets
+     principaux), pour Transactions, Résumé et Budget — plus besoin de chercher où cliquer
+     d'un onglet à l'autre. */
+  if(!estSection || (sub!=='budget' && sub!=='resume' && sub!=='mois')){
+    nav.style.display = 'none';
+    return;
+  }
+  nav.style.display = 'flex';
+
+  if(sub==='budget'){
+    switchEl.style.display = 'none';
+    label.textContent = `${capitaliser(NOMS_MOIS[moisActif.month])} ${moisActif.year}`;
+  } else if(sub==='resume'){
+    switchEl.style.display = '';
+    switchEl.innerHTML = [['mois','Mois'],['annee','Année']].map(([v,lbl])=>
+      `<button type="button" data-type="${v}" class="${periodeTypeResume===v?'active':''}">${lbl}</button>`).join('');
+    switchEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+      periodeTypeResume = b.dataset.type;
+      rafraichirSousOnglet(activeMainTab, 'resume');
+      afficherNavigationPeriode();
+    }));
+    label.textContent = periodeTypeResume==='mois' ? `${capitaliser(NOMS_MOIS[moisActif.month])} ${moisActif.year}` : String(anneeActive);
+  } else if(sub==='mois'){
+    switchEl.style.display = '';
+    switchEl.innerHTML = VUES_CALENDRIER.map(([v,lbl])=>
+      `<button type="button" data-type="${v}" class="${etatCalendrierPeriode.vue===v?'active':''}">${lbl}</button>`).join('');
+    switchEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+      etatCalendrierPeriode.vue = b.dataset.type;
+      rafraichirSousOnglet(activeMainTab, 'mois');
+      afficherNavigationPeriode();
+    }));
+    const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+    label.textContent = libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin);
+  }
 }
 
 function afficherComparaison(){
@@ -3171,16 +3151,28 @@ function rafraichirSousOnglet(scope, sub){
     /* Le calendrier, l'échéancier du compte conjoint et la liste (mode "Liste" du
        calendrier) vivent maintenant tous dans "Transactions" (ex-"Mois"). */
     afficherRecurrencesScope(scope);
-    /* S'assure que les récurrences sont bien générées au moins jusqu'à la fin du mois
-       consulté, même très loin dans le futur (aucune limite artificielle). */
-    genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
+    /* S'assure que les récurrences sont bien générées au moins jusqu'à la fin de la
+       période consultée dans le calendrier, même très loin dans le futur. */
+    const { fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+    genererDepensesRecurrentes(fin);
   } else if(sub==='resume'){
-    afficherGraphiqueEvolutionScope(scope);
-    afficherGraphiqueCategoriesMoisScope(scope);
-    genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
-  } else if(sub==='annee'){
-    afficherAnneeScope(scope);
-    genererDepensesRecurrentes(new Date(anneeActive, 11, 31));
+    const moisBlock = document.getElementById(`resume-mois-${scope}`);
+    const anneeBlock = document.getElementById(`resume-annee-${scope}`);
+    const anneeStats = document.getElementById(`annee-stats-${scope}`);
+    if(periodeTypeResume==='annee'){
+      if(moisBlock) moisBlock.style.display = 'none';
+      if(anneeBlock) anneeBlock.style.display = '';
+      if(anneeStats) anneeStats.style.display = '';
+      afficherAnneeScope(scope);
+      genererDepensesRecurrentes(new Date(anneeActive, 11, 31));
+    } else {
+      if(moisBlock) moisBlock.style.display = '';
+      if(anneeBlock) anneeBlock.style.display = 'none';
+      if(anneeStats) anneeStats.style.display = 'none';
+      afficherGraphiqueEvolutionScope(scope);
+      afficherGraphiqueCategoriesMoisScope(scope);
+      genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
+    }
   } else if(sub==='budget'){
     afficherSectionBudget(scope);
     genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
@@ -3210,21 +3202,47 @@ function allerAuMoisActuel(){
   if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   afficherNavigationPeriode();
 }
-document.getElementById('month-prev').addEventListener('click',()=>changerMois(-1));
-document.getElementById('month-next').addEventListener('click',()=>changerMois(1));
-document.getElementById('month-label').addEventListener('click', allerAuMoisActuel);
-document.getElementById('month-label').addEventListener('keydown', (e)=>{
-  if(e.key==='Enter' || e.key===' '){ e.preventDefault(); allerAuMoisActuel(); }
-});
-document.getElementById('year-prev').addEventListener('click',()=>{
-  anneeActive--;
-  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab,'annee');
+function changerAnnee(amount){
+  anneeActive += amount;
+  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   afficherNavigationPeriode();
-});
-document.getElementById('year-next').addEventListener('click',()=>{
-  anneeActive++;
-  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab,'annee');
-  afficherNavigationPeriode();
+}
+
+/* Dispatcher unique du sélecteur de période commun : selon l'onglet actif, ‹/› et le
+   libellé pilotent soit le mois, soit l'année, soit la période du calendrier — mais restent
+   toujours au même endroit à l'écran, pour une navigation simple et prévisible. */
+function periodeNavigation(direction){
+  const sub = activeSubtab[activeMainTab];
+  if(sub==='budget'){
+    changerMois(direction);
+  } else if(sub==='resume'){
+    if(periodeTypeResume==='mois') changerMois(direction);
+    else changerAnnee(direction);
+  } else if(sub==='mois'){
+    etatCalendrierPeriode.dateRef = avancerPeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef, direction);
+    rafraichirSousOnglet(activeMainTab, 'mois');
+    afficherNavigationPeriode();
+  }
+}
+function periodeLabelClick(){
+  const sub = activeSubtab[activeMainTab];
+  if(sub==='budget' || (sub==='resume' && periodeTypeResume==='mois')){
+    allerAuMoisActuel();
+  } else if(sub==='resume' && periodeTypeResume==='annee'){
+    anneeActive = aujourdhui.getFullYear();
+    rafraichirSousOnglet(activeMainTab, 'resume');
+    afficherNavigationPeriode();
+  } else if(sub==='mois'){
+    etatCalendrierPeriode.dateRef = debutJour(new Date());
+    rafraichirSousOnglet(activeMainTab, 'mois');
+    afficherNavigationPeriode();
+  }
+}
+document.getElementById('period-prev').addEventListener('click', ()=>periodeNavigation(-1));
+document.getElementById('period-next').addEventListener('click', ()=>periodeNavigation(1));
+document.getElementById('period-label').addEventListener('click', periodeLabelClick);
+document.getElementById('period-label').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' || e.key===' '){ e.preventDefault(); periodeLabelClick(); }
 });
 document.querySelectorAll('.compare-toggle button[data-mode]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.compare-toggle button[data-mode]').forEach(b=>b.classList.remove('active'));button.classList.add('active');modeComparaison=button.dataset.mode;afficherComparaison();}));
 document.getElementById('compare-a').addEventListener('change',afficherComparaison);
@@ -3279,7 +3297,7 @@ async function ajouterDepense(scope){
   const estCompte = scope==='conjoint' && document.getElementById('f-who-conjoint').value === 'Compte conjoint';
   const estRevenu = scope==='conjoint' ? (estCompte && document.getElementById('f-est-revenu-conjoint').checked) : document.getElementById('f-est-revenu-personnel').checked;
   const who = estCompte ? 'compte' : determinerQui(scope);
-  const pourcentageP1 = estCompte ? Number(document.getElementById('f-compte-repartition-conjoint').value) : null;
+  const pourcentageP1 = type==='conjointe' ? Number(document.getElementById('f-compte-repartition-conjoint').value) : null;
   const amount = parseFloat(document.getElementById(`f-amount-${scope}`).value);
   const date = document.getElementById(`f-date-${scope}`).value;
   const category = estRevenu ? 'Revenu' : document.getElementById(`f-category-${scope}`).value;
@@ -3425,12 +3443,13 @@ function remplirOptionsQui(selectId, includeCompte){
   document.getElementById(selectId).innerHTML = html;
 }
 
-/* "Qui" inclut désormais "Compte conjoint" comme un choix parmi les personnes (au lieu d'un
-   toggle séparé). Le champ de répartition reste toujours visible, mais n'est utilisable que
-   lorsque "Compte conjoint" est sélectionné — sinon il est grisé (disabled). */
+/* "Qui" inclut "Compte conjoint" comme un choix parmi les personnes. Le champ de
+   répartition (%) est maintenant toujours actif, peu importe qui est sélectionné : même
+   une dépense payée par Gabriel ou Mélissa peut être partagée dans une proportion autre que
+   50/50. Seul le champ "revenu" (argent qui entre dans le compte) reste réservé au choix
+   "Compte conjoint", puisque ce concept ne s'applique qu'à lui. */
 function appliquerChoixQuiConjoint(quiSelectId, repartitionInputId, revenuFieldId){
   const estCompte = document.getElementById(quiSelectId).value === 'Compte conjoint';
-  document.getElementById(repartitionInputId).disabled = !estCompte;
   if(revenuFieldId){
     const revenuField = document.getElementById(revenuFieldId);
     revenuField.style.display = estCompte ? '' : 'none';
@@ -3471,7 +3490,6 @@ function appliquerVerrouEditType(type){
     if(['Gabriel','Mélissa','Compte conjoint'].includes(valeurActuelle)) whoSelect.value = valeurActuelle;
     estCompte = whoSelect.value === 'Compte conjoint';
     compteField.style.display = '';
-    repartitionInput.disabled = !estCompte;
     estRevenuField.style.display = estCompte ? '' : 'none';
     if(!estCompte) estRevenuCheckbox.checked = false;
   }
@@ -3543,7 +3561,7 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
   const type=editTypeActuel==='personnelle'?'personnelle':'conjointe';
   const estCompte = type==='conjointe' && document.getElementById('edit-who').value === 'Compte conjoint';
   const estRevenu = (type==='personnelle' || estCompte) && document.getElementById('edit-est-revenu').checked;
-  const pourcentageP1 = estCompte ? Number(document.getElementById('edit-compte-repartition').value) : null;
+  const pourcentageP1 = type==='conjointe' ? Number(document.getElementById('edit-compte-repartition').value) : null;
   const who = estCompte ? 'compte' : clePersonne(document.getElementById('edit-who').value);
   const categorieFinale = estRevenu ? 'Revenu' : document.getElementById('edit-category').value;
   const noteFinale = document.getElementById('edit-note').value.trim();
@@ -3761,7 +3779,7 @@ function afficherTableauScope(scope){
 
   /* La liste (mode "Liste" du calendrier) suit désormais la période et les filtres du
      calendrier — un seul sélecteur pour tout l'onglet, plutôt que le mois global. */
-  const { debut, fin } = bornePeriode(etatCalendrier[scope].vue, etatCalendrier[scope].dateRef);
+  const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
   const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
   const dansPeriode = e => e.date>=debutStr && e.date<=finStr;
   const filtres = filtresCalendrier[scope];
