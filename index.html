@@ -155,10 +155,12 @@
     margin:16px 0 20px;
   }
   .period-nav-row{display:flex;align-items:center;justify-content:center;gap:12px;}
-  .period-type-row{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;}
-  .period-type-row .period-type-switch{flex:0 1 auto;}
-  .period-type-row .cal-mode-switch{margin-right:auto;}
-  .period-type-row .cal-hamburger-btn{margin-left:auto;}
+  /* Le sélecteur de type de période reste toujours parfaitement centré, peu importe l'onglet
+     — les contrôles annexes (☰ des filtres, etc.) sont positionnés en absolu par-dessus,
+     pour ne jamais pousser le centre du sélecteur d'un côté ou de l'autre. */
+  .period-type-row{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:38px;}
+  .period-type-row .period-type-switch{flex:0 0 auto;}
+  .period-type-row .cal-mode-switch{position:absolute;left:0;top:50%;transform:translateY(-50%);}
   .period-nav button,.icon-btn{
     border:1px solid var(--border);background:var(--surface);color:var(--text);
     border-radius:8px;padding:8px 12px;font-family:inherit;cursor:pointer;
@@ -274,12 +276,15 @@
   .cal-agenda-day-header{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:capitalize;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border);}
   .cal-agenda-day-header.today{color:var(--blue);}
   .cal-agenda-empty{font-size:12px;color:var(--text-secondary);padding:4px 0 10px;}
-  .cal-agenda-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
+  .cal-agenda-item{display:block;padding:9px 10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
   body.dark .cal-agenda-item{background:#2c3136;}
-  .cal-agenda-item-nom{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .cal-agenda-item-badges{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;}
+  .cal-agenda-item-ligne1{display:flex;align-items:center;gap:6px;}
+  .cal-agenda-item-ligne2{display:flex;align-items:center;gap:6px;margin-top:5px;}
   .cal-agenda-item-date{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--border);padding:2px 6px;border-radius:5px;flex-shrink:0;}
-  .cal-agenda-item-montant{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+  .cal-agenda-pct{font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;}
+  .cal-agenda-item-montant{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;margin-left:auto;padding-left:8px;}
+  .cal-agenda-item-note{font-size:13px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px;}
+  .cal-agenda-item-cat{font-size:12px;font-weight:500;flex-shrink:0;margin-left:auto;padding-left:8px;white-space:nowrap;}
 
   /* Couleurs des pastilles/items par type, cohérentes avec le reste de l'app */
   .cal-pill.cal-p1,.cal-agenda-item.cal-p1{background:color-mix(in srgb, var(--blue-dark) 16%, transparent);}
@@ -2744,7 +2749,7 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
        seulement s'il y a 2 dépenses ou plus (léger et lisible, façon Google Agenda en
        vue compacte). */
     const couleursPresentes = [...new Set(jourItems.map(classeTypeDepense))].slice(0,4);
-    html += `<div class="cal-month-cell ${dansLeMois?'':'outside'}" onclick="ouvrirJourModal('${scope}','${iso}')">
+    html += `<div class="cal-month-cell ${dansLeMois?'':'outside'}" onclick="allerVueJour('${scope}','${iso}')">
       <div class="cal-month-daynum ${iso===aujourdhuiStr?'today':''}">${curseur.getDate()}</div>
       ${nb>0 ? `<div class="cal-month-dots">
         ${couleursPresentes.map(c=>`<span class="cal-dot-mini ${c}"></span>`).join('')}
@@ -2757,41 +2762,50 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
   return html;
 }
 
+/* Cliquer une date dans la grille du mois bascule directement vers la vue "Jour" pour cette
+   date, plutôt que d'ouvrir une fenêtre par-dessus. */
+function allerVueJour(scope, iso){
+  etatCalendrierPeriode.vue = 'jour';
+  etatCalendrierPeriode.dateRef = dateLocaleDepuisISO(iso);
+  rafraichirSousOnglet(scope, 'mois');
+  afficherNavigationPeriode();
+}
+
 /* Carte de dépense unifiée, réutilisée partout où une liste de dépenses s'affiche (agenda
    Jour/Semaine/Paie, fiche d'une journée, mode Liste) — même visuel partout plutôt qu'un
    tableau différent selon l'endroit. `montrerDate` ajoute un petit badge de date (utile
    seulement quand le regroupement par jour n'est pas déjà visible, comme en mode Liste). */
-function rendreCarteDepenseHTML(e, scope, options){
-  options = options || {};
+/* Carte à disposition FIXE en 2 lignes, identique peu importe le tri ou le type de dépense :
+   Ligne 1 = Date, Qui, % (celui de la personne affichée comme "Qui"), puis Montant à droite.
+   Ligne 2 = Note, puis Catégorie à droite. */
+function rendreCarteDepenseHTML(e, scope){
   const dotClass = e.who;
   const quiLabel = e.estCompte ? '🏦 Compte conjoint' : libellePersonne(e.who);
   const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
-  const categoriePill = e.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[e.category]||'#9aa0a6'}">${e.category}</span>`;
-  const badgeRevenu = e.estRevenu ? '<span class="freq-pill badge-revenu">💰 Revenu</span>' : '';
   const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
-  const badgePourcentage = scope==='conjoint' && e.pourcentageP1!=null
-    ? `<div style="margin-top:4px;"><span class="freq-pill badge-compte">${e.pourcentageP1}% ${nomsPersonnes.p1}</span></div>` : '';
-  const dateBadge = options.montrerDate
-    ? `<span class="cal-agenda-item-date">${dateLocaleDepuisISO(e.date).toLocaleDateString('fr-CA',{day:'numeric', month:'short'})}</span>` : '';
-  /* Deux rangées à emplacement FIXE, peu importe le type de dépense : date+qui toujours
-     ensemble sur la même ligne, catégorie/revenu toujours sur la ligne suivante — pour que
-     l'information soit toujours au même endroit, plutôt que de sauter de ligne selon la
-     longueur du texte ("Compte conjoint" vs "Gabriel", par exemple). */
-  const ligneBadges = (categoriePill || badgeRevenu)
-    ? `<div class="cal-agenda-item-badges">${categoriePill}${badgeRevenu}</div>` : '';
+  /* Le % affiché correspond toujours à la part de la personne indiquée comme "Qui" (pas
+     toujours Gabriel) : pas besoin d'écrire son nom une deuxième fois, il est déjà juste à
+     côté. */
+  let pourcentageAffiche = '';
+  if(scope==='conjoint' && e.pourcentageP1!=null){
+    const pct = e.who==='p2' ? (100 - e.pourcentageP1) : e.pourcentageP1;
+    pourcentageAffiche = `<span class="cal-agenda-pct">${pct}%</span>`;
+  }
+  const dateCourte = dateLocaleDepuisISO(e.date).toLocaleDateString('fr-CA',{day:'numeric', month:'short'});
+  const categorieAffichee = e.estRevenu ? '💰 Revenu' : e.category;
+  const couleurCategorie = e.estRevenu ? 'var(--green)' : (COULEURS_CATEGORIES[e.category]||'#9aa0a6');
+
   return `
-    <div class="cal-agenda-item" onclick="fermerJourModal();ouvrirDetailOccurrence('${e.id}')">
-      <div style="min-width:0;flex:1;">
-        <div class="cal-agenda-item-nom">${iconeRecurrente} ${e.note || e.category}</div>
-        <div class="cal-agenda-item-badges">
-          ${dateBadge}
-          <span class="who-badge"><span class="dot ${dotClass}"></span>${quiLabel}</span>
-        </div>
-        ${ligneBadges}
+    <div class="cal-agenda-item" onclick="ouvrirDetailOccurrence('${e.id}')">
+      <div class="cal-agenda-item-ligne1">
+        <span class="cal-agenda-item-date">${dateCourte}</span>
+        <span class="who-badge"><span class="dot ${dotClass}"></span>${quiLabel}</span>
+        ${pourcentageAffiche}
+        <span class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</span>
       </div>
-      <div style="text-align:right;flex-shrink:0;margin-left:10px;">
-        <div class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</div>
-        ${badgePourcentage}
+      <div class="cal-agenda-item-ligne2">
+        <span class="cal-agenda-item-note">${iconeRecurrente} ${e.note || '—'}</span>
+        <span class="cal-agenda-item-cat" style="color:${couleurCategorie}">${categorieAffichee}</span>
       </div>
     </div>`;
 }
@@ -2838,39 +2852,15 @@ function wirerTriAgenda(scope){
 }
 
 /* Vue "agenda", utilisée pour Jour/Semaine/Paie/Mois — même contrôle de tri et même carte
-   partout (voir rendreCarteDepenseHTML). Si le tri est par Date, on regroupe par jour
-   (l'ordre des jours suit le sens du tri) ; sinon, liste plate triée avec un badge de date
-   sur chaque carte, puisque le regroupement par jour n'aurait plus de sens. */
+   partout, TOUJOURS en liste à plat (aucun regroupement par jour) : le tri se comporte donc
+   exactement pareil peu importe le critère choisi, y compris "Date". */
 function rendreAgendaCalendrier(scope, debut, fin){
   const tri = etatTri[scope];
   const items = trierListeDepenses(depensesPourCalendrier(scope, debut, fin), tri);
   const controle = rendreControleTriHTML(scope, tri);
-
-  if(tri.key !== 'Date'){
-    const corps = items.length
-      ? items.map(e=>rendreCarteDepenseHTML(e, scope, {montrerDate:true})).join('')
-      : '<div class="cal-agenda-empty">Aucune dépense pour cette période</div>';
-    return controle + corps;
-  }
-
-  const parJour = {};
-  items.forEach(e => { (parJour[e.date] = parJour[e.date] || []).push(e); });
-  const aujourdhuiStr = formaterDateISO(debutJour(new Date()));
-  const jours = [];
-  let curseur = new Date(debut);
-  while(curseur <= fin){ jours.push(new Date(curseur)); curseur = ajouterJours(curseur, 1); }
-  if(tri.dir === 'desc') jours.reverse();
-
-  const corps = jours.map(j=>{
-    const iso = formaterDateISO(j);
-    const jourItems = parJour[iso] || [];
-    const labelJour = j.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long'});
-    return `<div class="cal-agenda-day">
-      <div class="cal-agenda-day-header ${iso===aujourdhuiStr?'today':''}">${labelJour}</div>
-      ${jourItems.length ? jourItems.map(e=>rendreCarteDepenseHTML(e, scope)).join('') : '<div class="cal-agenda-empty">Aucune dépense</div>'}
-    </div>`;
-  }).join('');
-
+  const corps = items.length
+    ? items.map(e=>rendreCarteDepenseHTML(e, scope)).join('')
+    : '<div class="cal-agenda-empty">Aucune dépense pour cette période</div>';
   return controle + corps;
 }
 
