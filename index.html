@@ -2058,6 +2058,25 @@ function calculerEcheancierCompte(nbPaies){
     }
   });
 
+  /* Report du surplus : un montant "dû" négatif à une paie (revenu plus gros que ce qui
+     était attendu) ne peut pas se traduire par un dépôt négatif — on affiche 0$ et le
+     surplus réduit d'autant le montant dû à la PROCHAINE paie, en chaîne si besoin.
+     Appliqué séparément pour Gabriel et Mélissa, dans l'ordre chronologique. */
+  ['p1','p2'].forEach(personne=>{
+    let report = 0;
+    paies.forEach(p=>{
+      const iso = formaterDateISO(p);
+      const brut = totaux[iso][personne] + report;
+      if(brut < 0){
+        report = brut; /* surplus à reporter sur la paie suivante */
+        totaux[iso][personne] = 0;
+      } else {
+        report = 0;
+        totaux[iso][personne] = brut;
+      }
+    });
+  });
+
   return paies.map(p=>({ date:p, iso:formaterDateISO(p), p1: totaux[formaterDateISO(p)].p1, p2: totaux[formaterDateISO(p)].p2 }));
 }
 
