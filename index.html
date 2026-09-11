@@ -213,6 +213,9 @@
   .switch.small .switch-track::after{width:16px;height:16px;left:3px;top:3px;}
   .switch.small input:checked + .switch-track::after{transform:translateX(16px);}
   .recurrent-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;align-items:end;}
+  .jours-semaine-select{display:flex;gap:6px;flex-wrap:wrap;}
+  .jour-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:12px;font-weight:500;}
+  .jour-btn.selected{background:var(--blue);color:#fff;border-color:var(--blue);}
   @media (max-width:760px){
     .recurrent-row{flex-wrap:wrap;}
     .recurrent-actions{margin-left:auto;}
@@ -851,9 +854,9 @@
           <div class="chart-wrap"><canvas id="chart-categories-conjoint"></canvas></div>
         </div>
       </div>
-      <div class="card">
+      <div class="card" id="budget-edit-card-conjoint">
         <h3 style="margin-bottom:12px;">Gérer le budget conjoint de <span id="periode-label-conjoint"></span></h3>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ce budget est partagé : vous et votre partenaire pouvez tous les deux le consulter et le modifier. Il concerne seulement les dépenses <em>conjointes</em>. Le budget est propre à chaque mois.</p>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ce budget est partagé : vous et votre partenaire pouvez tous les deux le consulter et le modifier. Il concerne seulement les dépenses <em>conjointes</em>. Le budget est propre à chaque mois — ajustable seulement en vue "Paie".</p>
 
         <div style="padding-top:14px;border-top:1px solid var(--border);">
           <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
@@ -997,9 +1000,9 @@
           <div class="chart-wrap"><canvas id="chart-categories-personnel"></canvas></div>
         </div>
       </div>
-      <div class="card">
+      <div class="card" id="budget-edit-card-personnel">
         <h3 style="margin-bottom:12px;">Gérer mon budget de <span id="periode-label-personnel"></span></h3>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ces montants ne concernent que vous et servent à suivre vos dépenses <em>personnelles</em> (pas les dépenses conjointes). Cette section n'est visible que par vous. Le budget est propre à chaque mois.</p>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ces montants ne concernent que vous et servent à suivre vos dépenses <em>personnelles</em> (pas les dépenses conjointes). Cette section n'est visible que par vous. Le budget est propre à chaque mois — ajustable seulement en vue "Paie".</p>
 
         <div style="padding-top:14px;border-top:1px solid var(--border);">
           <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
@@ -1175,13 +1178,8 @@
     <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
     <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
     <div class="field">
-      <label>Fréquence</label>
-      <select id="edit-rec-frequence">
-        <option value="semaine">Chaque semaine</option>
-        <option value="2semaines">Chaque 2 semaines</option>
-        <option value="mois">Chaque mois</option>
-        <option value="annee">Chaque année</option>
-      </select>
+      <label>Se répète</label>
+      <select id="edit-rec-frequence"></select>
     </div>
     <div class="field" id="edit-rec-qui-field">
       <label>Qui</label>
@@ -1219,6 +1217,44 @@
     <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit-recurrent">Supprimer</button><button class="btn-add" id="save-edit-recurrent">Sauvegarder</button></div>
   </div>
 </div></div>
+
+<!-- Modal partagé de récurrence personnalisée (façon Google Agenda), utilisé par les 3
+     sélecteurs "Se répète" (ajout conjoint, ajout personnel, édition d'une récurrence). -->
+<div class="edit-modal" id="custom-repetition-modal"><div class="edit-card">
+  <button class="modal-close-btn" id="close-custom-repetition" aria-label="Fermer">&times;</button>
+  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Récurrence personnalisée</h3>
+  <div class="field" style="display:flex;align-items:end;gap:10px;">
+    <div style="flex:0 0 90px;">
+      <label>Tous/toutes les</label>
+      <input type="number" id="custom-rep-intervalle" min="1" step="1" value="1">
+    </div>
+    <div style="flex:1;">
+      <label>&nbsp;</label>
+      <select id="custom-rep-unite">
+        <option value="jour">jour(s)</option>
+        <option value="semaine">semaine(s)</option>
+        <option value="mois">mois</option>
+        <option value="annee">année(s)</option>
+      </select>
+    </div>
+  </div>
+  <div class="field" id="custom-rep-jours-field" style="display:none;">
+    <label>Répéter le</label>
+    <div class="jours-semaine-select" id="custom-rep-jours"></div>
+  </div>
+  <div class="field" id="custom-rep-mensuel-field" style="display:none;">
+    <label>Chaque mois</label>
+    <select id="custom-rep-type-mensuel">
+      <option value="jour_mois">Le même jour du mois</option>
+      <option value="dernier_jour">Le dernier jour du mois</option>
+    </select>
+  </div>
+  <div class="edit-actions">
+    <button class="btn-secondary" id="custom-repetition-annuler">Annuler</button>
+    <button class="btn-add" id="custom-repetition-terminer">Terminé</button>
+  </div>
+</div></div>
+
 
 <div class="edit-modal" id="occurrence-modal"><div class="edit-card" id="occurrence-modal-card">
   <button class="modal-close-btn" id="close-occurrence-modal" aria-label="Fermer">&times;</button>
@@ -1549,8 +1585,8 @@ function appliquerTheme(){
   if(darkMode) darkMode.checked = document.body.classList.contains('dark');
 }
 
-document.getElementById('f-date-conjoint').value = aujourdhui.toISOString().slice(0,10);
-document.getElementById('f-date-personnel').value = aujourdhui.toISOString().slice(0,10);
+document.getElementById('f-date-conjoint').value = formaterDateISO(debutJour(new Date()));
+document.getElementById('f-date-personnel').value = formaterDateISO(debutJour(new Date()));
 
 document.getElementById('mobile-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.add('mobile-add-open'));
 document.getElementById('close-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.remove('mobile-add-open'));
@@ -1621,22 +1657,37 @@ async function chargerBudgetsSupabase(){
 }
 
 /* Config propre à chaque section : quelles dépenses compter, sous quelle clé stocker le
-   budget, et quel nom envoyer à Supabase pour la colonne Personne. */
+   budget, et quel nom envoyer à Supabase pour la colonne Personne. Les dépenses comptées
+   suivent la période actuellement sélectionnée (Jour/Semaine/Paie/Mois/Année) ; seul le
+   budget-cible lui-même (les montants qu'on ajuste) reste toujours mensuel. */
 function configSection(scope){
+  const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+  const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
+  const dansPeriode = e => e.date >= debutStr && e.date <= finStr;
   if(scope === 'conjoint'){
     return {
-      filtre: e => e.type === 'conjointe' && dansMoisActif(e.date),
+      filtre: e => e.type === 'conjointe' && dansPeriode(e),
       budgetKey: 'conjoint',
       personneSupabase: 'Conjoint',
       valueClass: ''
     };
   }
   return {
-    filtre: e => e.type === 'personnelle' && e.who === currentUser && dansMoisActif(e.date),
+    filtre: e => e.type === 'personnelle' && e.who === currentUser && dansPeriode(e),
     budgetKey: currentUser,
     personneSupabase: nomPersonneSupabase(currentUser),
     valueClass: currentUser
   };
+}
+
+/* Ramène un budget mensuel à la période actuellement sélectionnée : identique au mois
+   pour "Mois", x12 pour "Année", au prorata du nombre de jours sinon (Jour/Semaine/Paie). */
+function budgetProratePourPeriode(budgetMensuel, vue, debut, fin){
+  if(vue === 'mois') return budgetMensuel;
+  if(vue === 'annee') return budgetMensuel * 12;
+  const joursPeriode = Math.round((fin - debut) / 86400000) + 1;
+  const joursDuMois = new Date(moisActif.year, moisActif.month+1, 0).getDate();
+  return budgetMensuel * (joursPeriode / joursDuMois);
 }
 
 async function sauvegarderBudget(scope){
@@ -1696,41 +1747,83 @@ function budgetTotalCalcule(budgetKey, periode){
 const paieAncrage = '2026-09-17';
 
 /* ===================== DÉPENSES RÉCURRENTES (abonnements, paiements réguliers) ===================== */
-/* Stockées dans la table Supabase "Recurrences" (Nom, Montant, Categorie, Frequence, DateDebut,
-   FinType, FinNombre, FinDate, Qui, Type, Actif). Si la table n'existe pas encore chez
-   l'utilisateur, on retombe sur le stockage local de l'appareil, comme pour les budgets.
+/* Stockées dans la table Supabase "Recurrences" (Nom, Montant, Categorie, Unite, Intervalle,
+   JoursSemaine, TypeMensuel, DateDebut, FinType, FinNombre, FinDate, Qui, Type, Actif).
+   Si la table n'existe pas encore chez l'utilisateur (ou si les colonnes Unite/Intervalle/
+   JoursSemaine/TypeMensuel n'ont pas encore été ajoutées), on retombe sur le stockage local
+   de l'appareil, comme pour les budgets — voir les instructions pour ajouter ces colonnes.
    Chaque récurrence active génère automatiquement de vraies dépenses (dans Personnel ou
    Conjoint selon son type) pour chaque échéance passée ET future (jusqu'à un horizon
    d'environ 2 ans, régénéré à chaque connexion), en les reliant via RecurrenceId sur la
-   table Depenses afin de ne jamais les dupliquer. */
+   table Depenses afin de ne jamais les dupliquer.
+
+   Modèle de répétition (façon Google Agenda) :
+     - unite: 'jour' | 'semaine' | 'mois' | 'annee'
+     - intervalle: nombre d'unités entre deux échéances (ex: 2 = un mois sur deux)
+     - joursSemaine: tableau de jours (0=dimanche ... 6=samedi), utilisé seulement si unite==='semaine'
+     - typeMensuel: 'jour_mois' (même numéro de jour chaque mois, plafonné en fin de mois
+       court) ou 'dernier_jour' (toujours le tout dernier jour du mois, peu importe sa
+       longueur) — utilisé seulement si unite==='mois'. C'est ce deuxième mode qui règle le
+       cas des dépenses facturées le dernier jour du mois (28/29/30/31 selon le mois). */
 let recurrences = [];
 let recurrencesSupabaseDisponible = true;
 let recurrenceEnEdition = null;
+
+/* Convertit l'ancien champ unique "Frequence" ('semaine'/'2semaines'/'mois'/'annee'),
+   utilisé avant l'introduction du modèle façon Google Agenda, vers le nouveau modèle
+   unite/intervalle. Permet aux récurrences créées avant cette mise à jour de continuer à
+   fonctionner sans migration manuelle. */
+function migrerAncienneFrequence(frequenceAncienne, dateDebut){
+  const jourSemaineDebut = dateDebut ? new Date(dateDebut+"T00:00:00").getDay() : 1;
+  if(frequenceAncienne === 'semaine') return { unite:'semaine', intervalle:1, joursSemaine:[jourSemaineDebut], typeMensuel:null };
+  if(frequenceAncienne === '2semaines') return { unite:'semaine', intervalle:2, joursSemaine:[jourSemaineDebut], typeMensuel:null };
+  if(frequenceAncienne === 'annee') return { unite:'annee', intervalle:1, joursSemaine:null, typeMensuel:null };
+  return { unite:'mois', intervalle:1, joursSemaine:null, typeMensuel:'jour_mois' };
+}
 
 async function chargerRecurrencesSupabase(){
   try{
     const { data, error } = await supabaseClient.from('Recurrences').select('*');
     if(error) throw error;
-    recurrences = (data || []).map(r => ({
-      id: r.id,
-      nom: r.Nom || '',
-      montant: Number(r.Montant || 0),
-      categorie: r.Categorie || 'Autre',
-      frequence: ['semaine','2semaines','mois','annee'].includes(r.Frequence) ? r.Frequence : 'mois',
-      dateDebut: r.DateDebut || null,
-      finType: ['jamais','nombre','date'].includes(r.FinType) ? r.FinType : 'jamais',
-      finNombre: r.FinNombre != null ? Number(r.FinNombre) : null,
-      finDate: r.FinDate || null,
-      who: r.Qui ? clePersonne(r.Qui) : null,
-      type: r.Type === 'personnelle' ? 'personnelle' : 'conjointe',
-      estCompte: r.EstCompte === true,
-      estRevenu: r.EstRevenu === true,
-      pourcentageP1: r.PourcentageP1 != null ? Number(r.PourcentageP1) : 50,
-      actif: r.Actif !== false,
-      /* Dates d'occurrences individuelles explicitement supprimées ("cette dépense
-         seulement") : à ne jamais régénérer, même si leur date n'a plus de dépense liée. */
-      datesExclues: r.DatesExclues ? String(r.DatesExclues).split(',').map(s=>s.trim()).filter(Boolean) : []
-    }));
+    recurrences = (data || []).map(r => {
+      const aLeNouveauModele = r.Unite != null;
+      const modele = aLeNouveauModele
+        ? {
+            unite: ['jour','semaine','mois','annee'].includes(r.Unite) ? r.Unite : 'mois',
+            intervalle: r.Intervalle != null ? Math.max(1, parseInt(r.Intervalle,10)) : 1,
+            joursSemaine: r.JoursSemaine ? String(r.JoursSemaine).split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n)) : null,
+            typeMensuel: r.TypeMensuel === 'dernier_jour' ? 'dernier_jour' : 'jour_mois'
+          }
+        : migrerAncienneFrequence(r.Frequence, r.DateDebut);
+      return {
+        id: r.id,
+        nom: r.Nom || '',
+        montant: Number(r.Montant || 0),
+        categorie: r.Categorie || 'Autre',
+        unite: modele.unite,
+        intervalle: modele.intervalle,
+        joursSemaine: modele.joursSemaine,
+        typeMensuel: modele.typeMensuel,
+        dateDebut: r.DateDebut || null,
+        finType: ['jamais','nombre','date'].includes(r.FinType) ? r.FinType : 'jamais',
+        finNombre: r.FinNombre != null ? Number(r.FinNombre) : null,
+        finDate: r.FinDate || null,
+        who: r.Qui ? clePersonne(r.Qui) : null,
+        type: r.Type === 'personnelle' ? 'personnelle' : 'conjointe',
+        estCompte: r.EstCompte === true,
+        estRevenu: r.EstRevenu === true,
+        /* Identifie la "famille" de récurrences issues d'une même série d'origine (voir
+           diviserRecurrenceAPartirDe) : quand une récurrence n'a pas encore de RacineId
+           (donnée créée avant l'ajout de ce champ, ou récurrence jamais scindée), elle est
+           sa propre racine. */
+        racineId: r.RacineId || r.id,
+        pourcentageP1: r.PourcentageP1 != null ? Number(r.PourcentageP1) : 50,
+        actif: r.Actif !== false,
+        /* Dates d'occurrences individuelles explicitement supprimées ("cette dépense
+           seulement") : à ne jamais régénérer, même si leur date n'a plus de dépense liée. */
+        datesExclues: r.DatesExclues ? String(r.DatesExclues).split(',').map(s=>s.trim()).filter(Boolean) : []
+      };
+    });
     recurrencesSupabaseDisponible = true;
   } catch(err){
     recurrencesSupabaseDisponible = false;
@@ -1745,32 +1838,78 @@ function sauvegarderRecurrencesLocal(){
   localStorage.setItem('depenses_recurrences', JSON.stringify(recurrences));
 }
 
-function multiplicateurMensuel(frequence){
-  if(frequence==='semaine') return 52/12;
-  if(frequence==='2semaines') return 26/12;
-  if(frequence==='annee') return 1/12;
-  return 1; /* mois */
+/* Nombre d'échéances par année pour une récurrence donnée — sert au calcul du total
+   mensuel/annuel affiché dans les stats (pas à la génération réelle des dates). */
+function occurrencesParAnnee(rec){
+  const intervalle = Math.max(1, rec.intervalle || 1);
+  if(rec.unite === 'jour') return 365 / intervalle;
+  if(rec.unite === 'semaine'){
+    const nbJours = (rec.joursSemaine && rec.joursSemaine.length) ? rec.joursSemaine.length : 1;
+    return (52 / intervalle) * nbJours;
+  }
+  if(rec.unite === 'annee') return 1 / intervalle;
+  return 12 / intervalle; /* mois */
 }
-function libelleFrequence(f){
-  return { semaine:'Chaque semaine', '2semaines':'Chaque 2 semaines', mois:'Chaque mois', annee:'Chaque année' }[f] || f;
+function multiplicateurMensuel(rec){ return occurrencesParAnnee(rec) / 12; }
+function multiplicateurAnnuel(rec){ return occurrencesParAnnee(rec); }
+
+const NOMS_JOURS_COURTS = ['dim','lun','mar','mer','jeu','ven','sam'];
+const NOMS_JOURS_LETTRE = ['D','L','M','M','J','V','S'];
+/* NOMS_MOIS est déjà déclaré plus haut dans le fichier (utilisé aussi par l'affichage du
+   calendrier), on le réutilise ici tel quel. */
+
+/* Construit un libellé humain (façon Google Agenda) à partir d'une config de répétition. */
+function libelleRecurrence(rec){
+  const intervalle = Math.max(1, rec.intervalle || 1);
+  if(rec.unite === 'jour'){
+    return intervalle === 1 ? 'Tous les jours' : `Tous les ${intervalle} jours`;
+  }
+  if(rec.unite === 'semaine'){
+    const jours = (rec.joursSemaine && rec.joursSemaine.length ? [...rec.joursSemaine] : []).sort();
+    if(jours.length === 5 && jours.join(',') === '1,2,3,4,5' && intervalle === 1){
+      return 'Tous les jours de semaine (lundi au vendredi)';
+    }
+    const joursLabel = jours.length ? jours.map(j=>NOMS_JOURS_COURTS[j]).join(', ') : '';
+    return intervalle === 1
+      ? `Toutes les semaines${joursLabel?` le ${joursLabel}`:''}`
+      : `Toutes les ${intervalle} semaines${joursLabel?` le ${joursLabel}`:''}`;
+  }
+  if(rec.unite === 'annee'){
+    let suffixe = '';
+    if(rec.dateDebut){
+      const d = new Date(rec.dateDebut+"T00:00:00");
+      suffixe = ` le ${d.getDate()} ${NOMS_MOIS[d.getMonth()]}`;
+    }
+    return intervalle === 1 ? `Annuellement${suffixe}` : `Tous les ${intervalle} ans${suffixe}`;
+  }
+  /* mois */
+  if(rec.typeMensuel === 'dernier_jour'){
+    return intervalle === 1 ? 'Tous les mois le dernier jour' : `Tous les ${intervalle} mois le dernier jour`;
+  }
+  const jourMois = rec.dateDebut ? new Date(rec.dateDebut+"T00:00:00").getDate() : null;
+  const suffixeJour = jourMois ? ` le ${jourMois}` : '';
+  return intervalle === 1 ? `Tous les mois${suffixeJour}` : `Tous les ${intervalle} mois${suffixeJour}`;
 }
 
-/* Avance une date d'une période, en gérant correctement les fins de mois (ex: 31 janvier
-   + 1 mois -> 28/29 février plutôt que de déborder sur mars). */
-function ajouterPeriode(date, frequence){
-  const d = new Date(date);
-  if(frequence==='semaine'){ d.setDate(d.getDate()+7); return d; }
-  if(frequence==='2semaines'){ d.setDate(d.getDate()+14); return d; }
-  if(frequence==='annee'){
-    const jour = d.getDate();
-    d.setFullYear(d.getFullYear()+1);
-    if(d.getDate() !== jour) d.setDate(0);
-    return d;
+/* Compare deux configs de répétition (unite/intervalle/joursSemaine/typeMensuel) pour savoir
+   si une config donnée correspond exactement à un des préréglages proposés dans le select. */
+function configsEquivalentes(a, b){
+  if(!a || !b) return false;
+  if(a.unite !== b.unite || (a.intervalle||1) !== (b.intervalle||1)) return false;
+  if(a.unite === 'semaine'){
+    const ja = (a.joursSemaine||[]).slice().sort().join(',');
+    const jb = (b.joursSemaine||[]).slice().sort().join(',');
+    return ja === jb;
   }
-  const jour = d.getDate();
-  d.setMonth(d.getMonth()+1);
-  if(d.getDate() !== jour) d.setDate(0);
-  return d;
+  if(a.unite === 'mois') return (a.typeMensuel||'jour_mois') === (b.typeMensuel||'jour_mois');
+  return true;
+}
+
+/* Renvoie le dernier jour du mois contenant `premierDuMoisOuDate` (peu importe le jour du
+   mois passé en entrée, seuls l'année et le mois comptent). */
+function dernierJourDuMois(anneeOuDate, moisEventuel){
+  if(anneeOuDate instanceof Date) return new Date(anneeOuDate.getFullYear(), anneeOuDate.getMonth()+1, 0);
+  return new Date(anneeOuDate, moisEventuel+1, 0);
 }
 
 /* Par défaut (connexion, ajout, activation), on génère 12 mois à l'avance pour les
@@ -1794,21 +1933,76 @@ function horizonMaximal(){
 
 /* Calcule toutes les dates d'échéance d'une récurrence, du départ jusqu'à la date limite
    donnée (elle-même plafonnée à 25 ans dans le futur), en respectant sa condition de fin
-   (jamais / nombre de paiements / date de fin). Couvre les échéances passées et futures. */
+   (jamais / nombre de paiements / date de fin). Couvre les échéances passées et futures.
+   Gère les 4 unités (jour/semaine/mois/année), l'intervalle personnalisé, plusieurs jours
+   de la semaine à la fois, et le cas "dernier jour du mois" (recalculé fraîchement chaque
+   mois, plutôt que de simplement plafonner un numéro de jour fixe qui resterait ensuite
+   coincé sur un mois court). */
 function genererOccurrences(rec, limiteDate){
   const dates = [];
   if(!rec.dateDebut) return dates;
-  let courant = new Date(rec.dateDebut+"T00:00:00");
+  const debut = new Date(rec.dateDebut+"T00:00:00");
   const plafond = horizonMaximal();
   const limiteDemandee = limiteDate && limiteDate < plafond ? limiteDate : plafond;
   const finDateObj = rec.finType==='date' && rec.finDate ? new Date(rec.finDate+"T00:00:00") : null;
   const limite = finDateObj && finDateObj < limiteDemandee ? finDateObj : limiteDemandee;
+  const maxOccurrences = rec.finType==='nombre' && rec.finNombre != null ? rec.finNombre : Infinity;
+  const intervalle = Math.max(1, rec.intervalle || 1);
+  const unite = rec.unite || 'mois';
+
+  if(unite === 'semaine'){
+    const jours = (rec.joursSemaine && rec.joursSemaine.length) ? rec.joursSemaine : [debut.getDay()];
+    const semaineDebut = new Date(debut); semaineDebut.setDate(semaineDebut.getDate() - semaineDebut.getDay());
+    let curseur = new Date(debut);
+    let compte = 0;
+    while(curseur <= limite && compte < maxOccurrences){
+      if(jours.includes(curseur.getDay())){
+        const semaineCourante = new Date(curseur); semaineCourante.setDate(semaineCourante.getDate() - semaineCourante.getDay());
+        const diffSemaines = Math.round((semaineCourante - semaineDebut) / (7*86400000));
+        if(diffSemaines % intervalle === 0){
+          dates.push(new Date(curseur));
+          compte++;
+        }
+      }
+      curseur.setDate(curseur.getDate()+1);
+    }
+    return dates;
+  }
+
+  if(unite === 'mois'){
+    let moisCourant = new Date(debut.getFullYear(), debut.getMonth(), 1);
+    let compte = 0;
+    while(compte < maxOccurrences){
+      const occ = rec.typeMensuel === 'dernier_jour'
+        ? dernierJourDuMois(moisCourant)
+        : new Date(moisCourant.getFullYear(), moisCourant.getMonth(), Math.min(debut.getDate(), dernierJourDuMois(moisCourant).getDate()));
+      if(occ > limite) break;
+      if(occ >= debut){ dates.push(occ); compte++; }
+      moisCourant.setMonth(moisCourant.getMonth()+intervalle);
+    }
+    return dates;
+  }
+
+  if(unite === 'annee'){
+    let anneeCourante = debut.getFullYear();
+    let compte = 0;
+    while(compte < maxOccurrences){
+      const dernierJourMoisVise = dernierJourDuMois(anneeCourante, debut.getMonth());
+      const occ = new Date(anneeCourante, debut.getMonth(), Math.min(debut.getDate(), dernierJourMoisVise.getDate()));
+      if(occ > limite) break;
+      if(occ >= debut){ dates.push(occ); compte++; }
+      anneeCourante += intervalle;
+    }
+    return dates;
+  }
+
+  /* unite === 'jour' */
+  let courant = new Date(debut);
   let compte = 0;
-  while(courant <= limite){
-    if(rec.finType==='nombre' && rec.finNombre != null && compte >= rec.finNombre) break;
+  while(courant <= limite && compte < maxOccurrences){
     dates.push(new Date(courant));
     compte++;
-    courant = ajouterPeriode(courant, rec.frequence);
+    courant.setDate(courant.getDate()+intervalle);
   }
   return dates;
 }
@@ -1976,7 +2170,7 @@ function calculerEcheancierCompte(nbPaies){
       if(rec.finType === 'jamais'){
         /* Récurrence sans fin connue : pas de "durée restante" à calculer, donc on garde une
            moyenne annuelle stable (identique à chaque paie, indéfiniment). */
-        const totalAnnuel = rec.montant * multiplicateurAnnuel(rec.frequence);
+        const totalAnnuel = rec.montant * multiplicateurAnnuel(rec);
         const partParPaie = totalAnnuel / PAIES_PAR_ANNEE;
         const p1Pct = pct(rec.pourcentageP1);
         paies.forEach(p=>{
@@ -2054,17 +2248,18 @@ function afficherEcheancierCompteConjoint(){
     return;
   }
 
-  /* Le contenu de l'échéancier suit le type de période choisi dans Résumé : "Paie" ne
-     montre que le tout prochain dépôt, "Mois" (et Jour/Semaine) ne montrent que les paies
-     tombant dans la période choisie, "Année" montre par défaut le mois en cours avec un
-     "voir plus" vers les 7 prochaines paies. */
+  /* Le contenu de l'échéancier suit le type de période choisi (Jour/Semaine/Paie/Mois/
+     Année, partagé avec Transactions et Résumé) : "Paie" ne montre que le tout prochain
+     dépôt, les autres périodes montrent les paies tombant dans la période choisie —
+     "Année" affiche par défaut le mois en cours avec un "voir plus" vers les 7 prochaines
+     paies plutôt que les 365 jours de l'année. */
   let echeancier;
   let afficherVoirPlus = false;
   let afficherVoirMoins = false;
 
-  if(periodeTypeResume === 'paie'){
+  if(etatCalendrierPeriode.vue === 'paie'){
     echeancier = echeancierComplet.slice(0, 1);
-  } else if(periodeTypeResume === 'annee'){
+  } else if(etatCalendrierPeriode.vue === 'annee'){
     if(!echeancierAnneeEtendu){
       const debutMoisStr = formaterDateISO(new Date(moisActif.year, moisActif.month, 1));
       const finMoisStr = formaterDateISO(new Date(moisActif.year, moisActif.month+1, 0));
@@ -2075,9 +2270,7 @@ function afficherEcheancierCompteConjoint(){
       afficherVoirMoins = true;
     }
   } else {
-    const { debut, fin } = periodeTypeResume === 'mois'
-      ? { debut: new Date(moisActif.year, moisActif.month, 1), fin: new Date(moisActif.year, moisActif.month+1, 0) }
-      : bornePeriode(periodeTypeResume, etatCalendrierPeriode.dateRef);
+    const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
     const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
     echeancier = echeancierComplet.filter(l => l.iso >= debutStr && l.iso <= finStr);
   }
@@ -2144,7 +2337,11 @@ async function genererDepensesRecurrentes(limiteDate){
             RecurrenceId: rec.id,
             EstCompte: !!rec.estCompte,
             EstRevenu: !!rec.estRevenu,
-            PourcentageP1: rec.estCompte ? (rec.pourcentageP1 != null ? rec.pourcentageP1 : 50) : null,
+            /* Le % de répartition s'applique à toute dépense conjointe (pas seulement
+               "Compte conjoint" payé automatiquement) — voir appliquerChoixQuiConjoint.
+               On ne doit donc jamais le forcer à null ici, sinon toute modification du %
+               sur une récurrence normale est perdue dès que ses échéances sont régénérées. */
+            PourcentageP1: rec.pourcentageP1 != null ? rec.pourcentageP1 : 50,
             user_id: rec.type === 'personnelle' ? (currentSession?.user?.id || null) : null
           });
         }
@@ -2189,12 +2386,28 @@ function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
 document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field'));
 
+/* "Se répète" du modal d'édition d'une récurrence : mêmes règles que les formulaires
+   d'ajout (interception de "Personnaliser…", régénération des préréglages si la date de
+   début change), voir le module partagé plus bas dans le fichier. */
+document.getElementById('edit-rec-frequence').addEventListener('change', function(){
+  if(this.value === '__custom__'){ ouvrirRecurrencePersonnalisee('edit-rec-frequence', 'edit-rec-date-debut'); return; }
+  this.dataset.valeurPrecedente = this.value;
+});
+document.getElementById('edit-rec-date-debut').addEventListener('change', function(){
+  const cfgActuel = lireConfigRepetition('edit-rec-frequence');
+  peuplerSelectRepetition('edit-rec-frequence', this.value, cfgActuel, false);
+});
+
 /* Supprime les dépenses déjà générées pour une récurrence qui tombent aujourd'hui ou
    plus tard (garde intact l'historique passé). Utilisé quand on modifie une récurrence
    (pour régénérer les échéances futures avec les nouvelles valeurs) ou qu'on la met en
    pause (pour ne plus avoir de dépenses futures fantômes). */
 async function supprimerDepensesFuturesRecurrence(id){
-  const aujourdhuiStr = aujourdhui.toISOString().slice(0,10);
+  /* Date du jour en LOCAL (pas toISOString(), qui convertit en UTC et peut décaler la
+     date d'un jour en soirée dans les fuseaux horaires à l'ouest de l'UTC comme le Québec —
+     ça faisait qu'une modification de "toute la série" ratait parfois l'échéance du jour
+     même et gardait ses anciennes valeurs, note incluse). */
+  const aujourdhuiStr = formaterDateISO(debutJour(new Date()));
   try{
     const { error } = await supabaseClient.from('Depenses').delete().eq('RecurrenceId', id).gte('Date', aujourdhuiStr);
     if(error) throw error;
@@ -2306,10 +2519,29 @@ async function exclureOccurrence(recurrenceId, dateStr){
 
 /* Crée une nouvelle récurrence à partir de valeurs déjà calculées (pas d'un formulaire) :
    utilisé pour fractionner une série lors d'un "cette dépense et les suivantes". */
+/* Valeur de secours pour l'ancienne colonne "Frequence" (texte), envoyée en plus du nouveau
+   modèle Unite/Intervalle/etc. Cette colonne est censée être optionnelle (voir migration
+   "rendre_frequence_optionnelle"), mais on l'alimente quand même par prudence : si jamais
+   elle redevenait obligatoire (nouvelle base, restauration, etc.), l'enregistrement d'une
+   récurrence ne doit jamais échouer silencieusement à cause d'elle. */
+function frequenceHeritee(unite, intervalle){
+  if(unite === 'semaine') return intervalle === 2 ? '2semaines' : 'semaine';
+  if(unite === 'annee') return 'annee';
+  return 'mois';
+}
+
 async function creerRecurrenceDepuisValeurs(champs){
   const id = uid();
+  /* Si aucune racine n'est fournie (création "normale", pas un fractionnement), la nouvelle
+     récurrence est sa propre racine — elle démarre une nouvelle "famille". */
+  const racineId = champs.racineId || id;
   const nouvelleRecurrenceDB = {
-    id, Nom: champs.nom, Montant: champs.montant, Categorie: champs.categorie, Frequence: champs.frequence,
+    id, Nom: champs.nom, Montant: champs.montant, Categorie: champs.categorie,
+    Frequence: frequenceHeritee(champs.unite, champs.intervalle),
+    Unite: champs.unite, Intervalle: champs.intervalle,
+    JoursSemaine: champs.joursSemaine && champs.joursSemaine.length ? champs.joursSemaine.join(',') : null,
+    TypeMensuel: champs.typeMensuel || null,
+    RacineId: racineId,
     DateDebut: champs.dateDebut, FinType: champs.finType, FinNombre: champs.finNombre, FinDate: champs.finDate,
     Qui: nomPersonneSupabase(champs.who), Type: champs.type, Actif: true,
     EstCompte: champs.estCompte, EstRevenu: champs.estRevenu, PourcentageP1: champs.pourcentageP1,
@@ -2318,7 +2550,11 @@ async function creerRecurrenceDepuisValeurs(champs){
   try{
     let { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
     if(error){
-      const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
+      /* Les colonnes Unite/Intervalle/JoursSemaine/TypeMensuel/RacineId (ou EstCompte/
+         EstRevenu/PourcentageP1 pour une base plus ancienne) n'existent peut-être pas
+         encore : on réessaie sans elles pour que la récurrence soit tout de même créée
+         (voir les instructions pour ajouter ces colonnes à Supabase). */
+      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
       const retry = await supabaseClient.from('Recurrences').insert([sansColonnesRecentes]);
       if(retry.error) throw retry.error;
     }
@@ -2326,7 +2562,9 @@ async function creerRecurrenceDepuisValeurs(champs){
     console.warn("Impossible d'enregistrer la nouvelle récurrence (fractionnement de série) dans Supabase, sauvegarde locale seulement.", err);
   }
   recurrences.push({
-    id, nom:champs.nom, montant:champs.montant, categorie:champs.categorie, frequence:champs.frequence,
+    id, nom:champs.nom, montant:champs.montant, categorie:champs.categorie,
+    unite:champs.unite, intervalle:champs.intervalle, joursSemaine:champs.joursSemaine || null, typeMensuel:champs.typeMensuel || null,
+    racineId,
     dateDebut:champs.dateDebut, finType:champs.finType, finNombre:champs.finNombre, finDate:champs.finDate,
     who:champs.who, type:champs.type, estCompte:champs.estCompte, estRevenu:champs.estRevenu,
     pourcentageP1: champs.pourcentageP1 != null ? champs.pourcentageP1 : 50, actif:true, datesExclues: []
@@ -2342,21 +2580,48 @@ async function supprimerOccurrenceSeule(depense){
   await supprimerDepense(depense.id);
 }
 
-/* "Cette dépense et les suivantes" (suppression) : coupe la série à cette date. */
+/* "Cette dépense et les suivantes" (suppression) : coupe la série à cette date, et supprime
+   aussi tout segment de la même famille qui démarrerait déjà après cette date (issu d'un
+   split antérieur) — sinon ces occurrences plus tardives continueraient d'exister alors
+   qu'elles font partie de ce qu'on est en train de supprimer "et les suivantes". */
 async function supprimerDepuisOccurrence(depense){
   const rec = recurrences.find(r=>r.id===depense.recurrenceId);
   await supprimerDepensesDepuisDate(depense.recurrenceId, depense.date);
-  if(rec && rec.dateDebut === depense.date){
-    await supprimerRecurrence(rec.id, true); /* plus rien avant cette date : elle n'a plus lieu d'être */
-  } else if(rec){
-    await tronquerRecurrenceAvant(rec.id, depense.date);
+  if(rec){
+    const racine = rec.racineId || rec.id;
+    const segmentsRemplaces = recurrences.filter(r =>
+      r.id !== rec.id && (r.racineId || r.id) === racine && r.dateDebut >= depense.date
+    );
+    for(const segment of segmentsRemplaces){
+      await supprimerRecurrence(segment.id, true);
+    }
+    if(rec.dateDebut === depense.date){
+      await supprimerRecurrence(rec.id, true); /* plus rien avant cette date : elle n'a plus lieu d'être */
+    } else {
+      await tronquerRecurrenceAvant(rec.id, depense.date);
+    }
   }
   rafraichirActif();
 }
 
 /* "Cette dépense et les suivantes" (modification) : termine l'ancienne récurrence juste avant
-   cette date et démarre une nouvelle récurrence ici avec les valeurs éditées. Les paramètres
-   de fin (nombre de paiements restants, ou date de fin) sont hérités de l'originale. */
+   cette date et démarre une nouvelle récurrence ici avec les valeurs éditées.
+
+   IMPORTANT — familles de récurrences : chaque fractionnement ("cette dépense et les
+   suivantes") crée une NOUVELLE récurrence distincte, mais elle appartient à la même
+   "famille" que celle dont elle est issue (voir racineId). Si on refractionne plus tard une
+   occurrence antérieure à un split déjà fait (ex: on scinde d'abord au 10 sept, puis plus
+   tard on scinde à nouveau au 8 sept, qui appartient encore à l'ancien segment se terminant
+   le 9), il faut :
+     1) retrouver la vraie fin de la famille (pas la fin tronquée du segment qu'on modifie,
+        qui n'est qu'un artefact technique du split précédent) — c'est la fin portée par le
+        segment le plus tardif de la famille (la "queue") ;
+     2) supprimer entièrement tout segment de la famille qui démarre à partir de la charnière
+        (ex: le segment "10 sept et suivants" créé par le split précédent), puisqu'un nouveau
+        "et les suivantes" à partir du 8 sept est censé remplacer tout ce qui existait après,
+        pas seulement ce qui restait dans le segment cliqué.
+   Sans ça, un deuxième fractionnement plus ancien se retrouvait limité à la fenêtre du
+   segment déjà tronqué (ex: seulement 2 jours) au lieu de couvrir toute la suite. */
 async function diviserRecurrenceAPartirDe(depense, nv){
   const dateCharniere = depense.date;
   const recOriginale = recurrences.find(r=>r.id===depense.recurrenceId);
@@ -2371,6 +2636,38 @@ async function diviserRecurrenceAPartirDe(depense, nv){
     return;
   }
 
+  const racine = recOriginale.racineId || recOriginale.id;
+  /* Segments de la même famille qui démarrent à/après la charnière : ils sont entièrement
+     remplacés par ce nouvel "et les suivantes", même s'ils avaient eux-mêmes déjà été créés
+     par un split antérieur. */
+  const segmentsRemplaces = recurrences.filter(r =>
+    r.id !== recOriginale.id && (r.racineId || r.id) === racine && r.dateDebut >= dateCharniere
+  );
+  /* La "queue" de la famille = parmi recOriginale et les segments remplacés, celui qui
+     démarre le plus tard : c'est lui qui porte les vraies conditions de fin restantes
+     (recOriginale seul si aucun split n'avait encore eu lieu après la charnière). */
+  const queue = [recOriginale, ...segmentsRemplaces].reduce((a,b) =>
+    new Date(b.dateDebut+"T00:00:00") > new Date(a.dateDebut+"T00:00:00") ? b : a
+  );
+
+  let finType = queue.finType, finNombre = queue.finNombre, finDate = queue.finDate;
+  if(finType === 'nombre' && finNombre != null){
+    if(queue.id === recOriginale.id){
+      /* Cas simple : pas de segment plus tardif déjà créé, on retire juste les occurrences
+         déjà écoulées avant la charnière. */
+      const dejaEcoulees = genererOccurrences(recOriginale, horizonMaximal()).filter(d => formaterDateISO(d) < dateCharniere).length;
+      finNombre = Math.max(1, finNombre - dejaEcoulees);
+    } else {
+      /* La queue est un segment distinct qui démarre après la charnière : son finNombre ne
+         compte que ses propres occurrences restantes. On y ajoute celles du nouveau motif
+         qui tombent entre la charnière et le début de la queue, pour ne pas en perdre. */
+      const veilleQueue = ajouterJours(dateLocaleDepuisISO(queue.dateDebut), -1);
+      const motifProvisoire = { ...recOriginale, dateDebut: dateCharniere, finType:'jamais', finNombre:null, finDate:null };
+      const occAvantQueue = genererOccurrences(motifProvisoire, veilleQueue).length;
+      finNombre = finNombre + occAvantQueue;
+    }
+  }
+
   await supprimerDepensesDepuisDate(recOriginale.id, dateCharniere);
   const estPremiereOccurrence = recOriginale.dateDebut === dateCharniere;
   if(estPremiereOccurrence){
@@ -2379,16 +2676,19 @@ async function diviserRecurrenceAPartirDe(depense, nv){
     await tronquerRecurrenceAvant(recOriginale.id, dateCharniere);
   }
 
-  let finType = recOriginale.finType, finNombre = recOriginale.finNombre, finDate = recOriginale.finDate;
-  if(finType === 'nombre' && finNombre != null){
-    const dejaEcoulees = genererOccurrences(recOriginale, horizonMaximal()).filter(d => formaterDateISO(d) < dateCharniere).length;
-    finNombre = Math.max(1, finNombre - dejaEcoulees);
+  /* Les segments plus tardifs déjà créés par un split antérieur sont maintenant
+     complètement remplacés par ce nouveau "et les suivantes" : on les supprime en entier
+     (récurrence + dépenses générées), y compris la queue si ce n'était pas recOriginale. */
+  for(const segment of segmentsRemplaces){
+    await supprimerRecurrence(segment.id, true);
   }
 
   await creerRecurrenceDepuisValeurs({
     type: recOriginale.type, nom: nv.note || recOriginale.nom, montant: nv.amount, categorie: nv.category,
-    frequence: recOriginale.frequence, dateDebut: dateCharniere, finType, finNombre, finDate,
-    who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1
+    unite: recOriginale.unite, intervalle: recOriginale.intervalle, joursSemaine: recOriginale.joursSemaine, typeMensuel: recOriginale.typeMensuel,
+    dateDebut: dateCharniere, finType, finNombre, finDate,
+    who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1,
+    racineId: racine
   });
   await genererDepensesRecurrentes();
 }
@@ -2480,7 +2780,7 @@ function afficherRecurrencesScope(scope){
   const liste = recurrences.filter(r => scope==='conjoint' ? r.type==='conjointe' : (r.type==='personnelle' && r.who===currentUser));
   const listeSansRevenu = liste.filter(r=>!r.estRevenu);
   const actifs = listeSansRevenu.filter(r=>r.actif);
-  const totalMensuel = actifs.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r.frequence),0);
+  const totalMensuel = actifs.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r),0);
 
   /* Dans Personnel, "+ Conjoint" ajoute aussi les paiements récurrents conjoints à la
      liste (en lecture seule, clairement identifiés) : leur vrai % pour les récurrences
@@ -2488,7 +2788,7 @@ function afficherRecurrencesScope(scope){
   const inclusionActive = scope==='personnel' && inclureConjointDansPersonnel;
   const recurrentesConjointes = inclusionActive ? recurrences.filter(r=>r.type==='conjointe' && !r.estRevenu) : [];
   const actifsConjoints = recurrentesConjointes.filter(r=>r.actif);
-  const totalMensuelConjointPart = actifsConjoints.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r.frequence)*partPersonnelleRecurrence(r),0);
+  const totalMensuelConjointPart = actifsConjoints.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r)*partPersonnelleRecurrence(r),0);
 
   const statsEl = document.getElementById(`recurrent-stats-${scope}`);
   if(statsEl){
@@ -2528,7 +2828,7 @@ function afficherRecurrencesScope(scope){
         <div class="recurrent-meta">
           ${badgeType}
           ${r.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}">${r.categorie}</span>`}
-          <span class="freq-pill">${libelleFrequence(r.frequence)}</span>
+          <span class="freq-pill">${libelleRecurrence(r)}</span>
           ${r.finType==='nombre' ? `<span class="freq-pill">${r.finNombre} paiement${r.finNombre>1?'s':''} max</span>` : ''}
           ${r.finType==='date' ? `<span class="freq-pill">Jusqu'au ${r.finDate}</span>` : ''}
         </div>
@@ -3027,7 +3327,7 @@ function ouvrirEditionRecurrence(id){
   document.getElementById('edit-rec-montant').value = rec.montant;
   document.getElementById('edit-rec-categorie').innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
   document.getElementById('edit-rec-categorie').value = rec.categorie;
-  document.getElementById('edit-rec-frequence').value = rec.frequence;
+  peuplerSelectRepetition('edit-rec-frequence', rec.dateDebut, { unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel }, false);
   document.getElementById('edit-rec-date-debut').value = rec.dateDebut || '';
   document.getElementById('edit-rec-fin-type').value = rec.finType || 'jamais';
   document.getElementById('edit-rec-fin-nombre').value = rec.finNombre || '';
@@ -3095,7 +3395,7 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   const montant = parseFloat(document.getElementById('edit-rec-montant').value);
   if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
   const categorie = document.getElementById('edit-rec-categorie').value;
-  const frequence = document.getElementById('edit-rec-frequence').value;
+  const cfgRepetition = lireConfigRepetition('edit-rec-frequence') || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
   const dateDebut = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
   const finType = document.getElementById('edit-rec-fin-type').value;
   const finNombre = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
@@ -3117,7 +3417,11 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   const categorieFinale = estRevenu ? 'Revenu' : categorie;
 
   const update = {
-    Nom: nom, Montant: montant, Categorie: categorieFinale, Frequence: frequence,
+    Nom: nom, Montant: montant, Categorie: categorieFinale,
+    Frequence: frequenceHeritee(cfgRepetition.unite, cfgRepetition.intervalle),
+    Unite: cfgRepetition.unite, Intervalle: cfgRepetition.intervalle,
+    JoursSemaine: cfgRepetition.joursSemaine && cfgRepetition.joursSemaine.length ? cfgRepetition.joursSemaine.join(',') : null,
+    TypeMensuel: cfgRepetition.typeMensuel || null,
     DateDebut: dateDebut, FinType: finType, FinNombre: finNombre, FinDate: finDate,
     Qui: nomPersonneSupabase(who), Actif: actif, EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1
   };
@@ -3125,8 +3429,12 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   try{
     let { error } = await supabaseClient.from('Recurrences').update(update).eq('id', recurrenceEnEdition.id);
     if(error){
-      console.warn("Mise à jour avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
-      const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = update;
+      /* Les colonnes Unite/Intervalle/JoursSemaine/TypeMensuel (ou EstCompte/EstRevenu/
+         PourcentageP1 pour une base plus ancienne) n'existent peut-être pas encore : voir
+         les instructions pour les ajouter à Supabase. On réessaie sans elles pour que la
+         mise à jour ne soit pas totalement bloquée. */
+      console.warn("Mise à jour avec certaines colonnes récentes impossible, nouvel essai sans elles.", error);
+      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, ...sansColonnesRecentes } = update;
       const retry = await supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', recurrenceEnEdition.id);
       if(retry.error) throw retry.error;
     }
@@ -3134,7 +3442,11 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
     console.warn("Impossible de mettre à jour la récurrence dans Supabase, sauvegarde locale seulement.", err);
   }
 
-  Object.assign(recurrenceEnEdition, { nom, montant, categorie: categorieFinale, frequence, dateDebut, finType, finNombre, finDate, who, actif, estCompte, estRevenu, pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50 });
+  Object.assign(recurrenceEnEdition, {
+    nom, montant, categorie: categorieFinale,
+    unite: cfgRepetition.unite, intervalle: cfgRepetition.intervalle, joursSemaine: cfgRepetition.joursSemaine, typeMensuel: cfgRepetition.typeMensuel,
+    dateDebut, finType, finNombre, finDate, who, actif, estCompte, estRevenu, pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50
+  });
   sauvegarderRecurrencesLocal();
   document.getElementById('edit-recurrent-modal').style.display = 'none';
   afficherRecurrencesScope(recurrenceEnEdition.type==='personnelle' ? 'personnel' : 'conjoint');
@@ -3146,14 +3458,8 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
 });
 
 /* Utilitaires réutilisés pour calculer les dépôts requis au compte conjoint (voir plus bas
-   dans le module Récurrent) : nombre d'occurrences par année selon la fréquence, et nombre
-   de paies aux 2 semaines par année. */
-function multiplicateurAnnuel(frequence){
-  if(frequence==='semaine') return 52;
-  if(frequence==='2semaines') return 26;
-  if(frequence==='annee') return 1;
-  return 12; /* mois */
-}
+   dans le module Récurrent) : nombre de paies aux 2 semaines par année.
+   (multiplicateurAnnuel est défini plus haut, avec multiplicateurMensuel.) */
 const PAIES_PAR_ANNEE = 26; /* aux 2 semaines */
 
 function libellePersonne(who){ return nomsPersonnes[who] || who; }
@@ -3209,22 +3515,20 @@ function capitaliser(mot){
   return mot.charAt(0).toUpperCase() + mot.slice(1);
 }
 
-/* Type de période affiché dans "Résumé" : 'mois' (évolution + catégories du mois) ou
-   'annee' (dépenses par mois + catégories de l'année) — choisi via le même sélecteur
-   commun que partout ailleurs, pour une navigation uniforme. */
-let periodeTypeResume = 'mois';
-
 function afficherNavigationPeriode(){
-  ['conjoint','personnel'].forEach(scope=>{
-    const el = document.getElementById(`month-evolution-title-${scope}`);
-    if(el) el.textContent = `Évolution des dépenses - ${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
-  });
-
   const estSection = activeMainTab === 'conjoint' || activeMainTab === 'personnel';
   const sub = estSection ? activeSubtab[activeMainTab] : null;
   const nav = document.getElementById('period-nav');
   const switchEl = document.getElementById('period-type-switch');
   const label = document.getElementById('period-label');
+
+  ['conjoint','personnel'].forEach(scope=>{
+    const el = document.getElementById(`month-evolution-title-${scope}`);
+    if(el){
+      const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+      el.textContent = `Évolution des dépenses - ${libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin)}`;
+    }
+  });
 
   /* Un seul sélecteur de période, toujours placé juste sous les onglets Transactions /
      Résumé / Budget (et nulle part ailleurs) : on déplace le même élément dans le bon
@@ -3244,38 +3548,31 @@ function afficherNavigationPeriode(){
   nav.style.display = 'flex';
 
   if(sub==='budget'){
-    switchEl.style.display = 'none';
-    label.textContent = `${capitaliser(NOMS_MOIS[moisActif.month])} ${moisActif.year}`;
-  } else if(sub==='resume'){
-    switchEl.style.display = '';
-    switchEl.innerHTML = VUES_RESUME.map(([v,lbl])=>
-      `<button type="button" data-type="${v}" class="${periodeTypeResume===v?'active':''}">${lbl}</button>`).join('');
-    switchEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
-      periodeTypeResume = b.dataset.type;
-      echeancierAnneeEtendu = false;
-      rafraichirSousOnglet(activeMainTab, 'resume');
-      afficherNavigationPeriode();
-    }));
-    if(periodeTypeResume==='mois'){
-      label.textContent = `${capitaliser(NOMS_MOIS[moisActif.month])} ${moisActif.year}`;
-    } else if(periodeTypeResume==='annee'){
-      label.textContent = String(anneeActive);
-    } else {
-      const { debut, fin } = bornePeriode(periodeTypeResume, etatCalendrierPeriode.dateRef);
-      label.textContent = libellePeriodeCalendrier(periodeTypeResume, debut, fin);
-    }
-  } else if(sub==='mois'){
+    /* Le budget lui-même reste toujours mensuel (voir afficherSectionBudget), mais on peut
+       tout de même consulter la comparaison budget/réel à n'importe quelle granularité. */
     switchEl.style.display = '';
     switchEl.innerHTML = VUES_CALENDRIER.map(([v,lbl])=>
       `<button type="button" data-type="${v}" class="${etatCalendrierPeriode.vue===v?'active':''}">${lbl}</button>`).join('');
     switchEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
       etatCalendrierPeriode.vue = b.dataset.type;
-      rafraichirSousOnglet(activeMainTab, 'mois');
+      rafraichirSousOnglet(activeMainTab, 'budget');
       afficherNavigationPeriode();
     }));
-    /* Jour / Semaine / Paie / Mois / Année sont 5 options d'un même sélecteur. Le menu de
-       filtres et la bascule grille/liste (visible seulement en Mois) vivent maintenant sur
-       l'entête de la carte calendrier/liste elle-même, pas ici. */
+    const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+    label.textContent = libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin);
+  } else if(sub==='resume' || sub==='mois'){
+    /* Transactions et Résumé partagent exactement le même sélecteur de période (Jour /
+       Semaine / Paie / Mois / Année) — plus besoin de synchroniser deux états séparés, il
+       n'y en a qu'un seul, donc c'est automatiquement pareil des deux côtés. */
+    switchEl.style.display = '';
+    switchEl.innerHTML = VUES_CALENDRIER.map(([v,lbl])=>
+      `<button type="button" data-type="${v}" class="${etatCalendrierPeriode.vue===v?'active':''}">${lbl}</button>`).join('');
+    switchEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+      etatCalendrierPeriode.vue = b.dataset.type;
+      echeancierAnneeEtendu = false;
+      rafraichirSousOnglet(activeMainTab, sub);
+      afficherNavigationPeriode();
+    }));
     const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
     label.textContent = libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin);
   }
@@ -3308,22 +3605,6 @@ document.querySelectorAll('#compare-scope-toggle button').forEach(bouton=>{
   });
 });
 
-/* Petit total pour les vues Jour/Semaine/Paie de Résumé (pas de graphique à cette échelle,
-   mais un chiffre reste utile — surtout côté Personnel qui n'a pas d'échéancier). */
-function afficherStatsPeriodeCourte(scope, vue){
-  const el = document.getElementById(`mois-stats-${scope}`);
-  if(!el) return;
-  const { debut, fin } = bornePeriode(vue, etatCalendrierPeriode.dateRef);
-  const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
-  const liste = depenses.filter(e =>
-    (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser)) &&
-    !e.estRevenu && e.date>=debutStr && e.date<=finStr
-  );
-  const total = liste.reduce((s,e)=>s+e.amount,0);
-  el.style.display = '';
-  el.innerHTML = `<div class="stat-card"><div class="label">Total dépensé<span class="mobile-line"> cette période</span></div><div class="value">${formaterMonnaie(total)}</div></div>`;
-}
-
 function rafraichirSousOnglet(scope, sub){
   if(sub==='mois'){
     /* Le calendrier, l'échéancier du compte conjoint et la liste (mode "Liste" du
@@ -3337,45 +3618,20 @@ function rafraichirSousOnglet(scope, sub){
   } else if(sub==='resume'){
     const moisBlock = document.getElementById(`resume-mois-${scope}`);
     const anneeBlock = document.getElementById(`resume-annee-${scope}`);
-    const moisStats = document.getElementById(`mois-stats-${scope}`);
     const anneeStats = document.getElementById(`annee-stats-${scope}`);
-    const echeancierCard = scope==='conjoint' ? document.getElementById('recurrent-compte-echeancier-card-conjoint') : null;
-
-    if(periodeTypeResume==='annee'){
-      if(moisBlock) moisBlock.style.display = 'none';
-      if(anneeBlock) anneeBlock.style.display = '';
-      if(moisStats) moisStats.style.display = 'none';
-      if(anneeStats) anneeStats.style.display = '';
-      if(scope==='conjoint') afficherEcheancierCompteConjoint();
-      afficherAnneeScope(scope);
-      genererDepensesRecurrentes(new Date(anneeActive, 11, 31));
-    } else if(periodeTypeResume==='mois'){
-      if(moisBlock) moisBlock.style.display = '';
-      if(anneeBlock) anneeBlock.style.display = 'none';
-      if(moisStats) moisStats.style.display = '';
-      if(anneeStats) anneeStats.style.display = 'none';
-      afficherStatsMoisScope(scope);
-      /* L'échéancier des prochains dépôts au compte conjoint vit ici (dans Résumé) plutôt
-         que dans Transactions. */
-      if(scope==='conjoint') afficherEcheancierCompteConjoint();
-      afficherGraphiqueEvolutionScope(scope);
-      afficherGraphiqueCategoriesMoisScope(scope);
-      genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
-    } else {
-      /* Jour / Semaine / Paie : les graphiques d'évolution mensuelle n'ont pas de sens à
-         cette échelle. On montre plutôt un petit total pour la période (utile aussi côté
-         Personnel, qui n'a pas d'échéancier), et l'échéancier des dépôts pour Conjoint. */
-      if(moisBlock) moisBlock.style.display = 'none';
-      if(anneeBlock) anneeBlock.style.display = 'none';
-      if(anneeStats) anneeStats.style.display = 'none';
-      afficherStatsPeriodeCourte(scope, periodeTypeResume);
-      if(scope==='conjoint') afficherEcheancierCompteConjoint();
-      const { fin } = bornePeriode(periodeTypeResume, etatCalendrierPeriode.dateRef);
-      genererDepensesRecurrentes(fin);
-    }
+    /* Les mêmes tableaux (stats + graphiques) s'affichent peu importe la période choisie —
+       seules les valeurs à l'intérieur changent, calculées pour la période sélectionnée. */
+    if(moisBlock) moisBlock.style.display = '';
+    if(anneeBlock) anneeBlock.style.display = 'none';
+    if(anneeStats) anneeStats.style.display = 'none';
+    afficherResumeUnifie(scope);
+    if(scope==='conjoint') afficherEcheancierCompteConjoint();
+    const { fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+    genererDepensesRecurrentes(fin);
   } else if(sub==='budget'){
     afficherSectionBudget(scope);
-    genererDepensesRecurrentes(new Date(moisActif.year, moisActif.month+1, 0));
+    const { fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+    genererDepensesRecurrentes(fin);
   }
 }
 
@@ -3391,53 +3647,56 @@ function rafraichirActif(){
   afficherNavigationPeriode();
 }
 
+/* `moisActif`/`anneeActive` restent la référence pour le Budget (mensuel par nature), mais
+   on les garde toujours synchronisés avec `etatCalendrierPeriode.dateRef` quand la vue est
+   "Mois" ou "Année", pour que Transactions/Résumé et Budget parlent toujours du même mois. */
 function changerMois(amount){
   const date = new Date(moisActif.year, moisActif.month + amount, 1);
   moisActif={year:date.getFullYear(),month:date.getMonth()};
+  etatCalendrierPeriode.dateRef = new Date(moisActif.year, moisActif.month, 1);
   if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   afficherNavigationPeriode();
 }
 function allerAuMoisActuel(){
   moisActif = {year:aujourdhui.getFullYear(), month:aujourdhui.getMonth()};
+  etatCalendrierPeriode.dateRef = debutJour(new Date());
   if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   afficherNavigationPeriode();
 }
 function changerAnnee(amount){
   anneeActive += amount;
+  etatCalendrierPeriode.dateRef = new Date(anneeActive, etatCalendrierPeriode.dateRef.getMonth(), 1);
   if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   afficherNavigationPeriode();
 }
 
 /* Dispatcher unique du sélecteur de période commun : selon l'onglet actif, ‹/› et le
    libellé pilotent soit le mois, soit l'année, soit la période du calendrier — mais restent
-   toujours au même endroit à l'écran, pour une navigation simple et prévisible. */
+   toujours au même endroit à l'écran, pour une navigation simple et prévisible. Mois/Année
+   passent par changerMois/changerAnnee pour garder Budget synchronisé ; Jour/Semaine/Paie
+   avancent directement `etatCalendrierPeriode.dateRef`. */
 function periodeNavigation(direction){
   const sub = activeSubtab[activeMainTab];
-  if(sub==='budget'){
-    changerMois(direction);
-  } else if(sub==='resume'){
-    if(periodeTypeResume==='mois') changerMois(direction);
-    else if(periodeTypeResume==='annee') changerAnnee(direction);
-    else {
-      etatCalendrierPeriode.dateRef = avancerPeriode(periodeTypeResume, etatCalendrierPeriode.dateRef, direction);
-      rafraichirSousOnglet(activeMainTab, 'resume');
-      afficherNavigationPeriode();
-    }
-  } else if(sub==='mois'){
+  if(sub!=='budget' && sub!=='resume' && sub!=='mois') return;
+  if(etatCalendrierPeriode.vue==='mois') changerMois(direction);
+  else if(etatCalendrierPeriode.vue==='annee') changerAnnee(direction);
+  else {
     etatCalendrierPeriode.dateRef = avancerPeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef, direction);
-    rafraichirSousOnglet(activeMainTab, 'mois');
+    rafraichirSousOnglet(activeMainTab, sub);
     afficherNavigationPeriode();
   }
 }
 function periodeLabelClick(){
   const sub = activeSubtab[activeMainTab];
-  if(sub==='budget' || (sub==='resume' && periodeTypeResume==='mois')){
+  if(sub!=='budget' && sub!=='resume' && sub!=='mois') return;
+  if(etatCalendrierPeriode.vue==='mois'){
     allerAuMoisActuel();
-  } else if(sub==='resume' && periodeTypeResume==='annee'){
+  } else if(etatCalendrierPeriode.vue==='annee'){
     anneeActive = aujourdhui.getFullYear();
-    rafraichirSousOnglet(activeMainTab, 'resume');
+    etatCalendrierPeriode.dateRef = debutJour(new Date());
+    rafraichirSousOnglet(activeMainTab, sub);
     afficherNavigationPeriode();
-  } else if(sub==='mois' || sub==='resume'){
+  } else {
     etatCalendrierPeriode.dateRef = debutJour(new Date());
     rafraichirSousOnglet(activeMainTab, sub);
     afficherNavigationPeriode();
@@ -3486,15 +3745,9 @@ document.querySelectorAll('.subtab-btn').forEach(btn=>{
     document.querySelectorAll(`.subtab-panel[data-scope="${scope}"]`).forEach(p=>p.classList.remove('active'));
     document.querySelector(`.subtab-panel[data-scope="${scope}"][data-sub="${sub}"]`).classList.add('active');
     activeSubtab[scope] = sub;
-    /* La période (Jour/Semaine/Paie/Mois) reste synchronisée entre "Transactions" et
-       "Résumé" dans les deux sens, pour ne jamais perdre sa sélection en changeant
-       d'onglet. Les vues sans équivalent d'un côté (grille 📅 pour Résumé, Année pour
-       Transactions) retombent sur "Mois". */
-    if(sub === 'resume'){
-      periodeTypeResume = etatCalendrierPeriode.vue === 'grille' ? 'mois' : etatCalendrierPeriode.vue;
-    } else if(sub === 'mois'){
-      etatCalendrierPeriode.vue = periodeTypeResume === 'annee' ? 'mois' : periodeTypeResume;
-    }
+    /* Transactions, Résumé et Budget partagent maintenant directement le même état de
+       période (etatCalendrierPeriode) : rien à synchroniser, la sélection reste
+       automatiquement la même partout. */
     rafraichirSousOnglet(scope, sub);
     afficherNavigationPeriode();
   });
@@ -3516,17 +3769,17 @@ async function ajouterDepense(scope){
   const date = document.getElementById(`f-date-${scope}`).value;
   const category = estRevenu ? 'Revenu' : document.getElementById(`f-category-${scope}`).value;
   const note = document.getElementById(`f-note-${scope}`).value.trim();
-  const repete = document.getElementById(`f-repete-${scope}`).value;
+  const cfgRepetition = lireConfigRepetition(`f-repete-${scope}`);
 
   if(!amount || amount<=0 || !date){
     alert("Merci d'entrer un montant et une date valides.");
     return;
   }
 
-  /* "Se répète" != Jamais : au lieu d'une dépense ponctuelle, on crée une récurrence à
-     partir de cette date (façon "Se répète" de Google Agenda) — le calendrier matérialisera
-     ensuite ses occurrences comme n'importe quelle autre récurrence. */
-  if(repete !== 'jamais'){
+  /* "Se répète" != Ne se répète pas : au lieu d'une dépense ponctuelle, on crée une
+     récurrence à partir de cette date (façon "Se répète" de Google Agenda) — le calendrier
+     matérialisera ensuite ses occurrences comme n'importe quelle autre récurrence. */
+  if(cfgRepetition){
     const finType = document.getElementById(`f-fin-type-${scope}`).value;
     const finNombreRaw = document.getElementById(`f-fin-nombre-${scope}`).value;
     const finNombre = finType==='nombre' ? (parseInt(finNombreRaw,10) || null) : null;
@@ -3536,7 +3789,8 @@ async function ajouterDepense(scope){
     if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
 
     await creerRecurrenceDepuisValeurs({
-      type, nom: note || category, montant: amount, categorie: category, frequence: repete,
+      type, nom: note || category, montant: amount, categorie: category,
+      unite: cfgRepetition.unite, intervalle: cfgRepetition.intervalle, joursSemaine: cfgRepetition.joursSemaine, typeMensuel: cfgRepetition.typeMensuel,
       dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1
     });
     await genererDepensesRecurrentes();
@@ -3598,6 +3852,7 @@ function reinitialiserFormulaireAjoutDepense(scope){
   document.getElementById(`f-amount-${scope}`).value = '';
   document.getElementById(`f-note-${scope}`).value = '';
   document.getElementById(`f-repete-${scope}`).value = 'jamais';
+  document.getElementById(`f-repete-${scope}`).dataset.valeurPrecedente = 'jamais';
   document.getElementById(`f-fin-type-${scope}`).value = 'jamais';
   document.getElementById(`f-fin-nombre-${scope}`).value = '';
   document.getElementById(`f-fin-date-${scope}`).value = '';
@@ -3615,12 +3870,150 @@ function reinitialiserFormulaireAjoutDepense(scope){
 document.getElementById('btn-add-conjoint').addEventListener('click', ()=>ajouterDepense('conjoint'));
 document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajouterDepense('personnel'));
 
+/* ===================== SÉLECTEUR "SE RÉPÈTE" FAÇON GOOGLE AGENDA =====================
+   Un seul module partagé par les 3 sélecteurs concernés (ajout conjoint, ajout personnel,
+   édition d'une récurrence) : préréglages calculés dynamiquement selon la date choisie
+   (comme Google Agenda qui propose "Toutes les semaines le mardi" si la date tombe un
+   mardi), + une option "Personnaliser…" qui ouvre le modal partagé pour choisir un
+   intervalle libre (ex: toutes les 3 semaines), plusieurs jours de la semaine à la fois, ou
+   "le dernier jour du mois" pour les dépenses dont la date de facturation varie selon la
+   longueur du mois. */
+function construirePresetsRepetition(dateISO){
+  const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
+  const jourSemaine = d.getDay();
+  const jourMois = d.getDate();
+  const estDernierJourDuMois = jourMois === dernierJourDuMois(d).getDate();
+  const configs = [
+    { unite:'jour', intervalle:1 },
+    { unite:'semaine', intervalle:1, joursSemaine:[jourSemaine] },
+    estDernierJourDuMois
+      ? { unite:'mois', intervalle:1, typeMensuel:'dernier_jour' }
+      : { unite:'mois', intervalle:1, typeMensuel:'jour_mois' },
+    { unite:'annee', intervalle:1 },
+    { unite:'semaine', intervalle:1, joursSemaine:[1,2,3,4,5] }
+  ];
+  return configs.map(cfg => ({ value: JSON.stringify(cfg), config: cfg, label: libelleRecurrence({...cfg, dateDebut: dateISO}) }));
+}
+
+/* Reconstruit entièrement les <option> d'un sélecteur "Se répète" à partir de la date
+   choisie. Si `cfgActuel` (config déjà en place, ex. en édition) ne correspond à aucun
+   préréglage, on l'ajoute quand même comme option supplémentaire pour ne jamais perdre une
+   récurrence personnalisée existante. `avecJamais` est à false pour le select du modal
+   d'édition d'une récurrence (une récurrence, par définition, se répète déjà). */
+function peuplerSelectRepetition(selectId, dateISO, cfgActuel, avecJamais){
+  const select = document.getElementById(selectId);
+  const presets = construirePresetsRepetition(dateISO);
+  let html = avecJamais ? `<option value="jamais">Ne se répète pas</option>` : '';
+  html += presets.map(p => `<option value='${p.value}'>${p.label}</option>`).join('');
+  let valeurCourante = avecJamais ? 'jamais' : (presets[0] ? presets[0].value : 'jamais');
+  if(cfgActuel){
+    const correspondance = presets.find(p => configsEquivalentes(p.config, cfgActuel));
+    if(correspondance){
+      valeurCourante = correspondance.value;
+    } else {
+      const valeurCustom = JSON.stringify(cfgActuel);
+      html += `<option value='${valeurCustom}' data-custom="1">${libelleRecurrence({...cfgActuel, dateDebut: dateISO})}</option>`;
+      valeurCourante = valeurCustom;
+    }
+  }
+  html += `<option value="__custom__">Personnaliser…</option>`;
+  select.innerHTML = html;
+  select.value = valeurCourante;
+  select.dataset.valeurPrecedente = valeurCourante;
+}
+
+/* Contexte du sélecteur actuellement en train d'ouvrir le modal "Récurrence personnalisée"
+   (un seul modal partagé pour les 3 sélecteurs, un seul peut être ouvert à la fois). */
+let contexteRecurrencePersonnalisee = null;
+
+function peuplerJoursSemaineBoutons(joursSelectionnes){
+  const conteneur = document.getElementById('custom-rep-jours');
+  conteneur.innerHTML = NOMS_JOURS_LETTRE.map((lettre,i)=>
+    `<button type="button" class="jour-btn${joursSelectionnes.includes(i)?' selected':''}" data-jour="${i}">${lettre}</button>`
+  ).join('');
+  conteneur.querySelectorAll('.jour-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> btn.classList.toggle('selected'));
+  });
+}
+function appliquerAffichageChampsCustomRepetition(){
+  const unite = document.getElementById('custom-rep-unite').value;
+  document.getElementById('custom-rep-jours-field').style.display = unite==='semaine' ? '' : 'none';
+  document.getElementById('custom-rep-mensuel-field').style.display = unite==='mois' ? '' : 'none';
+}
+document.getElementById('custom-rep-unite').addEventListener('change', appliquerAffichageChampsCustomRepetition);
+
+function ouvrirRecurrencePersonnalisee(selectId, dateInputId){
+  const select = document.getElementById(selectId);
+  contexteRecurrencePersonnalisee = { selectId, dateInputId, valeurPrecedente: select.dataset.valeurPrecedente || 'jamais' };
+  const dateISO = document.getElementById(dateInputId).value;
+  const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
+  let cfg = null;
+  try{ cfg = JSON.parse(contexteRecurrencePersonnalisee.valeurPrecedente); }catch(e){ cfg = null; }
+  if(!cfg || !cfg.unite) cfg = { unite:'semaine', intervalle:1, joursSemaine:[d.getDay()], typeMensuel:'jour_mois' };
+
+  document.getElementById('custom-rep-intervalle').value = cfg.intervalle || 1;
+  document.getElementById('custom-rep-unite').value = cfg.unite;
+  peuplerJoursSemaineBoutons(cfg.joursSemaine && cfg.joursSemaine.length ? cfg.joursSemaine : [d.getDay()]);
+  document.getElementById('custom-rep-type-mensuel').value = cfg.typeMensuel === 'dernier_jour' ? 'dernier_jour' : 'jour_mois';
+  appliquerAffichageChampsCustomRepetition();
+  document.getElementById('custom-repetition-modal').style.display = 'flex';
+}
+document.getElementById('close-custom-repetition').addEventListener('click', ()=>{
+  document.getElementById('custom-repetition-modal').style.display = 'none';
+  if(contexteRecurrencePersonnalisee) document.getElementById(contexteRecurrencePersonnalisee.selectId).value = contexteRecurrencePersonnalisee.valeurPrecedente;
+});
+document.getElementById('custom-repetition-annuler').addEventListener('click', ()=>{
+  document.getElementById('custom-repetition-modal').style.display = 'none';
+  if(contexteRecurrencePersonnalisee) document.getElementById(contexteRecurrencePersonnalisee.selectId).value = contexteRecurrencePersonnalisee.valeurPrecedente;
+});
+document.getElementById('custom-repetition-terminer').addEventListener('click', ()=>{
+  if(!contexteRecurrencePersonnalisee) return;
+  const intervalle = Math.max(1, parseInt(document.getElementById('custom-rep-intervalle').value,10) || 1);
+  const unite = document.getElementById('custom-rep-unite').value;
+  const joursSemaine = unite==='semaine'
+    ? Array.from(document.querySelectorAll('#custom-rep-jours .jour-btn.selected')).map(b=>parseInt(b.dataset.jour,10)).sort((a,b)=>a-b)
+    : null;
+  if(unite==='semaine' && (!joursSemaine || !joursSemaine.length)){ alert('Sélectionnez au moins un jour de la semaine.'); return; }
+  const typeMensuel = unite==='mois' ? document.getElementById('custom-rep-type-mensuel').value : null;
+  const cfg = { unite, intervalle, joursSemaine, typeMensuel };
+
+  const { selectId, dateInputId } = contexteRecurrencePersonnalisee;
+  const select = document.getElementById(selectId);
+  const dateISO = document.getElementById(dateInputId).value;
+  const valeur = JSON.stringify(cfg);
+  Array.from(select.options).forEach(o => { if(o.dataset.custom==='1') o.remove(); });
+  const option = document.createElement('option');
+  option.value = valeur;
+  option.textContent = libelleRecurrence({...cfg, dateDebut: dateISO});
+  option.dataset.custom = '1';
+  select.insertBefore(option, select.querySelector('option[value="__custom__"]'));
+  select.value = valeur;
+  select.dataset.valeurPrecedente = valeur;
+  select.dispatchEvent(new Event('change'));
+  document.getElementById('custom-repetition-modal').style.display = 'none';
+});
+
+/* Convertit la valeur choisie dans un sélecteur "Se répète" ('jamais', un JSON de config, ou
+   '__custom__' — mais ce dernier ne devrait jamais arriver ici, il est intercepté avant) en
+   config utilisable par creerRecurrenceDepuisValeurs / la mise à jour d'une récurrence. */
+function lireConfigRepetition(selectId){
+  const valeur = document.getElementById(selectId).value;
+  if(valeur === 'jamais' || valeur === '__custom__') return null;
+  try{ return JSON.parse(valeur); }catch(e){ return null; }
+}
+
 /* Affiche les champs "Se termine" seulement quand "Se répète" n'est pas "Jamais", et les
-   champs nombre/date selon le sous-choix, comme le fait le sélecteur équivalent du modal
-   d'édition d'une récurrence. */
+   champs nombre/date selon le sous-choix. Intercepte "Personnaliser…" pour ouvrir le modal
+   partagé, et régénère les préréglages quand la date choisie change (comme Google Agenda,
+   qui adapte "Toutes les semaines le ..." au jour réellement sélectionné). */
 ['conjoint','personnel'].forEach(scope=>{
-  document.getElementById(`f-repete-${scope}`).addEventListener('change', ()=>{
-    const repete = document.getElementById(`f-repete-${scope}`).value;
+  const selectId = `f-repete-${scope}`;
+  peuplerSelectRepetition(selectId, document.getElementById(`f-date-${scope}`).value, null, true);
+
+  document.getElementById(selectId).addEventListener('change', function(){
+    if(this.value === '__custom__'){ ouvrirRecurrencePersonnalisee(selectId, `f-date-${scope}`); return; }
+    this.dataset.valeurPrecedente = this.value;
+    const repete = this.value;
     document.getElementById(`f-fin-type-field-${scope}`).style.display = repete==='jamais' ? 'none' : '';
     if(repete==='jamais'){
       document.getElementById(`f-fin-nombre-field-${scope}`).style.display = 'none';
@@ -3628,6 +4021,10 @@ document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajout
     } else {
       appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
     }
+  });
+  document.getElementById(`f-date-${scope}`).addEventListener('change', function(){
+    const cfgActuel = lireConfigRepetition(selectId);
+    peuplerSelectRepetition(selectId, this.value, cfgActuel, true);
   });
   document.getElementById(`f-fin-type-${scope}`).addEventListener('change', ()=>
     appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`));
@@ -3791,6 +4188,14 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
     return;
   }
 
+  /* "Cette dépense seulement" (quand depenseEnEdition.recurrenceId est présent) : simple
+     modification de surface, comme dans Google Agenda. On NE détache PAS la dépense de sa
+     récurrence et on ne l'exclut pas non plus — elle reste rattachée à la série. Si plus
+     tard on modifie "toute la série" ou "cette dépense et les suivantes" sur une plage qui
+     inclut sa date, elle sera alors supprimée puis régénérée avec les valeurs de la série,
+     exactement comme un événement individuellement modifié dans un calendrier. Seule la
+     suppression individuelle (voir supprimerOccurrenceSeule) est permanente via
+     DatesExclues — la modification, elle, reste "de surface" et donc écrasable. */
   const update={
     Qui:nomPersonneSupabase(who),
     Montant:amount,
@@ -3850,104 +4255,120 @@ function carteEcartEqualisation(t1, t2){
   return `<div class="label">Payé en trop<span class="mobile-line"> (à récupérer)</span></div><div class="value" style="color:var(--green)">${formaterMonnaie(Math.abs(ecart))}</div>`;
 }
 
-function afficherStatsMoisScope(scope){
-  const liste = depenses.filter(filtreMoisScope(scope)).filter(e=>!e.estRevenu);
+/* ===================== RÉSUMÉ UNIFIÉ (mêmes tableaux peu importe la période) =====================
+   Un seul jeu de "tableaux" (3 cartes de stats + graphique d'évolution + répartition par
+   catégorie) s'affiche pour Jour/Semaine/Paie/Mois/Année — seules les VALEURS à l'intérieur
+   changent, calculées pour la période actuellement sélectionnée (etatCalendrierPeriode). */
+function afficherResumeUnifie(scope){
+  const vue = etatCalendrierPeriode.vue;
+  const { debut, fin } = bornePeriode(vue, etatCalendrierPeriode.dateRef);
+  const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
+  const dansPeriode = e => e.date >= debutStr && e.date <= finStr;
+
+  const liste = depenses.filter(e =>
+    (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser)) &&
+    !e.estRevenu && dansPeriode(e)
+  );
   const total = liste.reduce((s,e)=>s+e.amount,0);
   const el = document.getElementById(`mois-stats-${scope}`);
+
+  /* La comparaison à un budget ne fait sens qu'au mois (les budgets sont mensuels) : pour
+     les autres périodes, la 3e carte affiche autre chose de pertinent à cette échelle. */
   if(scope==='conjoint'){
     const t1 = liste.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
     const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
     const moi = currentUser==='p2' ? t2 : t1;
-    const periode = periodeActive();
-    const budgetTotal = budgetTotalCalcule('conjoint', periode);
-    const ecartBudget = total - budgetTotal;
-    el.innerHTML = `
-      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> moi</span></div><div class="value ${currentUser}">${formaterMonnaie(moi)}</div></div>
-      <div class="stat-card">
+    let troisiemeCarte;
+    if(vue==='mois'){
+      const budgetTotal = budgetTotalCalcule('conjoint', periodeActive());
+      const ecartBudget = total - budgetTotal;
+      troisiemeCarte = `<div class="stat-card">
         <div class="label">Total<span class="mobile-line"> conjoint</span></div>
         <div class="value">${formaterMonnaie(total)}</div>
         ${budgetTotal > 0 ? `<div style="font-size:11px;margin-top:4px;color:${ecartBudget>0?'var(--red)':'var(--green)'}">${ecartBudget>0?'+':''}${formaterMonnaie(ecartBudget)} vs budget</div>` : ''}
-      </div>
+      </div>`;
+    } else {
+      troisiemeCarte = `<div class="stat-card"><div class="label">Total<span class="mobile-line"> conjoint</span></div><div class="value">${formaterMonnaie(total)}</div></div>`;
+    }
+    el.innerHTML = `
+      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> moi</span></div><div class="value ${currentUser}">${formaterMonnaie(moi)}</div></div>
+      ${troisiemeCarte}
       <div class="stat-card">${carteEcartEqualisation(t1, t2)}</div>
     `;
   } else {
-    const nbConjoint = inclureConjointDansPersonnel ? depenses.filter(e=>e.type==='conjointe' && dansMoisActif(e.date)).length : 0;
+    const nbConjoint = inclureConjointDansPersonnel ? depenses.filter(e=>e.type==='conjointe' && dansPeriode(e)).length : 0;
     const nb = liste.length + nbConjoint;
-    const periode = periodeActive();
-    const budgetTotal = budgetTotalCalcule(currentUser, periode);
-    const restant = budgetTotal - total;
-    const totalAffiche = total + totalConjointPourInclusion(e=>dansMoisActif(e.date));
+    const totalAffiche = total + totalConjointPourInclusion(dansPeriode);
+    let troisiemeCarte;
+    if(vue==='mois'){
+      const budgetTotal = budgetTotalCalcule(currentUser, periodeActive());
+      const restant = budgetTotal - total;
+      troisiemeCarte = `<div class="stat-card"><div class="label">Restant<span class="mobile-line"> à dépenser</span></div><div class="value" style="color:${budgetTotal>0 ? (restant<0?'var(--red)':'var(--green)') : 'inherit'}">${budgetTotal>0 ? formaterMonnaie(restant) : '—'}</div></div>`;
+    } else {
+      troisiemeCarte = `<div class="stat-card"><div class="label">Dépense<span class="mobile-line"> moyenne</span></div><div class="value">${formaterMonnaie(nb ? totalAffiche/nb : 0)}</div></div>`;
+    }
     el.innerHTML = `
       <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${inclureConjointDansPersonnel ? '(+ conjoint)' : 'personnel'}</span></div><div class="value ${currentUser}">${formaterMonnaie(totalAffiche)}</div></div>
       <div class="stat-card"><div class="label">Nombre<span class="mobile-line"> de dépenses</span></div><div class="value">${nb}</div></div>
-      <div class="stat-card"><div class="label">Restant<span class="mobile-line"> à dépenser</span></div><div class="value" style="color:${budgetTotal>0 ? (restant<0?'var(--red)':'var(--green)') : 'inherit'}">${budgetTotal>0 ? formaterMonnaie(restant) : '—'}</div></div>
+      ${troisiemeCarte}
     `;
   }
-}
 
-function afficherGraphiqueEvolutionScope(scope){
-  const y = moisActif.year, m = moisActif.month;
-  const joursDansMois = new Date(y, m+1, 0).getDate();
-  const liste = depenses.filter(filtreMoisScope(scope));
+  /* Évolution : toujours regroupée par jour, sur toute la période sélectionnée (1 jour pour
+     "Jour", jusqu'à ~365 pour "Année") — même graphique partout, l'étendue s'adapte. */
+  const nbJours = Math.round((fin - debut) / 86400000) + 1;
   const ctx = document.getElementById(`chart-evolution-${scope}`);
   detruireGraphique(`evolution-${scope}`);
-
+  const labels = [];
+  { let c = new Date(debut); for(let i=0;i<nbJours;i++){ labels.push(c.getDate()); c = ajouterJours(c,1); } }
   let datasets;
   if(scope==='conjoint'){
-    const cum1 = new Array(joursDansMois).fill(0);
-    const cum2 = new Array(joursDansMois).fill(0);
+    const cum1 = new Array(nbJours).fill(0), cum2 = new Array(nbJours).fill(0);
     liste.forEach(e=>{
-      const jour = new Date(e.date+"T00:00:00").getDate()-1;
-      if(e.who==='p1') cum1[jour]+=e.amount;
-      else if(e.who==='p2') cum2[jour]+=e.amount;
+      const idx = Math.round((dateLocaleDepuisISO(e.date) - debut) / 86400000);
+      if(idx>=0 && idx<nbJours){ if(e.who==='p1') cum1[idx]+=e.amount; else if(e.who==='p2') cum2[idx]+=e.amount; }
     });
-    for(let i=1;i<joursDansMois;i++){ cum1[i]+=cum1[i-1]; cum2[i]+=cum2[i-1]; }
+    for(let i=1;i<nbJours;i++){ cum1[i]+=cum1[i-1]; cum2[i]+=cum2[i-1]; }
     datasets = [
       { label:nomsPersonnes.p1, data:cum1, borderColor:couleursPersonnes.p1, backgroundColor:couleursPersonnes.p1+'18', fill:true, tension:.3, pointRadius:0, borderWidth:2.5 },
       { label:nomsPersonnes.p2, data:cum2, borderColor:couleursPersonnes.p2, backgroundColor:couleursPersonnes.p2+'18', fill:true, tension:.3, pointRadius:0, borderWidth:2.5 }
     ];
   } else {
-    const cum = new Array(joursDansMois).fill(0);
-    liste.forEach(e=>{ const jour = new Date(e.date+"T00:00:00").getDate()-1; cum[jour]+=e.amount; });
-    for(let i=1;i<joursDansMois;i++){ cum[i]+=cum[i-1]; }
+    const cum = new Array(nbJours).fill(0);
+    liste.forEach(e=>{ const idx = Math.round((dateLocaleDepuisISO(e.date) - debut) / 86400000); if(idx>=0 && idx<nbJours) cum[idx]+=e.amount; });
+    for(let i=1;i<nbJours;i++) cum[i]+=cum[i-1];
     const couleur = couleursPersonnes[currentUser] || couleursPersonnes.p1;
-    datasets = [
-      { label:nomsPersonnes[currentUser] || nomsPersonnes.p1, data:cum, borderColor:couleur, backgroundColor:couleur+'18', fill:true, tension:.3, pointRadius:0, borderWidth:2.5 }
-    ];
+    datasets = [{ label:nomsPersonnes[currentUser] || nomsPersonnes.p1, data:cum, borderColor:couleur, backgroundColor:couleur+'18', fill:true, tension:.3, pointRadius:0, borderWidth:2.5 }];
   }
-
   charts[`evolution-${scope}`] = new Chart(ctx, {
     type:'line',
-    data:{ labels: Array.from({length:joursDansMois}, (_,i)=>i+1), datasets },
+    data:{ labels, datasets },
     options:{
       responsive:true, maintainAspectRatio:false,
       interaction:{mode:'index', intersect:false},
       plugins:{ legend:{position:'bottom', labels:{boxWidth:10, font:{family:'Roboto', size:12}}} },
       scales:{
-        x:{ title:{display:true,text:'Jour du mois'}, grid:{display:false} },
+        x:{ title:{display:true,text:'Jour'}, grid:{display:false} },
         y:{ ticks:{callback:v=>formaterMonnaie(v)}, grid:{color:'#eef0f3'} }
       }
     }
   });
-}
 
-function afficherGraphiqueCategoriesMoisScope(scope){
-  const liste = depenses.filter(filtreMoisScope(scope)).filter(e=>!e.estRevenu);
+  /* Répartition par catégorie, pour la même période. */
   const parCat = {};
   liste.forEach(e=> parCat[e.category] = (parCat[e.category]||0) + e.amount);
   if(scope==='personnel'){
-    const parCatConjoint = parCategorieConjointPourInclusion(e=>dansMoisActif(e.date));
+    const parCatConjoint = parCategorieConjointPourInclusion(dansPeriode);
     Object.entries(parCatConjoint).forEach(([cat,montant])=>{ parCat[cat] = (parCat[cat]||0) + montant; });
   }
-  const labels = Object.keys(parCat);
-  const data = Object.values(parCat);
-  const colors = labels.map(l=>COULEURS_CATEGORIES[l]||'#9aa0a6');
-
-  const ctx = document.getElementById(`chart-categories-mois-${scope}`);
+  const labelsCat = Object.keys(parCat);
+  const dataCat = Object.values(parCat);
+  const colorsCat = labelsCat.map(l=>COULEURS_CATEGORIES[l]||'#9aa0a6');
+  const ctxC = document.getElementById(`chart-categories-mois-${scope}`);
   detruireGraphique(`categories-mois-${scope}`);
-  charts[`categories-mois-${scope}`] = new Chart(ctx, {
+  charts[`categories-mois-${scope}`] = new Chart(ctxC, {
     type:'doughnut',
-    data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, borderColor:'transparent' }] },
+    data:{ labels:labelsCat, datasets:[{ data:dataCat, backgroundColor:colorsCat, borderWidth:0, borderColor:'transparent' }] },
     options:{
       responsive:true, maintainAspectRatio:false,
       cutout:'62%',
@@ -3957,72 +4378,28 @@ function afficherGraphiqueCategoriesMoisScope(scope){
   });
 }
 
-/* ===================== RENDU : SOUS-ONGLET ANNÉE (par section) ===================== */
-function afficherAnneeScope(scope){
-  const liste = depenses.filter(filtreAnneeScope(scope)).filter(e=>!e.estRevenu);
-  const total = liste.reduce((s,e)=>s+e.amount,0);
-  const el = document.getElementById(`annee-stats-${scope}`);
-  if(scope==='conjoint'){
-    const t1 = liste.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
-    const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
-    const moi = currentUser==='p2' ? t2 : t1;
-    el.innerHTML = `
-      <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> moi</span></div><div class="value ${currentUser}">${formaterMonnaie(moi)}</div></div>
-      <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${anneeActive}</span></div><div class="value">${formaterMonnaie(total)}</div></div>
-      <div class="stat-card">${carteEcartEqualisation(t1, t2)}</div>
-    `;
-  } else {
-    const nbConjoint = inclureConjointDansPersonnel ? depenses.filter(e=>e.type==='conjointe' && dansAnnee(e.date, anneeActive)).length : 0;
-    const nb = liste.length + nbConjoint;
-    const moyenne = nb ? (total + totalConjointPourInclusion(e=>dansAnnee(e.date, anneeActive))) / nb : 0;
-    const totalAffiche = total + totalConjointPourInclusion(e=>dansAnnee(e.date, anneeActive));
-    el.innerHTML = `
-      <div class="stat-card"><div class="label">Total<span class="mobile-line"> ${inclureConjointDansPersonnel ? '(+ conjoint)' : anneeActive}</span></div><div class="value ${currentUser}">${formaterMonnaie(totalAffiche)}</div></div>
-      <div class="stat-card"><div class="label">Nombre<span class="mobile-line"> de dépenses</span></div><div class="value">${nb}</div></div>
-      <div class="stat-card"><div class="label">Dépense<span class="mobile-line"> moyenne</span></div><div class="value">${formaterMonnaie(moyenne)}</div></div>
-    `;
-  }
-
-  const mensuel = new Array(12).fill(0);
-  liste.forEach(e=>{ const m = new Date(e.date+"T00:00:00").getMonth(); mensuel[m]+=e.amount; });
-  const ctxM = document.getElementById(`chart-annee-mensuel-${scope}`);
-  detruireGraphique(`annee-mensuel-${scope}`);
-  charts[`annee-mensuel-${scope}`] = new Chart(ctxM, {
-    type:'bar',
-    data:{ labels:NOMS_MOIS, datasets:[{ label:'Dépenses', data:mensuel, backgroundColor: scope==='conjoint' ? couleursPersonnes.p1 : (couleursPersonnes[currentUser]||couleursPersonnes.p1), borderRadius:4 }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>formaterMonnaie(v)}}} }
-  });
-
-  const parCat = {};
-  liste.forEach(e=> parCat[e.category] = (parCat[e.category]||0) + e.amount);
-  if(scope==='personnel'){
-    const parCatConjoint = parCategorieConjointPourInclusion(e=>dansAnnee(e.date, anneeActive));
-    Object.entries(parCatConjoint).forEach(([cat,montant])=>{ parCat[cat] = (parCat[cat]||0) + montant; });
-  }
-  const labels = Object.keys(parCat);
-  const data = Object.values(parCat);
-  const colors = labels.map(l=>COULEURS_CATEGORIES[l]||'#9aa0a6');
-  const ctxC = document.getElementById(`chart-annee-categories-${scope}`);
-  detruireGraphique(`annee-categories-${scope}`);
-  charts[`annee-categories-${scope}`] = new Chart(ctxC, {
-    type:'doughnut',
-    data:{ labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, borderColor:'transparent' }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{legend:{position:'bottom'}} }
-  });
-}
 
 function afficherSectionBudget(scope){
   const cfg = configSection(scope);
   const periode = periodeActive();
+  const { vue, dateRef } = etatCalendrierPeriode;
+  const { debut, fin } = bornePeriode(vue, dateRef);
+  const libellePeriodeCourte = libellePeriodeCalendrier(vue, debut, fin);
   const periodeLabelEl = document.getElementById(`periode-label-${scope}`);
   if(periodeLabelEl) periodeLabelEl.textContent = `${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
+
+  /* L'édition des montants-cibles (le budget mensuel lui-même) n'est possible qu'en vue
+     "Paie" — dans les autres vues, on ne fait que consulter la comparaison budget/réel
+     pour la période choisie. */
+  const carteEditionEl = document.getElementById(`budget-edit-card-${scope}`);
+  if(carteEditionEl) carteEditionEl.style.display = vue === 'paie' ? '' : 'none';
 
   const listeComplete = depenses.filter(cfg.filtre);
   const liste = listeComplete.filter(e=>!e.estRevenu);
   const total = liste.reduce((s,e)=>s+e.amount,0);
   const revenuMois = listeComplete.filter(e=>e.estRevenu).reduce((s,e)=>s+e.amount,0);
 
-  /* Liste des revenus du mois, bien visible, pour qu'on voie clairement ce qui a été
+  /* Liste des revenus de la période, bien visible, pour qu'on voie clairement ce qui a été
      comptabilisé (et pas juste un chiffre agrégé dans les statistiques). */
   const revenusCardEl = document.getElementById(`budget-revenus-card-${scope}`);
   const revenusListEl = document.getElementById(`budget-revenus-list-${scope}`);
@@ -4031,7 +4408,7 @@ function afficherSectionBudget(scope){
     const revenusListe = listeComplete.filter(e=>e.estRevenu);
     if(revenusListe.length){
       revenusCardEl.style.display = '';
-      if(revenusPeriodeEl) revenusPeriodeEl.textContent = `${NOMS_MOIS[moisActif.month]} ${moisActif.year}`;
+      if(revenusPeriodeEl) revenusPeriodeEl.textContent = libellePeriodeCourte;
       const revenusTries = revenusListe.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
       revenusListEl.innerHTML = revenusTries.map(e=>{
         const dateFmt = new Date(e.date+"T00:00:00").toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
@@ -4057,11 +4434,14 @@ function afficherSectionBudget(scope){
     }
   }
 
+  /* budgetActuel = les montants-cibles bruts (toujours mensuels, utilisés pour le
+     formulaire d'édition) ; budgetAffiche = ces montants ramenés au prorata de la période
+     actuellement consultée, pour comparer "pommes avec pommes". */
   const budgetActuel = (budgets[cfg.budgetKey] && budgets[cfg.budgetKey][periode]) || {};
   const sommeCategories = categories.reduce((s,c)=>s+(budgetActuel[c]||0),0);
-  const budgetAffiche = sommeCategories;
+  const budgetAffiche = budgetProratePourPeriode(sommeCategories, vue, debut, fin);
   const restant = budgetAffiche - total + revenuMois;
-  const libelleDepense = scope === 'conjoint' ? 'ce mois (conjoint)' : 'ce mois (perso)';
+  const libelleDepense = scope === 'conjoint' ? `${libellePeriodeCourte} (conjoint)` : `${libellePeriodeCourte} (perso)`;
 
   /* Dans Personnel, quand "+ Conjoint" est activé, on affiche AUSSI le budget conjoint
      entre parenthèses à côté du budget perso, sans jamais les fusionner en un seul chiffre :
@@ -4075,7 +4455,7 @@ function afficherSectionBudget(scope){
     const revenuMoisC = listeCompleteC.filter(e=>e.estRevenu).reduce((s,e)=>s+e.amount,0);
     const budgetActuelC = (budgets.conjoint && budgets.conjoint[periode]) || {};
     const sommeCategoriesC = categories.reduce((s,c)=>s+(budgetActuelC[c]||0),0);
-    const budgetAfficheC = sommeCategoriesC;
+    const budgetAfficheC = budgetProratePourPeriode(sommeCategoriesC, vue, debut, fin);
     const restantC = budgetAfficheC - totalC + revenuMoisC;
     const parCatC = {};
     listeC.forEach(e=> parCatC[e.category] = (parCatC[e.category]||0) + e.amount);
@@ -4084,17 +4464,18 @@ function afficherSectionBudget(scope){
   const parenthese = (val) => conjointInfo ? `<div style="font-size:11px;margin-top:4px;color:var(--text-secondary);">(conjoint : ${val})</div>` : '';
 
   const carteRevenu = revenuMois > 0.005 ? `
-    <div class="stat-card"><div class="label">💰 Revenu<span class="mobile-line"> ce mois</span></div><div class="value" style="color:var(--green)">+${formaterMonnaie(revenuMois)}</div></div>
+    <div class="stat-card"><div class="label">💰 Revenu<span class="mobile-line"> cette période</span></div><div class="value" style="color:var(--green)">+${formaterMonnaie(revenuMois)}</div></div>
   ` : '';
 
   document.getElementById(`stats-${scope}`).innerHTML = `
     <div class="stat-card"><div class="label">Dépensé<span class="mobile-line"> ${libelleDepense}</span></div><div class="value ${cfg.valueClass}">${formaterMonnaie(total)}</div>${parenthese(conjointInfo && formaterMonnaie(conjointInfo.total))}</div>
-    <div class="stat-card"><div class="label">Budget<span class="mobile-line"> total du mois</span></div><div class="value">${formaterMonnaie(budgetAffiche)}</div>${parenthese(conjointInfo && formaterMonnaie(conjointInfo.budget))}</div>
+    <div class="stat-card"><div class="label">Budget<span class="mobile-line"> pour cette période</span></div><div class="value">${formaterMonnaie(budgetAffiche)}</div>${parenthese(conjointInfo && formaterMonnaie(conjointInfo.budget))}</div>
     <div class="stat-card"><div class="label">Restant<span class="mobile-line"> à dépenser</span></div><div class="value ${restant>=0?'p1':'p2'}">${restant>=0?'':'-'}${formaterMonnaie(Math.abs(restant))}</div>${parenthese(conjointInfo && (conjointInfo.restant>=0?'':'-')+formaterMonnaie(Math.abs(conjointInfo.restant)))}</div>
     ${carteRevenu}
   `;
 
-  /* Liste des barres de progression par catégorie */
+  /* Liste des barres de progression par catégorie (budget de la catégorie ramené au
+     prorata de la période, comme le total). */
   const parCat = {};
   liste.forEach(e=> parCat[e.category] = (parCat[e.category]||0) + e.amount);
   const catAvecBudgetOuDepense = categories.filter(c =>
@@ -4103,15 +4484,17 @@ function afficherSectionBudget(scope){
   );
   const budgetListEl = document.getElementById(`budget-list-${scope}`);
   if(!catAvecBudgetOuDepense.length){
-    budgetListEl.innerHTML = `<div class="budget-empty">Aucun budget défini pour ${NOMS_MOIS[moisActif.month]}. Utilisez le formulaire ci-dessous pour en ajouter un par catégorie.</div>`;
+    budgetListEl.innerHTML = `<div class="budget-empty">Aucun budget défini pour ${libellePeriodeCourte}. Passez en vue "Paie" pour en ajouter un par catégorie.</div>`;
   } else {
     budgetListEl.innerHTML = catAvecBudgetOuDepense.map(cat=>{
       const depense = parCat[cat]||0;
-      const budget = budgetActuel[cat]||0;
+      const budgetBrut = budgetActuel[cat]||0;
+      const budget = budgetProratePourPeriode(budgetBrut, vue, debut, fin);
       const pct = budget>0 ? Math.min(100, (depense/budget)*100) : (depense>0 ? 100 : 0);
       const depasse = budget>0 && depense>budget;
       const couleur = depasse ? 'var(--red)' : (COULEURS_CATEGORIES[cat]||'#9aa0a6');
-      const conjointTxt = conjointInfo ? `(conjoint : ${formaterMonnaie(conjointInfo.parCat[cat]||0)}${(conjointInfo.budgetParCat[cat]||0)>0 ? ' / '+formaterMonnaie(conjointInfo.budgetParCat[cat]) : ''})` : '';
+      const budgetConjointC = conjointInfo ? budgetProratePourPeriode(conjointInfo.budgetParCat[cat]||0, vue, debut, fin) : 0;
+      const conjointTxt = conjointInfo ? `(conjoint : ${formaterMonnaie(conjointInfo.parCat[cat]||0)}${budgetConjointC>0 ? ' / '+formaterMonnaie(budgetConjointC) : ''})` : '';
       return `<div class="budget-row">
         <div class="budget-row-top">
           <div class="budget-row-cat"><span class="swatch" style="background:${COULEURS_CATEGORIES[cat]||'#9aa0a6'}"></span>${cat}</div>
@@ -4142,7 +4525,9 @@ function afficherSectionBudget(scope){
     });
   }
 
-  /* Formulaire de gestion du budget par catégorie */
+  /* Formulaire de gestion du budget par catégorie — seulement pertinent en vue "Paie"
+     (voir plus haut), mais on le construit dans tous les cas pour rester simple ; il est
+     juste invisible ailleurs. */
   const formEl = document.getElementById(`budget-form-${scope}`);
   formEl.innerHTML = categories.map(cat=>`
     <div class="field budget-input-field">
