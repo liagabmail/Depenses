@@ -280,9 +280,13 @@
   body.dark .cal-agenda-item{background:#2c3136;}
   .cal-agenda-item-ligne1{display:flex;align-items:center;gap:6px;}
   .cal-agenda-item-ligne2{display:flex;align-items:center;gap:6px;margin-top:5px;}
-  .cal-agenda-item-date{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--border);padding:2px 6px;border-radius:5px;flex-shrink:0;}
-  .cal-agenda-pct{font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;}
-  .cal-agenda-item-montant{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;margin-left:auto;padding-left:8px;}
+  /* Largeur fixe pour la date, pour que "1 sept" et "23 sept" prennent la même place et
+     que tout s'aligne d'une ligne à l'autre. */
+  .cal-agenda-item-date{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--border);padding:2px 6px;border-radius:5px;flex-shrink:0;min-width:52px;text-align:center;}
+  /* % et Montant regroupés, collés ensemble, complètement à droite. */
+  .cal-agenda-item-right{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;}
+  .cal-agenda-pct{font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;min-width:28px;text-align:right;}
+  .cal-agenda-item-montant{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;min-width:72px;text-align:right;}
   .cal-agenda-item-note{font-size:13px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px;}
   .cal-agenda-item-cat{font-size:12px;font-weight:500;flex-shrink:0;margin-left:auto;padding-left:8px;white-space:nowrap;}
 
@@ -2800,8 +2804,10 @@ function rendreCarteDepenseHTML(e, scope){
       <div class="cal-agenda-item-ligne1">
         <span class="cal-agenda-item-date">${dateCourte}</span>
         <span class="who-badge"><span class="dot ${dotClass}"></span>${quiLabel}</span>
-        ${pourcentageAffiche}
-        <span class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</span>
+        <span class="cal-agenda-item-right">
+          ${pourcentageAffiche}
+          <span class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</span>
+        </span>
       </div>
       <div class="cal-agenda-item-ligne2">
         <span class="cal-agenda-item-note">${iconeRecurrente} ${e.note || '—'}</span>
@@ -2832,13 +2838,16 @@ function rendreControleTriHTML(scope, tri){
     <div class="table-filters" style="padding:0 0 10px;">
       <div class="mobile-sort" style="margin-left:auto;">
         <select id="agenda-tri-${scope}" aria-label="Trier les dépenses">
-          <option value="Date">Date</option><option value="Qui">Qui</option><option value="Montant">Montant</option><option value="Categorie">Catégorie</option><option value="Note">Note</option>
+          <option value="Date">Date</option><option value="Montant">Montant</option>
         </select>
         <button type="button" class="sort-direction" id="agenda-tri-dir-${scope}" aria-label="${tri.dir==='asc'?'Tri croissant':'Tri décroissant'}">${tri.dir==='asc'?'↑':'↓'}</button>
       </div>
     </div>`;
 }
 function wirerTriAgenda(scope){
+  /* Sécurité : si un tri par Qui/Catégorie/Note était actif avant leur retrait, on retombe
+     sur Date plutôt que de laisser un état invalide. */
+  if(!['Date','Montant'].includes(etatTri[scope].key)) etatTri[scope].key = 'Date';
   const sel = document.getElementById(`agenda-tri-${scope}`);
   const dir = document.getElementById(`agenda-tri-dir-${scope}`);
   if(sel){
@@ -3378,6 +3387,12 @@ document.querySelectorAll('.subtab-btn').forEach(btn=>{
     document.querySelectorAll(`.subtab-panel[data-scope="${scope}"]`).forEach(p=>p.classList.remove('active'));
     document.querySelector(`.subtab-panel[data-scope="${scope}"][data-sub="${sub}"]`).classList.add('active');
     activeSubtab[scope] = sub;
+    /* En arrivant sur "Résumé", on reprend la même période que celle active dans
+       "Transactions" (Jour/Semaine/Paie/Mois), pour ne pas perdre sa sélection en changeant
+       d'onglet. La vue grille (📅) n'a pas d'équivalent ici, donc elle retombe sur "Mois". */
+    if(sub === 'resume'){
+      periodeTypeResume = etatCalendrierPeriode.vue === 'grille' ? 'mois' : etatCalendrierPeriode.vue;
+    }
     rafraichirSousOnglet(scope, sub);
     afficherNavigationPeriode();
   });
