@@ -155,12 +155,7 @@
     margin:16px 0 20px;
   }
   .period-nav-row{display:flex;align-items:center;justify-content:center;gap:12px;}
-  /* Le sélecteur de type de période reste toujours parfaitement centré, peu importe l'onglet
-     — les contrôles annexes (☰ des filtres, etc.) sont positionnés en absolu par-dessus,
-     pour ne jamais pousser le centre du sélecteur d'un côté ou de l'autre. */
-  .period-type-row{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:38px;}
-  .period-type-row .period-type-switch{flex:0 0 auto;}
-  .period-type-row .cal-mode-switch{position:absolute;left:0;top:50%;transform:translateY(-50%);}
+  .period-type-row{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:38px;}
   .period-nav button,.icon-btn{
     border:1px solid var(--border);background:var(--surface);color:var(--text);
     border-radius:8px;padding:8px 12px;font-family:inherit;cursor:pointer;
@@ -466,7 +461,8 @@
   .mobile-sort{display:none;}
   .mobile-sort select{border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:13px inherit;padding:7px 9px;}
   .mobile-sort{display:none;gap:6px;align-items:center;}
-  .sort-direction{width:34px;height:34px;padding:0!important;font-size:18px!important;line-height:1;cursor:pointer;}
+  .sort-direction{width:34px;height:34px;padding:0!important;font-size:16px!important;line-height:1;cursor:pointer;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:inherit;}
+  .sort-direction:hover{border-color:var(--blue);color:var(--blue);}
   .table-filters{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px;gap:10px;flex-wrap:wrap;}
   .table-filters .field{margin-bottom:0;}
   .table-filters select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);}
@@ -702,9 +698,7 @@
 
   <div class="period-nav" id="period-nav" style="display:none;">
     <div class="period-type-row">
-      <div class="cal-mode-switch" id="period-left-controls" style="display:none;"></div>
       <div class="period-type-switch" id="period-type-switch" style="display:none;"></div>
-      <div class="cal-mode-switch" id="period-right-controls" style="display:none;"></div>
     </div>
     <div class="period-nav-row">
       <button id="period-prev" aria-label="Période précédente">&lsaquo;</button>
@@ -724,7 +718,10 @@
 
     <!-- Sous-onglet : MOIS -->
     <div class="subtab-panel active" data-scope="conjoint" data-sub="mois">
-      <div class="card" id="calendrier-recurrent-card-conjoint" style="padding-top:14px;">
+      <div class="card" id="calendrier-recurrent-card-conjoint">
+        <div class="table-head-row cal-head" style="padding:14px 14px 10px;">
+          <button type="button" class="cal-hamburger-btn" data-scope="conjoint" aria-label="Filtres d'affichage">☰</button>
+        </div>
         <div id="cal-corps-conjoint"></div>
       </div>
 
@@ -877,7 +874,10 @@
         <button data-include="oui">+ Conjoint</button>
       </div>
 
-      <div class="card" id="calendrier-recurrent-card-personnel" style="padding-top:14px;">
+      <div class="card" id="calendrier-recurrent-card-personnel">
+        <div class="table-head-row cal-head" style="padding:14px 14px 10px;">
+          <button type="button" class="cal-hamburger-btn" data-scope="personnel" aria-label="Filtres d'affichage">☰</button>
+        </div>
         <div id="cal-corps-personnel"></div>
       </div>
 
@@ -2602,8 +2602,8 @@ function avancerPeriode(vue, dateRef, direction){
 }
 function formatCourtDate(d){ return `${d.getDate()} ${MOIS_NOMS[d.getMonth()].slice(0,3)}`; }
 function libellePeriodeCalendrier(vue, debut, fin){
-  if(vue==='jour') return debut.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-  if(vue==='mois' || vue==='grille') return `${MOIS_NOMS[debut.getMonth()]} ${debut.getFullYear()}`;
+  if(vue==='jour') return capitaliser(debut.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'}));
+  if(vue==='mois' || vue==='grille') return `${capitaliser(MOIS_NOMS[debut.getMonth()])} ${debut.getFullYear()}`;
   return `${formatCourtDate(debut)} – ${formatCourtDate(fin)} ${fin.getFullYear()}`;
 }
 function classeTypeDepense(e){
@@ -2670,13 +2670,40 @@ function ouvrirFiltresModal(scope){
   rendreMenuCalendrier(scope);
   document.getElementById('cal-filtres-modal').style.display = 'flex';
 }
+document.querySelectorAll('.cal-hamburger-btn[data-scope]').forEach(btn=>{
+  btn.addEventListener('click', ()=> ouvrirFiltresModal(btn.dataset.scope));
+});
+
+function toutFiltresActifs(scope){
+  const f = filtresCalendrier[scope];
+  return f.quiCaches.length===0 && !f.masquerRevenus && f.categoriesCachees.length===0;
+}
+function basculerToutFiltres(scope){
+  const f = filtresCalendrier[scope];
+  if(toutFiltresActifs(scope)){
+    f.quiCaches = scope==='conjoint' ? ['p1','p2','compte'] : [];
+    f.masquerRevenus = true;
+    f.categoriesCachees = categories.filter(c=>c!=='Revenu');
+  } else {
+    f.quiCaches = [];
+    f.masquerRevenus = false;
+    f.categoriesCachees = [];
+  }
+  sauvegarderFiltresCalendrier(scope);
+  rendreMenuCalendrier(scope);
+  afficherCalendrierRecurrent(scope);
+}
 
 function rendreMenuCalendrier(scope){
   const panneau = document.getElementById('cal-filtres-modal-content');
   const filtres = filtresCalendrier[scope];
   const catsPresentes = categories.filter(c => c!=='Revenu');
+  const toutActif = toutFiltresActifs(scope);
 
   panneau.innerHTML = `
+    <button type="button" class="btn-secondary" id="filtre-tout-toggle" style="width:100%;margin-bottom:12px;">
+      ${toutActif ? 'Tout désélectionner' : 'Tout sélectionner'}
+    </button>
     ${scope==='conjoint' ? `
     <div class="cal-menu-section-title">Qui</div>
     <label class="cal-menu-check">
@@ -2704,6 +2731,8 @@ function rendreMenuCalendrier(scope){
       </label>
     `).join('')}
   `;
+
+  document.getElementById('filtre-tout-toggle').addEventListener('click', ()=> basculerToutFiltres(scope));
 
   const caseRevenu = panneau.querySelector('[data-filtre-revenu]');
   if(caseRevenu) caseRevenu.addEventListener('change', (e)=>{
@@ -2804,11 +2833,11 @@ function rendreCarteDepenseHTML(e, scope){
     <div class="cal-agenda-item" onclick="ouvrirDetailOccurrence('${e.id}')">
       <div class="cal-agenda-item-ligne1">
         <span class="cal-agenda-item-date">${dateCourte}</span>
+        <span class="cal-agenda-item-recur">${iconeRecurrente}</span>
         <span class="who-badge"><span class="dot ${dotClass}"></span>${quiLabel}</span>
         <span class="cal-agenda-item-right">
           ${pourcentageAffiche}
           <span class="cal-agenda-item-montant" style="${e.estRevenu?'color:var(--green);':''}">${montantAffiche}</span>
-          <span class="cal-agenda-item-recur">${iconeRecurrente}</span>
         </span>
       </div>
       <div class="cal-agenda-item-ligne2">
@@ -3118,8 +3147,6 @@ function afficherNavigationPeriode(){
   const sub = estSection ? activeSubtab[activeMainTab] : null;
   const nav = document.getElementById('period-nav');
   const switchEl = document.getElementById('period-type-switch');
-  const gauche = document.getElementById('period-left-controls');
-  const droite = document.getElementById('period-right-controls');
   const label = document.getElementById('period-label');
 
   /* Un seul sélecteur de période, toujours placé juste sous les onglets Transactions /
@@ -3138,8 +3165,6 @@ function afficherNavigationPeriode(){
     return;
   }
   nav.style.display = 'flex';
-  gauche.style.display = 'none';
-  droite.style.display = 'none';
 
   if(sub==='budget'){
     switchEl.style.display = 'none';
@@ -3171,14 +3196,9 @@ function afficherNavigationPeriode(){
       rafraichirSousOnglet(activeMainTab, 'mois');
       afficherNavigationPeriode();
     }));
-    /* Jour / Semaine / Paie / Mois / 📅 (grille) sont maintenant 5 options d'un même
-       sélecteur — plus de choix séparé "calendrier ou liste" à côté. Seul le menu ☰ des
-       filtres reste, à gauche. */
-    gauche.style.display = '';
-    gauche.innerHTML = `<button type="button" class="cal-hamburger-btn" aria-label="Filtres d'affichage">☰</button>`;
-    gauche.querySelector('button').addEventListener('click', ()=> ouvrirFiltresModal(activeMainTab));
-    droite.style.display = 'none';
-
+    /* Jour / Semaine / Paie / Mois / 📅 (grille) sont 5 options d'un même sélecteur. Le
+       menu ☰ des filtres vit maintenant sur l'entête de la carte calendrier/liste
+       elle-même, pas ici. */
     const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
     label.textContent = libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin);
   }
