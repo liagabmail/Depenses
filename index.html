@@ -233,7 +233,13 @@
   body.dark .cal-mode-switch{background:#2c3136;}
   .cal-mode-switch button{border:none;background:transparent;color:var(--text-secondary);font-size:14px;padding:5px 9px;border-radius:6px;cursor:pointer;line-height:1;}
   .cal-mode-switch button.active{background:var(--surface);box-shadow:var(--shadow-1);}
-  .cal-hamburger-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:15px;cursor:pointer;flex-shrink:0;}
+  .cal-hamburger-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .cal-hamburger-btn.active{border-color:var(--blue);color:var(--blue);}
+  /* Barre d'outils du calendrier/liste : filtres à gauche, bascule grille/liste centrée
+     (visible seulement en vue Mois), tri à droite — toujours sur une seule ligne. */
+  .cal-toolbar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 14px 10px;gap:8px;}
+  .cal-toolbar-centre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);}
+  .cal-toolbar .mobile-sort{display:flex!important;gap:6px;align-items:center;}
   .cal-menu-panel{margin:0 14px 12px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface);box-shadow:var(--shadow-1);}
   .cal-menu-section-title{font-size:11px;text-transform:uppercase;color:var(--text-secondary);font-weight:600;margin:10px 0 4px;}
   .cal-menu-section-title:first-child{margin-top:0;}
@@ -244,6 +250,11 @@
   .cal-menu-check{display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:13px;}
   .cal-menu-check input{accent-color:var(--blue);width:16px;height:16px;flex-shrink:0;}
   .cal-menu-check .dot-cat{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .cal-menu-montant-valeurs{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:var(--text);margin:4px 0 6px;}
+  .cal-menu-montant-sliders{position:relative;height:28px;}
+  .cal-menu-montant-sliders input[type="range"]{position:absolute;left:0;top:9px;width:100%;margin:0;accent-color:var(--blue);pointer-events:none;}
+  .cal-menu-montant-sliders input[type="range"]::-webkit-slider-thumb{pointer-events:auto;}
+  .cal-menu-montant-sliders input[type="range"]::-moz-range-thumb{pointer-events:auto;}
   .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
   .cal-nav-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;}
   .cal-titre{font-weight:600;font-size:14px;text-align:center;text-transform:capitalize;flex:1;}
@@ -719,9 +730,6 @@
     <!-- Sous-onglet : MOIS -->
     <div class="subtab-panel active" data-scope="conjoint" data-sub="mois">
       <div class="card" id="calendrier-recurrent-card-conjoint">
-        <div class="table-head-row cal-head" style="padding:14px 14px 10px;">
-          <button type="button" class="cal-hamburger-btn" data-scope="conjoint" aria-label="Filtres d'affichage">☰</button>
-        </div>
         <div id="cal-corps-conjoint"></div>
       </div>
 
@@ -743,7 +751,7 @@
           </div>
           <div class="field">
             <label>Montant</label>
-            <input type="number" id="f-amount-conjoint" step="0.01" min="0" placeholder="0,00 $">
+            <input type="number" id="f-amount-conjoint" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
           </div>
           <div class="field" id="f-category-field-conjoint">
             <label>Catégorie</label>
@@ -875,9 +883,6 @@
       </div>
 
       <div class="card" id="calendrier-recurrent-card-personnel">
-        <div class="table-head-row cal-head" style="padding:14px 14px 10px;">
-          <button type="button" class="cal-hamburger-btn" data-scope="personnel" aria-label="Filtres d'affichage">☰</button>
-        </div>
         <div id="cal-corps-personnel"></div>
       </div>
 
@@ -891,7 +896,7 @@
           </div>
           <div class="field">
             <label>Montant</label>
-            <input type="number" id="f-amount-personnel" step="0.01" min="0" placeholder="0,00 $">
+            <input type="number" id="f-amount-personnel" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
           </div>
           <div class="field" id="f-category-field-personnel">
             <label>Catégorie</label>
@@ -1148,7 +1153,7 @@
       <input type="number" id="edit-compte-repartition" min="0" max="100" step="0.1" value="50">
     </div>
     <div class="field"><label>Date</label><input type="date" id="edit-date"></div>
-    <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0"></div>
+    <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
     <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
     <div class="field"><label>Note</label><input type="text" id="edit-note"></div>
     <div class="field toggle-field" id="edit-est-revenu-field" style="grid-column:1/-1;display:none;">
@@ -1167,7 +1172,7 @@
   <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Modifier un paiement récurrent</h3>
   <div class="form-grid">
     <div class="field"><label>Nom</label><input type="text" id="edit-rec-nom"></div>
-    <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" step="0.01" min="0"></div>
+    <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
     <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
     <div class="field">
       <label>Fréquence</label>
@@ -2550,11 +2555,14 @@ function afficherRecurrencesScope(scope){
    le mode d'affichage (calendrier ou liste) reste propre à chaque scope, puisque c'est une
    préférence d'affichage plutôt qu'une période. */
 let etatCalendrierPeriode = { vue: 'mois', dateRef: debutJour(new Date()) };
+/* En vue "Mois", on peut basculer entre la grille façon calendrier et la liste — les autres
+   vues (Jour/Semaine/Paie/Année) sont toujours des listes, ce choix ne s'applique qu'au mois. */
+let afficherGrilleMois = false;
 
 /* Filtres d'affichage (façon Google Agenda : cases à cocher pour montrer/cacher certains
    types d'entrées). Persistés localement par appareil - un filtre d'affichage est une
    préférence personnelle, pas une donnée à synchroniser. */
-function filtresParDefaut(){ return { categoriesCachees: [], masquerRevenus: false, quiCaches: [] }; }
+function filtresParDefaut(){ return { categoriesCachees: [], masquerRevenus: false, quiCaches: [], montantMin: 0, montantMax: null }; }
 let filtresCalendrier = { conjoint: filtresParDefaut(), personnel: filtresParDefaut() };
 (function chargerFiltresCalendrier(){
   ['conjoint','personnel'].forEach(scope=>{
@@ -2570,7 +2578,11 @@ function sauvegarderFiltresCalendrier(scope){
 
 const JOURS_SEMAINE_LUN_DIM = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MOIS_NOMS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-const VUES_CALENDRIER = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['grille','📅'] ];
+/* Icône "filtres" façon Material Design (3 barres, chacune avec un curseur à une hauteur
+   différente) plutôt qu'un simple ☰, pour bien la distinguer d'un menu de navigation. */
+const ICONE_FILTRE_SVG = `<svg viewBox="0 0 20 20" width="16" height="16" style="display:block;"><line x1="2" y1="5" x2="18" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="13" cy="5" r="2.1" fill="currentColor"/><line x1="2" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="7" cy="10" r="2.1" fill="currentColor"/><line x1="2" y1="15" x2="18" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="15" r="2.1" fill="currentColor"/></svg>`;
+
+const VUES_CALENDRIER = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['annee','Année'] ];
 const VUES_RESUME = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['annee','Année'] ];
 
 /* Lundi de la semaine contenant `date` (la semaine commence le lundi, convention FR-CA usuelle). */
@@ -2583,6 +2595,9 @@ function lundiDeSemaine(date){
 function borneMois(dateRef){
   return { debut: new Date(dateRef.getFullYear(), dateRef.getMonth(), 1), fin: new Date(dateRef.getFullYear(), dateRef.getMonth()+1, 0) };
 }
+function borneAnnee(dateRef){
+  return { debut: new Date(dateRef.getFullYear(), 0, 1), fin: new Date(dateRef.getFullYear(), 11, 31) };
+}
 function bornePeriodePaie(dateRef){
   const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
   const debut = paieDate(ancrage, indexPaiePourDate(ancrage, dateRef));
@@ -2592,18 +2607,21 @@ function bornePeriode(vue, dateRef){
   if(vue==='jour') return { debut: debutJour(dateRef), fin: debutJour(dateRef) };
   if(vue==='semaine'){ const debut = lundiDeSemaine(dateRef); return { debut, fin: ajouterJours(debut,6) }; }
   if(vue==='paie') return bornePeriodePaie(dateRef);
+  if(vue==='annee') return borneAnnee(dateRef);
   return borneMois(dateRef);
 }
 function avancerPeriode(vue, dateRef, direction){
   if(vue==='jour') return ajouterJours(dateRef, direction);
   if(vue==='semaine') return ajouterJours(dateRef, direction*7);
   if(vue==='paie') return ajouterJours(dateRef, direction*14);
+  if(vue==='annee'){ const d = new Date(dateRef); d.setFullYear(d.getFullYear()+direction); return d; }
   const d = new Date(dateRef); d.setMonth(d.getMonth()+direction); return d;
 }
 function formatCourtDate(d){ return `${d.getDate()} ${MOIS_NOMS[d.getMonth()].slice(0,3)}`; }
 function libellePeriodeCalendrier(vue, debut, fin){
   if(vue==='jour') return capitaliser(debut.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'}));
-  if(vue==='mois' || vue==='grille') return `${capitaliser(MOIS_NOMS[debut.getMonth()])} ${debut.getFullYear()}`;
+  if(vue==='mois') return `${capitaliser(MOIS_NOMS[debut.getMonth()])} ${debut.getFullYear()}`;
+  if(vue==='annee') return String(debut.getFullYear());
   return `${formatCourtDate(debut)} – ${formatCourtDate(fin)} ${fin.getFullYear()}`;
 }
 function classeTypeDepense(e){
@@ -2616,7 +2634,8 @@ function depensesPourCalendrier(scope, debut, fin){
   const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
   const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
   const filtres = filtresCalendrier[scope];
-  const appliquerFiltres = e => !(filtres.masquerRevenus && e.estRevenu) && !filtres.categoriesCachees.includes(e.category) && !filtres.quiCaches.includes(e.who);
+  const appliquerFiltres = e => !(filtres.masquerRevenus && e.estRevenu) && !filtres.categoriesCachees.includes(e.category) && !filtres.quiCaches.includes(e.who)
+    && e.amount >= filtres.montantMin && (filtres.montantMax == null || e.amount <= filtres.montantMax);
 
   let liste = depenses
     .filter(e => e.type===type && e.date>=debutStr && e.date<=finStr)
@@ -2641,20 +2660,54 @@ function afficherCalendrierRecurrent(scope){
   if(!corpsEl) return;
   const { vue, dateRef } = etatCalendrierPeriode;
   const { debut, fin } = bornePeriode(vue, dateRef);
+  const tri = etatTri[scope];
 
-  if(vue === 'grille'){
-    corpsEl.innerHTML = rendreGrilleMoisCalendrier(scope, dateRef);
+  const barreOutils = rendreBarreOutilsHTML(scope, tri);
+
+  if(vue === 'mois' && afficherGrilleMois){
+    corpsEl.innerHTML = barreOutils + rendreGrilleMoisCalendrier(scope, dateRef);
   } else {
-    /* Jour / Semaine / Paie / Mois partagent maintenant exactement le même visuel : une
-       liste triable (Date/Qui/Montant/Catégorie/Note), façon agenda. */
-    corpsEl.innerHTML = rendreAgendaCalendrier(scope, debut, fin);
+    /* Jour / Semaine / Paie / Mois / Année partagent le même visuel : une liste triable
+       (Date/Montant), façon agenda. */
+    corpsEl.innerHTML = barreOutils + rendreAgendaCorpsHTML(scope, debut, fin, tri);
     wirerTriAgenda(scope);
   }
+  wirerBarreOutils(scope);
 
   /* Si la fenêtre de filtres est ouverte pour ce scope, on la re-rend pour refléter les
      filtres actifs à jour. */
   const modal = document.getElementById('cal-filtres-modal');
   if(modal.style.display !== 'none' && scopeFiltresCourant === scope) rendreMenuCalendrier(scope);
+}
+
+/* Barre d'outils commune, en haut du calendrier/liste : icône de filtres (🎚) à gauche,
+   bascule grille/liste (📅) centrée — visible uniquement en vue "Mois" — et le contrôle de
+   tri (Date/Montant) à droite. Toujours sur la même ligne, pour rester compact et uniforme. */
+function rendreBarreOutilsHTML(scope, tri){
+  const vue = etatCalendrierPeriode.vue;
+  return `
+    <div class="cal-toolbar">
+      <button type="button" class="cal-hamburger-btn" id="cal-filtre-btn-${scope}" aria-label="Filtres d'affichage">${ICONE_FILTRE_SVG}</button>
+      ${vue==='mois' ? `<button type="button" class="cal-hamburger-btn cal-toolbar-centre" id="cal-grille-toggle-${scope}" aria-label="Basculer vue calendrier">📅</button>` : ''}
+      <div class="mobile-sort" id="cal-toolbar-tri-${scope}">
+        <select id="agenda-tri-${scope}" aria-label="Trier les dépenses">
+          <option value="Date">Date</option><option value="Montant">Montant</option>
+        </select>
+        <button type="button" class="sort-direction" id="agenda-tri-dir-${scope}" aria-label="${tri.dir==='asc'?'Tri croissant':'Tri décroissant'}">${tri.dir==='asc'?'↑':'↓'}</button>
+      </div>
+    </div>`;
+}
+function wirerBarreOutils(scope){
+  const btnFiltre = document.getElementById(`cal-filtre-btn-${scope}`);
+  if(btnFiltre) btnFiltre.addEventListener('click', ()=> ouvrirFiltresModal(scope));
+  const btnGrille = document.getElementById(`cal-grille-toggle-${scope}`);
+  if(btnGrille){
+    btnGrille.classList.toggle('active', afficherGrilleMois);
+    btnGrille.addEventListener('click', ()=>{
+      afficherGrilleMois = !afficherGrilleMois;
+      afficherCalendrierRecurrent(scope);
+    });
+  }
 }
 
 /* ===================== FENÊTRE DE FILTRES D'AFFICHAGE (façon Google Agenda) =====================
@@ -2670,9 +2723,6 @@ function ouvrirFiltresModal(scope){
   rendreMenuCalendrier(scope);
   document.getElementById('cal-filtres-modal').style.display = 'flex';
 }
-document.querySelectorAll('.cal-hamburger-btn[data-scope]').forEach(btn=>{
-  btn.addEventListener('click', ()=> ouvrirFiltresModal(btn.dataset.scope));
-});
 
 function toutFiltresActifs(scope){
   const f = filtresCalendrier[scope];
@@ -2699,6 +2749,13 @@ function rendreMenuCalendrier(scope){
   const filtres = filtresCalendrier[scope];
   const catsPresentes = categories.filter(c => c!=='Revenu');
   const toutActif = toutFiltresActifs(scope);
+
+  /* Borne haute du curseur : le plus gros montant existant (arrondi vers le haut), avec un
+     plancher raisonnable pour éviter un curseur dégénéré s'il y a peu de données. */
+  const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
+  const plusGrosMontant = depenses.filter(e=>e.type===type).reduce((m,e)=>Math.max(m,e.amount),0);
+  const bordureMax = Math.max(100, Math.ceil(plusGrosMontant/50)*50);
+  const montantMaxActuel = filtres.montantMax == null ? bordureMax : Math.min(filtres.montantMax, bordureMax);
 
   panneau.innerHTML = `
     <button type="button" class="btn-secondary" id="filtre-tout-toggle" style="width:100%;margin-bottom:12px;">
@@ -2730,9 +2787,42 @@ function rendreMenuCalendrier(scope){
         <span class="dot-cat" style="background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}"></span> ${c}
       </label>
     `).join('')}
+    <div class="cal-menu-section-title">Montant</div>
+    <div class="cal-menu-montant-valeurs">
+      <span id="filtre-montant-min-val">${formaterMonnaie(filtres.montantMin)}</span>
+      <span>–</span>
+      <span id="filtre-montant-max-val">${filtres.montantMax == null ? `${formaterMonnaie(bordureMax)}+` : formaterMonnaie(filtres.montantMax)}</span>
+    </div>
+    <div class="cal-menu-montant-sliders">
+      <input type="range" id="filtre-montant-min" min="0" max="${bordureMax}" step="5" value="${filtres.montantMin}">
+      <input type="range" id="filtre-montant-max" min="0" max="${bordureMax}" step="5" value="${montantMaxActuel}">
+    </div>
   `;
 
   document.getElementById('filtre-tout-toggle').addEventListener('click', ()=> basculerToutFiltres(scope));
+
+  const curseurMin = document.getElementById('filtre-montant-min');
+  const curseurMax = document.getElementById('filtre-montant-max');
+  const majAffichageMontant = ()=>{
+    document.getElementById('filtre-montant-min-val').textContent = formaterMonnaie(Number(curseurMin.value));
+    document.getElementById('filtre-montant-max-val').textContent = Number(curseurMax.value) >= bordureMax ? `${formaterMonnaie(bordureMax)}+` : formaterMonnaie(Number(curseurMax.value));
+  };
+  curseurMin.addEventListener('input', ()=>{
+    if(Number(curseurMin.value) > Number(curseurMax.value)) curseurMin.value = curseurMax.value;
+    majAffichageMontant();
+  });
+  curseurMax.addEventListener('input', ()=>{
+    if(Number(curseurMax.value) < Number(curseurMin.value)) curseurMax.value = curseurMin.value;
+    majAffichageMontant();
+  });
+  const appliquerMontant = ()=>{
+    filtres.montantMin = Number(curseurMin.value);
+    filtres.montantMax = Number(curseurMax.value) >= bordureMax ? null : Number(curseurMax.value);
+    sauvegarderFiltresCalendrier(scope);
+    afficherCalendrierRecurrent(scope);
+  };
+  curseurMin.addEventListener('change', appliquerMontant);
+  curseurMax.addEventListener('change', appliquerMontant);
 
   const caseRevenu = panneau.querySelector('[data-filtre-revenu]');
   if(caseRevenu) caseRevenu.addEventListener('change', (e)=>{
@@ -2863,18 +2953,6 @@ function trierListeDepenses(items, tri){
   return triees;
 }
 
-/* Contrôle de tri (même sélecteur partout : Jour/Semaine/Paie/Mois). */
-function rendreControleTriHTML(scope, tri){
-  return `
-    <div class="table-filters" style="padding:0 0 10px;">
-      <div class="mobile-sort" style="margin-left:auto;">
-        <select id="agenda-tri-${scope}" aria-label="Trier les dépenses">
-          <option value="Date">Date</option><option value="Montant">Montant</option>
-        </select>
-        <button type="button" class="sort-direction" id="agenda-tri-dir-${scope}" aria-label="${tri.dir==='asc'?'Tri croissant':'Tri décroissant'}">${tri.dir==='asc'?'↑':'↓'}</button>
-      </div>
-    </div>`;
-}
 function wirerTriAgenda(scope){
   /* Sécurité : si un tri par Qui/Catégorie/Note était actif avant leur retrait, on retombe
      sur Date plutôt que de laisser un état invalide. */
@@ -2891,17 +2969,16 @@ function wirerTriAgenda(scope){
   });
 }
 
-/* Vue "agenda", utilisée pour Jour/Semaine/Paie/Mois — même contrôle de tri et même carte
-   partout, TOUJOURS en liste à plat (aucun regroupement par jour) : le tri se comporte donc
-   exactement pareil peu importe le critère choisi, y compris "Date". */
-function rendreAgendaCalendrier(scope, debut, fin){
-  const tri = etatTri[scope];
+/* Vue "agenda", utilisée pour Jour/Semaine/Paie/Mois/Année — même carte partout, TOUJOURS en
+   liste à plat (aucun regroupement par jour) : le tri se comporte donc exactement pareil peu
+   importe le critère choisi. Le contrôle de tri lui-même vit maintenant dans la barre
+   d'outils commune (voir rendreBarreOutilsHTML), pas ici. */
+function rendreAgendaCorpsHTML(scope, debut, fin, tri){
   const items = trierListeDepenses(depensesPourCalendrier(scope, debut, fin), tri);
-  const controle = rendreControleTriHTML(scope, tri);
   const corps = items.length
     ? items.map(e=>rendreCarteDepenseHTML(e, scope)).join('')
     : '<div class="cal-agenda-empty">Aucune dépense pour cette période</div>';
-  return controle + corps;
+  return corps;
 }
 
 /* ===================== MODAL "JOUR" (façon Google Agenda) =====================
@@ -3196,9 +3273,9 @@ function afficherNavigationPeriode(){
       rafraichirSousOnglet(activeMainTab, 'mois');
       afficherNavigationPeriode();
     }));
-    /* Jour / Semaine / Paie / Mois / 📅 (grille) sont 5 options d'un même sélecteur. Le
-       menu ☰ des filtres vit maintenant sur l'entête de la carte calendrier/liste
-       elle-même, pas ici. */
+    /* Jour / Semaine / Paie / Mois / Année sont 5 options d'un même sélecteur. Le menu de
+       filtres et la bascule grille/liste (visible seulement en Mois) vivent maintenant sur
+       l'entête de la carte calendrier/liste elle-même, pas ici. */
     const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
     label.textContent = libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin);
   }
