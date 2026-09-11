@@ -3389,6 +3389,48 @@ document.getElementById('delete-edit-recurrent').addEventListener('click', async
     await supprimerRecurrence(recurrenceEnEdition.id, true);
   }
 });
+/* Fusionne un segment de la même famille (issu d'un fractionnement "cette dépense et les
+   suivantes" antérieur) dans une autre récurrence, lors d'une modification "toute la
+   série" : l'historique déjà passé de ce segment est RÉATTRIBUÉ (jamais supprimé) à la
+   récurrence cible, pour ne jamais perdre ni orpheliner de vraies dépenses déjà réelles ;
+   ses échéances futures sont supprimées (elles seront régénérées sous la récurrence
+   fusionnée, avec les nouvelles valeurs) ; puis le segment lui-même est supprimé. */
+async function fusionnerSegmentDansRecurrence(segment, cibleId, aujourdhuiStr){
+  try{
+    const { error } = await supabaseClient.from('Depenses').update({ RecurrenceId: cibleId }).eq('RecurrenceId', segment.id).lt('Date', aujourdhuiStr);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de réattribuer l'historique du segment fusionné dans Supabase.", err);
+  }
+  depenses.filter(e => e.recurrenceId===segment.id && e.date < aujourdhuiStr).forEach(e => { e.recurrenceId = cibleId; });
+
+  try{
+    const { error } = await supabaseClient.from('Depenses').delete().eq('RecurrenceId', segment.id).gte('Date', aujourdhuiStr);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de supprimer les échéances futures du segment fusionné dans Supabase.", err);
+  }
+  depenses = depenses.filter(e => !(e.recurrenceId===segment.id && e.date >= aujourdhuiStr));
+
+  try{
+    const { error } = await supabaseClient.from('Recurrences').delete().eq('id', segment.id);
+    if(error) throw error;
+  } catch(err){
+    console.warn("Impossible de supprimer la récurrence du segment fusionné dans Supabase.", err);
+  }
+  recurrences = recurrences.filter(r => r.id !== segment.id);
+}
+
+/* Convertit n'importe quelle condition de fin en une date de fin équivalente (ou null pour
+   "jamais"). Sert à fusionner une famille de récurrences sans avoir à recompter un nombre
+   d'occurrences à travers plusieurs segments qui peuvent avoir eu des motifs différents. */
+function finDateEquivalente(rec){
+  if(rec.finType === 'date') return rec.finDate;
+  if(rec.finType === 'jamais') return null;
+  const occ = genererOccurrences(rec, horizonMaximal());
+  return occ.length ? formaterDateISO(occ[occ.length-1]) : null;
+}
+
 document.getElementById('save-edit-recurrent').addEventListener('click', async ()=>{
   if(!recurrenceEnEdition) return;
   const nom = document.getElementById('edit-rec-nom').value.trim();
@@ -3396,14 +3438,14 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
   const categorie = document.getElementById('edit-rec-categorie').value;
   const cfgRepetition = lireConfigRepetition('edit-rec-frequence') || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
-  const dateDebut = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
+  const dateDebutFormulaire = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
   const finType = document.getElementById('edit-rec-fin-type').value;
-  const finNombre = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
-  const finDate = finType==='date' ? (document.getElementById('edit-rec-fin-date').value || null) : null;
+  const finNombreFormulaire = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
+  const finDateFormulaire = finType==='date' ? (document.getElementById('edit-rec-fin-date').value || null) : null;
   const actif = document.getElementById('edit-rec-actif').checked;
 
-  if(finType==='nombre' && !finNombre){ alert("Merci d'entrer un nombre de paiements valide."); return; }
-  if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
+  if(finType==='nombre' && !finNombreFormulaire){ alert("Merci d'entrer un nombre de paiements valide."); return; }
+  if(finType==='date' && !finDateFormulaire){ alert("Merci d'entrer une date de fin."); return; }
 
   let who = recurrenceEnEdition.who;
   let estCompte = false;
@@ -3416,13 +3458,47 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   const estRevenu = (recurrenceEnEdition.type==='personnelle' || estCompte) && document.getElementById('edit-rec-est-revenu').checked;
   const categorieFinale = estRevenu ? 'Revenu' : categorie;
 
+  /* "Toute la série" doit s'appliquer à TOUTE la famille de récurrences issues d'éventuels
+     fractionnements précédents ("cette dépense et les suivantes"), pas seulement au segment
+     technique sur lequel on a cliqué — sinon un segment déjà scindé plus loin dans le temps
+     (ex: les 3 dernières occurrences, séparées par un split antérieur) ne serait jamais
+     touché par un "toute la série" fait sur un segment plus ancien. On fusionne donc toute
+     la famille en une seule récurrence avec les nouvelles valeurs, en préservant l'historique
+     déjà passé de chaque segment (jamais supprimé, seulement réattribué). */
+  const racine = recurrenceEnEdition.racineId || recurrenceEnEdition.id;
+  const famille = recurrences.filter(r => (r.racineId || r.id) === racine);
+  const segmentsAFusionner = famille.filter(r => r.id !== recurrenceEnEdition.id);
+
+  /* Vraie date de début = la plus ancienne de toute la famille (jamais plus tardive que ce
+     que demande le formulaire, au cas où on voudrait délibérément avancer le départ). */
+  const vraiDebut = famille.reduce((a,b) => new Date(b.dateDebut) < new Date(a.dateDebut) ? b : a).dateDebut;
+  const dateDebut = new Date(dateDebutFormulaire) < new Date(vraiDebut) ? dateDebutFormulaire : vraiDebut;
+
+  /* Conditions de fin : si l'utilisateur n'a pas explicitement touché "Se termine" dans le
+     formulaire (il garde ce que ce segment avait déjà), on va chercher la vraie fin sur le
+     segment le plus tardif de la famille (la "queue") — sinon (changement explicite), on
+     respecte tel quel le nouveau choix de l'utilisateur. */
+  const finInchangee = finType === recurrenceEnEdition.finType
+    && String(finNombreFormulaire || '') === String(recurrenceEnEdition.finNombre || '')
+    && (finDateFormulaire || '') === (recurrenceEnEdition.finDate || '');
+  let finTypeFinal = finType, finNombreFinal = finNombreFormulaire, finDateFinal = finDateFormulaire;
+  if(finInchangee && segmentsAFusionner.length){
+    const queue = famille.reduce((a,b) => new Date(b.dateDebut) > new Date(a.dateDebut) ? b : a);
+    const dateFinEquivalente = finDateEquivalente(queue);
+    if(dateFinEquivalente == null){
+      finTypeFinal = 'jamais'; finNombreFinal = null; finDateFinal = null;
+    } else {
+      finTypeFinal = 'date'; finDateFinal = dateFinEquivalente; finNombreFinal = null;
+    }
+  }
+
   const update = {
     Nom: nom, Montant: montant, Categorie: categorieFinale,
     Frequence: frequenceHeritee(cfgRepetition.unite, cfgRepetition.intervalle),
     Unite: cfgRepetition.unite, Intervalle: cfgRepetition.intervalle,
     JoursSemaine: cfgRepetition.joursSemaine && cfgRepetition.joursSemaine.length ? cfgRepetition.joursSemaine.join(',') : null,
     TypeMensuel: cfgRepetition.typeMensuel || null,
-    DateDebut: dateDebut, FinType: finType, FinNombre: finNombre, FinDate: finDate,
+    DateDebut: dateDebut, FinType: finTypeFinal, FinNombre: finNombreFinal, FinDate: finDateFinal,
     Qui: nomPersonneSupabase(who), Actif: actif, EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1
   };
 
@@ -3445,13 +3521,21 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   Object.assign(recurrenceEnEdition, {
     nom, montant, categorie: categorieFinale,
     unite: cfgRepetition.unite, intervalle: cfgRepetition.intervalle, joursSemaine: cfgRepetition.joursSemaine, typeMensuel: cfgRepetition.typeMensuel,
-    dateDebut, finType, finNombre, finDate, who, actif, estCompte, estRevenu, pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50
+    dateDebut, finType: finTypeFinal, finNombre: finNombreFinal, finDate: finDateFinal, who, actif, estCompte, estRevenu, pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50
   });
   sauvegarderRecurrencesLocal();
   document.getElementById('edit-recurrent-modal').style.display = 'none';
-  afficherRecurrencesScope(recurrenceEnEdition.type==='personnelle' ? 'personnel' : 'conjoint');
+
   /* Les échéances passées restent inchangées (historique), mais les échéances futures déjà
-     générées sont recréées avec les nouvelles valeurs (montant, catégorie, fréquence, etc.). */
+     générées sont recréées avec les nouvelles valeurs (montant, catégorie, fréquence, etc.).
+     Les autres segments de la famille sont fusionnés dans recurrenceEnEdition : leur
+     historique est préservé (réattribué), leurs échéances futures supprimées puis
+     régénérées sous la récurrence désormais unique. */
+  const aujourdhuiStr = formaterDateISO(debutJour(new Date()));
+  for(const segment of segmentsAFusionner){
+    await fusionnerSegmentDansRecurrence(segment, recurrenceEnEdition.id, aujourdhuiStr);
+  }
+  afficherRecurrencesScope(recurrenceEnEdition.type==='personnelle' ? 'personnel' : 'conjoint');
   await supprimerDepensesFuturesRecurrence(recurrenceEnEdition.id);
   if(actif) await genererDepensesRecurrentes();
   rafraichirActif();
