@@ -686,6 +686,25 @@
     .mobile-date{display:inline;}
     .mobile-who{display:inline-flex;font-size:12px;}
   }
+  /* Détail d'un dépôt au compte conjoint (fenêtre de vérification du calcul) */
+  .depot-row:hover{background:var(--bg);}
+  .depot-section-titre{font-size:12px;font-weight:600;color:var(--text-secondary);
+    text-transform:uppercase;letter-spacing:.04em;margin:18px 0 6px;}
+  .depot-entete{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    font-size:12px;color:var(--text-secondary);font-weight:500;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .depot-entete-montants{display:flex;gap:16px;}
+  .depot-entete-montants span{min-width:76px;text-align:right;}
+  .depot-ligne{padding:11px 0;border-bottom:1px solid var(--border);}
+  .depot-ligne-haut{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .depot-ligne-nom{font-size:14px;font-weight:500;}
+  .depot-ligne-montants{display:flex;gap:16px;flex:0 0 auto;}
+  .depot-ligne-montants .value{min-width:76px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;}
+  .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.45;}
+  .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;
+    background:var(--border);color:var(--text-secondary);vertical-align:middle;}
+  .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
+  .depot-total.final .value{font-weight:600;}
 </style>
 </head>
 <body>
@@ -1365,6 +1384,12 @@
 <div class="edit-modal" id="jour-modal"><div class="edit-card" id="jour-modal-card">
   <button class="modal-close-btn" id="close-jour-modal" aria-label="Fermer">&times;</button>
   <div id="jour-modal-content"></div>
+</div></div>
+
+<!-- Détail d'un dépôt au compte conjoint : montre ligne par ligne d'où vient le montant
+     demandé à chaque paie, pour pouvoir vérifier le calcul à la main. -->
+<div class="edit-modal" id="depot-modal"><div class="edit-card">
+  <div id="depot-modal-content"></div>
 </div></div>
 
 <div class="edit-modal" id="cal-filtres-modal"><div class="edit-card">
@@ -2267,48 +2292,91 @@ function calculerEcheancierCompte(nbPaies){
   if(!paies.length) return null;
   const derniere = paies[paies.length-1];
   const totaux = {};
-  paies.forEach(p => totaux[formaterDateISO(p)] = {p1:0, p2:0});
+  /* Trace de vérification : pour chaque paie, la liste des contributions qui composent le
+     montant affiché. Purement descriptif — aucune de ces lignes n'influence le calcul, elles
+     sont seulement enregistrées au passage pour pouvoir expliquer le résultat (voir
+     ouvrirDetailDepot). La somme des lignes d'une paie doit toujours redonner exactement le
+     montant affiché pour cette paie : c'est ce qui permet de valider les calculs. */
+  const lignes = {};
+  paies.forEach(p => {
+    const iso = formaterDateISO(p);
+    totaux[iso] = {p1:0, p2:0};
+    lignes[iso] = [];
+  });
   const premierePaieIso = formaterDateISO(paies[0]);
 
   function pct(pourcentageP1){ return (pourcentageP1 != null ? pourcentageP1 : 50) / 100; }
-  function reporterSurPremierePaie(signe, montant, p1Pct){
-    totaux[premierePaieIso].p1 += signe*montant*p1Pct;
-    totaux[premierePaieIso].p2 += signe*montant*(1-p1Pct);
+
+  /* Applique une contribution à une paie ET l'enregistre dans la trace.
+     `signe` vaut +1 pour une dépense à provisionner, -1 pour un revenu qui réduit le dépôt. */
+  function contribuer(iso, signe, montant, p1Pct, info){
+    if(!totaux[iso]) return;
+    const partP1 = signe*montant*p1Pct;
+    const partP2 = signe*montant*(1-p1Pct);
+    totaux[iso].p1 += partP1;
+    totaux[iso].p2 += partP2;
+    lignes[iso].push({
+      libelle: info.libelle,
+      explication: info.explication,
+      nature: info.nature,        /* 'depense' | 'revenu' | 'ajustement' */
+      rattrapage: !!info.rattrapage,
+      pourcentageP1: Math.round(p1Pct*1000)/10,
+      p1: partP1,
+      p2: partP2
+    });
+  }
+
+  function reporterSurPremierePaie(signe, montant, p1Pct, info){
+    contribuer(premierePaieIso, signe, montant, p1Pct, Object.assign({}, info, { rattrapage:true }));
   }
 
   /* DÉPENSE : étalée entre `previousDate` (ou aujourd'hui si null) et `dueDate`. */
-  function ajouterDepense(dueDate, montant, pourcentageP1, previousDate, inclusifFin){
+  function ajouterDepense(dueDate, montant, pourcentageP1, previousDate, inclusifFin, info){
     const p1Pct = pct(pourcentageP1);
     const debut = previousDate || aujourdhui;
     const finBorne = inclusifFin ? dueDate : ajouterJours(dueDate, -1);
-    if(finBorne < debut){ reporterSurPremierePaie(1, montant, p1Pct); return; }
+    const echeance = formaterDateISO(dueDate);
+    if(finBorne < debut){
+      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature:'depense',
+        explication:`Échéance du ${echeance} déjà dépassée : le montant complet de ${formaterMonnaie(montant)} est rattrapé sur cette paie.` }));
+      return;
+    }
     const slots = paiesDansIntervalle(ancrage, debut, finBorne);
-    if(!slots.length){ reporterSurPremierePaie(1, montant, p1Pct); return; }
+    if(!slots.length){
+      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature:'depense',
+        explication:`Aucune paie ne tombe avant l'échéance du ${echeance} : les ${formaterMonnaie(montant)} sont mis en entier sur cette paie.` }));
+      return;
+    }
     const part = montant / slots.length;
+    const base = `${formaterMonnaie(montant)} à provisionner d'ici le ${echeance}, réparti sur ${slots.length} paie${slots.length>1?'s':''} = ${formaterMonnaie(part)} par paie.`;
     slots.forEach(s=>{
       const sIso = formaterDateISO(s);
       if(s < aujourdhui){
-        reporterSurPremierePaie(1, part, p1Pct); /* paie déjà passée : report automatique */
+        /* paie déjà passée : report automatique */
+        reporterSurPremierePaie(1, part, p1Pct, Object.assign({}, info, { nature:'depense',
+          explication:`${base} La part du ${sIso} est déjà passée, elle est rattrapée ici.` }));
       } else if(totaux[sIso]){
-        totaux[sIso].p1 += part*p1Pct;
-        totaux[sIso].p2 += part*(1-p1Pct);
+        contribuer(sIso, 1, part, p1Pct, Object.assign({}, info, { nature:'depense', explication: base }));
       }
       /* sinon : paie à venir mais au-delà de l'horizon affiché -> ignorée pour l'instant. */
     });
   }
 
   /* REVENU : jamais étalé. Montant plein sur la première paie sur/après `dateArrivee`. */
-  function ajouterRevenu(dateArrivee, montant, pourcentageP1){
+  function ajouterRevenu(dateArrivee, montant, pourcentageP1, info){
     const p1Pct = pct(pourcentageP1);
     const cible = premierePaieDepuis(ancrage, dateArrivee);
+    const arrivee = formaterDateISO(dateArrivee);
     if(cible < aujourdhui){
-      reporterSurPremierePaie(-1, montant, p1Pct); /* paie visée déjà passée : report automatique */
+      /* paie visée déjà passée : report automatique */
+      reporterSurPremierePaie(-1, montant, p1Pct, Object.assign({}, info, { nature:'revenu',
+        explication:`Revenu du ${arrivee} dont la paie visée est déjà passée : il est déduit ici à la place.` }));
       return;
     }
     const cIso = formaterDateISO(cible);
     if(totaux[cIso]){
-      totaux[cIso].p1 -= montant*p1Pct;
-      totaux[cIso].p2 -= montant*(1-p1Pct);
+      contribuer(cIso, -1, montant, p1Pct, Object.assign({}, info, { nature:'revenu',
+        explication:`Revenu de ${formaterMonnaie(montant)} arrivant le ${arrivee} : jamais étalé, il est déduit en entier de la première paie qui suit.` }));
     }
     /* sinon : paie visée au-delà de l'horizon affiché -> ignorée pour l'instant. */
   }
@@ -2316,12 +2384,14 @@ function calculerEcheancierCompte(nbPaies){
   /* 1) Dépenses/revenus "compte" ponctuels (sans récurrence) */
   depenses.filter(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId).forEach(e=>{
     const due = debutJour(dateLocaleDepuisISO(e.date));
-    if(e.estRevenu) ajouterRevenu(due, e.amount, e.pourcentageP1);
-    else ajouterDepense(due, e.amount, e.pourcentageP1, null, true);
+    const info = { libelle: e.note || e.category, source:'ponctuelle' };
+    if(e.estRevenu) ajouterRevenu(due, e.amount, e.pourcentageP1, info);
+    else ajouterDepense(due, e.amount, e.pourcentageP1, null, true, info);
   });
 
   /* 2) Récurrences "compte" actives */
   recurrences.filter(r=>r.type==='conjointe' && r.estCompte && r.actif).forEach(rec=>{
+    const libelle = rec.nom || rec.categorie;
     if(rec.estRevenu){
       /* Chaque occurrence est indépendante (pas de fenêtre à fermer) : seules celles dont
          la première paie visée n'est pas encore passée sont encore pertinentes. Les
@@ -2332,7 +2402,7 @@ function calculerEcheancierCompte(nbPaies){
         const due = debutJour(occDate);
         const cible = premierePaieDepuis(ancrage, due);
         if(cible < aujourdhui) return; /* déjà réglé dans le passé, on n'y retouche plus */
-        ajouterRevenu(due, rec.montant, rec.pourcentageP1);
+        ajouterRevenu(due, rec.montant, rec.pourcentageP1, { libelle, source:'recurrence' });
       });
     } else {
       /* Dépense récurrente : pour obtenir un montant STABLE d'une paie à l'autre (plutôt que
@@ -2349,10 +2419,10 @@ function calculerEcheancierCompte(nbPaies){
         const totalAnnuel = rec.montant * multiplicateurAnnuel(rec);
         const partParPaie = totalAnnuel / PAIES_PAR_ANNEE;
         const p1Pct = pct(rec.pourcentageP1);
+        const occAn = Math.round(occurrencesParAnnee(rec)*100)/100;
+        const explication = `Récurrence sans date de fin : ${formaterMonnaie(rec.montant)} × ${occAn} occurrence${occAn>1?'s':''} par an = ${formaterMonnaie(totalAnnuel)}, lissé sur les ${PAIES_PAR_ANNEE} paies de l'année = ${formaterMonnaie(partParPaie)} par paie.`;
         paies.forEach(p=>{
-          const pIso = formaterDateISO(p);
-          totaux[pIso].p1 += partParPaie*p1Pct;
-          totaux[pIso].p2 += partParPaie*(1-p1Pct);
+          contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, nature:'depense', explication });
         });
       } else {
         const occs = genererOccurrences(rec, horizonMaximal());
@@ -2364,11 +2434,10 @@ function calculerEcheancierCompte(nbPaies){
         const nPaies = paiesRestantes.length || 1;
         const partParPaie = montantTotalRestant / nPaies;
         const p1Pct = pct(rec.pourcentageP1);
+        const explication = `${occsRestantes.length} paiement${occsRestantes.length>1?'s':''} de ${formaterMonnaie(rec.montant)} restant${occsRestantes.length>1?'s':''} d'ici le ${formaterDateISO(finRecurrence)} = ${formaterMonnaie(montantTotalRestant)}, réparti sur les ${nPaies} paie${nPaies>1?'s':''} de cette période = ${formaterMonnaie(partParPaie)} par paie.`;
         paies.forEach(p=>{
           if(p >= aujourdhui && p <= finRecurrence){
-            const pIso = formaterDateISO(p);
-            totaux[pIso].p1 += partParPaie*p1Pct;
-            totaux[pIso].p2 += partParPaie*(1-p1Pct);
+            contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, nature:'depense', explication });
           }
         });
       }
@@ -2378,14 +2447,23 @@ function calculerEcheancierCompte(nbPaies){
   /* Report du surplus : un montant "dû" négatif à une paie (revenu plus gros que ce qui
      était attendu) ne peut pas se traduire par un dépôt négatif — on affiche 0$ et le
      surplus réduit d'autant le montant dû à la PROCHAINE paie, en chaîne si besoin.
-     Appliqué séparément pour Gabriel et Mélissa, dans l'ordre chronologique. */
+     Appliqué séparément pour Gabriel et Mélissa, dans l'ordre chronologique.
+
+     On note au passage les deux mouvements (surplus reçu / surplus renvoyé plus loin) pour
+     que la somme des lignes de la fenêtre de détail redonne exactement le montant affiché,
+     même quand un report entre en jeu. */
+  const surplusRecu = {}, surplusRenvoye = {};
+  paies.forEach(p=>{ const iso = formaterDateISO(p); surplusRecu[iso] = {p1:0,p2:0}; surplusRenvoye[iso] = {p1:0,p2:0}; });
+
   ['p1','p2'].forEach(personne=>{
     let report = 0;
     paies.forEach(p=>{
       const iso = formaterDateISO(p);
+      if(report < 0) surplusRecu[iso][personne] = report;
       const brut = totaux[iso][personne] + report;
       if(brut < 0){
         report = brut; /* surplus à reporter sur la paie suivante */
+        surplusRenvoye[iso][personne] = -brut;
         totaux[iso][personne] = 0;
       } else {
         report = 0;
@@ -2394,7 +2472,105 @@ function calculerEcheancierCompte(nbPaies){
     });
   });
 
-  return paies.map(p=>({ date:p, iso:formaterDateISO(p), p1: totaux[formaterDateISO(p)].p1, p2: totaux[formaterDateISO(p)].p2 }));
+  paies.forEach(p=>{
+    const iso = formaterDateISO(p);
+    const recu = surplusRecu[iso], renvoye = surplusRenvoye[iso];
+    if(recu.p1 || recu.p2){
+      lignes[iso].push({ libelle:'Surplus de la paie précédente', nature:'ajustement',
+        explication:"Un revenu a dépassé ce qui était dû à la paie précédente : le surplus vient réduire le dépôt de cette paie-ci.",
+        p1: recu.p1, p2: recu.p2 });
+    }
+    if(renvoye.p1 || renvoye.p2){
+      lignes[iso].push({ libelle:'Surplus reporté sur la paie suivante', nature:'ajustement',
+        explication:"Le solde de cette paie serait négatif : on ne demande pas un dépôt négatif, donc le dépôt est ramené à 0 $ et le surplus est repoussé sur la paie suivante.",
+        p1: renvoye.p1, p2: renvoye.p2 });
+    }
+  });
+
+  return paies.map(p=>{
+    const iso = formaterDateISO(p);
+    return { date:p, iso, p1: totaux[iso].p1, p2: totaux[iso].p2, lignes: lignes[iso] };
+  });
+}
+
+/* ===================== DÉTAIL D'UN DÉPÔT (vérification du calcul) =====================
+   Cliquer une paie dans "Prochains dépôts au compte conjoint" ouvre le détail ligne par
+   ligne du montant demandé : d'où vient chaque part, comment elle a été répartie, et le
+   total qui doit correspondre exactement au montant de la ligne cliquée. */
+let dernierEcheancier = [];
+
+function fermerDepotModal(){ document.getElementById('depot-modal').style.display = 'none'; }
+
+function ouvrirDetailDepot(iso){
+  const paie = dernierEcheancier.find(l => l.iso === iso);
+  if(!paie) return;
+
+  const dateLisible = capitaliser(paie.date.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'}));
+  const lignes = paie.lignes || [];
+
+  /* Les lignes sont regroupées par nature pour que la lecture suive le raisonnement :
+     ce qu'il faut provisionner, ce qui vient en déduction, puis les reports. */
+  const groupes = [
+    ['depense',    'À provisionner'],
+    ['revenu',     'Revenus déduits'],
+    ['ajustement', 'Reports']
+  ];
+
+  const montantHTML = (v, classe) =>
+    `<span class="value ${classe}">${v < 0 ? '−' : ''}${formaterMonnaie(Math.abs(v))}</span>`;
+
+  let corps = '';
+  groupes.forEach(([nature, titre])=>{
+    const duGroupe = lignes.filter(l => l.nature === nature);
+    if(!duGroupe.length) return;
+    corps += `<div class="depot-section-titre">${titre}</div>`;
+    corps += duGroupe.map(l => `
+      <div class="depot-ligne">
+        <div class="depot-ligne-haut">
+          <span class="depot-ligne-nom">${echapperHTML(l.libelle)}${l.rattrapage ? '<span class="depot-pill">rattrapage</span>' : ''}</span>
+          <span class="depot-ligne-montants">${montantHTML(l.p1,'p1')}${montantHTML(l.p2,'p2')}</span>
+        </div>
+        <div class="depot-ligne-explication">${echapperHTML(l.explication || '')}${l.pourcentageP1 != null ? ` Partagé ${l.pourcentageP1}% / ${Math.round((100-l.pourcentageP1)*10)/10}%.` : ''}</div>
+      </div>`).join('');
+  });
+
+  if(!lignes.length){
+    corps = `<div class="budget-empty">Aucune dépense ni revenu ne vise cette paie : rien à déposer.</div>`;
+  }
+
+  /* Contrôle de cohérence : la somme des lignes doit redonner le montant affiché. S'il y a
+     un écart, on le montre au lieu de le cacher — c'est tout l'intérêt de cette fenêtre. */
+  const sommeP1 = lignes.reduce((s,l)=>s+l.p1, 0);
+  const sommeP2 = lignes.reduce((s,l)=>s+l.p2, 0);
+  const ecart = Math.abs(sommeP1 - paie.p1) + Math.abs(sommeP2 - paie.p2);
+  const controle = ecart < 0.005
+    ? `<div class="depot-ligne-explication" style="margin-top:10px;">✓ La somme des lignes correspond exactement au montant affiché dans l'échéancier.</div>`
+    : `<div class="depot-ligne-explication" style="margin-top:10px;color:var(--red);">⚠ Écart de ${formaterMonnaie(ecart)} entre le détail et le montant affiché.</div>`;
+
+  document.getElementById('depot-modal-content').innerHTML = `
+    <div class="modal-header">
+      <h3>Dépôt au compte conjoint<span class="modal-sous-titre">${dateLisible}</span></h3>
+      <button class="modal-close-btn" id="depot-fermer" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="depot-entete">
+        <span>Provenance</span>
+        <span class="depot-entete-montants"><span>${nomsPersonnes.p1}</span><span>${nomsPersonnes.p2}</span></span>
+      </div>
+      ${corps}
+      <div class="depot-total final">
+        <span>Total à déposer</span>
+        <span class="depot-ligne-montants">${montantHTML(paie.p1,'p1')}${montantHTML(paie.p2,'p2')}</span>
+      </div>
+      ${controle}
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="depot-fermer-bas">Fermer</button>
+    </div>
+  `;
+  document.getElementById('depot-fermer').addEventListener('click', fermerDepotModal);
+  document.getElementById('depot-fermer-bas').addEventListener('click', fermerDepotModal);
+  document.getElementById('depot-modal').style.display = 'flex';
 }
 
 /* Affiche l'échéancier calculé dans la carte "🏦 Prochains dépôts au compte conjoint". */
@@ -2419,6 +2595,9 @@ function afficherEcheancierCompteConjoint(){
   carte.style.display = '';
 
   const echeancierComplet = calculerEcheancierCompte(8);
+  /* Conservé pour la fenêtre de détail : elle réutilise exactement le calcul affiché plutôt
+     que de le refaire, sinon les deux pourraient diverger sans qu'on s'en aperçoive. */
+  dernierEcheancier = echeancierComplet || [];
   if(!echeancierComplet || !echeancierComplet.length){
     conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
     return;
@@ -2466,7 +2645,7 @@ function afficherEcheancierCompteConjoint(){
       </div>
     </div>
   ` + echeancier.map(ligne => `
-    <div class="recurrent-row">
+    <div class="recurrent-row depot-row" onclick="ouvrirDetailDepot('${ligne.iso}')" style="cursor:pointer;" title="Voir le détail du calcul">
       <div class="recurrent-nom">${formatDate(ligne.date)}</div>
       <div style="display:flex;gap:18px;">
         <span class="value p1" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p1)}</span>
