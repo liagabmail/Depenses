@@ -1231,9 +1231,13 @@
         <label>Se termine</label>
         <select id="edit-fin-type" disabled></select>
       </div>
-      <div class="field" id="edit-fin-valeur-field">
-        <label>Fin de la série</label>
-        <input type="text" id="edit-fin-valeur" disabled>
+      <div class="field" id="edit-fin-nombre-field">
+        <label>Nombre de paiements</label>
+        <input type="text" id="edit-fin-nombre" disabled>
+      </div>
+      <div class="field" id="edit-fin-date-field">
+        <label>Date de fin</label>
+        <input type="text" id="edit-fin-date" disabled>
       </div>
       <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note"></div>
       <div class="field toggle-field pleine-largeur" id="edit-est-revenu-field">
@@ -2008,7 +2012,7 @@ function occurrencesParAnnee(rec){
 function multiplicateurMensuel(rec){ return occurrencesParAnnee(rec) / 12; }
 function multiplicateurAnnuel(rec){ return occurrencesParAnnee(rec); }
 
-const NOMS_JOURS_COURTS = ['dim','lun','mar','mer','jeu','ven','sam'];
+const NOMS_JOURS_COURTS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const NOMS_JOURS_LETTRE = ['D','L','M','M','J','V','S'];
 /* NOMS_MOIS est déjà déclaré plus haut dans le fichier (utilisé aussi par l'affichage du
    calendrier), on le réutilise ici tel quel. */
@@ -2924,7 +2928,7 @@ async function diviserRecurrenceAPartirDe(depense, nv){
      fractionnement : on les rattache à la nouvelle règle. Les modifications individuelles,
      elles, sont écrasées. */
   const nouvelId = await creerRecurrenceDepuisValeurs({
-    type: recOriginale.type, nom: nv.note || recOriginale.nom, montant: nv.amount, categorie: nv.category,
+    type: recOriginale.type, nom: nv.note != null ? nv.note : recOriginale.nom, montant: nv.amount, categorie: nv.category,
     unite: recOriginale.unite, intervalle: recOriginale.intervalle,
     joursSemaine: recOriginale.joursSemaine, typeMensuel: recOriginale.typeMensuel,
     dateDebut: dateCharniere, finType, finNombre, finDate,
@@ -3105,7 +3109,7 @@ function afficherRecurrencesScope(scope){
     return `
     <div class="recurrent-row ${r.actif?'':'inactive'} ${r.estRevenu?'row-revenu-item':(r.estCompte?'row-compte-item':(r.estConjoint?'row-conjoint-share':''))}" onclick="ouvrirEditionRecurrence('${r.id}')" style="cursor:pointer;">
       <div class="recurrent-info">
-        <div class="recurrent-nom">${r.nom}${(scope==='conjoint' || r.estConjoint) ? ` <span class="who-badge"><span class="dot ${r.who}"></span>${libellePersonne(r.who)}</span>` : ''}</div>
+        <div class="recurrent-nom">${r.nom || r.categorie}${(scope==='conjoint' || r.estConjoint) ? ` <span class="who-badge"><span class="dot ${r.who}"></span>${libellePersonne(r.who)}</span>` : ''}</div>
         <div class="recurrent-meta">
           ${badgeType}
           ${r.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}">${r.categorie}</span>`}
@@ -4103,7 +4107,7 @@ async function ajouterDepense(scope){
     if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
 
     await creerRecurrenceDepuisValeurs({
-      type, nom: note || category, montant: amount, categorie: category,
+      type, nom: note, montant: amount, categorie: category,
       unite: cfgRepetition.unite, intervalle: cfgRepetition.intervalle, joursSemaine: cfgRepetition.joursSemaine, typeMensuel: cfgRepetition.typeMensuel,
       dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1
     });
@@ -4475,23 +4479,27 @@ function ouvrirEdition(id, mode){
   const rec = depense.recurrenceId ? recurrences.find(r=>r.id===depense.recurrenceId) : null;
   const selRepetition = document.getElementById('edit-repetition');
   const selFinType = document.getElementById('edit-fin-type');
-  const inputFinValeur = document.getElementById('edit-fin-valeur');
+  const inputFinNombre = document.getElementById('edit-fin-nombre');
+  const inputFinDate = document.getElementById('edit-fin-date');
   if(rec){
     selRepetition.innerHTML = `<option>${libelleRecurrence(rec)}</option>`;
     const libellesFin = { jamais:'Jamais', nombre:'Après un nombre de paiements', date:'À une date précise' };
     selFinType.innerHTML = `<option>${libellesFin[rec.finType] || 'Jamais'}</option>`;
-    inputFinValeur.value = rec.finType==='nombre' ? `${rec.finNombre} paiements`
-      : (rec.finType==='date' && rec.finDate ? dateLocaleDepuisISO(rec.finDate).toLocaleDateString('fr-CA',{day:'numeric',month:'long',year:'numeric'}) : '—');
+    inputFinNombre.value = rec.finType==='nombre' && rec.finNombre != null ? String(rec.finNombre) : '';
+    inputFinDate.value = rec.finType==='date' && rec.finDate
+      ? dateLocaleDepuisISO(rec.finDate).toLocaleDateString('fr-CA',{day:'numeric',month:'long',year:'numeric'}) : '';
     document.getElementById('edit-actif').checked = !!rec.actif;
   } else {
     selRepetition.innerHTML = '<option>Ne se répète pas</option>';
     selFinType.innerHTML = '<option>—</option>';
-    inputFinValeur.value = '—';
+    inputFinNombre.value = '';
+    inputFinDate.value = '';
     document.getElementById('edit-actif').checked = true;
   }
   activerChamp('edit-repetition-field', false);
   activerChamp('edit-fin-type-field', false);
-  activerChamp('edit-fin-valeur-field', false);
+  activerChamp('edit-fin-nombre-field', false);
+  activerChamp('edit-fin-date-field', false);
   activerChamp('edit-actif-field', false, 'edit-actif');
 
   editTypeActuel = depense.type==='personnelle' ? 'personnelle' : 'conjointe';
