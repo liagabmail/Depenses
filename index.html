@@ -213,6 +213,19 @@
   .switch.small .switch-track::after{width:16px;height:16px;left:3px;top:3px;}
   .switch.small input:checked + .switch-track::after{transform:translateX(16px);}
   .recurrent-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;align-items:end;}
+  /* Choix de portée (cette occurrence / et les suivantes / toute la série) */
+  .portee-choix{display:flex;flex-direction:column;gap:10px;}
+  .portee-option{
+    width:100%;text-align:left;cursor:pointer;
+    border:1px solid var(--border);border-radius:10px;
+    background:var(--surface);color:var(--text);
+    padding:14px 16px;font:inherit;
+    display:flex;flex-direction:column;gap:3px;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .portee-option:hover{border-color:var(--blue);background:color-mix(in srgb, var(--blue) 6%, var(--surface));}
+  .portee-titre{font-size:14px;font-weight:600;}
+  .portee-desc{font-size:12px;color:var(--text-secondary);}
   .jours-semaine-select{display:flex;gap:6px;flex-wrap:wrap;}
   .jour-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:12px;font-weight:500;}
   .jour-btn.selected{background:var(--blue);color:#fff;border-color:var(--blue);}
@@ -578,23 +591,66 @@
     #tab-comparer .compare-selects select{width:100%;min-width:0;padding:7px 5px;font-size:12px;text-align:center;}
     #tab-comparer .vs-label{padding-top:0;}
   }
-  .edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:900;}
-  .edit-card{background:var(--surface);padding:24px;border-radius:var(--radius);width:min(92%,760px);box-shadow:var(--shadow-2);}
-  .edit-card.type-conjointe{background:color-mix(in srgb, var(--mauve) 7%, var(--surface));}
-  .edit-card.type-compte{background:color-mix(in srgb, var(--yellow) 10%, var(--surface));}
-  .edit-card.type-revenu{background:color-mix(in srgb, var(--green) 8%, var(--surface));}
-  #edit-who:disabled{opacity:.55;cursor:not-allowed;background:var(--bg);}
-  .edit-card h2{margin:0 0 18px;font-size:20px;font-weight:500;}.edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+  /* ===== Fenêtres d'édition : une seule apparence pour toutes =====
+     Plus de teintes de couleur selon le type (conjointe/compte/revenu) : toutes les
+     fenêtres partagent exactement la même carte neutre, la même grille et le même ordre de
+     champs. Une option qui ne s'applique pas au contexte est GRISÉE (disabled) plutôt que
+     masquée, pour que rien ne se déplace d'une fenêtre à l'autre. */
+  .edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:900;padding:20px;overflow-y:auto;}
+  .edit-card{
+    background:var(--surface);
+    padding:0;
+    border-radius:var(--radius);
+    width:min(92%,720px);
+    box-shadow:var(--shadow-2);
+    overflow:hidden;
+    position:relative;
+  }
+  /* En-tête commun à toutes les fenêtres */
+  .modal-header{
+    display:flex;align-items:center;gap:10px;
+    padding:18px 24px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+  }
+  .modal-header h3{
+    margin:0;font-size:16px;font-weight:600;color:var(--text);
+    flex:1;min-width:0;
+  }
+  .modal-header .modal-sous-titre{
+    display:block;font-size:12px;font-weight:400;color:var(--text-secondary);margin-top:3px;
+  }
+  .modal-body{padding:22px 24px;}
+  .modal-footer{
+    padding:16px 24px;
+    border-top:1px solid var(--border);
+    display:flex;justify-content:flex-end;gap:10px;
+    background:var(--surface);
+  }
+  .modal-footer .btn-danger{margin-right:auto;}
+  /* Grille de champs identique dans toutes les fenêtres */
+  .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;align-items:start;}
+  .modal-grid .field{margin:0;min-width:0;}
+  .modal-grid .field.pleine-largeur{grid-column:1 / -1;}
+  @media (max-width:620px){ .modal-grid{grid-template-columns:1fr;} }
+  /* Un champ grisé garde sa place : seul son aspect change */
+  .field.est-desactive label{opacity:.55;}
+  .field select:disabled, .field input:disabled{opacity:.5;cursor:not-allowed;}
+  .edit-card h2{margin:0 0 18px;font-size:20px;font-weight:500;}
+  .edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
   .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
   .btn-danger{background:#d93025;color:#fff;border-color:#d93025;}
   .btn-danger:hover{background:#b0261a;border-color:#b0261a;}
   #save-edit{background:var(--blue);}
   .edit-actions{grid-column:1 / -1;display:flex;justify-content:flex-end;gap:12px;}
   @media (max-width:760px){
-    .edit-modal{align-items:stretch;justify-content:stretch;background:var(--surface);}
-    .edit-card{width:100%;height:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;padding:24px 20px;}
+    .edit-modal{align-items:stretch;justify-content:stretch;background:var(--surface);padding:0;}
+    .edit-card{width:100%;height:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;}
+    .edit-card .modal-body{flex:1;overflow-y:auto;}
+    .edit-card .modal-header, .edit-card .modal-footer{flex:0 0 auto;}
     .edit-card .edit-actions{grid-column:1 / -1;align-items:stretch;}
     .edit-card .edit-actions button{flex:1;padding-left:8px;padding-right:8px;}
+    .modal-footer button{flex:1;padding-left:8px;padding-right:8px;}
   }
   #table-personnel.hide-qui-column th:first-child,
   #table-personnel.hide-qui-column td:first-child{display:none;}
@@ -1146,118 +1202,159 @@
   </div>
 </div></div>
 
+<!-- ===== Fenêtres d'édition unifiées =====
+     Les deux fenêtres (dépense / paiement récurrent) utilisent la MÊME structure et le même
+     ordre de champs : Qui, Part %, Montant, Catégorie, Date, Se répète, Se termine,
+     Nombre/Date de fin, Note, Revenu, Actif. Un champ qui ne s'applique pas au contexte est
+     grisé (disabled) et non masqué, pour que rien ne bouge d'une fenêtre à l'autre. -->
+
 <div class="edit-modal" id="edit-modal"><div class="edit-card">
-  <button class="modal-close-btn" id="close-edit" aria-label="Fermer">&times;</button>
-  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Modifier une dépense</h3>
-  <div class="form-grid">
-    <div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select></div>
-    <div class="field" id="edit-compte-repartition-field">
-      <label>Part de <span id="edit-compte-nom-p1"></span> (%)</label>
-      <input type="number" id="edit-compte-repartition" min="0" max="100" step="0.1" value="50">
+  <div class="modal-header">
+    <h3 id="edit-modal-titre">Modifier une dépense<span class="modal-sous-titre" id="edit-modal-sous-titre"></span></h3>
+    <button class="modal-close-btn" id="close-edit" aria-label="Fermer">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="modal-grid">
+      <div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select></div>
+      <div class="field" id="edit-compte-repartition-field">
+        <label>Part de <span id="edit-compte-nom-p1"></span> (%)</label>
+        <input type="number" id="edit-compte-repartition" min="0" max="100" step="0.1" value="50">
+      </div>
+      <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
+      <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
+      <div class="field" id="edit-date-field"><label>Date</label><input type="date" id="edit-date"></div>
+      <div class="field" id="edit-repetition-field">
+        <label>Se répète</label>
+        <select id="edit-repetition" disabled></select>
+      </div>
+      <div class="field" id="edit-fin-type-field">
+        <label>Se termine</label>
+        <select id="edit-fin-type" disabled></select>
+      </div>
+      <div class="field" id="edit-fin-valeur-field">
+        <label>Fin de la série</label>
+        <input type="text" id="edit-fin-valeur" disabled>
+      </div>
+      <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note"></div>
+      <div class="field toggle-field pleine-largeur" id="edit-est-revenu-field">
+        <span class="toggle-field-label" id="edit-est-revenu-label">💰 Est un revenu</span>
+        <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
+      </div>
+      <div class="field toggle-field pleine-largeur" id="edit-actif-field">
+        <span class="toggle-field-label">Série active</span>
+        <label class="switch"><input type="checkbox" id="edit-actif" disabled checked><span class="switch-track"></span></label>
+      </div>
+      <div class="field pleine-largeur" id="edit-toggle-type-field">
+        <button type="button" class="btn-secondary" id="edit-toggle-type" style="width:100%;"></button>
+      </div>
     </div>
-    <div class="field"><label>Date</label><input type="date" id="edit-date"></div>
-    <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
-    <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
-    <div class="field"><label>Note</label><input type="text" id="edit-note"></div>
-    <div class="field toggle-field" id="edit-est-revenu-field" style="grid-column:1/-1;display:none;">
-      <span class="toggle-field-label" id="edit-est-revenu-label">💰 Est un revenu</span>
-      <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
-    </div>
-    <div class="field" style="grid-column:1/-1;">
-      <button type="button" class="btn-secondary" id="edit-toggle-type" style="width:100%;"></button>
-    </div>
-    <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit">Supprimer</button><button class="btn-add" id="save-edit">Sauvegarder</button></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-secondary btn-danger" id="delete-edit">Supprimer</button>
+    <button class="btn-add" id="save-edit">Sauvegarder</button>
   </div>
 </div></div>
 
 <div class="edit-modal" id="edit-recurrent-modal"><div class="edit-card">
-  <button class="modal-close-btn" id="close-edit-recurrent" aria-label="Fermer">&times;</button>
-  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Modifier un paiement récurrent</h3>
-  <div class="form-grid">
-    <div class="field"><label>Nom</label><input type="text" id="edit-rec-nom"></div>
-    <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
-    <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
-    <div class="field">
-      <label>Se répète</label>
-      <select id="edit-rec-frequence"></select>
+  <div class="modal-header">
+    <h3 id="edit-rec-titre">Modifier un paiement récurrent<span class="modal-sous-titre" id="edit-rec-sous-titre"></span></h3>
+    <button class="modal-close-btn" id="close-edit-recurrent" aria-label="Fermer">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="modal-grid">
+      <div class="field" id="edit-rec-qui-field">
+        <label>Qui</label>
+        <select id="edit-rec-qui"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select>
+      </div>
+      <div class="field" id="edit-rec-compte-repartition-field">
+        <label>Part de <span id="edit-rec-compte-nom-p1"></span> (%)</label>
+        <input type="number" id="edit-rec-compte-repartition" min="0" max="100" step="0.1" value="50">
+      </div>
+      <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
+      <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
+      <div class="field"><label>Date</label><input type="date" id="edit-rec-date-debut"></div>
+      <div class="field">
+        <label>Se répète</label>
+        <select id="edit-rec-frequence"></select>
+      </div>
+      <div class="field">
+        <label>Se termine</label>
+        <select id="edit-rec-fin-type">
+          <option value="jamais">Jamais</option>
+          <option value="nombre">Après un nombre de paiements</option>
+          <option value="date">À une date précise</option>
+        </select>
+      </div>
+      <div class="field" id="edit-rec-fin-nombre-field">
+        <label>Nombre de paiements</label>
+        <input type="number" id="edit-rec-fin-nombre" min="1" step="1">
+      </div>
+      <div class="field" id="edit-rec-fin-date-field">
+        <label>Date de fin</label>
+        <input type="date" id="edit-rec-fin-date">
+      </div>
+      <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom"></div>
+      <div class="field toggle-field pleine-largeur" id="edit-rec-est-revenu-field">
+        <span class="toggle-field-label" id="edit-rec-est-revenu-label">💰 Est un revenu</span>
+        <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
+      </div>
+      <div class="field toggle-field pleine-largeur">
+        <span class="toggle-field-label">Série active</span>
+        <label class="switch"><input type="checkbox" id="edit-rec-actif"><span class="switch-track"></span></label>
+      </div>
+      <div class="field pleine-largeur">
+        <button type="button" class="btn-secondary" id="edit-rec-toggle-type" style="width:100%;" disabled></button>
+      </div>
     </div>
-    <div class="field" id="edit-rec-qui-field">
-      <label>Qui</label>
-      <select id="edit-rec-qui"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select>
-    </div>
-    <div class="field" id="edit-rec-compte-repartition-field">
-      <label>Part de <span id="edit-rec-compte-nom-p1"></span> (%)</label>
-      <input type="number" id="edit-rec-compte-repartition" min="0" max="100" step="0.1" value="50">
-    </div>
-    <div class="field"><label>Depuis le</label><input type="date" id="edit-rec-date-debut"></div>
-    <div class="field">
-      <label>Se termine</label>
-      <select id="edit-rec-fin-type">
-        <option value="jamais">Jamais</option>
-        <option value="nombre">Après un nombre de paiements</option>
-        <option value="date">À une date précise</option>
-      </select>
-    </div>
-    <div class="field" id="edit-rec-fin-nombre-field" style="display:none;">
-      <label>Nombre de paiements</label>
-      <input type="number" id="edit-rec-fin-nombre" min="1" step="1">
-    </div>
-    <div class="field" id="edit-rec-fin-date-field" style="display:none;">
-      <label>Date de fin</label>
-      <input type="date" id="edit-rec-fin-date">
-    </div>
-    <div class="field toggle-field" id="edit-rec-est-revenu-field" style="grid-column:1/-1;display:none;">
-      <span class="toggle-field-label" id="edit-rec-est-revenu-label">💰 Est un revenu</span>
-      <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
-    </div>
-    <div class="field toggle-field">
-      <span class="toggle-field-label">Actif</span>
-      <label class="switch"><input type="checkbox" id="edit-rec-actif"><span class="switch-track"></span></label>
-    </div>
-    <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit-recurrent">Supprimer</button><button class="btn-add" id="save-edit-recurrent">Sauvegarder</button></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-secondary btn-danger" id="delete-edit-recurrent">Supprimer</button>
+    <button class="btn-add" id="save-edit-recurrent">Sauvegarder</button>
   </div>
 </div></div>
 
 <!-- Modal partagé de récurrence personnalisée (façon Google Agenda), utilisé par les 3
      sélecteurs "Se répète" (ajout conjoint, ajout personnel, édition d'une récurrence). -->
 <div class="edit-modal" id="custom-repetition-modal"><div class="edit-card">
-  <button class="modal-close-btn" id="close-custom-repetition" aria-label="Fermer">&times;</button>
-  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Récurrence personnalisée</h3>
-  <div class="field" style="display:flex;align-items:end;gap:10px;">
-    <div style="flex:0 0 90px;">
-      <label>Tous/toutes les</label>
-      <input type="number" id="custom-rep-intervalle" min="1" step="1" value="1">
+  <div class="modal-header">
+    <h3>Récurrence personnalisée</h3>
+    <button class="modal-close-btn" id="close-custom-repetition" aria-label="Fermer">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="modal-grid">
+      <div class="field">
+        <label>Tous/toutes les</label>
+        <input type="number" id="custom-rep-intervalle" min="1" step="1" value="1">
+      </div>
+      <div class="field">
+        <label>Unité</label>
+        <select id="custom-rep-unite">
+          <option value="jour">jour(s)</option>
+          <option value="semaine">semaine(s)</option>
+          <option value="mois">mois</option>
+          <option value="annee">année(s)</option>
+        </select>
+      </div>
+      <div class="field pleine-largeur" id="custom-rep-jours-field">
+        <label>Répéter le</label>
+        <div class="jours-semaine-select" id="custom-rep-jours"></div>
+      </div>
+      <div class="field pleine-largeur" id="custom-rep-mensuel-field">
+        <label>Chaque mois</label>
+        <select id="custom-rep-type-mensuel">
+          <option value="jour_mois">Le même jour du mois</option>
+          <option value="dernier_jour">Le dernier jour du mois</option>
+        </select>
+      </div>
     </div>
-    <div style="flex:1;">
-      <label>&nbsp;</label>
-      <select id="custom-rep-unite">
-        <option value="jour">jour(s)</option>
-        <option value="semaine">semaine(s)</option>
-        <option value="mois">mois</option>
-        <option value="annee">année(s)</option>
-      </select>
-    </div>
   </div>
-  <div class="field" id="custom-rep-jours-field" style="display:none;">
-    <label>Répéter le</label>
-    <div class="jours-semaine-select" id="custom-rep-jours"></div>
-  </div>
-  <div class="field" id="custom-rep-mensuel-field" style="display:none;">
-    <label>Chaque mois</label>
-    <select id="custom-rep-type-mensuel">
-      <option value="jour_mois">Le même jour du mois</option>
-      <option value="dernier_jour">Le dernier jour du mois</option>
-    </select>
-  </div>
-  <div class="edit-actions">
+  <div class="modal-footer">
     <button class="btn-secondary" id="custom-repetition-annuler">Annuler</button>
     <button class="btn-add" id="custom-repetition-terminer">Terminé</button>
   </div>
 </div></div>
 
-
 <div class="edit-modal" id="occurrence-modal"><div class="edit-card" id="occurrence-modal-card">
-  <button class="modal-close-btn" id="close-occurrence-modal" aria-label="Fermer">&times;</button>
   <div id="occurrence-modal-content"></div>
 </div></div>
 
@@ -2442,10 +2539,28 @@ function assurerHorizon(limiteDate){
 }
 
 
+/* Grise un champ (au lieu de le masquer) quand il ne s'applique pas au contexte : la
+   disposition reste alors strictement identique d'une fenêtre à l'autre, ce qui évite que
+   les champs se déplacent selon le type de dépense. */
+function activerChamp(fieldId, actif, controlId){
+  const field = document.getElementById(fieldId);
+  if(!field) return;
+  field.classList.toggle('est-desactive', !actif);
+  const controle = controlId ? document.getElementById(controlId)
+    : field.querySelector('input, select, button, textarea');
+  if(controle) controle.disabled = !actif;
+}
+
 function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
   const val = document.getElementById(selectId).value;
-  document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
-  document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
+  const dansModal = nombreFieldId.startsWith('edit-rec-');
+  if(dansModal){
+    activerChamp(nombreFieldId, val==='nombre');
+    activerChamp(dateFieldId, val==='date');
+  } else {
+    document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
+    document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
+  }
 }
 document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field'));
@@ -2557,6 +2672,21 @@ async function supprimerRecurrence(id, sansConfirmation){
      restent membres de la même "famille" (racineId).
    - "Toute la série" : on fusionne toute la famille en une seule règle portant les nouvelles
      valeurs. Toutes les occurrences changent, passées comprises. */
+
+/* "Toute la série" (suppression) : supprime TOUS les segments de la famille, pas seulement
+   celui sur lequel on a cliqué. Sans ça, une série ayant été fractionnée par des "cette
+   dépense et les suivantes" laissait derrière elle les morceaux créés par ces
+   fractionnements, qui continuaient d'afficher des occurrences. */
+async function supprimerSerieComplete(recurrenceId, sansConfirmation){
+  const rec = recurrences.find(r=>r.id===recurrenceId);
+  if(!rec) return;
+  if(!sansConfirmation && !confirm("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")) return;
+  for(const segment of familleDeRecurrence(rec)){
+    await supprimerRecurrence(segment.id, true);
+  }
+  recalculerDepenses();
+  rafraichirActif();
+}
 
 function veilleISO(dateStr){ return formaterDateISO(ajouterJours(dateLocaleDepuisISO(dateStr), -1)); }
 
@@ -2831,7 +2961,6 @@ function fermerOccurrenceModal(){
   document.getElementById('occurrence-modal').style.display = 'none';
   occurrenceCourante = null;
 }
-document.getElementById('close-occurrence-modal').addEventListener('click', fermerOccurrenceModal);
 
 function ouvrirDetailOccurrence(id){
   const depense = depenses.find(e=>e.id===id);
@@ -2847,18 +2976,25 @@ function rendreVueDetailOccurrence(){
   const contenu = document.getElementById('occurrence-modal-content');
   const qui = d.estCompte ? '🏦 Compte conjoint' : (nomsPersonnes[d.who] || d.who);
   const repartition = d.estCompte ? ` (${d.pourcentageP1!=null?d.pourcentageP1:50}% ${nomsPersonnes.p1})` : '';
-  const badge = d.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente" style="margin-left:6px;">↻</span>' : '';
+  const rec = d.recurrenceId ? recurrences.find(r=>r.id===d.recurrenceId) : null;
+  const sousTitre = rec ? `Série récurrente · ${libelleRecurrence(rec)}` : 'Dépense ponctuelle';
   const dateLisible = dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
   contenu.innerHTML = `
-    <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">${d.note || d.category}${badge}</h3>
-    <div style="font-size:26px;font-weight:600;margin-bottom:6px;">${formaterMonnaie(d.amount)}</div>
-    <div style="color:var(--text-secondary);font-size:13px;margin-bottom:2px;text-transform:capitalize;">${dateLisible}</div>
-    <div style="color:var(--text-secondary);font-size:13px;margin-bottom:18px;">${d.category} · ${qui}${repartition}</div>
-    <div class="edit-actions">
+    <div class="modal-header">
+      <h3>${d.note || d.category}<span class="modal-sous-titre">${sousTitre}</span></h3>
+      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:28px;font-weight:600;margin-bottom:10px;">${formaterMonnaie(d.amount)}</div>
+      <div style="color:var(--text-secondary);font-size:13px;margin-bottom:4px;text-transform:capitalize;">${dateLisible}</div>
+      <div style="color:var(--text-secondary);font-size:13px;">${d.category} · ${qui}${repartition}</div>
+    </div>
+    <div class="modal-footer">
       <button class="btn-secondary btn-danger" id="occ-btn-supprimer">Supprimer</button>
       <button class="btn-add" id="occ-btn-modifier">Modifier</button>
     </div>
   `;
+  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
   document.getElementById('occ-btn-modifier').addEventListener('click', ()=>{
     if(d.recurrenceId) rendreChoixPortee('modifier');
     else { fermerOccurrenceModal(); ouvrirEdition(d.id); }
@@ -2874,14 +3010,31 @@ function rendreChoixPortee(action){
   const contenu = document.getElementById('occurrence-modal-content');
   const verbe = action==='modifier' ? 'Modifier' : 'Supprimer';
   contenu.innerHTML = `
-    <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">${verbe} — cette dépense fait partie d'une série récurrente</h3>
-    <div class="form-grid" style="gap:10px;">
-      <button class="btn-secondary" style="width:100%;text-align:left;" id="portee-seulement">Cette dépense seulement</button>
-      <button class="btn-secondary" style="width:100%;text-align:left;" id="portee-suivantes">Cette dépense et les suivantes</button>
-      <button class="btn-secondary" style="width:100%;text-align:left;" id="portee-serie">Toute la série</button>
-      <button class="btn-secondary" style="width:100%;text-align:center;margin-top:6px;" id="portee-annuler">Annuler</button>
+    <div class="modal-header">
+      <h3>${verbe} une occurrence<span class="modal-sous-titre">Cette dépense fait partie d'une série récurrente</span></h3>
+      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="portee-choix">
+        <button class="portee-option" id="portee-seulement">
+          <span class="portee-titre">Cette dépense seulement</span>
+          <span class="portee-desc">N'affecte que l'occurrence du ${dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA',{day:'numeric',month:'long'})}</span>
+        </button>
+        <button class="portee-option" id="portee-suivantes">
+          <span class="portee-titre">Cette dépense et les suivantes</span>
+          <span class="portee-desc">Les occurrences précédentes restent inchangées</span>
+        </button>
+        <button class="portee-option" id="portee-serie">
+          <span class="portee-titre">Toute la série</span>
+          <span class="portee-desc">Toutes les occurrences, passées et futures</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="portee-annuler">Retour</button>
     </div>
   `;
+  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
   document.getElementById('portee-annuler').addEventListener('click', rendreVueDetailOccurrence);
   document.getElementById('portee-seulement').addEventListener('click', ()=>{
     if(action==='modifier'){ fermerOccurrenceModal(); ouvrirEdition(d.id); }
@@ -2893,7 +3046,7 @@ function rendreChoixPortee(action){
   });
   document.getElementById('portee-serie').addEventListener('click', ()=>{
     if(action==='modifier'){ fermerOccurrenceModal(); ouvrirEditionRecurrence(d.recurrenceId); }
-    else { fermerOccurrenceModal(); supprimerRecurrence(d.recurrenceId); }
+    else { fermerOccurrenceModal(); supprimerSerieComplete(d.recurrenceId); }
   });
 }
 
@@ -3475,31 +3628,22 @@ function ouvrirEditionRecurrence(id){
   if(rec.type==='conjointe'){
     remplirOptionsQui('edit-rec-qui', true);
     document.getElementById('edit-rec-qui').value = rec.estCompte ? 'Compte conjoint' : libellePersonne(rec.who==='compte' ? 'p1' : rec.who);
-    quiField.style.display = '';
-    compteField.style.display = '';
-    estRevenuField.style.display = rec.estCompte ? '' : 'none';
+    activerChamp('edit-rec-qui-field', true);
+    activerChamp('edit-rec-compte-repartition-field', true);
+    activerChamp('edit-rec-est-revenu-field', !!rec.estCompte);
   } else {
-    compteField.style.display = 'none';
-    quiField.style.display = 'none';
-    estRevenuField.style.display = '';
+    activerChamp('edit-rec-qui-field', false);
+    activerChamp('edit-rec-compte-repartition-field', false);
+    activerChamp('edit-rec-est-revenu-field', true);
   }
+  document.getElementById('edit-rec-toggle-type').textContent =
+    rec.type === 'personnelle' ? 'Série personnelle' : 'Série conjointe';
 
-  appliquerTeinteEditRecurrent();
   appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
 
+  document.getElementById('edit-rec-sous-titre').textContent =
+    `Toute la série · ${libelleRecurrence(rec)}`;
   document.getElementById('edit-recurrent-modal').style.display = 'flex';
-}
-/* Teinte le modal de récurrence : vert pour un revenu, jaune pour une charge payée par le
-   compte conjoint, mauve pour une récurrence conjointe normale. */
-function appliquerTeinteEditRecurrent(){
-  const editRecCard = document.querySelector('#edit-recurrent-modal .edit-card');
-  if(!editRecCard || !recurrenceEnEdition) return;
-  const type = recurrenceEnEdition.type;
-  const estCompte = type==='conjointe' && document.getElementById('edit-rec-qui').value === 'Compte conjoint';
-  const estRevenu = document.getElementById('edit-rec-est-revenu').checked;
-  editRecCard.classList.toggle('type-revenu', estRevenu);
-  editRecCard.classList.toggle('type-compte', estCompte && !estRevenu);
-  editRecCard.classList.toggle('type-conjointe', type==='conjointe' && !estCompte && !estRevenu);
 }
 document.getElementById('edit-rec-qui').addEventListener('change', ()=>{
   const estCompte = document.getElementById('edit-rec-qui').value === 'Compte conjoint';
@@ -3507,14 +3651,14 @@ document.getElementById('edit-rec-qui').addEventListener('change', ()=>{
   estRevenuField.style.display = estCompte ? '' : 'none';
   if(!estCompte) document.getElementById('edit-rec-est-revenu').checked = false;
   appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
-  appliquerTeinteEditRecurrent();
 });
-document.getElementById('edit-rec-est-revenu').addEventListener('change', appliquerTeinteEditRecurrent);
 document.getElementById('close-edit-recurrent').addEventListener('click', ()=>document.getElementById('edit-recurrent-modal').style.display='none');
 document.getElementById('delete-edit-recurrent').addEventListener('click', async ()=>{
-  if(recurrenceEnEdition && confirm("Supprimer ce paiement récurrent ? Toutes les dépenses générées automatiquement pour lui (passées et futures) seront aussi supprimées.")){
+  if(recurrenceEnEdition && confirm("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")){
     document.getElementById('edit-recurrent-modal').style.display='none';
-    await supprimerRecurrence(recurrenceEnEdition.id, true);
+    /* Supprime toute la famille : une série fractionnée par des "et les suivantes" est
+       composée de plusieurs segments, qui doivent tous disparaître ensemble. */
+    await supprimerSerieComplete(recurrenceEnEdition.id, true);
   }
 });
 /* Convertit n'importe quelle condition de fin en date de fin équivalente (ou null pour
@@ -4207,7 +4351,9 @@ function lireConfigRepetition(selectId){
 /* Une entrée "revenu" n'a pas besoin de catégorie (ce n'est pas une dépense classée) :
    on cache simplement le champ pendant qu'elle est cochée. */
 function appliquerAffichageCategoriePourRevenu(checkboxId, categoryFieldId){
-  document.getElementById(categoryFieldId).style.display = document.getElementById(checkboxId).checked ? 'none' : '';
+  /* Un revenu est toujours classé dans la catégorie "Revenu" : le champ reste visible mais
+     grisé, pour que la disposition ne change pas. */
+  activerChamp(categoryFieldId, !document.getElementById(checkboxId).checked);
 }
 document.getElementById('f-est-revenu-conjoint').addEventListener('change', ()=>
   appliquerAffichageCategoriePourRevenu('f-est-revenu-conjoint','f-category-field-conjoint'));
@@ -4263,27 +4409,20 @@ function appliquerVerrouEditType(type){
   if(type === 'personnelle'){
     remplirOptionsQui('edit-who', false);
     whoSelect.value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
-    whoSelect.disabled = true;
-    compteField.style.display = 'none';
-    estRevenuField.style.display = '';
+    activerChamp('edit-who-field', false);
+    activerChamp('edit-compte-repartition-field', false);
+    activerChamp('edit-est-revenu-field', true);
   } else {
     const valeurActuelle = whoSelect.value;
     remplirOptionsQui('edit-who', true);
-    whoSelect.disabled = false;
+    activerChamp('edit-who-field', true);
     if(['Gabriel','Mélissa','Compte conjoint'].includes(valeurActuelle)) whoSelect.value = valeurActuelle;
     estCompte = whoSelect.value === 'Compte conjoint';
-    compteField.style.display = '';
-    estRevenuField.style.display = estCompte ? '' : 'none';
+    activerChamp('edit-compte-repartition-field', true);
+    activerChamp('edit-est-revenu-field', estCompte);
     if(!estCompte) estRevenuCheckbox.checked = false;
   }
 
-  const editCard = document.querySelector('#edit-modal .edit-card');
-  if(editCard){
-    const estRevenu = estRevenuCheckbox.checked && (type==='personnelle' || estCompte);
-    editCard.classList.toggle('type-revenu', estRevenu);
-    editCard.classList.toggle('type-compte', estCompte && !estRevenu);
-    editCard.classList.toggle('type-conjointe', type==='conjointe' && !estCompte && !estRevenu);
-  }
   appliquerAffichageCategoriePourRevenu('edit-est-revenu','edit-category-field');
 }
 document.getElementById('edit-who').addEventListener('change', ()=> appliquerVerrouEditType(editTypeActuel));
@@ -4321,19 +4460,53 @@ function ouvrirEdition(id, mode){
   remplirOptionsQui('edit-who', depense.type !== 'personnelle');
   document.getElementById('edit-who').value = depense.estCompte ? 'Compte conjoint' : libellePersonne(depense.who==='compte' ? currentUser : depense.who);
   document.getElementById('edit-date').value=depense.date;
+  activerChamp('edit-date-field', modeEditionDepense !== 'suivantes', 'edit-date');
   document.getElementById('edit-date').disabled = modeEditionDepense === 'suivantes';
   document.getElementById('edit-note').value=depense.note;
-  document.getElementById('edit-category').innerHTML=categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+  document.getElementById('edit-category').innerHTML=categories.map(c=>`<option>${c}</option>`).join('');
   document.getElementById('edit-category').value=depense.category;
   document.getElementById('edit-compte-nom-p1').textContent = nomsPersonnes.p1;
   document.getElementById('edit-compte-repartition').value = depense.pourcentageP1 != null ? depense.pourcentageP1 : 50;
   document.getElementById('edit-est-revenu').checked = !!depense.estRevenu;
+
+  /* Champs de contexte de la série : toujours présents pour que la disposition soit
+     identique à celle de la fenêtre "paiement récurrent", mais en lecture seule ici —
+     on modifie une occurrence, pas la règle de répétition. */
+  const rec = depense.recurrenceId ? recurrences.find(r=>r.id===depense.recurrenceId) : null;
+  const selRepetition = document.getElementById('edit-repetition');
+  const selFinType = document.getElementById('edit-fin-type');
+  const inputFinValeur = document.getElementById('edit-fin-valeur');
+  if(rec){
+    selRepetition.innerHTML = `<option>${libelleRecurrence(rec)}</option>`;
+    const libellesFin = { jamais:'Jamais', nombre:'Après un nombre de paiements', date:'À une date précise' };
+    selFinType.innerHTML = `<option>${libellesFin[rec.finType] || 'Jamais'}</option>`;
+    inputFinValeur.value = rec.finType==='nombre' ? `${rec.finNombre} paiements`
+      : (rec.finType==='date' && rec.finDate ? dateLocaleDepuisISO(rec.finDate).toLocaleDateString('fr-CA',{day:'numeric',month:'long',year:'numeric'}) : '—');
+    document.getElementById('edit-actif').checked = !!rec.actif;
+  } else {
+    selRepetition.innerHTML = '<option>Ne se répète pas</option>';
+    selFinType.innerHTML = '<option>—</option>';
+    inputFinValeur.value = '—';
+    document.getElementById('edit-actif').checked = true;
+  }
+  activerChamp('edit-repetition-field', false);
+  activerChamp('edit-fin-type-field', false);
+  activerChamp('edit-fin-valeur-field', false);
+  activerChamp('edit-actif-field', false, 'edit-actif');
+
   editTypeActuel = depense.type==='personnelle' ? 'personnelle' : 'conjointe';
   appliquerVerrouEditType(editTypeActuel);
   mettreAJourBoutonType();
-  document.querySelector('#edit-modal h3').textContent = modeEditionDepense === 'suivantes'
+  /* Une occurrence de série ne peut pas basculer conjointe/personnelle toute seule :
+     ça se change sur la série entière. */
+  activerChamp('edit-toggle-type-field', !depense.virtuelle, 'edit-toggle-type');
+
+  document.getElementById('edit-modal-titre').firstChild.textContent = modeEditionDepense === 'suivantes'
     ? 'Modifier cette dépense et les suivantes'
-    : 'Modifier une dépense';
+    : (rec ? 'Modifier une occurrence' : 'Modifier une dépense');
+  document.getElementById('edit-modal-sous-titre').textContent = rec
+    ? `Série récurrente · ${libelleRecurrence(rec)}`
+    : 'Dépense ponctuelle';
   document.getElementById('edit-modal').style.display='flex';
 }
 document.getElementById('close-edit').addEventListener('click',()=>{document.getElementById('edit-modal').style.display='none'; modeEditionDepense='normal'; document.getElementById('edit-date').disabled=false;});
