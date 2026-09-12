@@ -407,7 +407,10 @@
   .form-grid>.field.pleine-largeur{grid-column:1 / -1;}
   .form-grid>.btn-add{grid-column:1 / -1;width:100%;margin-top:4px;}
   @media (max-width:560px){
-    .form-grid, .modal-grid{grid-template-columns:1fr;}
+    /* Les fenêtres d'édition repassent sur une colonne, mais PAS les formulaires d'ajout :
+       leur disposition en deux colonnes (Qui+Montant, Part %+Catégorie, Note, Date+Se répète)
+       est ce qui leur permet de tenir en entier au-dessus du clavier. */
+    .modal-grid{grid-template-columns:1fr;}
   }
   .field label{
     display:block;font-size:12px;color:var(--text-secondary);
@@ -499,8 +502,17 @@
   .modal-close-btn:hover{color:var(--text);background:rgba(0,0,0,.06);}
   body.dark .modal-close-btn:hover{background:rgba(255,255,255,.08);}
   @media (max-width:760px){
-    .form-card{display:none;position:fixed;inset:0;margin:0;padding:24px 20px;z-index:800;border-radius:0;overflow:auto;}
+    /* Même correctif que les fenêtres d'édition : `inset:0` valait la hauteur de la fenêtre,
+       donc le bouton « Ajouter » passait sous le clavier. On borne sur la hauteur réellement
+       visible et on resserre les marges pour gagner des lignes. */
+    .form-card{display:none;position:fixed;left:0;top:0;right:0;margin:0;padding:16px 16px 20px;z-index:800;
+      border-radius:0;overflow:auto;-webkit-overflow-scrolling:touch;
+      height:var(--hauteur-visible, 100dvh);max-height:var(--hauteur-visible, 100dvh);}
     .form-card.mobile-add-open{display:block;}
+    .form-card h3{margin-bottom:10px;font-size:16px;}
+    .form-card .form-grid{gap:10px 12px;}
+    .form-card .field label{margin-bottom:4px;}
+    .form-card .field select, .form-card .field input{padding:9px 10px;}
     .mobile-add-btn{display:flex;position:fixed;right:20px;bottom:20px;width:56px;height:56px;border:0;border-radius:50%;background:var(--blue);color:#fff;font-size:32px;line-height:1;align-items:center;justify-content:center;box-shadow:var(--shadow-2);z-index:700;cursor:pointer;}
     .mobile-close-btn{display:block;float:right;border:0;background:none;color:var(--text-secondary);font-size:24px;cursor:pointer;}
   }
@@ -871,13 +883,13 @@
             <label>Qui</label>
             <select id="f-who-conjoint"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select>
           </div>
-          <div class="field" id="f-compte-repartition-field-conjoint">
-            <label>Part de <span id="f-compte-nom-p1-conjoint"></span> (%)</label>
-            <input type="number" id="f-compte-repartition-conjoint" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
-          </div>
           <div class="field">
             <label>Montant</label>
             <input type="number" id="f-amount-conjoint" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
+          </div>
+          <div class="field" id="f-compte-repartition-field-conjoint">
+            <label>Part de <span id="f-compte-nom-p1-conjoint"></span> (%)</label>
+            <input type="number" id="f-compte-repartition-conjoint" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
           </div>
           <div class="field" id="f-category-field-conjoint">
             <label>Catégorie</label>
@@ -886,6 +898,10 @@
               <option>Maison</option><option>Loisirs</option><option>Santé</option>
               <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
             </select>
+          </div>
+          <div class="field pleine-largeur">
+            <label>Note</label>
+            <input type="text" id="f-note-conjoint" placeholder="Optionnel">
           </div>
           <div class="field">
             <label>Date</label>
@@ -912,15 +928,11 @@
             <label>Date de fin</label>
             <input type="date" id="f-fin-date-conjoint">
           </div>
-          <div class="field pleine-largeur">
-            <label>Note</label>
-            <input type="text" id="f-note-conjoint" placeholder="Optionnel">
-          </div>
           <div class="field toggle-field" id="f-est-revenu-field-conjoint" style="grid-column:1/-1;display:none;">
             <span class="toggle-field-label">💰 Est un revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
-          <button class="btn-add" id="btn-add-conjoint">Ajouter</button>
+<button class="btn-add" id="btn-add-conjoint">Ajouter</button>
         </div>
       </div>
       <button class="mobile-add-btn" id="mobile-add-conjoint" aria-label="Ajouter une dépense conjointe">+</button>
@@ -1012,9 +1024,6 @@
       </div>
 
       <div class="card form-card" id="form-card-personnel">
-        <button class="mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
-        <h3 style="margin-bottom:14px;">Ajouter une dépense personnelle</h3>
-        <div class="form-grid">
           <div class="field">
             <label>Montant</label>
             <input type="number" id="f-amount-personnel" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
@@ -1026,6 +1035,10 @@
               <option>Maison</option><option>Loisirs</option><option>Santé</option>
               <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
             </select>
+          </div>
+          <div class="field pleine-largeur">
+            <label>Note</label>
+            <input type="text" id="f-note-personnel" placeholder="Optionnel">
           </div>
           <div class="field">
             <label>Date</label>
@@ -1052,15 +1065,14 @@
             <label>Date de fin</label>
             <input type="date" id="f-fin-date-personnel">
           </div>
-          <div class="field pleine-largeur">
-            <label>Note</label>
-            <input type="text" id="f-note-personnel" placeholder="Optionnel">
-          </div>
           <div class="field toggle-field" style="grid-column:1/-1;">
             <span class="toggle-field-label">💰 Est un revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
-          <button class="btn-add" id="btn-add-personnel">Ajouter</button>
+<button class="mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
+        <h3 style="margin-bottom:14px;">Ajouter une dépense personnelle</h3>
+        <div class="form-grid">
+<button class="btn-add" id="btn-add-personnel">Ajouter</button>
         </div>
       </div>
       <button class="mobile-add-btn" id="mobile-add-personnel" aria-label="Ajouter une dépense personnelle">+</button>
@@ -1276,14 +1288,15 @@
   </div>
   <div class="modal-body">
     <div class="modal-grid">
-      <div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select></div>
+<div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select></div>
+<div class="field"><label>Montant</label><input type="number" id="edit-amount" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
       <div class="field" id="edit-compte-repartition-field">
         <label>Part de <span id="edit-compte-nom-p1"></span> (%)</label>
         <input type="number" id="edit-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
       </div>
-      <div class="field"><label>Montant</label><input type="number" id="edit-amount" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
-      <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
-      <div class="field" id="edit-date-field"><label>Date</label><input type="date" id="edit-date"></div>
+<div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note"></div>
+<div class="field" id="edit-date-field"><label>Date</label><input type="date" id="edit-date"></div>
       <div class="field" id="edit-repetition-field">
         <label>Se répète</label>
         <select id="edit-repetition" disabled></select>
@@ -1300,7 +1313,6 @@
         <label>Date de fin</label>
         <input type="text" id="edit-fin-date" disabled>
       </div>
-      <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note"></div>
       <div class="field toggle-field pleine-largeur" id="edit-est-revenu-field">
         <span class="toggle-field-label" id="edit-est-revenu-label">💰 Est un revenu</span>
         <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
@@ -1331,13 +1343,14 @@
         <label>Qui</label>
         <select id="edit-rec-qui"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select>
       </div>
+<div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
       <div class="field" id="edit-rec-compte-repartition-field">
         <label>Part de <span id="edit-rec-compte-nom-p1"></span> (%)</label>
         <input type="number" id="edit-rec-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
       </div>
-      <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
-      <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
-      <div class="field"><label>Date</label><input type="date" id="edit-rec-date-debut"></div>
+<div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom"></div>
+<div class="field"><label>Date</label><input type="date" id="edit-rec-date-debut"></div>
       <div class="field">
         <label>Se répète</label>
         <select id="edit-rec-frequence"></select>
@@ -1358,7 +1371,6 @@
         <label>Date de fin</label>
         <input type="date" id="edit-rec-fin-date">
       </div>
-      <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom"></div>
       <div class="field toggle-field pleine-largeur" id="edit-rec-est-revenu-field">
         <span class="toggle-field-label" id="edit-rec-est-revenu-label">💰 Est un revenu</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
@@ -4502,21 +4514,20 @@ document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajout
    intervalle libre (ex: toutes les 3 semaines), plusieurs jours de la semaine à la fois, ou
    "le dernier jour du mois" pour les dépenses dont la date de facturation varie selon la
    longueur du mois. */
+/* Le menu ne propose plus de liste de préréglages : tout ce qu'ils permettaient (intervalle,
+   unité, jours de la semaine) se règle déjà dans « Personnalisé… », qui couvre strictement
+   plus de cas. Les garder revenait à offrir deux chemins pour le même résultat.
+
+   Seule exception conservée : « Tous les mois le dernier jour », proposé directement quand la
+   date choisie TOMBE le dernier jour du mois — c'est le seul réglage qu'on ne devine pas à la
+   lecture de la date (le 30 avril peut vouloir dire « le 30 » ou « le dernier jour »), donc
+   le seul qui mérite d'être mis en avant. Il reste aussi accessible depuis « Personnalisé… »
+   pour les autres dates. */
 function construirePresetsRepetition(dateISO){
   const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
-  const jourSemaine = d.getDay();
-  const jourMois = d.getDate();
-  const estDernierJourDuMois = jourMois === dernierJourDuMois(d).getDate();
-  const configs = [
-    { unite:'jour', intervalle:1 },
-    { unite:'semaine', intervalle:1, joursSemaine:[jourSemaine] },
-    estDernierJourDuMois
-      ? { unite:'mois', intervalle:1, typeMensuel:'dernier_jour' }
-      : { unite:'mois', intervalle:1, typeMensuel:'jour_mois' },
-    { unite:'annee', intervalle:1 },
-    { unite:'semaine', intervalle:1, joursSemaine:[1,2,3,4,5] }
-  ];
-  return configs.map(cfg => ({ value: JSON.stringify(cfg), config: cfg, label: libelleRecurrence({...cfg, dateDebut: dateISO}) }));
+  if(d.getDate() !== dernierJourDuMois(d).getDate()) return [];
+  const cfg = { unite:'mois', intervalle:1, typeMensuel:'dernier_jour' };
+  return [{ value: JSON.stringify(cfg), config: cfg, label: libelleRecurrence({...cfg, dateDebut: dateISO}) }];
 }
 
 /* Reconstruit entièrement les <option> d'un sélecteur "Se répète" à partir de la date
@@ -4542,6 +4553,9 @@ function peuplerSelectRepetition(selectId, dateISO, cfgActuel, avecJamais){
   }
   html += `<option value="__custom__">Personnaliser…</option>`;
   select.innerHTML = html;
+  /* Sans « Ne se répète pas » ni préréglage ni config existante, la seule entrée réelle est
+     « Personnaliser… » : on l'y positionne plutôt que de laisser une valeur fantôme. */
+  if(!Array.from(select.options).some(o => o.value === valeurCourante)) valeurCourante = '__custom__';
   select.value = valeurCourante;
   select.dataset.valeurPrecedente = valeurCourante;
 }
@@ -4658,6 +4672,14 @@ function lireConfigRepetition(selectId, dateISO){
       document.getElementById(`f-fin-date-field-${scope}`).style.display = 'none';
     } else {
       appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
+      /* Les options de fin viennent d'apparaître sous la ligne « Date / Se répète ». Sur
+         mobile elles seraient cachées par le clavier : on le referme et on amène les
+         options dans le champ de vision. */
+      if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      setTimeout(()=>{
+        const champFin = document.getElementById(`f-fin-type-field-${scope}`);
+        if(champFin) champFin.scrollIntoView({block:'nearest', behavior:'smooth'});
+      }, 250);
     }
   });
   document.getElementById(`f-date-${scope}`).addEventListener('change', function(){
