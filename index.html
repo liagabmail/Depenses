@@ -45,6 +45,10 @@
     --text:#202124;
     --text-secondary:#5f6368;
     --radius:12px;
+    /* Bleu d'accent pour le TEXTE des menus actifs. En thème clair c'est --blue ; en sombre
+       ce bleu devient illisible sur fond foncé, d'où une variable dédiée (voir body.dark).
+       --blue reste réservé aux fonds pleins avec texte blanc (boutons, bascules). */
+    --accent-menu:#1a73e8;
     --shadow-1: 0 1px 2px 0 rgba(60,64,67,.30), 0 1px 3px 1px rgba(60,64,67,.15);
     --shadow-2: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
   }
@@ -176,12 +180,12 @@
     transition:color .15s ease;
   }
   .tab-btn:hover{color:var(--text);}
-  .tab-btn.active{color:var(--blue);}
+  .tab-btn.active{color:var(--accent-menu);}
   .tab-btn.active::after{
     content:"";
     position:absolute;left:10px;right:10px;bottom:-1px;
     height:3px;border-radius:3px 3px 0 0;
-    background:var(--blue);
+    background:var(--accent-menu);
   }
 
   .tab-panel{display:none;}
@@ -193,8 +197,8 @@
   .subtabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;}
   .subtab-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text-secondary);padding:10px 16px;position:relative;transition:color .15s ease;}
   .subtab-btn:hover{color:var(--text);}
-  .subtab-btn.active{color:var(--blue);}
-  .subtab-btn.active::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--blue);}
+  .subtab-btn.active{color:var(--accent-menu);}
+  .subtab-btn.active::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent-menu);}
   .subtab-panel{display:none;}
   .subtab-panel.active{display:block;}
 
@@ -388,16 +392,22 @@
 
   /* Formulaire */
   .form-card{margin-bottom:24px;}
+  /* Les formulaires d'ajout utilisent EXACTEMENT la même grille que les fenêtres d'édition
+     (.modal-grid) : deux colonnes, mêmes espacements, et la largeur pleine demandée
+     explicitement via .pleine-largeur. Avant, cette grille avait 5 colonnes et forçait la
+     pleine largeur sur le 5e enfant : dès qu'un champ était masqué, le placement changeait
+     et les champs ne tombaient plus au même endroit d'un formulaire à l'autre. */
   .form-grid{
     display:grid;
-    grid-template-columns:1fr 1fr 1fr 1.6fr auto;
-    gap:12px;
-    align-items:end;
+    grid-template-columns:1fr 1fr;
+    gap:14px 16px;
+    align-items:start;
   }
-  .form-grid>.field:nth-child(5){grid-column:1 / -1;}
-  .form-grid>.btn-add{grid-column:1 / -1;width:100%;}
-  @media (max-width:900px){
-    .form-grid{grid-template-columns:1fr 1fr;}
+  .form-grid>.field{margin:0;min-width:0;}
+  .form-grid>.field.pleine-largeur{grid-column:1 / -1;}
+  .form-grid>.btn-add{grid-column:1 / -1;width:100%;margin-top:4px;}
+  @media (max-width:560px){
+    .form-grid, .modal-grid{grid-template-columns:1fr;}
   }
   .field label{
     display:block;font-size:12px;color:var(--text-secondary);
@@ -416,9 +426,27 @@
     transition:border-color .15s ease, box-shadow .15s ease;
   }
   .field select:focus, .field input:focus{
-    border-color:var(--blue);
+    border-color:var(--accent-menu);
     box-shadow:0 0 0 3px rgba(26,115,232,.15);
   }
+  /* Les <select> gardaient le rendu natif du système : flèche, hauteur et couleurs
+     différentes des <input> voisins, et fond clair en thème sombre. On neutralise le style
+     natif et on redessine le chevron pour que tous les champs se ressemblent. */
+  .field select{
+    appearance:none;
+    -webkit-appearance:none;
+    padding-right:34px;
+    background-repeat:no-repeat;
+    background-position:right 11px center;
+    background-size:14px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6l4 4 4-4'/></svg>");
+  }
+  body.dark .field select{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23bdc1c6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6l4 4 4-4'/></svg>");
+  }
+  /* Le menu déroulant lui-même est dessiné par le système : sans ça, il reste blanc en
+     thème sombre sur plusieurs navigateurs. */
+  .field select option{background:var(--surface);color:var(--text);}
   .field select:disabled, .field input:disabled{
     opacity:.45;
     cursor:not-allowed;
@@ -572,7 +600,7 @@
   .switch-track::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s;}
   .switch input:checked + .switch-track{background:var(--blue);}
   .switch input:checked + .switch-track::after{transform:translateX(20px);}
-  body.dark{--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
+  body.dark{--accent-menu:#8ab4f8;--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
   body.dark tbody tr:hover{background:#2b3035;} body.dark tbody td{border-bottom-color:#343a40;}
   body.dark .cat-pill{background:#303b4a;color:#b8d1f5;}
   .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
@@ -699,6 +727,12 @@
   .depot-ligne-nom{font-size:14px;font-weight:500;}
   .depot-ligne-montants{display:flex;gap:16px;flex:0 0 auto;}
   .depot-ligne-montants .value{min-width:76px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;}
+  /* Mêmes couleurs que les cartes de stats, pour qu'une colonne se reconnaisse d'un coup d'œil. */
+  .depot-ligne-montants .value.p1{color:var(--blue-dark);}
+  .depot-ligne-montants .value.p2{color:var(--red);}
+  .depot-entete-montants span.p1{color:var(--blue-dark);}
+  .depot-entete-montants span.p2{color:var(--red);}
+  .depot-ligne .cat-pill{margin-top:6px;}
   .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.45;}
   .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;
     background:var(--border);color:var(--text-secondary);vertical-align:middle;}
@@ -821,15 +855,11 @@
           </div>
           <div class="field" id="f-compte-repartition-field-conjoint">
             <label>Part de <span id="f-compte-nom-p1-conjoint"></span> (%)</label>
-            <input type="number" id="f-compte-repartition-conjoint" min="0" max="100" step="0.1" value="50">
-          </div>
-          <div class="field">
-            <label>Date</label>
-            <input type="date" id="f-date-conjoint">
+            <input type="number" id="f-compte-repartition-conjoint" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
           </div>
           <div class="field">
             <label>Montant</label>
-            <input type="number" id="f-amount-conjoint" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
+            <input type="number" id="f-amount-conjoint" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
           </div>
           <div class="field" id="f-category-field-conjoint">
             <label>Catégorie</label>
@@ -840,8 +870,8 @@
             </select>
           </div>
           <div class="field">
-            <label>Note</label>
-            <input type="text" id="f-note-conjoint" placeholder="Optionnel">
+            <label>Date</label>
+            <input type="date" id="f-date-conjoint">
           </div>
           <div class="field">
             <label>Se répète</label>
@@ -863,11 +893,15 @@
           </div>
           <div class="field" id="f-fin-nombre-field-conjoint" style="display:none;">
             <label>Nombre de paiements</label>
-            <input type="number" id="f-fin-nombre-conjoint" min="1" step="1" placeholder="ex: 12">
+            <input type="number" id="f-fin-nombre-conjoint" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric">
           </div>
           <div class="field" id="f-fin-date-field-conjoint" style="display:none;">
             <label>Date de fin</label>
             <input type="date" id="f-fin-date-conjoint">
+          </div>
+          <div class="field pleine-largeur">
+            <label>Note</label>
+            <input type="text" id="f-note-conjoint" placeholder="Optionnel">
           </div>
           <div class="field toggle-field" id="f-est-revenu-field-conjoint" style="grid-column:1/-1;display:none;">
             <span class="toggle-field-label">💰 Est un revenu</span>
@@ -969,12 +1003,8 @@
         <h3 style="margin-bottom:14px;">Ajouter une dépense personnelle</h3>
         <div class="form-grid">
           <div class="field">
-            <label>Date</label>
-            <input type="date" id="f-date-personnel">
-          </div>
-          <div class="field">
             <label>Montant</label>
-            <input type="number" id="f-amount-personnel" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
+            <input type="number" id="f-amount-personnel" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
           </div>
           <div class="field" id="f-category-field-personnel">
             <label>Catégorie</label>
@@ -985,8 +1015,8 @@
             </select>
           </div>
           <div class="field">
-            <label>Note</label>
-            <input type="text" id="f-note-personnel" placeholder="Optionnel">
+            <label>Date</label>
+            <input type="date" id="f-date-personnel">
           </div>
           <div class="field">
             <label>Se répète</label>
@@ -1008,11 +1038,15 @@
           </div>
           <div class="field" id="f-fin-nombre-field-personnel" style="display:none;">
             <label>Nombre de paiements</label>
-            <input type="number" id="f-fin-nombre-personnel" min="1" step="1" placeholder="ex: 12">
+            <input type="number" id="f-fin-nombre-personnel" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric">
           </div>
           <div class="field" id="f-fin-date-field-personnel" style="display:none;">
             <label>Date de fin</label>
             <input type="date" id="f-fin-date-personnel">
+          </div>
+          <div class="field pleine-largeur">
+            <label>Note</label>
+            <input type="text" id="f-note-personnel" placeholder="Optionnel">
           </div>
           <div class="field toggle-field" style="grid-column:1/-1;">
             <span class="toggle-field-label">💰 Est un revenu</span>
@@ -1237,9 +1271,9 @@
       <div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select></div>
       <div class="field" id="edit-compte-repartition-field">
         <label>Part de <span id="edit-compte-nom-p1"></span> (%)</label>
-        <input type="number" id="edit-compte-repartition" min="0" max="100" step="0.1" value="50">
+        <input type="number" id="edit-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
       </div>
-      <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
+      <div class="field"><label>Montant</label><input type="number" id="edit-amount" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
       <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
       <div class="field" id="edit-date-field"><label>Date</label><input type="date" id="edit-date"></div>
       <div class="field" id="edit-repetition-field">
@@ -1291,9 +1325,9 @@
       </div>
       <div class="field" id="edit-rec-compte-repartition-field">
         <label>Part de <span id="edit-rec-compte-nom-p1"></span> (%)</label>
-        <input type="number" id="edit-rec-compte-repartition" min="0" max="100" step="0.1" value="50">
+        <input type="number" id="edit-rec-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
       </div>
-      <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
+      <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
       <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
       <div class="field"><label>Date</label><input type="date" id="edit-rec-date-debut"></div>
       <div class="field">
@@ -1310,7 +1344,7 @@
       </div>
       <div class="field" id="edit-rec-fin-nombre-field">
         <label>Nombre de paiements</label>
-        <input type="number" id="edit-rec-fin-nombre" min="1" step="1">
+        <input type="number" id="edit-rec-fin-nombre" data-num="entier" min="1" step="1" inputmode="numeric">
       </div>
       <div class="field" id="edit-rec-fin-date-field">
         <label>Date de fin</label>
@@ -1347,7 +1381,7 @@
     <div class="modal-grid">
       <div class="field">
         <label>Tous/toutes les</label>
-        <input type="number" id="custom-rep-intervalle" min="1" step="1" value="1">
+        <input type="number" id="custom-rep-intervalle" data-num="entier" min="1" step="1" value="1" inputmode="numeric">
       </div>
       <div class="field">
         <label>Unité</label>
@@ -2317,6 +2351,7 @@ function calculerEcheancierCompte(nbPaies){
     totaux[iso].p2 += partP2;
     lignes[iso].push({
       libelle: info.libelle,
+      categorie: info.categorie,
       explication: info.explication,
       nature: info.nature,        /* 'depense' | 'revenu' | 'ajustement' */
       rattrapage: !!info.rattrapage,
@@ -2384,7 +2419,7 @@ function calculerEcheancierCompte(nbPaies){
   /* 1) Dépenses/revenus "compte" ponctuels (sans récurrence) */
   depenses.filter(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId).forEach(e=>{
     const due = debutJour(dateLocaleDepuisISO(e.date));
-    const info = { libelle: e.note || e.category, source:'ponctuelle' };
+    const info = { libelle: e.note || e.category, categorie: e.category, source:'ponctuelle' };
     if(e.estRevenu) ajouterRevenu(due, e.amount, e.pourcentageP1, info);
     else ajouterDepense(due, e.amount, e.pourcentageP1, null, true, info);
   });
@@ -2392,6 +2427,7 @@ function calculerEcheancierCompte(nbPaies){
   /* 2) Récurrences "compte" actives */
   recurrences.filter(r=>r.type==='conjointe' && r.estCompte && r.actif).forEach(rec=>{
     const libelle = rec.nom || rec.categorie;
+    const categorie = rec.categorie;
     if(rec.estRevenu){
       /* Chaque occurrence est indépendante (pas de fenêtre à fermer) : seules celles dont
          la première paie visée n'est pas encore passée sont encore pertinentes. Les
@@ -2402,7 +2438,7 @@ function calculerEcheancierCompte(nbPaies){
         const due = debutJour(occDate);
         const cible = premierePaieDepuis(ancrage, due);
         if(cible < aujourdhui) return; /* déjà réglé dans le passé, on n'y retouche plus */
-        ajouterRevenu(due, rec.montant, rec.pourcentageP1, { libelle, source:'recurrence' });
+        ajouterRevenu(due, rec.montant, rec.pourcentageP1, { libelle, categorie, source:'recurrence' });
       });
     } else {
       /* Dépense récurrente : pour obtenir un montant STABLE d'une paie à l'autre (plutôt que
@@ -2422,7 +2458,7 @@ function calculerEcheancierCompte(nbPaies){
         const occAn = Math.round(occurrencesParAnnee(rec)*100)/100;
         const explication = `Récurrence sans date de fin : ${formaterMonnaie(rec.montant)} × ${occAn} occurrence${occAn>1?'s':''} par an = ${formaterMonnaie(totalAnnuel)}, lissé sur les ${PAIES_PAR_ANNEE} paies de l'année = ${formaterMonnaie(partParPaie)} par paie.`;
         paies.forEach(p=>{
-          contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, nature:'depense', explication });
+          contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
         });
       } else {
         const occs = genererOccurrences(rec, horizonMaximal());
@@ -2437,7 +2473,7 @@ function calculerEcheancierCompte(nbPaies){
         const explication = `${occsRestantes.length} paiement${occsRestantes.length>1?'s':''} de ${formaterMonnaie(rec.montant)} restant${occsRestantes.length>1?'s':''} d'ici le ${formaterDateISO(finRecurrence)} = ${formaterMonnaie(montantTotalRestant)}, réparti sur les ${nPaies} paie${nPaies>1?'s':''} de cette période = ${formaterMonnaie(partParPaie)} par paie.`;
         paies.forEach(p=>{
           if(p >= aujourdhui && p <= finRecurrence){
-            contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, nature:'depense', explication });
+            contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
           }
         });
       }
@@ -2519,6 +2555,13 @@ function ouvrirDetailDepot(iso){
   const montantHTML = (v, classe) =>
     `<span class="value ${classe}">${v < 0 ? '−' : ''}${formaterMonnaie(Math.abs(v))}</span>`;
 
+  /* Pastille de catégorie, aux mêmes couleurs que partout ailleurs dans l'app. */
+  const pastilleCategorie = (cat) => {
+    if(!cat) return '';
+    const c = COULEURS_CATEGORIES[cat] || '#9aa0a6';
+    return `<span class="cat-pill" style="background:${c}22;color:${c};">${echapperHTML(cat)}</span>`;
+  };
+
   let corps = '';
   groupes.forEach(([nature, titre])=>{
     const duGroupe = lignes.filter(l => l.nature === nature);
@@ -2530,6 +2573,7 @@ function ouvrirDetailDepot(iso){
           <span class="depot-ligne-nom">${echapperHTML(l.libelle)}${l.rattrapage ? '<span class="depot-pill">rattrapage</span>' : ''}</span>
           <span class="depot-ligne-montants">${montantHTML(l.p1,'p1')}${montantHTML(l.p2,'p2')}</span>
         </div>
+        ${pastilleCategorie(l.categorie)}
         <div class="depot-ligne-explication">${echapperHTML(l.explication || '')}${l.pourcentageP1 != null ? ` Partagé ${l.pourcentageP1}% / ${Math.round((100-l.pourcentageP1)*10)/10}%.` : ''}</div>
       </div>`).join('');
   });
@@ -2555,7 +2599,7 @@ function ouvrirDetailDepot(iso){
     <div class="modal-body">
       <div class="depot-entete">
         <span>Provenance</span>
-        <span class="depot-entete-montants"><span>${nomsPersonnes.p1}</span><span>${nomsPersonnes.p2}</span></span>
+        <span class="depot-entete-montants"><span class="p1">${nomsPersonnes.p1}</span><span class="p2">${nomsPersonnes.p2}</span></span>
       </div>
       ${corps}
       <div class="depot-total final">
@@ -5372,6 +5416,47 @@ document.getElementById('import-file').addEventListener('change', async (e)=>{
   }
   e.target.value = '';
 });
+
+/* ===================== CONTRAINTES DE SAISIE NUMÉRIQUE =====================
+   Les attributs min/max/step d'un <input type="number"> ne sont vérifiés par le navigateur
+   qu'à la validation d'un formulaire — ici il n'y en a pas, donc rien n'empêchait de taper
+   un pourcentage de 250 ou un montant à cinq décimales. Chaque champ marqué `data-num`
+   est donc corrigé en direct, à la frappe comme au collage.
+
+   La valeur est TRONQUÉE et non arrondie : taper un chiffre de trop ne doit jamais modifier
+   les chiffres déjà saisis. */
+const REGLES_NUMERIQUES = {
+  pourcentage: { decimales:0, min:0,  max:100 },  /* part d'une personne : 0 à 100, entier */
+  montant:     { decimales:2, min:0 },            /* dollars : 2 décimales maximum */
+  entier:      { decimales:0, min:1 }             /* nombre de paiements, intervalle */
+};
+
+function appliquerRegleNumerique(champ){
+  const regle = REGLES_NUMERIQUES[champ.dataset.num];
+  if(!regle) return;
+  /* Saisie en cours d'être invalide (ex: "12.") : le navigateur renvoie une valeur vide,
+     on le laisse finir plutôt que d'effacer ce qu'il tape. */
+  if(champ.value === '') return;
+  const saisi = Number(champ.value);
+  if(!isFinite(saisi)) return;
+
+  const facteur = Math.pow(10, regle.decimales);
+  let corrige = Math.trunc(saisi * facteur) / facteur;
+  if(regle.min != null && corrige < regle.min) corrige = regle.min;
+  if(regle.max != null && corrige > regle.max) corrige = regle.max;
+
+  /* On ne réécrit le champ que si la valeur change VRAIMENT : sinon taper "12,30" se
+     ferait réécrire en "12,3" au troisième caractère, avec le curseur qui saute. */
+  if(corrige !== saisi) champ.value = String(corrige);
+}
+
+function activerContraintesNumeriques(){
+  document.querySelectorAll('[data-num]').forEach(champ=>{
+    champ.addEventListener('input', ()=>appliquerRegleNumerique(champ));
+    champ.addEventListener('blur',  ()=>appliquerRegleNumerique(champ));
+  });
+}
+activerContraintesNumeriques();
 
 /* Lancement au démarrage */
 initAuth();
