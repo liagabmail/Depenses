@@ -248,6 +248,12 @@
   body.dark .cal-menu-vue-option:hover{background:#2c3136;}
   .cal-menu-vue-option.active{color:var(--blue);font-weight:600;}
   .cal-menu-check{display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:13px;}
+  .jours-semaine-select{display:flex;gap:6px;flex-wrap:wrap;}
+  .jours-semaine-select button{
+    width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--surface);
+    color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;
+  }
+  .jours-semaine-select button.active{background:var(--blue);border-color:var(--blue);color:#fff;}
   .cal-menu-check input{accent-color:var(--blue);width:16px;height:16px;flex-shrink:0;}
   .cal-menu-check .dot-cat{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .cal-menu-montant-valeurs{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:var(--text);margin:4px 0 6px;}
@@ -769,11 +775,41 @@
             <label>Se répète</label>
             <select id="f-repete-conjoint">
               <option value="jamais" selected>Jamais</option>
+              <option value="jour">Chaque jour</option>
               <option value="semaine">Chaque semaine</option>
               <option value="2semaines">Chaque 2 semaines</option>
               <option value="mois">Chaque mois</option>
               <option value="annee">Chaque année</option>
+              <option value="personnalise">Personnalisé…</option>
             </select>
+          </div>
+          <div class="field champ-perso" id="f-perso-field-conjoint" style="display:none;grid-column:1/-1;">
+            <label>Se répète tous les</label>
+            <div style="display:flex;gap:8px;">
+              <input type="number" id="f-perso-intervalle-conjoint" min="1" step="1" value="1" style="width:70px;flex-shrink:0;">
+              <select id="f-perso-unite-conjoint" style="flex:1;">
+                <option value="jour">jour(s)</option>
+                <option value="semaine">semaine(s)</option>
+                <option value="mois">mois</option>
+                <option value="annee">année(s)</option>
+              </select>
+            </div>
+            <div id="f-perso-jours-field-conjoint" style="display:none;margin-top:12px;">
+              <label style="display:block;margin-bottom:8px;">Se répète le</label>
+              <div class="jours-semaine-select" id="f-perso-jours-conjoint">
+                <button type="button" data-jour="0">D</button>
+                <button type="button" data-jour="1">L</button>
+                <button type="button" data-jour="2">M</button>
+                <button type="button" data-jour="3">M</button>
+                <button type="button" data-jour="4">J</button>
+                <button type="button" data-jour="5">V</button>
+                <button type="button" data-jour="6">S</button>
+              </div>
+            </div>
+            <label class="cal-menu-check" id="f-perso-dernier-jour-field-conjoint" style="display:none;margin-top:10px;">
+              <input type="checkbox" id="f-perso-dernier-jour-conjoint">
+              Le dernier jour du mois
+            </label>
           </div>
           <div class="field" id="f-fin-type-field-conjoint" style="display:none;">
             <label>Se termine</label>
@@ -914,11 +950,41 @@
             <label>Se répète</label>
             <select id="f-repete-personnel">
               <option value="jamais" selected>Jamais</option>
+              <option value="jour">Chaque jour</option>
               <option value="semaine">Chaque semaine</option>
               <option value="2semaines">Chaque 2 semaines</option>
               <option value="mois">Chaque mois</option>
               <option value="annee">Chaque année</option>
+              <option value="personnalise">Personnalisé…</option>
             </select>
+          </div>
+          <div class="field champ-perso" id="f-perso-field-personnel" style="display:none;grid-column:1/-1;">
+            <label>Se répète tous les</label>
+            <div style="display:flex;gap:8px;">
+              <input type="number" id="f-perso-intervalle-personnel" min="1" step="1" value="1" style="width:70px;flex-shrink:0;">
+              <select id="f-perso-unite-personnel" style="flex:1;">
+                <option value="jour">jour(s)</option>
+                <option value="semaine">semaine(s)</option>
+                <option value="mois">mois</option>
+                <option value="annee">année(s)</option>
+              </select>
+            </div>
+            <div id="f-perso-jours-field-personnel" style="display:none;margin-top:12px;">
+              <label style="display:block;margin-bottom:8px;">Se répète le</label>
+              <div class="jours-semaine-select" id="f-perso-jours-personnel">
+                <button type="button" data-jour="0">D</button>
+                <button type="button" data-jour="1">L</button>
+                <button type="button" data-jour="2">M</button>
+                <button type="button" data-jour="3">M</button>
+                <button type="button" data-jour="4">J</button>
+                <button type="button" data-jour="5">V</button>
+                <button type="button" data-jour="6">S</button>
+              </div>
+            </div>
+            <label class="cal-menu-check" id="f-perso-dernier-jour-field-personnel" style="display:none;margin-top:10px;">
+              <input type="checkbox" id="f-perso-dernier-jour-personnel">
+              Le dernier jour du mois
+            </label>
           </div>
           <div class="field" id="f-fin-type-field-personnel" style="display:none;">
             <label>Se termine</label>
@@ -1160,11 +1226,41 @@
       <label>Se répète</label>
       <select id="edit-repete">
         <option value="jamais" selected>Jamais</option>
+        <option value="jour">Chaque jour</option>
         <option value="semaine">Chaque semaine</option>
         <option value="2semaines">Chaque 2 semaines</option>
         <option value="mois">Chaque mois</option>
         <option value="annee">Chaque année</option>
+        <option value="personnalise">Personnalisé…</option>
       </select>
+    </div>
+    <div class="field champ-perso" id="f-perso-field-perso" style="display:none;grid-column:1/-1;">
+      <label>Se répète tous les</label>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="f-perso-intervalle-perso" min="1" step="1" value="1" style="width:70px;flex-shrink:0;">
+        <select id="f-perso-unite-perso" style="flex:1;">
+          <option value="jour">jour(s)</option>
+          <option value="semaine">semaine(s)</option>
+          <option value="mois">mois</option>
+          <option value="annee">année(s)</option>
+        </select>
+      </div>
+      <div id="f-perso-jours-field-perso" style="display:none;margin-top:12px;">
+        <label style="display:block;margin-bottom:8px;">Se répète le</label>
+        <div class="jours-semaine-select" id="f-perso-jours-perso">
+          <button type="button" data-jour="0">D</button>
+          <button type="button" data-jour="1">L</button>
+          <button type="button" data-jour="2">M</button>
+          <button type="button" data-jour="3">M</button>
+          <button type="button" data-jour="4">J</button>
+          <button type="button" data-jour="5">V</button>
+          <button type="button" data-jour="6">S</button>
+        </div>
+      </div>
+      <label class="cal-menu-check" id="f-perso-dernier-jour-field-perso" style="display:none;margin-top:10px;">
+        <input type="checkbox" id="f-perso-dernier-jour-perso">
+        Le dernier jour du mois
+      </label>
     </div>
     <div class="field" id="edit-fin-type-field-perso" style="display:none;">
       <label>Se termine</label>
@@ -1203,11 +1299,41 @@
     <div class="field">
       <label>Fréquence</label>
       <select id="edit-rec-frequence">
+        <option value="jour">Chaque jour</option>
         <option value="semaine">Chaque semaine</option>
         <option value="2semaines">Chaque 2 semaines</option>
         <option value="mois">Chaque mois</option>
         <option value="annee">Chaque année</option>
+        <option value="personnalise">Personnalisé…</option>
       </select>
+    </div>
+    <div class="field champ-perso" id="f-perso-field-rec" style="display:none;grid-column:1/-1;">
+      <label>Se répète tous les</label>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="f-perso-intervalle-rec" min="1" step="1" value="1" style="width:70px;flex-shrink:0;">
+        <select id="f-perso-unite-rec" style="flex:1;">
+          <option value="jour">jour(s)</option>
+          <option value="semaine">semaine(s)</option>
+          <option value="mois">mois</option>
+          <option value="annee">année(s)</option>
+        </select>
+      </div>
+      <div id="f-perso-jours-field-rec" style="display:none;margin-top:12px;">
+        <label style="display:block;margin-bottom:8px;">Se répète le</label>
+        <div class="jours-semaine-select" id="f-perso-jours-rec">
+          <button type="button" data-jour="0">D</button>
+          <button type="button" data-jour="1">L</button>
+          <button type="button" data-jour="2">M</button>
+          <button type="button" data-jour="3">M</button>
+          <button type="button" data-jour="4">J</button>
+          <button type="button" data-jour="5">V</button>
+          <button type="button" data-jour="6">S</button>
+        </div>
+      </div>
+      <label class="cal-menu-check" id="f-perso-dernier-jour-field-rec" style="display:none;margin-top:10px;">
+        <input type="checkbox" id="f-perso-dernier-jour-rec">
+        Le dernier jour du mois
+      </label>
     </div>
     <div class="field" id="edit-rec-qui-field">
       <label>Qui</label>
@@ -1237,10 +1363,6 @@
     <div class="field toggle-field" id="edit-rec-est-revenu-field" style="grid-column:1/-1;display:none;">
       <span class="toggle-field-label" id="edit-rec-est-revenu-label">💰 Est un revenu</span>
       <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
-    </div>
-    <div class="field toggle-field">
-      <span class="toggle-field-label">Actif</span>
-      <label class="switch"><input type="checkbox" id="edit-rec-actif"><span class="switch-track"></span></label>
     </div>
     <div class="edit-actions"><button class="btn-secondary btn-danger" id="delete-edit-recurrent">Supprimer</button><button class="btn-add" id="save-edit-recurrent">Sauvegarder</button></div>
   </div>
@@ -1757,7 +1879,7 @@ async function chargerRecurrencesSupabase(){
       nom: r.Nom || '',
       montant: Number(r.Montant || 0),
       categorie: r.Categorie || 'Autre',
-      frequence: ['semaine','2semaines','mois','annee'].includes(r.Frequence) ? r.Frequence : 'mois',
+      frequence: ['jour','semaine','2semaines','mois','annee'].includes(r.Frequence) ? r.Frequence : 'mois',
       dateDebut: r.DateDebut || null,
       finType: ['jamais','nombre','date'].includes(r.FinType) ? r.FinType : 'jamais',
       finNombre: r.FinNombre != null ? Number(r.FinNombre) : null,
@@ -1770,7 +1892,12 @@ async function chargerRecurrencesSupabase(){
       actif: r.Actif !== false,
       /* Dates d'occurrences individuelles explicitement supprimées ("cette dépense
          seulement") : à ne jamais régénérer, même si leur date n'a plus de dépense liée. */
-      datesExclues: r.DatesExclues ? String(r.DatesExclues).split(',').map(s=>s.trim()).filter(Boolean) : []
+      datesExclues: r.DatesExclues ? String(r.DatesExclues).split(',').map(s=>s.trim()).filter(Boolean) : [],
+      /* Personnalisation façon Google Agenda (intervalle, jours de semaine précis, dernier
+         jour du mois) — absentes ou nulles pour les récurrences "classiques". */
+      intervalle: r.Intervalle != null ? Number(r.Intervalle) : 1,
+      joursSemaine: r.JoursSemaine ? String(r.JoursSemaine).split(',').map(s=>Number(s.trim())).filter(n=>!isNaN(n)) : null,
+      dernierJourMois: r.DernierJourMois === true
     }));
     recurrencesSupabaseDisponible = true;
   } catch(err){
@@ -1786,30 +1913,53 @@ function sauvegarderRecurrencesLocal(){
   localStorage.setItem('depenses_recurrences', JSON.stringify(recurrences));
 }
 
-function multiplicateurMensuel(frequence){
-  if(frequence==='semaine') return 52/12;
-  if(frequence==='2semaines') return 26/12;
-  if(frequence==='annee') return 1/12;
-  return 1; /* mois */
+/* Équivalent mensuel moyen d'une récurrence, intervalle et jours personnalisés inclus. */
+function multiplicateurMensuel(rec){
+  return multiplicateurAnnuel(rec) / 12;
 }
-function libelleFrequence(f){
-  return { semaine:'Chaque semaine', '2semaines':'Chaque 2 semaines', mois:'Chaque mois', annee:'Chaque année' }[f] || f;
+/* Libellé lisible d'une récurrence : les choix rapides gardent leur texte simple, une
+   récurrence "Personnalisé…" (intervalle > 1, jours précis, ou dernier jour du mois) décrit
+   son propre réglage, façon Google Agenda. */
+function libelleFrequence(rec){
+  if(typeof rec === 'string') rec = { frequence: rec, intervalle: 1 };
+  if(!estPersonnalisee(rec)){
+    return { jour:'Chaque jour', semaine:'Chaque semaine', '2semaines':'Chaque 2 semaines', mois:'Chaque mois', annee:'Chaque année' }[rec.frequence] || rec.frequence;
+  }
+  const unites = { jour:['jour','jours'], semaine:['semaine','semaines'], mois:['mois','mois'], annee:['année','années'] };
+  const [singulier, pluriel] = unites[rec.frequence] || ['mois','mois'];
+  const intervalle = rec.intervalle || 1;
+  let base = intervalle > 1 ? `Tous les ${intervalle} ${pluriel}` : `Chaque ${singulier}`;
+  if(rec.frequence==='semaine' && rec.joursSemaine && rec.joursSemaine.length){
+    const noms = ['D','L','M','M','J','V','S'];
+    base += ` (${rec.joursSemaine.slice().sort().map(j=>noms[j]).join(', ')})`;
+  }
+  if(rec.frequence==='mois' && rec.dernierJourMois){
+    base += ' (dernier jour)';
+  }
+  return base;
 }
 
 /* Avance une date d'une période, en gérant correctement les fins de mois (ex: 31 janvier
-   + 1 mois -> 28/29 février plutôt que de déborder sur mars). */
-function ajouterPeriode(date, frequence){
+   + 1 mois -> 28/29 février plutôt que de déborder sur mars), et en respectant l'intervalle
+   personnalisé (ex: tous les 3 mois) ainsi que "le dernier jour du mois". */
+function ajouterPeriode(date, rec){
   const d = new Date(date);
-  if(frequence==='semaine'){ d.setDate(d.getDate()+7); return d; }
-  if(frequence==='2semaines'){ d.setDate(d.getDate()+14); return d; }
-  if(frequence==='annee'){
+  const intervalle = rec.intervalle || 1;
+  if(rec.frequence==='jour'){ d.setDate(d.getDate()+intervalle); return d; }
+  if(rec.frequence==='semaine'){ d.setDate(d.getDate()+7*intervalle); return d; }
+  if(rec.frequence==='2semaines'){ d.setDate(d.getDate()+14); return d; }
+  if(rec.frequence==='annee'){
     const jour = d.getDate();
-    d.setFullYear(d.getFullYear()+1);
+    d.setFullYear(d.getFullYear()+intervalle);
     if(d.getDate() !== jour) d.setDate(0);
     return d;
   }
+  /* mois */
+  if(rec.dernierJourMois){
+    return new Date(d.getFullYear(), d.getMonth()+intervalle+1, 0);
+  }
   const jour = d.getDate();
-  d.setMonth(d.getMonth()+1);
+  d.setMonth(d.getMonth()+intervalle);
   if(d.getDate() !== jour) d.setDate(0);
   return d;
 }
@@ -1835,21 +1985,48 @@ function horizonMaximal(){
 
 /* Calcule toutes les dates d'échéance d'une récurrence, du départ jusqu'à la date limite
    donnée (elle-même plafonnée à 25 ans dans le futur), en respectant sa condition de fin
-   (jamais / nombre de paiements / date de fin). Couvre les échéances passées et futures. */
+   (jamais / nombre de paiements / date de fin). Couvre les échéances passées et futures.
+   Si des jours de semaine précis sont choisis (ex: L/M/V), on avance jour par jour plutôt
+   que par bonds de 7 jours, en ne gardant que les jours cochés et en respectant l'intervalle
+   de semaines (façon Google Agenda "Personnaliser…"). */
 function genererOccurrences(rec, limiteDate){
   const dates = [];
   if(!rec.dateDebut) return dates;
-  let courant = new Date(rec.dateDebut+"T00:00:00");
+  const debutDate = new Date(rec.dateDebut+"T00:00:00");
   const plafond = horizonMaximal();
   const limiteDemandee = limiteDate && limiteDate < plafond ? limiteDate : plafond;
   const finDateObj = rec.finType==='date' && rec.finDate ? new Date(rec.finDate+"T00:00:00") : null;
   const limite = finDateObj && finDateObj < limiteDemandee ? finDateObj : limiteDemandee;
+
+  if(rec.frequence==='semaine' && rec.joursSemaine && rec.joursSemaine.length){
+    const intervalle = rec.intervalle || 1;
+    const semaineDebut = dimancheDeSemaine(debutDate);
+    let curseur = new Date(debutDate);
+    let compte = 0;
+    let securite = 0;
+    while(curseur <= limite && securite < 20000){
+      securite++;
+      if(curseur >= debutDate && rec.joursSemaine.includes(curseur.getDay())){
+        const semaineCourante = dimancheDeSemaine(curseur);
+        const nbSemaines = Math.round((semaineCourante - semaineDebut) / (7*86400000));
+        if(nbSemaines % intervalle === 0){
+          if(rec.finType==='nombre' && rec.finNombre != null && compte >= rec.finNombre) break;
+          dates.push(new Date(curseur));
+          compte++;
+        }
+      }
+      curseur = ajouterJours(curseur, 1);
+    }
+    return dates;
+  }
+
+  let courant = new Date(debutDate);
   let compte = 0;
   while(courant <= limite){
     if(rec.finType==='nombre' && rec.finNombre != null && compte >= rec.finNombre) break;
     dates.push(new Date(courant));
     compte++;
-    courant = ajouterPeriode(courant, rec.frequence);
+    courant = ajouterPeriode(courant, rec);
   }
   return dates;
 }
@@ -2026,7 +2203,7 @@ function calculerEcheancierCompte(nbPaies){
       if(rec.finType === 'jamais'){
         /* Récurrence sans fin connue : pas de "durée restante" à calculer, donc on garde une
            moyenne annuelle stable (identique à chaque paie, indéfiniment). */
-        const totalAnnuel = rec.montant * multiplicateurAnnuel(rec.frequence);
+        const totalAnnuel = rec.montant * multiplicateurAnnuel(rec);
         const partParPaie = totalAnnuel / PAIES_PAR_ANNEE;
         const p1Pct = pct(rec.pourcentageP1);
         paies.forEach(p=>{
@@ -2276,6 +2453,69 @@ function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
 }
 document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field'));
+wirerPersonnalisation('rec');
+document.getElementById('edit-rec-frequence').addEventListener('change', ()=>{
+  const val = document.getElementById('edit-rec-frequence').value;
+  document.getElementById('f-perso-field-rec').style.display = val==='personnalise' ? '' : 'none';
+  if(val==='personnalise') reinitialiserPersonnalisation('rec');
+});
+
+/* ===================== PERSONNALISATION DE RÉCURRENCE (façon Google Agenda) =====================
+   "Se répète tous les [N] [jour/semaine/mois/année]", avec en plus, selon l'unité choisie :
+   quels jours de la semaine (pour "semaine"), ou le dernier jour du mois (pour "mois").
+   Réutilisé par les 4 endroits où on choisit une fréquence, via un préfixe d'ids commun
+   (`conjoint`, `personnel`, `perso` pour convertir une dépense ponctuelle dans "Modifier",
+   `rec` pour éditer une série existante). */
+function wirerPersonnalisation(prefix){
+  const uniteSel = document.getElementById(`f-perso-unite-${prefix}`);
+  const majAffichage = ()=>{
+    document.getElementById(`f-perso-jours-field-${prefix}`).style.display = uniteSel.value==='semaine' ? '' : 'none';
+    document.getElementById(`f-perso-dernier-jour-field-${prefix}`).style.display = uniteSel.value==='mois' ? '' : 'none';
+  };
+  uniteSel.addEventListener('change', majAffichage);
+  document.querySelectorAll(`#f-perso-jours-${prefix} button`).forEach(btn=>{
+    btn.addEventListener('click', ()=> btn.classList.toggle('active'));
+  });
+  majAffichage();
+}
+function reinitialiserPersonnalisation(prefix){
+  document.getElementById(`f-perso-intervalle-${prefix}`).value = 1;
+  document.getElementById(`f-perso-unite-${prefix}`).value = 'semaine';
+  document.querySelectorAll(`#f-perso-jours-${prefix} button`).forEach(b=>b.classList.remove('active'));
+  document.getElementById(`f-perso-dernier-jour-${prefix}`).checked = false;
+  document.getElementById(`f-perso-jours-field-${prefix}`).style.display = '';
+  document.getElementById(`f-perso-dernier-jour-field-${prefix}`).style.display = 'none';
+}
+/* Lit le panneau et renvoie { frequence, intervalle, joursSemaine, dernierJourMois } — prêt
+   à fusionner dans une récurrence. `frequence` ici vaut l'unité choisie (jour/semaine/mois/
+   année), pas "personnalise" (qui n'est qu'un choix de menu, jamais stocké tel quel). */
+function lireValeursPersonnalisation(prefix){
+  const unite = document.getElementById(`f-perso-unite-${prefix}`).value;
+  const intervalle = Math.max(1, parseInt(document.getElementById(`f-perso-intervalle-${prefix}`).value, 10) || 1);
+  const joursSemaine = unite==='semaine'
+    ? Array.from(document.querySelectorAll(`#f-perso-jours-${prefix} button.active`)).map(b=>Number(b.dataset.jour))
+    : null;
+  const dernierJourMois = unite==='mois' && document.getElementById(`f-perso-dernier-jour-${prefix}`).checked;
+  return { frequence: unite, intervalle, joursSemaine: (joursSemaine && joursSemaine.length) ? joursSemaine : null, dernierJourMois };
+}
+/* Pré-remplit le panneau à partir d'une récurrence existante (pour "Modifier un paiement
+   récurrent"), quand elle a un intervalle > 1, des jours spécifiques, ou le dernier jour
+   du mois — donc qu'elle a été créée via "Personnalisé…". */
+function appliquerValeursPersonnalisation(prefix, rec){
+  document.getElementById(`f-perso-intervalle-${prefix}`).value = rec.intervalle || 1;
+  document.getElementById(`f-perso-unite-${prefix}`).value = rec.frequence;
+  document.querySelectorAll(`#f-perso-jours-${prefix} button`).forEach(b=>{
+    b.classList.toggle('active', !!(rec.joursSemaine && rec.joursSemaine.includes(Number(b.dataset.jour))));
+  });
+  document.getElementById(`f-perso-dernier-jour-${prefix}`).checked = !!rec.dernierJourMois;
+  document.getElementById(`f-perso-jours-field-${prefix}`).style.display = rec.frequence==='semaine' ? '' : 'none';
+  document.getElementById(`f-perso-dernier-jour-field-${prefix}`).style.display = rec.frequence==='mois' ? '' : 'none';
+}
+/* Une récurrence est "personnalisée" (au sens du menu) si elle a un intervalle > 1, des
+   jours de semaine précis, ou le dernier jour du mois — sinon c'est un des choix rapides. */
+function estPersonnalisee(rec){
+  return (rec.intervalle && rec.intervalle > 1) || (rec.joursSemaine && rec.joursSemaine.length) || rec.dernierJourMois;
+}
 
 /* Supprime les dépenses déjà générées pour une récurrence qui tombent aujourd'hui ou
    plus tard (garde intact l'historique passé). Utilisé quand on modifie une récurrence
@@ -2290,25 +2530,6 @@ async function supprimerDepensesFuturesRecurrence(id){
     console.warn("Impossible de supprimer les dépenses futures liées dans Supabase.", err);
   }
   depenses = depenses.filter(e => !(e.recurrenceId === id && e.date >= aujourdhuiStr));
-}
-
-async function basculerActifRecurrence(id){
-  const rec = recurrences.find(r=>r.id===id); if(!rec) return;
-  rec.actif = !rec.actif;
-  try{
-    const { error } = await supabaseClient.from('Recurrences').update({Actif:rec.actif}).eq('id', id);
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible de mettre à jour la récurrence dans Supabase, sauvegarde locale seulement.", err);
-    sauvegarderRecurrencesLocal();
-  }
-  if(rec.actif){
-    await genererDepensesRecurrentes();
-  } else {
-    await supprimerDepensesFuturesRecurrence(id);
-    rafraichirActif();
-  }
-  afficherRecurrencesScope(rec.type==='personnelle' ? 'personnel' : 'conjoint');
 }
 
 async function supprimerRecurrence(id, sansConfirmation){
@@ -2396,17 +2617,21 @@ async function exclureOccurrence(recurrenceId, dateStr){
    utilisé pour fractionner une série lors d'un "cette dépense et les suivantes". */
 async function creerRecurrenceDepuisValeurs(champs){
   const id = uid();
+  const intervalle = champs.intervalle || 1;
+  const joursSemaine = champs.joursSemaine || null;
+  const dernierJourMois = !!champs.dernierJourMois;
   const nouvelleRecurrenceDB = {
     id, Nom: champs.nom, Montant: champs.montant, Categorie: champs.categorie, Frequence: champs.frequence,
     DateDebut: champs.dateDebut, FinType: champs.finType, FinNombre: champs.finNombre, FinDate: champs.finDate,
     Qui: nomPersonneSupabase(champs.who), Type: champs.type, Actif: true,
     EstCompte: champs.estCompte, EstRevenu: champs.estRevenu, PourcentageP1: champs.pourcentageP1,
+    Intervalle: intervalle, JoursSemaine: joursSemaine ? joursSemaine.join(',') : null, DernierJourMois: dernierJourMois,
     user_id: champs.type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
   try{
     let { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
     if(error){
-      const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
+      const { EstCompte, EstRevenu, PourcentageP1, Intervalle, JoursSemaine, DernierJourMois, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
       const retry = await supabaseClient.from('Recurrences').insert([sansColonnesRecentes]);
       if(retry.error) throw retry.error;
     }
@@ -2417,7 +2642,8 @@ async function creerRecurrenceDepuisValeurs(champs){
     id, nom:champs.nom, montant:champs.montant, categorie:champs.categorie, frequence:champs.frequence,
     dateDebut:champs.dateDebut, finType:champs.finType, finNombre:champs.finNombre, finDate:champs.finDate,
     who:champs.who, type:champs.type, estCompte:champs.estCompte, estRevenu:champs.estRevenu,
-    pourcentageP1: champs.pourcentageP1 != null ? champs.pourcentageP1 : 50, actif:true, datesExclues: []
+    pourcentageP1: champs.pourcentageP1 != null ? champs.pourcentageP1 : 50, actif:true, datesExclues: [],
+    intervalle, joursSemaine, dernierJourMois
   });
   sauvegarderRecurrencesLocal();
   return id;
@@ -2476,7 +2702,8 @@ async function diviserRecurrenceAPartirDe(depense, nv){
   await creerRecurrenceDepuisValeurs({
     type: recOriginale.type, nom: nv.note || recOriginale.nom, montant: nv.amount, categorie: nv.category,
     frequence: recOriginale.frequence, dateDebut: dateCharniere, finType, finNombre, finDate,
-    who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1
+    who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1,
+    intervalle: recOriginale.intervalle, joursSemaine: recOriginale.joursSemaine, dernierJourMois: recOriginale.dernierJourMois
   });
   await genererDepensesRecurrentes();
 }
@@ -2568,7 +2795,7 @@ function afficherRecurrencesScope(scope){
   const liste = recurrences.filter(r => scope==='conjoint' ? r.type==='conjointe' : (r.type==='personnelle' && r.who===currentUser));
   const listeSansRevenu = liste.filter(r=>!r.estRevenu);
   const actifs = listeSansRevenu.filter(r=>r.actif);
-  const totalMensuel = actifs.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r.frequence),0);
+  const totalMensuel = actifs.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r),0);
 
   /* Dans Personnel, "+ Conjoint" ajoute aussi les paiements récurrents conjoints à la
      liste (en lecture seule, clairement identifiés) : leur vrai % pour les récurrences
@@ -2576,7 +2803,7 @@ function afficherRecurrencesScope(scope){
   const inclusionActive = scope==='personnel' && inclureConjointDansPersonnel;
   const recurrentesConjointes = inclusionActive ? recurrences.filter(r=>r.type==='conjointe' && !r.estRevenu) : [];
   const actifsConjoints = recurrentesConjointes.filter(r=>r.actif);
-  const totalMensuelConjointPart = actifsConjoints.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r.frequence)*partPersonnelleRecurrence(r),0);
+  const totalMensuelConjointPart = actifsConjoints.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r)*partPersonnelleRecurrence(r),0);
 
   const statsEl = document.getElementById(`recurrent-stats-${scope}`);
   if(statsEl){
@@ -2616,17 +2843,13 @@ function afficherRecurrencesScope(scope){
         <div class="recurrent-meta">
           ${badgeType}
           ${r.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}">${r.categorie}</span>`}
-          <span class="freq-pill">${libelleFrequence(r.frequence)}</span>
+          <span class="freq-pill">${libelleFrequence(r)}</span>
           ${r.finType==='nombre' ? `<span class="freq-pill">${r.finNombre} paiement${r.finNombre>1?'s':''} max</span>` : ''}
           ${r.finType==='date' ? `<span class="freq-pill">Jusqu'au ${r.finDate}</span>` : ''}
         </div>
       </div>
       <div class="recurrent-actions">
         <div class="recurrent-montant" style="${r.estRevenu?'color:var(--green);':''}">${montantAffiche}${sousMontant}</div>
-        <label class="switch small" title="${r.actif ? 'Actif' : 'Inactif'}" onclick="event.stopPropagation()">
-          <input type="checkbox" ${r.actif?'checked':''} onchange="basculerActifRecurrence('${r.id}')">
-          <span class="switch-track"></span>
-        </label>
       </div>
     </div>
   `;
@@ -3115,12 +3338,13 @@ function ouvrirEditionRecurrence(id){
   document.getElementById('edit-rec-montant').value = rec.montant;
   document.getElementById('edit-rec-categorie').innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
   document.getElementById('edit-rec-categorie').value = rec.categorie;
-  document.getElementById('edit-rec-frequence').value = rec.frequence;
+  document.getElementById('edit-rec-frequence').value = estPersonnalisee(rec) ? 'personnalise' : rec.frequence;
+  document.getElementById('f-perso-field-rec').style.display = estPersonnalisee(rec) ? '' : 'none';
+  if(estPersonnalisee(rec)) appliquerValeursPersonnalisation('rec', rec);
   document.getElementById('edit-rec-date-debut').value = rec.dateDebut || '';
   document.getElementById('edit-rec-fin-type').value = rec.finType || 'jamais';
   document.getElementById('edit-rec-fin-nombre').value = rec.finNombre || '';
   document.getElementById('edit-rec-fin-date').value = rec.finDate || '';
-  document.getElementById('edit-rec-actif').checked = rec.actif;
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field');
 
   const quiField = document.getElementById('edit-rec-qui-field');
@@ -3183,12 +3407,16 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   const montant = parseFloat(document.getElementById('edit-rec-montant').value);
   if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
   const categorie = document.getElementById('edit-rec-categorie').value;
-  const frequence = document.getElementById('edit-rec-frequence').value;
+  const frequenceChoisie = document.getElementById('edit-rec-frequence').value;
+  const perso = frequenceChoisie==='personnalise' ? lireValeursPersonnalisation('rec') : { frequence: frequenceChoisie, intervalle: 1, joursSemaine: null, dernierJourMois: false };
+  const frequence = perso.frequence;
   const dateDebut = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
   const finType = document.getElementById('edit-rec-fin-type').value;
   const finNombre = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
   const finDate = finType==='date' ? (document.getElementById('edit-rec-fin-date').value || null) : null;
-  const actif = document.getElementById('edit-rec-actif').checked;
+  /* Plus d'option "Actif" à éditer : une récurrence reste active tant qu'elle n'est pas
+     supprimée (ou naturellement terminée via "Se termine"). */
+  const actif = true;
 
   if(finType==='nombre' && !finNombre){ alert("Merci d'entrer un nombre de paiements valide."); return; }
   if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
@@ -3207,14 +3435,15 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   const update = {
     Nom: nom, Montant: montant, Categorie: categorieFinale, Frequence: frequence,
     DateDebut: dateDebut, FinType: finType, FinNombre: finNombre, FinDate: finDate,
-    Qui: nomPersonneSupabase(who), Actif: actif, EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1
+    Qui: nomPersonneSupabase(who), Actif: actif, EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1,
+    Intervalle: perso.intervalle, JoursSemaine: perso.joursSemaine ? perso.joursSemaine.join(',') : null, DernierJourMois: perso.dernierJourMois
   };
 
   try{
     let { error } = await supabaseClient.from('Recurrences').update(update).eq('id', recurrenceEnEdition.id);
     if(error){
       console.warn("Mise à jour avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
-      const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = update;
+      const { EstCompte, EstRevenu, PourcentageP1, Intervalle, JoursSemaine, DernierJourMois, ...sansColonnesRecentes } = update;
       const retry = await supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', recurrenceEnEdition.id);
       if(retry.error) throw retry.error;
     }
@@ -3222,7 +3451,11 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
     console.warn("Impossible de mettre à jour la récurrence dans Supabase, sauvegarde locale seulement.", err);
   }
 
-  Object.assign(recurrenceEnEdition, { nom, montant, categorie: categorieFinale, frequence, dateDebut, finType, finNombre, finDate, who, actif, estCompte, estRevenu, pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50 });
+  Object.assign(recurrenceEnEdition, {
+    nom, montant, categorie: categorieFinale, frequence, dateDebut, finType, finNombre, finDate, who, actif, estCompte, estRevenu,
+    pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50,
+    intervalle: perso.intervalle, joursSemaine: perso.joursSemaine, dernierJourMois: perso.dernierJourMois
+  });
   sauvegarderRecurrencesLocal();
   document.getElementById('edit-recurrent-modal').style.display = 'none';
   afficherRecurrencesScope(recurrenceEnEdition.type==='personnelle' ? 'personnel' : 'conjoint');
@@ -3236,11 +3469,18 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
 /* Utilitaires réutilisés pour calculer les dépôts requis au compte conjoint (voir plus bas
    dans le module Récurrent) : nombre d'occurrences par année selon la fréquence, et nombre
    de paies aux 2 semaines par année. */
-function multiplicateurAnnuel(frequence){
-  if(frequence==='semaine') return 52;
-  if(frequence==='2semaines') return 26;
-  if(frequence==='annee') return 1;
-  return 12; /* mois */
+/* Nombre moyen d'occurrences par année, incluant l'intervalle personnalisé et, pour une
+   semaine avec jours précis, le nombre de jours cochés (ex: L/M/V à intervalle 1 -> 3*52). */
+function multiplicateurAnnuel(rec){
+  const intervalle = rec.intervalle || 1;
+  if(rec.frequence==='jour') return 365 / intervalle;
+  if(rec.frequence==='semaine'){
+    const nbJours = (rec.joursSemaine && rec.joursSemaine.length) ? rec.joursSemaine.length : 1;
+    return (52 / intervalle) * nbJours;
+  }
+  if(rec.frequence==='2semaines') return 26;
+  if(rec.frequence==='annee') return 1 / intervalle;
+  return 12 / intervalle; /* mois (le dernier jour du mois ne change pas la fréquence) */
 }
 const PAIES_PAR_ANNEE = 26; /* aux 2 semaines */
 
@@ -3560,7 +3800,8 @@ async function ajouterDepense(scope){
 
   /* "Se répète" != Jamais : au lieu d'une dépense ponctuelle, on crée une récurrence à
      partir de cette date (façon "Se répète" de Google Agenda) — le calendrier matérialisera
-     ensuite ses occurrences comme n'importe quelle autre récurrence. */
+     ensuite ses occurrences comme n'importe quelle autre récurrence. "Personnalisé…" lit en
+     plus le panneau (intervalle, jours de semaine, dernier jour du mois). */
   if(repete !== 'jamais'){
     const finType = document.getElementById(`f-fin-type-${scope}`).value;
     const finNombreRaw = document.getElementById(`f-fin-nombre-${scope}`).value;
@@ -3570,9 +3811,12 @@ async function ajouterDepense(scope){
     if(finType==='nombre' && !finNombre){ alert("Merci d'entrer un nombre de paiements valide."); return; }
     if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
 
+    const perso = repete==='personnalise' ? lireValeursPersonnalisation(scope) : { frequence: repete, intervalle: 1, joursSemaine: null, dernierJourMois: false };
+
     await creerRecurrenceDepuisValeurs({
-      type, nom: note || category, montant: amount, categorie: category, frequence: repete,
-      dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1
+      type, nom: note || category, montant: amount, categorie: category, frequence: perso.frequence,
+      dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1,
+      intervalle: perso.intervalle, joursSemaine: perso.joursSemaine, dernierJourMois: perso.dernierJourMois
     });
     await genererDepensesRecurrentes();
     reinitialiserFormulaireAjoutDepense(scope);
@@ -3638,6 +3882,7 @@ function reinitialiserFormulaireAjoutDepense(scope){
   document.getElementById(`f-fin-date-${scope}`).value = '';
   appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
   document.getElementById(`f-fin-type-field-${scope}`).style.display = 'none';
+  document.getElementById(`f-perso-field-${scope}`).style.display = 'none';
   document.getElementById(`form-card-${scope}`).classList.remove('mobile-add-open');
   if(scope==='conjoint'){
     document.getElementById('f-est-revenu-conjoint').checked = false;
@@ -3652,11 +3897,15 @@ document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajout
 
 /* Affiche les champs "Se termine" seulement quand "Se répète" n'est pas "Jamais", et les
    champs nombre/date selon le sous-choix, comme le fait le sélecteur équivalent du modal
-   d'édition d'une récurrence. */
+   d'édition d'une récurrence. "Personnalisé…" affiche en plus le panneau façon Google
+   Agenda (intervalle, jours de la semaine, dernier jour du mois). */
 ['conjoint','personnel'].forEach(scope=>{
+  wirerPersonnalisation(scope);
   document.getElementById(`f-repete-${scope}`).addEventListener('change', ()=>{
     const repete = document.getElementById(`f-repete-${scope}`).value;
     document.getElementById(`f-fin-type-field-${scope}`).style.display = repete==='jamais' ? 'none' : '';
+    document.getElementById(`f-perso-field-${scope}`).style.display = repete==='personnalise' ? '' : 'none';
+    if(repete==='personnalise') reinitialiserPersonnalisation(scope);
     if(repete==='jamais'){
       document.getElementById(`f-fin-nombre-field-${scope}`).style.display = 'none';
       document.getElementById(`f-fin-date-field-${scope}`).style.display = 'none';
@@ -3819,9 +4068,12 @@ function ouvrirEdition(id, mode){
     : 'Modifier une dépense';
   document.getElementById('edit-modal').style.display='flex';
 }
+wirerPersonnalisation('perso');
 document.getElementById('edit-repete').addEventListener('change', ()=>{
   const repete = document.getElementById('edit-repete').value;
   document.getElementById('edit-fin-type-field-perso').style.display = repete==='jamais' ? 'none' : '';
+  document.getElementById('f-perso-field-perso').style.display = repete==='personnalise' ? '' : 'none';
+  if(repete==='personnalise') reinitialiserPersonnalisation('perso');
   if(repete==='jamais'){
     document.getElementById('edit-fin-nombre-field-perso').style.display = 'none';
     document.getElementById('edit-fin-date-field-perso').style.display = 'none';
@@ -3868,10 +4120,13 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
     if(finType==='nombre' && !finNombre){ alert("Merci d'entrer un nombre de paiements valide."); return; }
     if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
 
+    const perso = repete==='personnalise' ? lireValeursPersonnalisation('perso') : { frequence: repete, intervalle: 1, joursSemaine: null, dernierJourMois: false };
+
     await creerRecurrenceDepuisValeurs({
       type, nom: noteFinale || categorieFinale, montant: amount, categorie: categorieFinale,
-      frequence: repete, dateDebut: date, finType, finNombre, finDate,
-      who, estCompte, estRevenu, pourcentageP1
+      frequence: perso.frequence, dateDebut: date, finType, finNombre, finDate,
+      who, estCompte, estRevenu, pourcentageP1,
+      intervalle: perso.intervalle, joursSemaine: perso.joursSemaine, dernierJourMois: perso.dernierJourMois
     });
     await supprimerDepense(depenseEnEdition.id);
     await genererDepensesRecurrentes();
