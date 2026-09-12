@@ -419,12 +419,9 @@
   .form-grid>.field{margin:0;min-width:0;}
   .form-grid>.field.pleine-largeur{grid-column:1 / -1;}
   .form-grid>.btn-add{grid-column:1 / -1;width:100%;margin-top:4px;}
-  @media (max-width:560px){
-    /* Les fenêtres d'édition repassent sur une colonne, mais PAS les formulaires d'ajout :
-       leur disposition en deux colonnes (Qui+Montant, Part %+Catégorie, Note, Date+Se répète)
-       est ce qui leur permet de tenir en entier au-dessus du clavier. */
-    .modal-grid{grid-template-columns:1fr;}
-  }
+  /* Formulaires d'ajout ET fenêtres d'édition gardent leurs deux colonnes jusqu'en bas :
+     mêmes champs aux mêmes endroits, qu'on ajoute ou qu'on modifie. Les champs qui ont
+     besoin de largeur (Note, réglages de récurrence) demandent .pleine-largeur. */
   .field label{
     display:block;font-size:12px;color:var(--text-secondary);
     margin-bottom:6px;font-weight:500;
@@ -685,7 +682,6 @@
   .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;align-items:start;}
   .modal-grid .field{margin:0;min-width:0;}
   .modal-grid .field.pleine-largeur{grid-column:1 / -1;}
-  @media (max-width:620px){ .modal-grid{grid-template-columns:1fr;} }
   /* Un champ grisé garde sa place : seul son aspect change */
   .field.est-desactive label{opacity:.55;}
   .field select:disabled, .field input:disabled{opacity:.5;cursor:not-allowed;}
@@ -1410,7 +1406,7 @@
 <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
 <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom"></div>
 <div class="field"><label>Date</label><input type="date" id="edit-rec-date-debut"></div>
-      <div class="field">
+      <div class="field pleine-largeur" id="edit-rec-intervalle-field">
         <label>Se répète tous les</label>
         <div class="rec-intervalle">
           <input type="number" id="edit-rec-intervalle" data-num="entier" min="1" step="1" value="1" inputmode="numeric">
@@ -1422,11 +1418,11 @@
           </select>
         </div>
       </div>
-      <div class="field pleine-largeur" id="edit-rec-jours-field">
+      <div class="field pleine-largeur" id="edit-rec-jours-field" style="display:none;">
         <label>Se répète le</label>
         <div class="jours-semaine-select" id="edit-rec-jours"></div>
       </div>
-      <div class="field pleine-largeur" id="edit-rec-mensuel-field">
+      <div class="field pleine-largeur" id="edit-rec-mensuel-field" style="display:none;">
         <label>Chaque mois</label>
         <select id="edit-rec-type-mensuel"></select>
       </div>
