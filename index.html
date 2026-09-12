@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Dépenses</title>
 
 <!-- ===================== PWA : installation "app" sans barre de navigateur ===================== -->
@@ -673,9 +673,27 @@
   .edit-actions{grid-column:1 / -1;display:flex;justify-content:flex-end;gap:12px;}
   @media (max-width:760px){
     .edit-modal{align-items:stretch;justify-content:stretch;background:var(--surface);padding:0;}
-    .edit-card{width:100%;height:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;}
-    .edit-card .modal-body{flex:1;overflow-y:auto;}
+    /* Hauteur = ce qui est RÉELLEMENT visible. `100%` valait la hauteur de la fenêtre, donc
+       à l'ouverture du clavier le bas de la fenêtre (et le pied avec ses boutons) passait
+       dessous, hors d'atteinte. `--hauteur-visible` est tenu à jour depuis visualViewport ;
+       100dvh sert de repli quand l'API n'est pas disponible. */
+    .edit-card{width:100%;height:var(--hauteur-visible, 100dvh);min-height:0;max-height:var(--hauteur-visible, 100dvh);
+      border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;}
+    .edit-card .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
     .edit-card .modal-header, .edit-card .modal-footer{flex:0 0 auto;}
+
+    /* Clavier ouvert : la place est comptée. L'entête et le pied cessent d'être figés et
+       repassent dans le flux, si bien que TOUT le formulaire devient atteignable en
+       faisant défiler — les boutons d'action se retrouvent simplement en dessous des
+       champs, ce qui est le bon ordre de lecture quand on est en train de saisir. */
+    body.clavier-ouvert .edit-card{display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    body.clavier-ouvert .edit-card .modal-body{overflow:visible;}
+    body.clavier-ouvert .edit-card .modal-header{position:sticky;top:0;z-index:2;background:var(--surface);}
+    body.clavier-ouvert .edit-card .modal-footer{position:static;}
+    /* Marge de sécurité pour qu'un champ visé par le défilement automatique ne colle pas
+       au bord de l'entête ni au haut du clavier. */
+    body.clavier-ouvert .edit-card .field{scroll-margin-top:64px;scroll-margin-bottom:24px;}
+
     .edit-card .edit-actions{grid-column:1 / -1;align-items:stretch;}
     .edit-card .edit-actions button{flex:1;padding-left:8px;padding-right:8px;}
     .modal-footer button{flex:1;padding-left:8px;padding-right:8px;}
@@ -875,13 +893,8 @@
           </div>
           <div class="field">
             <label>Se répète</label>
-            <select id="f-repete-conjoint">
-              <option value="jamais" selected>Jamais</option>
-              <option value="semaine">Chaque semaine</option>
-              <option value="2semaines">Chaque 2 semaines</option>
-              <option value="mois">Chaque mois</option>
-              <option value="annee">Chaque année</option>
-            </select>
+            <!-- Options construites par peuplerSelectRepetition() selon la date choisie. -->
+            <select id="f-repete-conjoint"></select>
           </div>
           <div class="field" id="f-fin-type-field-conjoint" style="display:none;">
             <label>Se termine</label>
@@ -1020,13 +1033,8 @@
           </div>
           <div class="field">
             <label>Se répète</label>
-            <select id="f-repete-personnel">
-              <option value="jamais" selected>Jamais</option>
-              <option value="semaine">Chaque semaine</option>
-              <option value="2semaines">Chaque 2 semaines</option>
-              <option value="mois">Chaque mois</option>
-              <option value="annee">Chaque année</option>
-            </select>
+            <!-- Options construites par peuplerSelectRepetition() selon la date choisie. -->
+            <select id="f-repete-personnel"></select>
           </div>
           <div class="field" id="f-fin-type-field-personnel" style="display:none;">
             <label>Se termine</label>
@@ -2126,6 +2134,52 @@ function libelleRecurrence(rec){
   return intervalle === 1 ? `Tous les mois${suffixeJour}` : `Tous les ${intervalle} mois${suffixeJour}`;
 }
 
+/* Ramène une config de répétition à une forme CANONIQUE unique. Plusieurs réglages
+   différents décrivaient exactement la même récurrence, ce qui produisait des entrées en
+   double dans le sélecteur et des libellés incohérents pour un comportement identique :
+
+     · « tous les 7 jours »              ≡ « toutes les semaines le <jour de la date> »
+     · « toutes les semaines » sans jour ≡ « toutes les semaines le <jour de la date> »
+     · « toutes les semaines », 7 jours  ≡ « tous les jours »
+
+   En normalisant à l'enregistrement, un réglage personnalisé qui retombe sur un préréglage
+   existant se confond avec lui au lieu de s'ajouter à côté. */
+function normaliserConfigRepetition(cfg, dateISO){
+  if(!cfg || cfg === 'jamais') return cfg;
+  const normalisee = {...cfg};
+  normalisee.intervalle = Math.max(1, normalisee.intervalle || 1);
+  const jourDeLaDate = dateISO ? new Date(dateISO+"T00:00:00").getDay() : new Date().getDay();
+
+  /* Un intervalle en jours multiple de 7 est une récurrence hebdomadaire. */
+  if(normalisee.unite === 'jour' && normalisee.intervalle % 7 === 0){
+    normalisee.unite = 'semaine';
+    normalisee.intervalle = normalisee.intervalle / 7;
+    normalisee.joursSemaine = [jourDeLaDate];
+  }
+
+  if(normalisee.unite === 'semaine'){
+    let jours = Array.isArray(normalisee.joursSemaine) ? [...new Set(normalisee.joursSemaine)].sort((a,b)=>a-b) : [];
+    /* Aucun jour coché : la règle implicite était « le jour de la date de début ». On la
+       rend explicite, pour qu'il n'y ait qu'une seule écriture possible. */
+    if(!jours.length) jours = [jourDeLaDate];
+    /* Les 7 jours cochés chaque semaine, c'est tous les jours. */
+    if(jours.length === 7 && normalisee.intervalle === 1){
+      return { unite:'jour', intervalle:1 };
+    }
+    normalisee.joursSemaine = jours;
+  } else {
+    delete normalisee.joursSemaine;
+  }
+
+  if(normalisee.unite === 'mois'){
+    normalisee.typeMensuel = normalisee.typeMensuel === 'dernier_jour' ? 'dernier_jour' : 'jour_mois';
+  } else {
+    delete normalisee.typeMensuel;
+  }
+
+  return normalisee;
+}
+
 /* Compare deux configs de répétition (unite/intervalle/joursSemaine/typeMensuel) pour savoir
    si une config donnée correspond exactement à un des préréglages proposés dans le select. */
 function configsEquivalentes(a, b){
@@ -2817,7 +2871,9 @@ document.getElementById('edit-rec-frequence').addEventListener('change', functio
   this.dataset.valeurPrecedente = this.value;
 });
 document.getElementById('edit-rec-date-debut').addEventListener('change', function(){
-  const cfgActuel = lireConfigRepetition('edit-rec-frequence');
+  /* La date change : on renormalise sur la NOUVELLE date, pour qu'une règle hebdomadaire
+     suive le jour de la semaine qu'on vient de choisir. */
+  const cfgActuel = lireConfigRepetition('edit-rec-frequence', this.value);
   peuplerSelectRepetition('edit-rec-frequence', this.value, cfgActuel, false);
 });
 
@@ -3922,8 +3978,8 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   const montant = parseFloat(document.getElementById('edit-rec-montant').value);
   if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
   const categorie = document.getElementById('edit-rec-categorie').value;
-  const cfgRepetition = lireConfigRepetition('edit-rec-frequence') || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
   const dateDebutFormulaire = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
+  const cfgRepetition = lireConfigRepetition('edit-rec-frequence', dateDebutFormulaire) || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
   const finType = document.getElementById('edit-rec-fin-type').value;
   const finNombreFormulaire = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
   const finDateFormulaire = finType==='date' ? (document.getElementById('edit-rec-fin-date').value || null) : null;
@@ -4335,7 +4391,7 @@ async function ajouterDepense(scope){
   const date = document.getElementById(`f-date-${scope}`).value;
   const category = estRevenu ? 'Revenu' : document.getElementById(`f-category-${scope}`).value;
   const note = document.getElementById(`f-note-${scope}`).value.trim();
-  const cfgRepetition = lireConfigRepetition(`f-repete-${scope}`);
+  const cfgRepetition = lireConfigRepetition(`f-repete-${scope}`, date);
 
   if(!amount || amount<=0 || !date){
     alert("Merci d'entrer un montant et une date valides.");
@@ -4543,20 +4599,34 @@ document.getElementById('custom-repetition-terminer').addEventListener('click', 
     : null;
   if(unite==='semaine' && (!joursSemaine || !joursSemaine.length)){ alert('Sélectionnez au moins un jour de la semaine.'); return; }
   const typeMensuel = unite==='mois' ? document.getElementById('custom-rep-type-mensuel').value : null;
-  const cfg = { unite, intervalle, joursSemaine, typeMensuel };
 
   const { selectId, dateInputId } = contexteRecurrencePersonnalisee;
   const select = document.getElementById(selectId);
   const dateISO = document.getElementById(dateInputId).value;
+  /* Canonisation : « tous les 7 jours » devient « toutes les semaines le mardi », etc. */
+  const cfg = normaliserConfigRepetition({ unite, intervalle, joursSemaine, typeMensuel }, dateISO);
   const valeur = JSON.stringify(cfg);
+
   Array.from(select.options).forEach(o => { if(o.dataset.custom==='1') o.remove(); });
-  const option = document.createElement('option');
-  option.value = valeur;
-  option.textContent = libelleRecurrence({...cfg, dateDebut: dateISO});
-  option.dataset.custom = '1';
-  select.insertBefore(option, select.querySelector('option[value="__custom__"]'));
-  select.value = valeur;
-  select.dataset.valeurPrecedente = valeur;
+
+  /* Si le réglage retombe sur un préréglage déjà listé, on sélectionne celui-là plutôt que
+     d'ajouter une option qui dirait exactement la même chose. */
+  const equivalent = Array.from(select.options).find(o=>{
+    if(o.value === 'jamais' || o.value === '__custom__') return false;
+    try{ return configsEquivalentes(JSON.parse(o.value), cfg); }catch(e){ return false; }
+  });
+  if(equivalent){
+    select.value = equivalent.value;
+    select.dataset.valeurPrecedente = equivalent.value;
+  } else {
+    const option = document.createElement('option');
+    option.value = valeur;
+    option.textContent = libelleRecurrence({...cfg, dateDebut: dateISO});
+    option.dataset.custom = '1';
+    select.insertBefore(option, select.querySelector('option[value="__custom__"]'));
+    select.value = valeur;
+    select.dataset.valeurPrecedente = valeur;
+  }
   select.dispatchEvent(new Event('change'));
   document.getElementById('custom-repetition-modal').style.display = 'none';
 });
@@ -4564,10 +4634,10 @@ document.getElementById('custom-repetition-terminer').addEventListener('click', 
 /* Convertit la valeur choisie dans un sélecteur "Se répète" ('jamais', un JSON de config, ou
    '__custom__' — mais ce dernier ne devrait jamais arriver ici, il est intercepté avant) en
    config utilisable par creerRecurrenceDepuisValeurs / la mise à jour d'une récurrence. */
-function lireConfigRepetition(selectId){
+function lireConfigRepetition(selectId, dateISO){
   const valeur = document.getElementById(selectId).value;
   if(valeur === 'jamais' || valeur === '__custom__') return null;
-  try{ return JSON.parse(valeur); }catch(e){ return null; }
+  try{ return normaliserConfigRepetition(JSON.parse(valeur), dateISO); }catch(e){ return null; }
 }
 
 /* Affiche les champs "Se termine" seulement quand "Se répète" n'est pas "Jamais", et les
@@ -4591,7 +4661,7 @@ function lireConfigRepetition(selectId){
     }
   });
   document.getElementById(`f-date-${scope}`).addEventListener('change', function(){
-    const cfgActuel = lireConfigRepetition(selectId);
+    const cfgActuel = lireConfigRepetition(selectId, this.value);
     peuplerSelectRepetition(selectId, this.value, cfgActuel, true);
   });
   document.getElementById(`f-fin-type-${scope}`).addEventListener('change', ()=>
@@ -5457,6 +5527,50 @@ function activerContraintesNumeriques(){
   });
 }
 activerContraintesNumeriques();
+
+/* ===================== CLAVIER VIRTUEL SUR MOBILE =====================
+   Sur mobile, les fenêtres d'édition occupent tout l'écran. Tant qu'elles se dimensionnaient
+   sur la hauteur de la FENÊTRE, l'ouverture du clavier poussait le bas du formulaire (et le
+   pied avec ses boutons) sous le clavier, sans moyen d'y accéder.
+
+   visualViewport donne la hauteur réellement visible. On la publie dans une variable CSS et
+   on marque le body quand le clavier est ouvert, ce qui laisse la mise en page rendre
+   l'entête et le pied défilants : tous les champs redeviennent atteignables. */
+function suivreClavierVirtuel(){
+  const vv = window.visualViewport;
+  if(!vv) return; /* repli CSS : 100dvh */
+
+  /* Seuil : en dessous, une variation de hauteur vient d'une barre d'adresse qui se replie,
+     pas d'un clavier. */
+  const SEUIL_CLAVIER = 140;
+  let hauteurMax = vv.height;
+
+  const majuster = () => {
+    hauteurMax = Math.max(hauteurMax, vv.height);
+    document.documentElement.style.setProperty('--hauteur-visible', `${Math.round(vv.height)}px`);
+    const clavierOuvert = (hauteurMax - vv.height) > SEUIL_CLAVIER;
+    document.body.classList.toggle('clavier-ouvert', clavierOuvert);
+  };
+
+  vv.addEventListener('resize', majuster);
+  vv.addEventListener('scroll', majuster);
+  window.addEventListener('orientationchange', ()=>{ hauteurMax = 0; setTimeout(majuster, 250); });
+  majuster();
+
+  /* Quand on passe d'un champ à l'autre, le navigateur ne ramène pas toujours le champ visé
+     au-dessus du clavier : on s'en assure une fois la mise en page stabilisée. */
+  document.addEventListener('focusin', (e)=>{
+    const champ = e.target;
+    if(!champ.matches || !champ.matches('input, select, textarea')) return;
+    if(!champ.closest('.edit-card')) return;
+    setTimeout(()=>{
+      if(document.activeElement === champ){
+        champ.scrollIntoView({block:'nearest', behavior:'smooth'});
+      }
+    }, 300);
+  });
+}
+suivreClavierVirtuel();
 
 /* Lancement au démarrage */
 initAuth();
