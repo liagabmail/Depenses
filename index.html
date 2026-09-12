@@ -233,6 +233,19 @@
   .jours-semaine-select{display:flex;gap:6px;flex-wrap:wrap;}
   .jour-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:12px;font-weight:500;}
   .jour-btn.selected{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+  /* Couple « intervalle + unité » sur une seule ligne, comme dans Google Agenda. */
+  .rec-intervalle{display:flex;gap:8px;}
+  .rec-intervalle input{flex:0 0 72px;}
+  .rec-intervalle select{flex:1;min-width:0;}
+
+  /* Bascule occupant une cellule de la grille : elle doit s'aligner sur la hauteur du champ
+     voisin (Date), dont le libellé occupe la ligne du dessus. */
+  .field.champ-bascule{display:flex;align-items:center;justify-content:space-between;
+    gap:10px;align-self:end;min-height:41px;}
+  .field.champ-bascule .toggle-field-label{font-size:14px;}
+
+  .titre-formulaire{margin-bottom:14px;}
   @media (max-width:760px){
     .recurrent-row{flex-wrap:wrap;}
     .recurrent-actions{margin-left:auto;}
@@ -877,7 +890,7 @@
 
       <div class="card form-card" id="form-card-conjoint">
         <button class="mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
-        <h3 style="margin-bottom:14px;">Ajouter une dépense conjointe</h3>
+        <h3 class="titre-formulaire">Ajouter une dépense conjointe</h3>
         <div class="form-grid">
           <div class="field" id="f-who-field-conjoint">
             <label>Qui</label>
@@ -907,12 +920,35 @@
             <label>Date</label>
             <input type="date" id="f-date-conjoint">
           </div>
-          <div class="field">
-            <label>Se répète</label>
-            <!-- Options construites par peuplerSelectRepetition() selon la date choisie. -->
-            <select id="f-repete-conjoint"></select>
+          <div class="field toggle-field champ-bascule" id="f-repete-field-conjoint">
+            <span class="toggle-field-label">🔁 Se répète</span>
+            <label class="switch"><input type="checkbox" id="f-repete-conjoint"><span class="switch-track"></span></label>
           </div>
-          <div class="field" id="f-fin-type-field-conjoint" style="display:none;">
+          <!-- Options de récurrence : dépliées dans le formulaire quand la bascule est à ON,
+               plus de fenêtre séparée. -->
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-intervalle-field-conjoint" style="display:none;">
+            <label>Se répète tous les</label>
+            <div class="rec-intervalle">
+              <input type="number" id="f-rec-intervalle-conjoint" data-num="entier" min="1" step="1" value="1" inputmode="numeric">
+              <select id="f-rec-unite-conjoint">
+                <option value="jour">jour(s)</option>
+                <option value="semaine">semaine(s)</option>
+                <option value="mois">mois</option>
+                <option value="annee">an(s)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-jours-field-conjoint" style="display:none;">
+            <label>Se répète le</label>
+            <div class="jours-semaine-select" id="f-rec-jours-conjoint"></div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-mensuel-field-conjoint" style="display:none;">
+            <label>Chaque mois</label>
+            <!-- « Le dernier jour du mois » n'est proposé que si la date choisie tombe
+                 effectivement le dernier jour : options reconstruites à chaque changement. -->
+            <select id="f-rec-type-mensuel-conjoint"></select>
+          </div>
+          <div class="field bloc-recurrence" id="f-fin-type-field-conjoint" style="display:none;">
             <label>Se termine</label>
             <select id="f-fin-type-conjoint">
               <option value="jamais">Jamais</option>
@@ -920,19 +956,19 @@
               <option value="date">À une date précise</option>
             </select>
           </div>
-          <div class="field" id="f-fin-nombre-field-conjoint" style="display:none;">
+          <div class="field bloc-recurrence" id="f-fin-nombre-field-conjoint" style="display:none;">
             <label>Nombre de paiements</label>
             <input type="number" id="f-fin-nombre-conjoint" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric">
           </div>
-          <div class="field" id="f-fin-date-field-conjoint" style="display:none;">
+          <div class="field bloc-recurrence" id="f-fin-date-field-conjoint" style="display:none;">
             <label>Date de fin</label>
             <input type="date" id="f-fin-date-conjoint">
           </div>
-          <div class="field toggle-field" id="f-est-revenu-field-conjoint" style="grid-column:1/-1;display:none;">
+          <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-conjoint" style="display:none;">
             <span class="toggle-field-label">💰 Est un revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
-<button class="btn-add" id="btn-add-conjoint">Ajouter</button>
+          <button class="btn-add" id="btn-add-conjoint">Ajouter</button>
         </div>
       </div>
       <button class="mobile-add-btn" id="mobile-add-conjoint" aria-label="Ajouter une dépense conjointe">+</button>
@@ -1024,6 +1060,9 @@
       </div>
 
       <div class="card form-card" id="form-card-personnel">
+        <button class="mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
+        <h3 class="titre-formulaire">Ajouter une dépense personnelle</h3>
+        <div class="form-grid">
           <div class="field">
             <label>Montant</label>
             <input type="number" id="f-amount-personnel" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
@@ -1044,12 +1083,35 @@
             <label>Date</label>
             <input type="date" id="f-date-personnel">
           </div>
-          <div class="field">
-            <label>Se répète</label>
-            <!-- Options construites par peuplerSelectRepetition() selon la date choisie. -->
-            <select id="f-repete-personnel"></select>
+          <div class="field toggle-field champ-bascule" id="f-repete-field-personnel">
+            <span class="toggle-field-label">🔁 Se répète</span>
+            <label class="switch"><input type="checkbox" id="f-repete-personnel"><span class="switch-track"></span></label>
           </div>
-          <div class="field" id="f-fin-type-field-personnel" style="display:none;">
+          <!-- Options de récurrence : dépliées dans le formulaire quand la bascule est à ON,
+               plus de fenêtre séparée. -->
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-intervalle-field-personnel" style="display:none;">
+            <label>Se répète tous les</label>
+            <div class="rec-intervalle">
+              <input type="number" id="f-rec-intervalle-personnel" data-num="entier" min="1" step="1" value="1" inputmode="numeric">
+              <select id="f-rec-unite-personnel">
+                <option value="jour">jour(s)</option>
+                <option value="semaine">semaine(s)</option>
+                <option value="mois">mois</option>
+                <option value="annee">an(s)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-jours-field-personnel" style="display:none;">
+            <label>Se répète le</label>
+            <div class="jours-semaine-select" id="f-rec-jours-personnel"></div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-mensuel-field-personnel" style="display:none;">
+            <label>Chaque mois</label>
+            <!-- « Le dernier jour du mois » n'est proposé que si la date choisie tombe
+                 effectivement le dernier jour : options reconstruites à chaque changement. -->
+            <select id="f-rec-type-mensuel-personnel"></select>
+          </div>
+          <div class="field bloc-recurrence" id="f-fin-type-field-personnel" style="display:none;">
             <label>Se termine</label>
             <select id="f-fin-type-personnel">
               <option value="jamais">Jamais</option>
@@ -1057,22 +1119,19 @@
               <option value="date">À une date précise</option>
             </select>
           </div>
-          <div class="field" id="f-fin-nombre-field-personnel" style="display:none;">
+          <div class="field bloc-recurrence" id="f-fin-nombre-field-personnel" style="display:none;">
             <label>Nombre de paiements</label>
             <input type="number" id="f-fin-nombre-personnel" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric">
           </div>
-          <div class="field" id="f-fin-date-field-personnel" style="display:none;">
+          <div class="field bloc-recurrence" id="f-fin-date-field-personnel" style="display:none;">
             <label>Date de fin</label>
             <input type="date" id="f-fin-date-personnel">
           </div>
-          <div class="field toggle-field" style="grid-column:1/-1;">
+          <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-personnel">
             <span class="toggle-field-label">💰 Est un revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
-<button class="mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
-        <h3 style="margin-bottom:14px;">Ajouter une dépense personnelle</h3>
-        <div class="form-grid">
-<button class="btn-add" id="btn-add-personnel">Ajouter</button>
+          <button class="btn-add" id="btn-add-personnel">Ajouter</button>
         </div>
       </div>
       <button class="mobile-add-btn" id="mobile-add-personnel" aria-label="Ajouter une dépense personnelle">+</button>
@@ -1352,8 +1411,24 @@
 <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom"></div>
 <div class="field"><label>Date</label><input type="date" id="edit-rec-date-debut"></div>
       <div class="field">
-        <label>Se répète</label>
-        <select id="edit-rec-frequence"></select>
+        <label>Se répète tous les</label>
+        <div class="rec-intervalle">
+          <input type="number" id="edit-rec-intervalle" data-num="entier" min="1" step="1" value="1" inputmode="numeric">
+          <select id="edit-rec-unite">
+            <option value="jour">jour(s)</option>
+            <option value="semaine">semaine(s)</option>
+            <option value="mois">mois</option>
+            <option value="annee">an(s)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field pleine-largeur" id="edit-rec-jours-field">
+        <label>Se répète le</label>
+        <div class="jours-semaine-select" id="edit-rec-jours"></div>
+      </div>
+      <div class="field pleine-largeur" id="edit-rec-mensuel-field">
+        <label>Chaque mois</label>
+        <select id="edit-rec-type-mensuel"></select>
       </div>
       <div class="field">
         <label>Se termine</label>
@@ -1387,47 +1462,6 @@
   <div class="modal-footer">
     <button class="btn-secondary btn-danger" id="delete-edit-recurrent">Supprimer</button>
     <button class="btn-add" id="save-edit-recurrent">Sauvegarder</button>
-  </div>
-</div></div>
-
-<!-- Modal partagé de récurrence personnalisée (façon Google Agenda), utilisé par les 3
-     sélecteurs "Se répète" (ajout conjoint, ajout personnel, édition d'une récurrence). -->
-<div class="edit-modal" id="custom-repetition-modal"><div class="edit-card">
-  <div class="modal-header">
-    <h3>Récurrence personnalisée</h3>
-    <button class="modal-close-btn" id="close-custom-repetition" aria-label="Fermer">&times;</button>
-  </div>
-  <div class="modal-body">
-    <div class="modal-grid">
-      <div class="field">
-        <label>Tous/toutes les</label>
-        <input type="number" id="custom-rep-intervalle" data-num="entier" min="1" step="1" value="1" inputmode="numeric">
-      </div>
-      <div class="field">
-        <label>Unité</label>
-        <select id="custom-rep-unite">
-          <option value="jour">jour(s)</option>
-          <option value="semaine">semaine(s)</option>
-          <option value="mois">mois</option>
-          <option value="annee">année(s)</option>
-        </select>
-      </div>
-      <div class="field pleine-largeur" id="custom-rep-jours-field">
-        <label>Répéter le</label>
-        <div class="jours-semaine-select" id="custom-rep-jours"></div>
-      </div>
-      <div class="field pleine-largeur" id="custom-rep-mensuel-field">
-        <label>Chaque mois</label>
-        <select id="custom-rep-type-mensuel">
-          <option value="jour_mois">Le même jour du mois</option>
-          <option value="dernier_jour">Le dernier jour du mois</option>
-        </select>
-      </div>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button class="btn-secondary" id="custom-repetition-annuler">Annuler</button>
-    <button class="btn-add" id="custom-repetition-terminer">Terminé</button>
   </div>
 </div></div>
 
@@ -2875,19 +2909,10 @@ function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
 document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field'));
 
-/* "Se répète" du modal d'édition d'une récurrence : mêmes règles que les formulaires
-   d'ajout (interception de "Personnaliser…", régénération des préréglages si la date de
-   début change), voir le module partagé plus bas dans le fichier. */
-document.getElementById('edit-rec-frequence').addEventListener('change', function(){
-  if(this.value === '__custom__'){ ouvrirRecurrencePersonnalisee('edit-rec-frequence', 'edit-rec-date-debut'); return; }
-  this.dataset.valeurPrecedente = this.value;
-});
-document.getElementById('edit-rec-date-debut').addEventListener('change', function(){
-  /* La date change : on renormalise sur la NOUVELLE date, pour qu'une règle hebdomadaire
-     suive le jour de la semaine qu'on vient de choisir. */
-  const cfgActuel = lireConfigRepetition('edit-rec-frequence', this.value);
-  peuplerSelectRepetition('edit-rec-frequence', this.value, cfgActuel, false);
-});
+/* La fenêtre d'édition d'une récurrence utilise les MÊMES contrôles que les formulaires
+   d'ajout (module partagé plus bas). Pas de bascule ici : une récurrence se répète par
+   définition, les réglages sont donc toujours visibles. Le branchement se fait avec le
+   module, plus bas dans le fichier (les contrôles y sont définis). */
 
 async function basculerActifRecurrence(id){
   const rec = recurrences.find(r=>r.id===id); if(!rec) return;
@@ -3921,7 +3946,7 @@ function ouvrirEditionRecurrence(id){
   document.getElementById('edit-rec-montant').value = rec.montant;
   document.getElementById('edit-rec-categorie').innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
   document.getElementById('edit-rec-categorie').value = rec.categorie;
-  peuplerSelectRepetition('edit-rec-frequence', rec.dateDebut, { unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel }, false);
+  remplirControlesRecurrence(CONTROLES_RECURRENCE_EDITION, { unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel });
   document.getElementById('edit-rec-date-debut').value = rec.dateDebut || '';
   document.getElementById('edit-rec-fin-type').value = rec.finType || 'jamais';
   document.getElementById('edit-rec-fin-nombre').value = rec.finNombre || '';
@@ -3991,7 +4016,7 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
   const categorie = document.getElementById('edit-rec-categorie').value;
   const dateDebutFormulaire = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
-  const cfgRepetition = lireConfigRepetition('edit-rec-frequence', dateDebutFormulaire) || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
+  const cfgRepetition = lireControlesRecurrence(CONTROLES_RECURRENCE_EDITION) || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
   const finType = document.getElementById('edit-rec-fin-type').value;
   const finNombreFormulaire = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
   const finDateFormulaire = finType==='date' ? (document.getElementById('edit-rec-fin-date').value || null) : null;
@@ -4403,7 +4428,11 @@ async function ajouterDepense(scope){
   const date = document.getElementById(`f-date-${scope}`).value;
   const category = estRevenu ? 'Revenu' : document.getElementById(`f-category-${scope}`).value;
   const note = document.getElementById(`f-note-${scope}`).value.trim();
-  const cfgRepetition = lireConfigRepetition(`f-repete-${scope}`, date);
+  /* La bascule « Se répète » décide : à OFF c'est une dépense ponctuelle, à ON on lit les
+     réglages dépliés juste en dessous. */
+  const cfgRepetition = document.getElementById(`f-repete-${scope}`).checked
+    ? lireControlesRecurrence(controlesRecurrenceAjout(scope))
+    : null;
 
   if(!amount || amount<=0 || !date){
     alert("Merci d'entrer un montant et une date valides.");
@@ -4487,8 +4516,8 @@ async function ajouterDepense(scope){
 function reinitialiserFormulaireAjoutDepense(scope){
   document.getElementById(`f-amount-${scope}`).value = '';
   document.getElementById(`f-note-${scope}`).value = '';
-  document.getElementById(`f-repete-${scope}`).value = 'jamais';
-  document.getElementById(`f-repete-${scope}`).dataset.valeurPrecedente = 'jamais';
+  document.getElementById(`f-repete-${scope}`).checked = false;
+  appliquerAffichageRepetition(scope, false);
   document.getElementById(`f-fin-type-${scope}`).value = 'jamais';
   document.getElementById(`f-fin-nombre-${scope}`).value = '';
   document.getElementById(`f-fin-date-${scope}`).value = '';
@@ -4506,189 +4535,156 @@ function reinitialiserFormulaireAjoutDepense(scope){
 document.getElementById('btn-add-conjoint').addEventListener('click', ()=>ajouterDepense('conjoint'));
 document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajouterDepense('personnel'));
 
-/* ===================== SÉLECTEUR "SE RÉPÈTE" FAÇON GOOGLE AGENDA =====================
-   Un seul module partagé par les 3 sélecteurs concernés (ajout conjoint, ajout personnel,
-   édition d'une récurrence) : préréglages calculés dynamiquement selon la date choisie
-   (comme Google Agenda qui propose "Toutes les semaines le mardi" si la date tombe un
-   mardi), + une option "Personnaliser…" qui ouvre le modal partagé pour choisir un
-   intervalle libre (ex: toutes les 3 semaines), plusieurs jours de la semaine à la fois, ou
-   "le dernier jour du mois" pour les dépenses dont la date de facturation varie selon la
-   longueur du mois. */
-/* Le menu ne propose plus de liste de préréglages : tout ce qu'ils permettaient (intervalle,
-   unité, jours de la semaine) se règle déjà dans « Personnalisé… », qui couvre strictement
-   plus de cas. Les garder revenait à offrir deux chemins pour le même résultat.
+/* ===================== RÉCURRENCE : CONTRÔLES EN LIGNE =====================
+   Une bascule « Se répète » dans le formulaire ; quand elle est à ON, les réglages se
+   déplient juste en dessous, dans le même écran. Il n'y a plus de fenêtre « Personnaliser… »
+   ni de liste de préréglages : un seul chemin pour un seul résultat.
 
-   Seule exception conservée : « Tous les mois le dernier jour », proposé directement quand la
-   date choisie TOMBE le dernier jour du mois — c'est le seul réglage qu'on ne devine pas à la
-   lecture de la date (le 30 avril peut vouloir dire « le 30 » ou « le dernier jour »), donc
-   le seul qui mérite d'être mis en avant. Il reste aussi accessible depuis « Personnalisé… »
-   pour les autres dates. */
-function construirePresetsRepetition(dateISO){
-  const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
-  if(d.getDate() !== dernierJourDuMois(d).getDate()) return [];
-  const cfg = { unite:'mois', intervalle:1, typeMensuel:'dernier_jour' };
-  return [{ value: JSON.stringify(cfg), config: cfg, label: libelleRecurrence({...cfg, dateDebut: dateISO}) }];
+   Les mêmes contrôles servent aux deux formulaires d'ajout et à la fenêtre d'édition d'une
+   récurrence ; chaque emplacement fournit simplement les identifiants de SES éléments. */
+
+function controlesRecurrenceAjout(scope){
+  return {
+    intervalle: `f-rec-intervalle-${scope}`,
+    unite: `f-rec-unite-${scope}`,
+    jours: `f-rec-jours-${scope}`,
+    joursField: `f-rec-jours-field-${scope}`,
+    typeMensuel: `f-rec-type-mensuel-${scope}`,
+    mensuelField: `f-rec-mensuel-field-${scope}`,
+    date: `f-date-${scope}`
+  };
 }
+const CONTROLES_RECURRENCE_EDITION = {
+  intervalle:'edit-rec-intervalle', unite:'edit-rec-unite',
+  jours:'edit-rec-jours', joursField:'edit-rec-jours-field',
+  typeMensuel:'edit-rec-type-mensuel', mensuelField:'edit-rec-mensuel-field',
+  date:'edit-rec-date-debut'
+};
 
-/* Reconstruit entièrement les <option> d'un sélecteur "Se répète" à partir de la date
-   choisie. Si `cfgActuel` (config déjà en place, ex. en édition) ne correspond à aucun
-   préréglage, on l'ajoute quand même comme option supplémentaire pour ne jamais perdre une
-   récurrence personnalisée existante. `avecJamais` est à false pour le select du modal
-   d'édition d'une récurrence (une récurrence, par définition, se répète déjà). */
-function peuplerSelectRepetition(selectId, dateISO, cfgActuel, avecJamais){
-  const select = document.getElementById(selectId);
-  const presets = construirePresetsRepetition(dateISO);
-  let html = avecJamais ? `<option value="jamais">Ne se répète pas</option>` : '';
-  html += presets.map(p => `<option value='${p.value}'>${p.label}</option>`).join('');
-  let valeurCourante = avecJamais ? 'jamais' : (presets[0] ? presets[0].value : 'jamais');
-  if(cfgActuel){
-    const correspondance = presets.find(p => configsEquivalentes(p.config, cfgActuel));
-    if(correspondance){
-      valeurCourante = correspondance.value;
-    } else {
-      const valeurCustom = JSON.stringify(cfgActuel);
-      html += `<option value='${valeurCustom}' data-custom="1">${libelleRecurrence({...cfgActuel, dateDebut: dateISO})}</option>`;
-      valeurCourante = valeurCustom;
-    }
-  }
-  html += `<option value="__custom__">Personnaliser…</option>`;
-  select.innerHTML = html;
-  /* Sans « Ne se répète pas » ni préréglage ni config existante, la seule entrée réelle est
-     « Personnaliser… » : on l'y positionne plutôt que de laisser une valeur fantôme. */
-  if(!Array.from(select.options).some(o => o.value === valeurCourante)) valeurCourante = '__custom__';
-  select.value = valeurCourante;
-  select.dataset.valeurPrecedente = valeurCourante;
-}
-
-/* Contexte du sélecteur actuellement en train d'ouvrir le modal "Récurrence personnalisée"
-   (un seul modal partagé pour les 3 sélecteurs, un seul peut être ouvert à la fois). */
-let contexteRecurrencePersonnalisee = null;
-
-function peuplerJoursSemaineBoutons(joursSelectionnes){
-  const conteneur = document.getElementById('custom-rep-jours');
+function peuplerJoursSemaineBoutons(conteneurId, joursSelectionnes){
+  const conteneur = document.getElementById(conteneurId);
+  if(!conteneur) return;
   conteneur.innerHTML = NOMS_JOURS_LETTRE.map((lettre,i)=>
     `<button type="button" class="jour-btn${joursSelectionnes.includes(i)?' selected':''}" data-jour="${i}">${lettre}</button>`
   ).join('');
-  conteneur.querySelectorAll('.jour-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> btn.classList.toggle('selected'));
-  });
 }
-function appliquerAffichageChampsCustomRepetition(){
-  const unite = document.getElementById('custom-rep-unite').value;
-  document.getElementById('custom-rep-jours-field').style.display = unite==='semaine' ? '' : 'none';
-  document.getElementById('custom-rep-mensuel-field').style.display = unite==='mois' ? '' : 'none';
-}
-document.getElementById('custom-rep-unite').addEventListener('change', appliquerAffichageChampsCustomRepetition);
 
-function ouvrirRecurrencePersonnalisee(selectId, dateInputId){
-  const select = document.getElementById(selectId);
-  contexteRecurrencePersonnalisee = { selectId, dateInputId, valeurPrecedente: select.dataset.valeurPrecedente || 'jamais' };
-  const dateISO = document.getElementById(dateInputId).value;
+/* « Le dernier jour du mois » n'est proposé QUE si la date choisie tombe effectivement le
+   dernier jour : partout ailleurs ce serait un réglage impossible à deviner à la lecture de
+   la date. Si l'option disparaît alors qu'elle était sélectionnée, on retombe sur le jour
+   du mois. */
+function peuplerTypeMensuel(ids){
+  const select = document.getElementById(ids.typeMensuel);
+  if(!select) return;
+  const dateISO = document.getElementById(ids.date).value;
   const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
-  let cfg = null;
-  try{ cfg = JSON.parse(contexteRecurrencePersonnalisee.valeurPrecedente); }catch(e){ cfg = null; }
-  if(!cfg || !cfg.unite) cfg = { unite:'semaine', intervalle:1, joursSemaine:[d.getDay()], typeMensuel:'jour_mois' };
-
-  document.getElementById('custom-rep-intervalle').value = cfg.intervalle || 1;
-  document.getElementById('custom-rep-unite').value = cfg.unite;
-  peuplerJoursSemaineBoutons(cfg.joursSemaine && cfg.joursSemaine.length ? cfg.joursSemaine : [d.getDay()]);
-  document.getElementById('custom-rep-type-mensuel').value = cfg.typeMensuel === 'dernier_jour' ? 'dernier_jour' : 'jour_mois';
-  appliquerAffichageChampsCustomRepetition();
-  document.getElementById('custom-repetition-modal').style.display = 'flex';
+  const estDernierJour = d.getDate() === dernierJourDuMois(d).getDate();
+  const ancienChoix = select.value;
+  let html = `<option value="jour_mois">Le ${d.getDate()} de chaque mois</option>`;
+  if(estDernierJour) html += `<option value="dernier_jour">Le dernier jour du mois</option>`;
+  select.innerHTML = html;
+  select.value = (ancienChoix === 'dernier_jour' && estDernierJour) ? 'dernier_jour' : 'jour_mois';
 }
-document.getElementById('close-custom-repetition').addEventListener('click', ()=>{
-  document.getElementById('custom-repetition-modal').style.display = 'none';
-  if(contexteRecurrencePersonnalisee) document.getElementById(contexteRecurrencePersonnalisee.selectId).value = contexteRecurrencePersonnalisee.valeurPrecedente;
-});
-document.getElementById('custom-repetition-annuler').addEventListener('click', ()=>{
-  document.getElementById('custom-repetition-modal').style.display = 'none';
-  if(contexteRecurrencePersonnalisee) document.getElementById(contexteRecurrencePersonnalisee.selectId).value = contexteRecurrencePersonnalisee.valeurPrecedente;
-});
-document.getElementById('custom-repetition-terminer').addEventListener('click', ()=>{
-  if(!contexteRecurrencePersonnalisee) return;
-  const intervalle = Math.max(1, parseInt(document.getElementById('custom-rep-intervalle').value,10) || 1);
-  const unite = document.getElementById('custom-rep-unite').value;
-  const joursSemaine = unite==='semaine'
-    ? Array.from(document.querySelectorAll('#custom-rep-jours .jour-btn.selected')).map(b=>parseInt(b.dataset.jour,10)).sort((a,b)=>a-b)
-    : null;
-  if(unite==='semaine' && (!joursSemaine || !joursSemaine.length)){ alert('Sélectionnez au moins un jour de la semaine.'); return; }
-  const typeMensuel = unite==='mois' ? document.getElementById('custom-rep-type-mensuel').value : null;
 
-  const { selectId, dateInputId } = contexteRecurrencePersonnalisee;
-  const select = document.getElementById(selectId);
-  const dateISO = document.getElementById(dateInputId).value;
-  /* Canonisation : « tous les 7 jours » devient « toutes les semaines le mardi », etc. */
-  const cfg = normaliserConfigRepetition({ unite, intervalle, joursSemaine, typeMensuel }, dateISO);
-  const valeur = JSON.stringify(cfg);
+/* Les jours de la semaine ne concernent qu'une règle hebdomadaire, le choix du jour du mois
+   qu'une règle mensuelle : on n'affiche que ce qui s'applique. */
+function appliquerAffichageRecurrence(ids){
+  const unite = document.getElementById(ids.unite).value;
+  document.getElementById(ids.joursField).style.display = unite === 'semaine' ? '' : 'none';
+  document.getElementById(ids.mensuelField).style.display = unite === 'mois' ? '' : 'none';
+  if(unite === 'mois') peuplerTypeMensuel(ids);
+}
 
-  Array.from(select.options).forEach(o => { if(o.dataset.custom==='1') o.remove(); });
-
-  /* Si le réglage retombe sur un préréglage déjà listé, on sélectionne celui-là plutôt que
-     d'ajouter une option qui dirait exactement la même chose. */
-  const equivalent = Array.from(select.options).find(o=>{
-    if(o.value === 'jamais' || o.value === '__custom__') return false;
-    try{ return configsEquivalentes(JSON.parse(o.value), cfg); }catch(e){ return false; }
-  });
-  if(equivalent){
-    select.value = equivalent.value;
-    select.dataset.valeurPrecedente = equivalent.value;
-  } else {
-    const option = document.createElement('option');
-    option.value = valeur;
-    option.textContent = libelleRecurrence({...cfg, dateDebut: dateISO});
-    option.dataset.custom = '1';
-    select.insertBefore(option, select.querySelector('option[value="__custom__"]'));
-    select.value = valeur;
-    select.dataset.valeurPrecedente = valeur;
+function remplirControlesRecurrence(ids, cfg){
+  const dateISO = document.getElementById(ids.date).value;
+  const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
+  const c = cfg || { unite:'mois', intervalle:1 };
+  document.getElementById(ids.intervalle).value = Math.max(1, c.intervalle || 1);
+  document.getElementById(ids.unite).value = c.unite || 'mois';
+  peuplerJoursSemaineBoutons(ids.jours, (c.joursSemaine && c.joursSemaine.length) ? c.joursSemaine : [d.getDay()]);
+  appliquerAffichageRecurrence(ids);
+  const selMensuel = document.getElementById(ids.typeMensuel);
+  if(selMensuel && c.typeMensuel === 'dernier_jour'){
+    selMensuel.value = 'dernier_jour';
+    if(selMensuel.value !== 'dernier_jour') selMensuel.value = 'jour_mois'; /* option absente */
   }
-  select.dispatchEvent(new Event('change'));
-  document.getElementById('custom-repetition-modal').style.display = 'none';
-});
-
-/* Convertit la valeur choisie dans un sélecteur "Se répète" ('jamais', un JSON de config, ou
-   '__custom__' — mais ce dernier ne devrait jamais arriver ici, il est intercepté avant) en
-   config utilisable par creerRecurrenceDepuisValeurs / la mise à jour d'une récurrence. */
-function lireConfigRepetition(selectId, dateISO){
-  const valeur = document.getElementById(selectId).value;
-  if(valeur === 'jamais' || valeur === '__custom__') return null;
-  try{ return normaliserConfigRepetition(JSON.parse(valeur), dateISO); }catch(e){ return null; }
 }
 
-/* Affiche les champs "Se termine" seulement quand "Se répète" n'est pas "Jamais", et les
-   champs nombre/date selon le sous-choix. Intercepte "Personnaliser…" pour ouvrir le modal
-   partagé, et régénère les préréglages quand la date choisie change (comme Google Agenda,
-   qui adapte "Toutes les semaines le ..." au jour réellement sélectionné). */
-['conjoint','personnel'].forEach(scope=>{
-  const selectId = `f-repete-${scope}`;
-  peuplerSelectRepetition(selectId, document.getElementById(`f-date-${scope}`).value, null, true);
+function lireControlesRecurrence(ids){
+  const unite = document.getElementById(ids.unite).value;
+  const intervalle = Math.max(1, parseInt(document.getElementById(ids.intervalle).value,10) || 1);
+  const joursSemaine = unite === 'semaine'
+    ? Array.from(document.querySelectorAll(`#${ids.jours} .jour-btn.selected`)).map(b=>parseInt(b.dataset.jour,10)).sort((a,b)=>a-b)
+    : null;
+  const selMensuel = document.getElementById(ids.typeMensuel);
+  const typeMensuel = unite === 'mois' && selMensuel ? selMensuel.value : null;
+  const dateISO = document.getElementById(ids.date).value;
+  return normaliserConfigRepetition({ unite, intervalle, joursSemaine, typeMensuel }, dateISO);
+}
 
-  document.getElementById(selectId).addEventListener('change', function(){
-    if(this.value === '__custom__'){ ouvrirRecurrencePersonnalisee(selectId, `f-date-${scope}`); return; }
-    this.dataset.valeurPrecedente = this.value;
-    const repete = this.value;
-    document.getElementById(`f-fin-type-field-${scope}`).style.display = repete==='jamais' ? 'none' : '';
-    if(repete==='jamais'){
-      document.getElementById(`f-fin-nombre-field-${scope}`).style.display = 'none';
-      document.getElementById(`f-fin-date-field-${scope}`).style.display = 'none';
-    } else {
-      appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
-      /* Les options de fin viennent d'apparaître sous la ligne « Date / Se répète ». Sur
-         mobile elles seraient cachées par le clavier : on le referme et on amène les
-         options dans le champ de vision. */
-      if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
-      setTimeout(()=>{
-        const champFin = document.getElementById(`f-fin-type-field-${scope}`);
-        if(champFin) champFin.scrollIntoView({block:'nearest', behavior:'smooth'});
-      }, 250);
-    }
+function brancherControlesRecurrence(ids){
+  document.getElementById(ids.unite).addEventListener('change', ()=>appliquerAffichageRecurrence(ids));
+  document.getElementById(ids.jours).addEventListener('click', (e)=>{
+    const btn = e.target.closest('.jour-btn');
+    if(!btn) return;
+    btn.classList.toggle('selected');
+    /* Au moins un jour doit rester coché, sinon la règle n'a plus de sens. */
+    if(!document.querySelector(`#${ids.jours} .jour-btn.selected`)) btn.classList.add('selected');
   });
-  document.getElementById(`f-date-${scope}`).addEventListener('change', function(){
-    const cfgActuel = lireConfigRepetition(selectId, this.value);
-    peuplerSelectRepetition(selectId, this.value, cfgActuel, true);
+  document.getElementById(ids.date).addEventListener('change', ()=>{
+    if(document.getElementById(ids.unite).value === 'mois') peuplerTypeMensuel(ids);
   });
+}
+
+/* Fenêtre d'édition d'une récurrence : contrôles toujours visibles, pas de bascule. */
+brancherControlesRecurrence(CONTROLES_RECURRENCE_EDITION);
+
+/* Bascule « Se répète » des deux formulaires d'ajout : à ON, tous les réglages de récurrence
+   se déplient sous la ligne « Date / Se répète ». */
+['conjoint','personnel'].forEach(scope=>{
+  const ids = controlesRecurrenceAjout(scope);
+  brancherControlesRecurrence(ids);
+
+  document.getElementById(`f-repete-${scope}`).addEventListener('change', function(){
+    appliquerAffichageRepetition(scope, this.checked);
+    if(!this.checked) return;
+    /* Les réglages viennent d'apparaître sous la ligne 4. Sur mobile ils seraient cachés par
+       le clavier : on le referme et on les amène dans le champ de vision. */
+    if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    setTimeout(()=>{
+      const bloc = document.getElementById(`f-rec-intervalle-field-${scope}`);
+      if(bloc) bloc.scrollIntoView({block:'nearest', behavior:'smooth'});
+    }, 250);
+  });
+
   document.getElementById(`f-fin-type-${scope}`).addEventListener('change', ()=>
     appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`));
+
+  appliquerAffichageRepetition(scope, false);
 });
+
+/* Affiche ou masque d'un bloc tous les réglages de récurrence d'un formulaire d'ajout. */
+function appliquerAffichageRepetition(scope, actif){
+  const ids = controlesRecurrenceAjout(scope);
+  if(actif) remplirControlesRecurrence(ids, lireConfigCouranteOuDefaut(scope));
+  document.querySelectorAll(`#form-card-${scope} .bloc-recurrence`).forEach(el=>{
+    el.style.display = actif ? '' : 'none';
+  });
+  if(actif){
+    appliquerAffichageRecurrence(ids);
+    appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
+  }
+}
+
+/* Au premier dépliage, on propose « tous les mois », le réglage le plus courant pour une
+   dépense; ensuite on conserve ce que l'utilisateur avait déjà réglé. */
+function lireConfigCouranteOuDefaut(scope){
+  const ids = controlesRecurrenceAjout(scope);
+  const dejaRegle = document.getElementById(ids.unite).dataset.initialise === '1';
+  if(dejaRegle) return lireControlesRecurrence(ids);
+  document.getElementById(ids.unite).dataset.initialise = '1';
+  return { unite:'mois', intervalle:1 };
+}
 
 /* Bascule générique : quand la case "payé par le compte conjoint" est cochée, on cache le
    sélecteur "Qui" et on montre le champ de répartition en %, et vice-versa. */
