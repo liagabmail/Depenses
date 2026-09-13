@@ -1018,7 +1018,7 @@
             <span id="f-apercu-conjoint"></span>
           </div>
           <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-conjoint" style="display:none;">
-            <span class="toggle-field-label">💰 Est un revenu</span>
+            <span class="toggle-field-label">Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
         </div>
@@ -1192,7 +1192,7 @@
             <span id="f-apercu-personnel"></span>
           </div>
           <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-personnel">
-            <span class="toggle-field-label">💰 Est un revenu</span>
+            <span class="toggle-field-label">Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
         </div>
@@ -1474,8 +1474,10 @@
         <input type="text" id="edit-fin-date" disabled autocomplete="off">
       </div>
       <!-- Dépense ponctuelle qui n'appartient à aucune série : la bascule permet de la
-           transformer directement en série, sans passer par une fenêtre séparée. -->
-      <div class="field toggle-field champ-bascule pleine-largeur" id="edit-repete-toggle-field">
+           transformer directement en série, sans passer par une fenêtre séparée.
+           Demi-largeur, donc posée à côté de la date, exactement comme dans le formulaire
+           d'ajout : les deux fenêtres doivent présenter les mêmes champs au même endroit. -->
+      <div class="field toggle-field champ-bascule" id="edit-repete-toggle-field">
         <span class="toggle-field-label"><span class="recurring-icon">↻</span> Se répète</span>
         <label class="switch"><input type="checkbox" id="edit-repete-toggle"><span class="switch-track"></span></label>
       </div>
@@ -1516,7 +1518,7 @@
         <input type="date" id="edit-nouv-fin-date" autocomplete="off">
       </div>
       <div class="field toggle-field pleine-largeur" id="edit-est-revenu-field">
-        <span class="toggle-field-label" id="edit-est-revenu-label">💰 Est un revenu</span>
+        <span class="toggle-field-label" id="edit-est-revenu-label">Revenu</span>
         <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur" id="edit-toggle-type-field">
@@ -1592,7 +1594,7 @@
         <input type="date" id="edit-rec-fin-date" autocomplete="off">
       </div>
       <div class="field toggle-field pleine-largeur" id="edit-rec-est-revenu-field">
-        <span class="toggle-field-label" id="edit-rec-est-revenu-label">💰 Est un revenu</span>
+        <span class="toggle-field-label" id="edit-rec-est-revenu-label">Revenu</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur">
