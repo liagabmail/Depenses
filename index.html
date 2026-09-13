@@ -999,7 +999,7 @@
             </select>
           </div>
           <div class="field bloc-recurrence" id="f-fin-nombre-field-conjoint" style="display:none;">
-            <label>Nombre de paiements</label>
+            <label>Nombre</label>
             <input type="number" id="f-fin-nombre-conjoint" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric" autocomplete="off">
           </div>
           <div class="field bloc-recurrence" id="f-fin-date-field-conjoint" style="display:none;">
@@ -1173,7 +1173,7 @@
             </select>
           </div>
           <div class="field bloc-recurrence" id="f-fin-nombre-field-personnel" style="display:none;">
-            <label>Nombre de paiements</label>
+            <label>Nombre</label>
             <input type="number" id="f-fin-nombre-personnel" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric" autocomplete="off">
           </div>
           <div class="field bloc-recurrence" id="f-fin-date-field-personnel" style="display:none;">
@@ -1424,7 +1424,7 @@
         <select id="edit-fin-type" disabled></select>
       </div>
       <div class="field" id="edit-fin-nombre-field">
-        <label>Nombre de paiements</label>
+        <label>Nombre</label>
         <input type="text" id="edit-fin-nombre" disabled autocomplete="off">
       </div>
       <div class="field" id="edit-fin-date-field">
@@ -1504,7 +1504,7 @@
         </select>
       </div>
       <div class="field" id="edit-rec-fin-nombre-field">
-        <label>Nombre de paiements</label>
+        <label>Nombre</label>
         <input type="number" id="edit-rec-fin-nombre" data-num="entier" min="1" step="1" inputmode="numeric" autocomplete="off">
       </div>
       <div class="field" id="edit-rec-fin-date-field">
@@ -1901,10 +1901,17 @@ function appliquerTheme(){
 document.getElementById('f-date-conjoint').value = formaterDateISO(debutJour(new Date()));
 document.getElementById('f-date-personnel').value = formaterDateISO(debutJour(new Date()));
 
-document.getElementById('mobile-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.add('mobile-add-open'));
-document.getElementById('close-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.remove('mobile-add-open'));
-document.getElementById('mobile-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.add('mobile-add-open'));
-document.getElementById('close-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.remove('mobile-add-open'));
+/* Le formulaire repart toujours des valeurs de base : on remet à zéro À L'OUVERTURE comme à
+   la fermeture, pour qu'une saisie abandonnée ne réapparaisse jamais à la fois suivante. */
+['conjoint','personnel'].forEach(scope=>{
+  document.getElementById(`mobile-add-${scope}`).addEventListener('click', ()=>{
+    reinitialiserFormulaireAjoutDepense(scope);
+    document.getElementById(`form-card-${scope}`).classList.add('mobile-add-open');
+  });
+  document.getElementById(`close-add-${scope}`).addEventListener('click', ()=>{
+    reinitialiserFormulaireAjoutDepense(scope);
+  });
+});
 
 /* Chargement initial depuis Supabase (avec les noms exacts des colonnes) */
 async function chargerDepensesSupabase() {
@@ -4017,7 +4024,7 @@ function ouvrirEditionRecurrence(id){
   recurrenceEnEdition = rec;
   document.getElementById('edit-rec-nom').value = rec.nom;
   document.getElementById('edit-rec-montant').value = rec.montant;
-  document.getElementById('edit-rec-categorie').innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+  document.getElementById('edit-rec-categorie').innerHTML = categories.map(c=>`<option>${echapperHTML(c)}</option>`).join('');
   document.getElementById('edit-rec-categorie').value = rec.categorie;
   remplirControlesRecurrence(CONTROLES_RECURRENCE_EDITION, { unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel });
   document.getElementById('edit-rec-date-debut').value = rec.dateDebut || '';
@@ -4221,13 +4228,13 @@ function rafraichirOptionsFormulaires(){
   ['conjoint','personnel'].forEach(scope=>{
     const select = document.getElementById(`f-category-${scope}`);
     const current = select.value;
-    select.innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+    select.innerHTML = categories.map(c=>`<option>${echapperHTML(c)}</option>`).join('');
     if(categories.includes(current)) select.value = current;
 
     const selectRec = document.getElementById(`rec-categorie-${scope}`);
     if(selectRec){
       const currentRec = selectRec.value;
-      selectRec.innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+      selectRec.innerHTML = categories.map(c=>`<option>${echapperHTML(c)}</option>`).join('');
       if(categories.includes(currentRec)) selectRec.value = currentRec;
     }
   });
@@ -4601,13 +4608,21 @@ function reinitialiserFormulaireAjoutDepense(scope){
   appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
   document.getElementById(`f-fin-type-field-${scope}`).style.display = 'none';
   document.getElementById(`form-card-${scope}`).classList.remove('mobile-add-open');
+  /* Valeurs de base : date du jour, catégorie par défaut, et côté conjoint la personne qui
+     utilise l'application avec un partage à parts égales. Sans ça, rouvrir le formulaire
+     réaffichait la saisie précédente, ce qui fait facilement enregistrer une dépense avec la
+     date ou la catégorie de la fois d'avant. */
+  document.getElementById(`f-date-${scope}`).value = formaterDateISO(new Date());
+  document.getElementById(`f-category-${scope}`).value = 'Épicerie';
   if(scope==='conjoint'){
     document.getElementById('f-est-revenu-conjoint').checked = false;
     document.getElementById('f-compte-repartition-conjoint').value = 50;
+    document.getElementById('f-who-conjoint').value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
     appliquerChoixQuiConjoint('f-who-conjoint','f-compte-repartition-conjoint','f-est-revenu-field-conjoint');
   } else {
     document.getElementById('f-est-revenu-personnel').checked = false;
   }
+  rafraichirOptionsFormulaires();
 }
 document.getElementById('btn-add-conjoint').addEventListener('click', ()=>ajouterDepense('conjoint'));
 document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajouterDepense('personnel'));
@@ -4846,9 +4861,14 @@ document.getElementById('edit-rec-est-revenu').addEventListener('change', ()=>
 
 /* Génère les options du sélecteur "Qui" : Gabriel/Mélissa, plus "Compte conjoint" si
    `includeCompte` est vrai (pertinent seulement pour les dépenses conjointes). */
+/* Options sans teinte : la couleur de fond des <option> est rendue par le système et pas par
+   la page, elle ressortait donc différemment d'un navigateur et d'un thème à l'autre — et
+   illisible en thème sombre. Les couleurs de personne et de catégorie restent partout où
+   elles sont vraiment utiles (pastilles, montants, graphiques). */
 function remplirOptionsQui(selectId, includeCompte){
-  let html = ['p1','p2'].map(key=>[key,nomsPersonnes[key]]).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
-  if(includeCompte) html += `<option value="Compte conjoint" style="color:${couleursPersonnes.compte};background:${couleursPersonnes.compte}22">Compte conjoint</option>`;
+  let html = ['p1','p2'].map(key=>nomsPersonnes[key])
+    .map(name=>`<option value="${echapperHTML(name)}">${echapperHTML(name)}</option>`).join('');
+  if(includeCompte) html += `<option value="Compte conjoint">Compte conjoint</option>`;
   document.getElementById(selectId).innerHTML = html;
 }
 
