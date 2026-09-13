@@ -246,6 +246,11 @@
   .field.champ-bascule .toggle-field-label{font-size:14px;}
 
   .titre-formulaire{margin-bottom:14px;}
+
+  /* Aperçu de la première occurrence, sous les réglages de récurrence. */
+  .apercu-recurrence{font-size:12px;color:var(--text-secondary);line-height:1.45;
+    background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;}
+  .apercu-recurrence .apercu-alerte{color:var(--red);}
   @media (max-width:760px){
     .recurrent-row{flex-wrap:wrap;}
     .recurrent-actions{margin-left:auto;}
@@ -404,7 +409,14 @@
   }
 
   /* Formulaire */
-  .form-card{margin-bottom:24px;}
+  /* La carte d'ajout partage le squelette des fenêtres d'édition (.modal-header /
+     .modal-body / .modal-footer) : mêmes marges, même séparateur, même alignement du titre.
+     Elle annule donc le padding de .card, que ces trois blocs fournissent eux-mêmes. */
+  .form-card{margin-bottom:24px;padding:0;overflow:hidden;}
+  .form-card .modal-footer{justify-content:stretch;}
+  .form-card .modal-footer .btn-add{width:100%;}
+  /* Le bouton de fermeture ne sert que sur mobile, où la carte s'ouvre en plein écran. */
+  .form-card .mobile-close-btn{display:none;}
   /* Les formulaires d'ajout utilisent EXACTEMENT la même grille que les fenêtres d'édition
      (.modal-grid) : deux colonnes, mêmes espacements, et la largeur pleine demandée
      explicitement via .pleine-largeur. Avant, cette grille avait 5 colonnes et forçait la
@@ -515,16 +527,34 @@
     /* Même correctif que les fenêtres d'édition : `inset:0` valait la hauteur de la fenêtre,
        donc le bouton « Ajouter » passait sous le clavier. On borne sur la hauteur réellement
        visible et on resserre les marges pour gagner des lignes. */
-    .form-card{display:none;position:fixed;left:0;top:0;right:0;margin:0;padding:16px 16px 20px;z-index:800;
-      border-radius:0;overflow:auto;-webkit-overflow-scrolling:touch;
-      height:var(--hauteur-visible, 100dvh);max-height:var(--hauteur-visible, 100dvh);}
-    .form-card.mobile-add-open{display:block;}
-    .form-card h3{margin-bottom:10px;font-size:16px;}
-    .form-card .form-grid{gap:10px 12px;}
-    .form-card .field label{margin-bottom:4px;}
-    .form-card .field select, .form-card .field input{padding:9px 10px;}
+    /* En plein écran, la carte d'ajout se comporte EXACTEMENT comme une fenêtre d'édition :
+       entête figé, corps défilant, pied figé, bornés sur la hauteur réellement visible. */
+    .form-card{display:none;position:fixed;left:0;top:0;right:0;margin:0;padding:0;z-index:800;
+      border-radius:0;
+      height:var(--hauteur-visible, 100dvh);max-height:var(--hauteur-visible, 100dvh);
+      flex-direction:column;}
+    .form-card.mobile-add-open{display:flex;}
+    .form-card .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    .form-card .modal-header, .form-card .modal-footer{flex:0 0 auto;}
+    .form-card .mobile-close-btn{display:block;}
+
+    /* Clavier ouvert : mêmes règles que les fenêtres d'édition, l'entête et le pied
+       repassent dans le flux pour que tous les champs restent atteignables. */
+    body.clavier-ouvert .form-card{display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    body.clavier-ouvert .form-card .modal-body{overflow:visible;}
+    body.clavier-ouvert .form-card .modal-header{position:sticky;top:0;z-index:2;}
+
+    /* Champs resserrés pour tenir au-dessus du clavier — appliqué aussi aux fenêtres
+       d'édition, pour que la densité soit la même partout. */
+    .form-card .form-grid, .edit-card .modal-grid{gap:10px 12px;}
+    .form-card .field label, .edit-card .field label{margin-bottom:4px;}
+    .form-card .field select, .form-card .field input,
+    .edit-card .field select, .edit-card .field input{padding:9px 10px;}
+    .modal-header{padding:14px 16px;}
+    .modal-body{padding:14px 16px;}
+    .modal-footer{padding:12px 16px;}
+
     .mobile-add-btn{display:flex;position:fixed;right:20px;bottom:20px;width:56px;height:56px;border:0;border-radius:50%;background:var(--blue);color:#fff;font-size:32px;line-height:1;align-items:center;justify-content:center;box-shadow:var(--shadow-2);z-index:700;cursor:pointer;}
-    .mobile-close-btn{display:block;float:right;border:0;background:none;color:var(--text-secondary);font-size:24px;cursor:pointer;}
   }
 
   /* Tableau */
@@ -885,8 +915,11 @@
       </div>
 
       <div class="card form-card" id="form-card-conjoint">
-        <button class="mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
-        <h3 class="titre-formulaire">Ajouter une dépense conjointe</h3>
+        <div class="modal-header">
+          <h3>Ajouter une dépense conjointe<span class="modal-sous-titre">Partagée entre vous deux</span></h3>
+          <button class="modal-close-btn mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
+        </div>
+        <div class="modal-body">
         <div class="form-grid">
           <div class="field" id="f-who-field-conjoint">
             <label>Qui</label>
@@ -913,7 +946,9 @@
             <input type="text" id="f-note-conjoint" placeholder="Optionnel">
           </div>
           <div class="field">
-            <label>Date</label>
+            <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
+                 est un point de départ, pas forcément la première occurrence. -->
+            <label id="f-date-label-conjoint">Date</label>
             <input type="date" id="f-date-conjoint">
           </div>
           <div class="field toggle-field champ-bascule" id="f-repete-field-conjoint">
@@ -960,10 +995,16 @@
             <label>Date de fin</label>
             <input type="date" id="f-fin-date-conjoint">
           </div>
+          <div class="field pleine-largeur bloc-recurrence apercu-recurrence" id="f-apercu-field-conjoint" style="display:none;">
+            <span id="f-apercu-conjoint"></span>
+          </div>
           <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-conjoint" style="display:none;">
             <span class="toggle-field-label">💰 Est un revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
+        </div>
+        </div>
+        <div class="modal-footer">
           <button class="btn-add" id="btn-add-conjoint">Ajouter</button>
         </div>
       </div>
@@ -1056,8 +1097,11 @@
       </div>
 
       <div class="card form-card" id="form-card-personnel">
-        <button class="mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
-        <h3 class="titre-formulaire">Ajouter une dépense personnelle</h3>
+        <div class="modal-header">
+          <h3>Ajouter une dépense personnelle<span class="modal-sous-titre">Visible par vous seul</span></h3>
+          <button class="modal-close-btn mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
+        </div>
+        <div class="modal-body">
         <div class="form-grid">
           <div class="field">
             <label>Montant</label>
@@ -1076,7 +1120,9 @@
             <input type="text" id="f-note-personnel" placeholder="Optionnel">
           </div>
           <div class="field">
-            <label>Date</label>
+            <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
+                 est un point de départ, pas forcément la première occurrence. -->
+            <label id="f-date-label-personnel">Date</label>
             <input type="date" id="f-date-personnel">
           </div>
           <div class="field toggle-field champ-bascule" id="f-repete-field-personnel">
@@ -1123,10 +1169,16 @@
             <label>Date de fin</label>
             <input type="date" id="f-fin-date-personnel">
           </div>
+          <div class="field pleine-largeur bloc-recurrence apercu-recurrence" id="f-apercu-field-personnel" style="display:none;">
+            <span id="f-apercu-personnel"></span>
+          </div>
           <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-personnel">
             <span class="toggle-field-label">💰 Est un revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
+        </div>
+        </div>
+        <div class="modal-footer">
           <button class="btn-add" id="btn-add-personnel">Ajouter</button>
         </div>
       </div>
@@ -4513,6 +4565,10 @@ function reinitialiserFormulaireAjoutDepense(scope){
   document.getElementById(`f-amount-${scope}`).value = '';
   document.getElementById(`f-note-${scope}`).value = '';
   document.getElementById(`f-repete-${scope}`).checked = false;
+  /* Formulaire vidé : les jours redeviennent libres de suivre la prochaine date choisie. */
+  const conteneurJours = document.getElementById(`f-rec-jours-${scope}`);
+  if(conteneurJours) conteneurJours.dataset.choisiParUtilisateur = '0';
+  document.getElementById(`f-rec-unite-${scope}`).dataset.initialise = '';
   appliquerAffichageRepetition(scope, false);
   document.getElementById(`f-fin-type-${scope}`).value = 'jamais';
   document.getElementById(`f-fin-nombre-${scope}`).value = '';
@@ -4589,6 +4645,19 @@ function appliquerAffichageRecurrence(ids){
   document.getElementById(ids.joursField).style.display = unite === 'semaine' ? '' : 'none';
   document.getElementById(ids.mensuelField).style.display = unite === 'mois' ? '' : 'none';
   if(unite === 'mois') peuplerTypeMensuel(ids);
+  if(unite === 'semaine') semerJoursDepuisDate(ids);
+}
+
+/* Les jours cochés SUIVENT la date choisie, tant que l'utilisateur n'en a pas coché
+   lui-même. Sans ça, passer sur « semaine » laissait en place les jours d'un réglage
+   précédent : on pouvait croire avoir choisi « le samedi » alors qu'un autre jour restait
+   coché en dessous, et la première occurrence tombait au mauvais endroit. */
+function semerJoursDepuisDate(ids){
+  const conteneur = document.getElementById(ids.jours);
+  if(!conteneur || conteneur.dataset.choisiParUtilisateur === '1') return;
+  const dateISO = document.getElementById(ids.date).value;
+  const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
+  peuplerJoursSemaineBoutons(ids.jours, [d.getDay()]);
 }
 
 function remplirControlesRecurrence(ids, cfg){
@@ -4597,7 +4666,9 @@ function remplirControlesRecurrence(ids, cfg){
   const c = cfg || { unite:'mois', intervalle:1 };
   document.getElementById(ids.intervalle).value = Math.max(1, c.intervalle || 1);
   document.getElementById(ids.unite).value = c.unite || 'mois';
-  peuplerJoursSemaineBoutons(ids.jours, (c.joursSemaine && c.joursSemaine.length) ? c.joursSemaine : [d.getDay()]);
+  const joursExplicites = !!(c.joursSemaine && c.joursSemaine.length);
+  peuplerJoursSemaineBoutons(ids.jours, joursExplicites ? c.joursSemaine : [d.getDay()]);
+  document.getElementById(ids.jours).dataset.choisiParUtilisateur = joursExplicites ? '1' : '0';
   appliquerAffichageRecurrence(ids);
   const selMensuel = document.getElementById(ids.typeMensuel);
   if(selMensuel && c.typeMensuel === 'dernier_jour'){
@@ -4626,9 +4697,13 @@ function brancherControlesRecurrence(ids){
     btn.classList.toggle('selected');
     /* Au moins un jour doit rester coché, sinon la règle n'a plus de sens. */
     if(!document.querySelector(`#${ids.jours} .jour-btn.selected`)) btn.classList.add('selected');
+    /* À partir d'ici, le choix appartient à l'utilisateur : la date ne le réécrit plus. */
+    e.currentTarget.dataset.choisiParUtilisateur = '1';
   });
   document.getElementById(ids.date).addEventListener('change', ()=>{
-    if(document.getElementById(ids.unite).value === 'mois') peuplerTypeMensuel(ids);
+    const unite = document.getElementById(ids.unite).value;
+    if(unite === 'mois') peuplerTypeMensuel(ids);
+    if(unite === 'semaine') semerJoursDepuisDate(ids);
   });
 }
 
@@ -4640,6 +4715,14 @@ brancherControlesRecurrence(CONTROLES_RECURRENCE_EDITION);
 ['conjoint','personnel'].forEach(scope=>{
   const ids = controlesRecurrenceAjout(scope);
   brancherControlesRecurrence(ids);
+
+  /* Tout changement de réglage (unité, intervalle, jours, date) refait l'aperçu. */
+  [ids.unite, ids.intervalle, ids.jours, ids.typeMensuel, ids.date].forEach(elId=>{
+    const el = document.getElementById(elId);
+    if(el) ['change','click','input'].forEach(evt => el.addEventListener(evt, ()=>{
+      if(document.getElementById(`f-repete-${scope}`).checked) rafraichirApercuRecurrence(scope);
+    }));
+  });
 
   document.getElementById(`f-repete-${scope}`).addEventListener('change', function(){
     appliquerAffichageRepetition(scope, this.checked);
@@ -4662,14 +4745,50 @@ brancherControlesRecurrence(CONTROLES_RECURRENCE_EDITION);
 /* Affiche ou masque d'un bloc tous les réglages de récurrence d'un formulaire d'ajout. */
 function appliquerAffichageRepetition(scope, actif){
   const ids = controlesRecurrenceAjout(scope);
-  if(actif) remplirControlesRecurrence(ids, lireConfigCouranteOuDefaut(scope));
+  if(actif){
+    /* Re-déplier le bloc relit ses propres contrôles : ça ne doit pas être compris comme un
+       choix de l'utilisateur, sinon les jours cesseraient de suivre la date. */
+    const conteneurJours = document.getElementById(ids.jours);
+    const choixAnterieur = conteneurJours ? conteneurJours.dataset.choisiParUtilisateur : '0';
+    remplirControlesRecurrence(ids, lireConfigCouranteOuDefaut(scope));
+    if(conteneurJours) conteneurJours.dataset.choisiParUtilisateur = choixAnterieur || '0';
+  }
   document.querySelectorAll(`#form-card-${scope} .bloc-recurrence`).forEach(el=>{
     el.style.display = actif ? '' : 'none';
   });
+  /* Pour une série, la date saisie est un point de DÉPART : la première occurrence peut
+     tomber plus tard (choisir le 11 septembre avec « toutes les semaines le samedi » donne
+     une première occurrence le 12). Le libellé le dit, et l'aperçu la donne explicitement. */
+  document.getElementById(`f-date-label-${scope}`).textContent = actif ? 'À partir de' : 'Date';
   if(actif){
     appliquerAffichageRecurrence(ids);
     appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
+    rafraichirApercuRecurrence(scope);
   }
+}
+
+/* Annonce la première occurrence réellement générée par les réglages en cours. */
+function rafraichirApercuRecurrence(scope){
+  const champ = document.getElementById(`f-apercu-${scope}`);
+  const bloc = document.getElementById(`f-apercu-field-${scope}`);
+  if(!champ || !bloc) return;
+  const dateISO = document.getElementById(`f-date-${scope}`).value;
+  if(!dateISO){ bloc.style.display = 'none'; return; }
+  const cfg = lireControlesRecurrence(controlesRecurrenceAjout(scope));
+  const apercu = { ...cfg, dateDebut: dateISO, finType:'jamais' };
+  const occs = genererOccurrences(apercu, ajouterJours(new Date(dateISO+"T00:00:00"), 800));
+  bloc.style.display = '';
+  if(!occs.length){
+    champ.textContent = "Aucune occurrence ne correspond à ces réglages.";
+    champ.className = 'apercu-alerte';
+    return;
+  }
+  const premiere = occs[0];
+  const memeJour = formaterDateISO(premiere) === dateISO;
+  champ.className = '';
+  champ.textContent = memeJour
+    ? `Première occurrence : ${premiere.toLocaleDateString('fr-CA',{weekday:'long', day:'numeric', month:'long', year:'numeric'})}.`
+    : `Première occurrence : ${premiere.toLocaleDateString('fr-CA',{weekday:'long', day:'numeric', month:'long', year:'numeric'})} — la date choisie sert de point de départ.`;
 }
 
 /* Au premier dépliage, on propose « tous les mois », le réglage le plus courant pour une
