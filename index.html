@@ -96,6 +96,19 @@
   .auth-success{color:var(--green);font-size:13px;margin:0;min-height:16px;}
   .link-btn{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;}
   .link-btn:hover{color:var(--blue-dark);}
+
+  /* Boîte de message custom (remplace alert() natif, dont l'entête "x dit" est disgracieuse) */
+  #alerte-modal{
+    position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);
+    display:none;align-items:center;justify-content:center;z-index:2000;
+  }
+  #alerte-modal.visible{display:flex;}
+  .alerte-card{
+    background:var(--surface);padding:22px;border-radius:var(--radius);box-shadow:var(--shadow-2);
+    width:90%;max-width:360px;text-align:left;
+  }
+  .alerte-card p{margin:0 0 18px;font-size:14px;color:var(--text);white-space:pre-line;}
+  .alerte-card .auth-submit{width:100%;margin-top:0;}
   .account-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .account-row .email{font-size:14px;font-weight:500;word-break:break-all;}
 
@@ -810,6 +823,14 @@
 </head>
 <body>
 
+  <!-- Boîte de message custom, pour ne pas dépendre de alert() natif -->
+  <div id="alerte-modal">
+    <div class="alerte-card">
+      <p id="alerte-message"></p>
+      <button type="button" class="auth-submit" id="alerte-ok">OK</button>
+    </div>
+  </div>
+
   <!-- MODAL DE CONNEXION (authentification réelle Supabase) -->
   <div id="auth-modal" style="display:none;">
     <div class="auth-card">
@@ -941,7 +962,7 @@
           </div>
           <div class="field pleine-largeur">
             <label>Note</label>
-            <input type="text" id="f-note-conjoint" placeholder="Optionnel" autocomplete="off">
+            <input type="text" id="f-note-conjoint" placeholder="Optionnel" maxlength="30" autocomplete="off">
           </div>
           <div class="field">
             <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
@@ -1016,7 +1037,7 @@
       <div class="stats-row" id="annee-stats-conjoint" style="display:none;"></div>
       <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
         <div class="table-head-row">
-          <h3>🏦 Prochains dépôts au compte conjoint</h3>
+          <h3>Prochains dépôts au compte conjoint</h3>
         </div>
         <div id="recurrent-compte-echeancier-conjoint"></div>
       </div>
@@ -1115,7 +1136,7 @@
           </div>
           <div class="field pleine-largeur">
             <label>Note</label>
-            <input type="text" id="f-note-personnel" placeholder="Optionnel" autocomplete="off">
+            <input type="text" id="f-note-personnel" placeholder="Optionnel" maxlength="30" autocomplete="off">
           </div>
           <div class="field">
             <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
@@ -1300,6 +1321,39 @@
       <h3>Apparence</h3>
       <div class="theme-toggle"><span>Mode sombre</span><label class="switch" for="dark-mode"><input type="checkbox" id="dark-mode"><span class="switch-track"></span></label></div>
     </div>
+    <div class="card settings-section" id="notifications-section">
+      <h3>Notifications</h3>
+      <div class="theme-toggle">
+        <span>Dépôt à faire au compte conjoint</span>
+        <label class="switch" for="notif-toggle"><input type="checkbox" id="notif-toggle"><span class="switch-track"></span></label>
+      </div>
+      <div id="notif-reglages" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <div class="modal-grid">
+          <div class="field">
+            <label>Quand</label>
+            <select id="notif-quand">
+              <option value="avant">Jour(s) avant la paie</option>
+              <option value="le-jour">Le jour même</option>
+              <option value="apres">Jour(s) après la paie</option>
+            </select>
+          </div>
+          <div class="field" id="notif-jours-field">
+            <label>Nombre de jours</label>
+            <input type="number" id="notif-jours" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>À quelle heure</label>
+            <input type="time" id="notif-heure" value="08:00" autocomplete="off">
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-statut"></p>
+      </div>
+      <div class="theme-toggle" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+        <span>Ajout/modification d'une dépense conjointe par l'autre</span>
+        <label class="switch" for="notif-activite-toggle"><input type="checkbox" id="notif-activite-toggle"><span class="switch-track"></span></label>
+      </div>
+      <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-activite-statut"></p>
+    </div>
     <div class="card settings-section" id="donnees-section">
       <h3>Données</h3>
       <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">
@@ -1400,8 +1454,9 @@
         <input type="number" id="edit-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
       </div>
 <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
-<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note" autocomplete="off"></div>
-<div class="field" id="edit-date-field"><label>Date</label><input type="date" id="edit-date" autocomplete="off"></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note" maxlength="30" autocomplete="off"></div>
+<div class="field" id="edit-date-field"><label id="edit-date-label">Date</label><input type="date" id="edit-date" autocomplete="off"></div>
+      <!-- Occurrence appartenant déjà à une série : affichage en lecture seule de sa règle. -->
       <div class="field" id="edit-repetition-field">
         <label>Se répète</label>
         <select id="edit-repetition" disabled></select>
@@ -1418,19 +1473,54 @@
         <label>Date de fin</label>
         <input type="text" id="edit-fin-date" disabled autocomplete="off">
       </div>
+      <!-- Dépense ponctuelle qui n'appartient à aucune série : la bascule permet de la
+           transformer directement en série, sans passer par une fenêtre séparée. -->
+      <div class="field toggle-field champ-bascule pleine-largeur" id="edit-repete-toggle-field">
+        <span class="toggle-field-label"><span class="recurring-icon">↻</span> Se répète</span>
+        <label class="switch"><input type="checkbox" id="edit-repete-toggle"><span class="switch-track"></span></label>
+      </div>
+      <div class="field pleine-largeur bloc-recurrence-edit" id="edit-nouv-rec-intervalle-field" style="display:none;">
+        <label>Se répète tous les</label>
+        <div class="rec-intervalle">
+          <input type="number" id="edit-nouv-rec-intervalle" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
+          <select id="edit-nouv-rec-unite">
+            <option value="jour">jour(s)</option>
+            <option value="semaine">semaine(s)</option>
+            <option value="mois">mois</option>
+            <option value="annee">an(s)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field pleine-largeur bloc-recurrence-edit" id="edit-nouv-rec-jours-field" style="display:none;">
+        <label>Se répète le</label>
+        <div class="jours-semaine-select" id="edit-nouv-rec-jours"></div>
+      </div>
+      <div class="field pleine-largeur bloc-recurrence-edit" id="edit-nouv-rec-mensuel-field" style="display:none;">
+        <label>Chaque mois</label>
+        <select id="edit-nouv-rec-type-mensuel"></select>
+      </div>
+      <div class="field bloc-recurrence-edit" id="edit-nouv-fin-type-field" style="display:none;">
+        <label>Se termine</label>
+        <select id="edit-nouv-fin-type">
+          <option value="jamais">Jamais</option>
+          <option value="nombre">Après un nombre de paiements</option>
+          <option value="date">À une date précise</option>
+        </select>
+      </div>
+      <div class="field bloc-recurrence-edit" id="edit-nouv-fin-nombre-field" style="display:none;">
+        <label>Nombre</label>
+        <input type="number" id="edit-nouv-fin-nombre" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric" autocomplete="off">
+      </div>
+      <div class="field bloc-recurrence-edit" id="edit-nouv-fin-date-field" style="display:none;">
+        <label>Date de fin</label>
+        <input type="date" id="edit-nouv-fin-date" autocomplete="off">
+      </div>
       <div class="field toggle-field pleine-largeur" id="edit-est-revenu-field">
         <span class="toggle-field-label" id="edit-est-revenu-label">💰 Est un revenu</span>
         <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur" id="edit-toggle-type-field">
         <button type="button" class="btn-secondary" id="edit-toggle-type" style="width:100%;"></button>
-      </div>
-      <!-- Conversion d'une dépense ponctuelle en série. Masqué pour une occurrence, qui
-           appartient déjà à une série. -->
-      <div class="field pleine-largeur" id="edit-rendre-recurrente-field">
-        <button type="button" class="btn-secondary" id="edit-rendre-recurrente" style="width:100%;">
-          <span class="recurring-icon">↻</span> Rendre récurrente
-        </button>
       </div>
     </div>
   </div>
@@ -1457,7 +1547,7 @@
         <input type="number" id="edit-rec-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
       </div>
 <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
-<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom" autocomplete="off"></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom" maxlength="30" autocomplete="off"></div>
 <div class="field">
         <!-- Une récurrence part toujours d'une date d'ancrage, jamais d'une date unique :
              le libellé est donc « À partir de » en permanence, comme dans le formulaire
@@ -1628,6 +1718,8 @@ async function gererSession(session){
   await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerExceptionsSupabase() ]);
   recalculerDepenses();
   rafraichirActif();
+  chargerPreferencesNotification();
+  enregistrerPersonneUtilisateur();
 }
 
 document.getElementById('setpw-form').addEventListener('submit', async (e)=>{
@@ -2813,6 +2905,7 @@ function afficherEcheancierCompteConjoint(){
   /* Conservé pour la fenêtre de détail : elle réutilise exactement le calcul affiché plutôt
      que de le refaire, sinon les deux pourraient diverger sans qu'on s'en aperçoive. */
   dernierEcheancier = echeancierComplet || [];
+  synchroniserEcheancierNotifications(echeancierComplet);
   if(!echeancierComplet || !echeancierComplet.length){
     conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
     return;
@@ -3389,7 +3482,7 @@ function rendreVueDetailOccurrence(){
   const d = occurrenceCourante;
   if(!d) return;
   const contenu = document.getElementById('occurrence-modal-content');
-  const qui = d.estCompte ? '🏦 Compte conjoint' : (nomsPersonnes[d.who] || d.who);
+  const qui = d.estCompte ? 'Compte conjoint' : (nomsPersonnes[d.who] || d.who);
   const repartition = d.estCompte ? ` (${d.pourcentageP1!=null?d.pourcentageP1:50}% ${nomsPersonnes.p1})` : '';
   const rec = d.recurrenceId ? recurrences.find(r=>r.id===d.recurrenceId) : null;
   const sousTitre = rec ? `Série récurrente · ${libelleRecurrence(rec)}` : 'Dépense ponctuelle';
@@ -3774,7 +3867,7 @@ function rendreMenuCalendrier(scope){
     </label>
     <label class="cal-menu-check">
       <input type="checkbox" data-filtre-qui="compte" ${filtres.quiCaches.includes('compte')?'':'checked'}>
-      <span class="dot-cat" style="background:${couleursPersonnes.compte}"></span> 🏦 Compte conjoint
+      <span class="dot-cat" style="background:${couleursPersonnes.compte}"></span> Compte conjoint
     </label>
     ` : ''}
     <div class="cal-menu-section-title">Afficher</div>
@@ -3906,7 +3999,7 @@ function allerVueJour(scope, iso){
    Ligne 2 = Note, puis Catégorie à droite. */
 function rendreCarteDepenseHTML(e, scope){
   const dotClass = e.who;
-  const quiLabel = e.estCompte ? '🏦 Compte conjoint' : libellePersonne(e.who);
+  const quiLabel = e.estCompte ? 'Compte conjoint' : libellePersonne(e.who);
   const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
   const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
   /* Le % affiché correspond toujours à la part de la personne indiquée comme "Qui" (pas
@@ -4095,7 +4188,7 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   if(!recurrenceEnEdition) return;
   const nom = document.getElementById('edit-rec-nom').value.trim();
   const montant = parseFloat(document.getElementById('edit-rec-montant').value);
-  if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
+  if(!nom || !montant || montant<=0){ afficherAlerte("Merci d'entrer un nom et un montant valides."); return; }
   const categorie = document.getElementById('edit-rec-categorie').value;
   const dateDebutFormulaire = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
   const cfgRepetition = lireControlesRecurrence(CONTROLES_RECURRENCE_EDITION) || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
@@ -4106,8 +4199,8 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
      conserve tel quel plutôt que de le réinitialiser. */
   const actif = recurrenceEnEdition.actif;
 
-  if(finType==='nombre' && !finNombreFormulaire){ alert("Merci d'entrer un nombre de paiements valide."); return; }
-  if(finType==='date' && !finDateFormulaire){ alert("Merci d'entrer une date de fin."); return; }
+  if(finType==='nombre' && !finNombreFormulaire){ afficherAlerte("Merci d'entrer un nombre de paiements valide."); return; }
+  if(finType==='date' && !finDateFormulaire){ afficherAlerte("Merci d'entrer une date de fin."); return; }
 
   let who = recurrenceEnEdition.who;
   let estCompte = false;
@@ -4194,6 +4287,7 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   recalculerDepenses();
   afficherRecurrencesScope(recurrenceEnEdition.type==='personnelle' ? 'personnel' : 'conjoint');
   rafraichirActif();
+  if(recurrenceEnEdition.type==='conjointe') notifierActivitePartenaire('modification', `${categorieFinale} — ${formaterMonnaie(montant)}`);
 });
 
 /* Utilitaires réutilisés pour calculer les dépôts requis au compte conjoint (voir plus bas
@@ -4519,7 +4613,7 @@ async function ajouterDepense(scope){
     : null;
 
   if(!amount || amount<=0 || !date){
-    alert("Merci d'entrer un montant et une date valides.");
+    afficherAlerte("Merci d'entrer un montant et une date valides.");
     return;
   }
 
@@ -4532,8 +4626,8 @@ async function ajouterDepense(scope){
     const finNombre = finType==='nombre' ? (parseInt(finNombreRaw,10) || null) : null;
     const finDateRaw = document.getElementById(`f-fin-date-${scope}`).value;
     const finDate = finType==='date' ? (finDateRaw || null) : null;
-    if(finType==='nombre' && !finNombre){ alert("Merci d'entrer un nombre de paiements valide."); return; }
-    if(finType==='date' && !finDate){ alert("Merci d'entrer une date de fin."); return; }
+    if(finType==='nombre' && !finNombre){ afficherAlerte("Merci d'entrer un nombre de paiements valide."); return; }
+    if(finType==='date' && !finDate){ afficherAlerte("Merci d'entrer une date de fin."); return; }
 
     await creerRecurrenceDepuisValeurs({
       type, nom: note, montant: amount, categorie: category,
@@ -4544,6 +4638,7 @@ async function ajouterDepense(scope){
     reinitialiserFormulaireAjoutDepense(scope);
     afficherRecurrencesScope(scope);
     rafraichirActif();
+    if(type==='conjointe') notifierActivitePartenaire('ajout', `${category} — ${formaterMonnaie(amount)}`);
     return;
   }
 
@@ -4571,7 +4666,7 @@ async function ajouterDepense(scope){
     const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleDepenseDB;
     const retry = await supabaseClient.from('Depenses').insert([sansColonnesRecentes]);
     if(retry.error){
-      alert("Erreur lors de l'enregistrement sur Supabase.");
+      afficherAlerte("Erreur lors de l'enregistrement sur Supabase.");
       console.error(retry.error);
       return;
     }
@@ -4594,6 +4689,7 @@ async function ajouterDepense(scope){
 
   reinitialiserFormulaireAjoutDepense(scope);
   rafraichirActif();
+  if(type==='conjointe') notifierActivitePartenaire('ajout', `${category} — ${formaterMonnaie(amount)}`);
 }
 
 /* Remet le formulaire d'ajout à zéro après une insertion réussie (dépense ou récurrence). */
@@ -4962,41 +5058,36 @@ let modeEditionDepense = 'normal';
    règle. Convertir revient donc à un simple échange : on crée la règle à partir des valeurs
    de la dépense, puis on supprime la ligne d'origine.
 
-   On propose d'emblée « tous les mois », le cas le plus courant, puis on ouvre l'éditeur de
-   série pour que la règle soit ajustée (hebdomadaire, aux deux semaines, date de fin…).
-   Le sens inverse n'existe pas : une série peut avoir des dizaines d'occurrences et des
-   exceptions, décider laquelle survivrait n'aurait pas de réponse évidente. */
-document.getElementById('edit-rendre-recurrente').addEventListener('click', async ()=>{
-  const depense = depenseEnEdition;
-  if(!depense || depense.virtuelle || depense.recurrenceId) return;
+   La bascule « Se répète » du formulaire d'édition (même mécanique que dans les formulaires
+   d'ajout) déplie directement les réglages de fréquence : plus besoin d'un bouton séparé
+   « Rendre récurrente » qui ouvrait ensuite une deuxième fenêtre pour choisir la fréquence. */
+const CONTROLES_RECURRENCE_NOUVELLE = {
+  intervalle:'edit-nouv-rec-intervalle', unite:'edit-nouv-rec-unite',
+  jours:'edit-nouv-rec-jours', joursField:'edit-nouv-rec-jours-field',
+  typeMensuel:'edit-nouv-rec-type-mensuel', mensuelField:'edit-nouv-rec-mensuel-field',
+  date:'edit-date'
+};
+brancherControlesRecurrence(CONTROLES_RECURRENCE_NOUVELLE);
 
-  const nouvelId = await creerRecurrenceDepuisValeurs({
-    nom: depense.note || depense.category,
-    montant: depense.amount,
-    categorie: depense.category,
-    unite: 'mois', intervalle: 1, joursSemaine: null, typeMensuel: 'jour_mois',
-    dateDebut: depense.date,
-    finType: 'jamais', finNombre: null, finDate: null,
-    who: depense.who, type: depense.type,
-    estCompte: !!depense.estCompte, estRevenu: !!depense.estRevenu,
-    pourcentageP1: depense.pourcentageP1
-  });
-
-  /* La dépense d'origine disparaît : elle est désormais la première occurrence de la série. */
-  const { error } = await supabaseClient.from('Depenses').delete().eq('id', depense.id);
-  if(error){
-    alert("La série a été créée, mais la dépense d'origine n'a pas pu être supprimée : elle risque d'apparaître en double.");
-  } else {
-    depensesReelles = depensesReelles.filter(e => e.id !== depense.id);
+function appliquerAffichageRepetitionEdit(actif){
+  if(actif){
+    const conteneurJours = document.getElementById(CONTROLES_RECURRENCE_NOUVELLE.jours);
+    const choixAnterieur = conteneurJours ? conteneurJours.dataset.choisiParUtilisateur : '0';
+    remplirControlesRecurrence(CONTROLES_RECURRENCE_NOUVELLE, { unite:'mois', intervalle:1 });
+    if(conteneurJours) conteneurJours.dataset.choisiParUtilisateur = choixAnterieur || '0';
   }
-
-  document.getElementById('edit-modal').style.display = 'none';
-  depenseEnEdition = null;
-  recalculerDepenses();
-  rafraichirActif();
-  /* On enchaîne sur l'éditeur de série pour régler la fréquence tout de suite. */
-  ouvrirEditionRecurrence(nouvelId);
+  document.querySelectorAll('#edit-modal .bloc-recurrence-edit').forEach(el=>{ el.style.display = actif ? '' : 'none'; });
+  document.getElementById('edit-date-label').textContent = actif ? 'À partir de' : 'Date';
+  if(actif){
+    appliquerAffichageRecurrence(CONTROLES_RECURRENCE_NOUVELLE);
+    appliquerAffichageFinRecurrence('edit-nouv-fin-type','edit-nouv-fin-nombre-field','edit-nouv-fin-date-field');
+  }
+}
+document.getElementById('edit-repete-toggle').addEventListener('change', function(){
+  appliquerAffichageRepetitionEdit(this.checked);
 });
+document.getElementById('edit-nouv-fin-type').addEventListener('change', ()=>
+  appliquerAffichageFinRecurrence('edit-nouv-fin-type','edit-nouv-fin-nombre-field','edit-nouv-fin-date-field'));
 
 function ouvrirEdition(id, mode){
   const depense=depenses.find(e=>e.id===id); if(!depense) return;
@@ -5023,6 +5114,11 @@ function ouvrirEdition(id, mode){
   const selFinType = document.getElementById('edit-fin-type');
   const inputFinNombre = document.getElementById('edit-fin-nombre');
   const inputFinDate = document.getElementById('edit-fin-date');
+  /* « Se répète » n'a de sens à activer que pour une dépense qui n'appartient à aucune
+     série : une occurrence en fait déjà partie, et sa règle se modifie depuis l'éditeur de
+     série. Pour elle, on garde l'affichage en lecture seule de sa règle ; pour une dépense
+     ponctuelle, on montre plutôt la bascule qui permet de la transformer en série. */
+  const peutDevenirRecurrente = !rec && !depense.virtuelle;
   if(rec){
     selRepetition.innerHTML = `<option>${libelleRecurrence(rec)}</option>`;
     const libellesFin = { jamais:'Jamais', nombre:'Après un nombre de paiements', date:'À une date précise' };
@@ -5040,6 +5136,12 @@ function ouvrirEdition(id, mode){
   activerChamp('edit-fin-type-field', false);
   activerChamp('edit-fin-nombre-field', false);
   activerChamp('edit-fin-date-field', false);
+  ['edit-repetition-field','edit-fin-type-field','edit-fin-nombre-field','edit-fin-date-field'].forEach(id=>{
+    document.getElementById(id).style.display = peutDevenirRecurrente ? 'none' : '';
+  });
+  document.getElementById('edit-repete-toggle-field').style.display = peutDevenirRecurrente ? '' : 'none';
+  document.getElementById('edit-repete-toggle').checked = false;
+  appliquerAffichageRepetitionEdit(false);
 
   editTypeActuel = depense.type==='personnelle' ? 'personnelle' : 'conjointe';
   appliquerVerrouEditType(editTypeActuel);
@@ -5047,10 +5149,6 @@ function ouvrirEdition(id, mode){
   /* Une occurrence de série ne peut pas basculer conjointe/personnelle toute seule :
      ça se change sur la série entière. */
   activerChamp('edit-toggle-type-field', !depense.virtuelle, 'edit-toggle-type');
-  /* « Rendre récurrente » n'a de sens que pour une dépense qui n'appartient à aucune série :
-     une occurrence en fait déjà partie, et sa règle se modifie depuis l'éditeur de série. */
-  document.getElementById('edit-rendre-recurrente-field').style.display =
-    (rec || depense.virtuelle) ? 'none' : '';
 
   document.getElementById('edit-modal-titre').firstChild.textContent = modeEditionDepense === 'suivantes'
     ? 'Modifier cette dépense et les suivantes'
@@ -5064,7 +5162,7 @@ document.getElementById('close-edit').addEventListener('click',()=>{document.get
 document.getElementById('delete-edit').addEventListener('click',async()=>{if(depenseEnEdition && confirm('Supprimer cette dépense ?')){document.getElementById('edit-modal').style.display='none';await supprimerDepense(depenseEnEdition.id);}});
 document.getElementById('save-edit').addEventListener('click',async()=>{
   const amount=parseFloat(document.getElementById('edit-amount').value),date=document.getElementById('edit-date').value;
-  if(!depenseEnEdition||!amount||amount<=0||!date){alert('Merci d’entrer un montant et une date valides.');return;}
+  if(!depenseEnEdition||!amount||amount<=0||!date){afficherAlerte('Merci d’entrer un montant et une date valides.');return;}
   const type=editTypeActuel==='personnelle'?'personnelle':'conjointe';
   const estCompte = type==='conjointe' && document.getElementById('edit-who').value === 'Compte conjoint';
   const estRevenu = (type==='personnelle' || estCompte) && document.getElementById('edit-est-revenu').checked;
@@ -5090,6 +5188,41 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
       await modifierOccurrenceSeule(depenseEnEdition, nouvellesValeurs);
     }
     fermer();
+    if(depenseEnEdition.type==='conjointe') notifierActivitePartenaire('modification', `${categorieFinale} — ${formaterMonnaie(amount)}`);
+    return;
+  }
+
+  /* Dépense ponctuelle sur laquelle « Se répète » vient d'être activé : conversion en série
+     plutôt que mise à jour simple (voir la section PONCTUELLE → RÉCURRENTE plus haut). */
+  if(document.getElementById('edit-repete-toggle-field').style.display !== 'none'
+     && document.getElementById('edit-repete-toggle').checked){
+    const cfg = lireControlesRecurrence(CONTROLES_RECURRENCE_NOUVELLE);
+    const finType = document.getElementById('edit-nouv-fin-type').value;
+    const finNombreRaw = document.getElementById('edit-nouv-fin-nombre').value;
+    const finNombre = finType==='nombre' ? (parseInt(finNombreRaw,10) || null) : null;
+    const finDateRaw = document.getElementById('edit-nouv-fin-date').value;
+    const finDate = finType==='date' ? (finDateRaw || null) : null;
+    if(finType==='nombre' && !finNombre){ afficherAlerte("Merci d'entrer un nombre de paiements valide."); return; }
+    if(finType==='date' && !finDate){ afficherAlerte("Merci d'entrer une date de fin."); return; }
+
+    await creerRecurrenceDepuisValeurs({
+      type, nom: noteFinale, montant: amount, categorie: categorieFinale,
+      unite: cfg.unite, intervalle: cfg.intervalle, joursSemaine: cfg.joursSemaine, typeMensuel: cfg.typeMensuel,
+      dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1
+    });
+
+    /* La dépense d'origine disparaît : elle est désormais la première occurrence de la série. */
+    const { error: erreurSuppression } = await supabaseClient.from('Depenses').delete().eq('id', depenseEnEdition.id);
+    if(erreurSuppression){
+      afficherAlerte("La série a été créée, mais la dépense d'origine n'a pas pu être supprimée : elle risque d'apparaître en double.");
+    } else {
+      depensesReelles = depensesReelles.filter(e => e.id !== depenseEnEdition.id);
+    }
+    depenseEnEdition = null;
+    recalculerDepenses();
+    fermer();
+    rafraichirActif();
+    if(type==='conjointe') notifierActivitePartenaire('modification', `${categorieFinale} — ${formaterMonnaie(amount)}`);
     return;
   }
 
@@ -5111,15 +5244,208 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
     console.warn("Mise à jour avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
     const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = update;
     const retry = await supabaseClient.from('Depenses').update(sansColonnesRecentes).eq('id',depenseEnEdition.id);
-    if(retry.error){alert('Erreur lors de la modification.');console.error(retry.error);return;}
+    if(retry.error){afficherAlerte('Erreur lors de la modification.');console.error(retry.error);return;}
   }
   Object.assign(depenseEnEdition,{who,amount,date,category:update.Categorie,note:update.Note,type:update.Type,estCompte,estRevenu,pourcentageP1});
   recalculerDepenses();
   fermer();
   rafraichirActif();
+  if(type==='conjointe') notifierActivitePartenaire('modification', `${categorieFinale} — ${formaterMonnaie(amount)}`);
 });
 
 document.getElementById('dark-mode').addEventListener('change',e=>{localStorage.setItem('depenses_theme',e.target.checked?'dark':'light');appliquerTheme();});
+
+/* ===================== NOTIFICATIONS : DÉPÔT AU COMPTE CONJOINT =====================
+   Une notification push (Web Push) annonce le montant à déposer au compte conjoint, un
+   certain nombre de jours avant/après/le jour même de la paie, à l'heure choisie. Elle
+   fonctionne même app fermée : une tâche planifiée côté Supabase (pg_cron) envoie les push
+   au bon moment, en lisant un échéancier précalculé par le client (voir
+   synchroniserEcheancierNotifications ci-dessous) — aucune logique de calcul n'est
+   dupliquée côté serveur, seul le résultat déjà affiché dans "Prochains dépôts" y est copié. */
+const VAPID_PUBLIC_KEY = 'BHYNfW_M1gKqwjCNnYiV4OuXI8Un2Bhi2475P_0UuZmZHDpYFVYRrAU7ApiE600O8_3S2RUrzLTFI3rIYVmk4JI';
+
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
+}
+
+/* Copie l'échéancier (déjà calculé pour l'affichage "Prochains dépôts") dans une table
+   partagée, pour que la fonction planifiée n'ait qu'à le lire — jamais à le recalculer.
+   On évite les écritures redondantes en ne renvoyant que si le contenu a changé depuis la
+   dernière synchronisation. */
+let dernierSignatureEcheancierSync = null;
+async function synchroniserEcheancierNotifications(echeancierComplet){
+  if(!currentSession || !echeancierComplet || !echeancierComplet.length) return;
+  const lignes = echeancierComplet.map(l=>({
+    iso: l.iso,
+    montant_p1: Math.round(l.p1*100)/100,
+    montant_p2: Math.round(l.p2*100)/100
+  }));
+  const signature = JSON.stringify(lignes);
+  if(signature === dernierSignatureEcheancierSync) return;
+  dernierSignatureEcheancierSync = signature;
+  const { error } = await supabaseClient.from('depots_echeancier').upsert(
+    lignes.map(l=>({ ...l, updated_at: new Date().toISOString() }))
+  );
+  if(error){
+    dernierSignatureEcheancierSync = null; /* on réessaiera au prochain calcul */
+    console.warn("Impossible de synchroniser l'échéancier pour les notifications.", error);
+  }
+}
+
+/* Traduit le formulaire (Quand / Nombre de jours) en un seul entier signé, tel qu'attendu
+   par la fonction planifiée : négatif = avant la paie, positif = après, 0 = le jour même. */
+function lireJoursOffsetFormulaireNotif(){
+  const quand = document.getElementById('notif-quand').value;
+  const jours = Math.max(1, parseInt(document.getElementById('notif-jours').value,10) || 1);
+  if(quand === 'avant') return -jours;
+  if(quand === 'apres') return jours;
+  return 0;
+}
+function ecrireJoursOffsetFormulaireNotif(joursOffset){
+  const quand = joursOffset < 0 ? 'avant' : (joursOffset > 0 ? 'apres' : 'le-jour');
+  document.getElementById('notif-quand').value = quand;
+  document.getElementById('notif-jours').value = Math.abs(joursOffset) || 1;
+  document.getElementById('notif-jours-field').style.display = quand === 'le-jour' ? 'none' : '';
+}
+
+async function chargerPreferencesNotification(){
+  if(!currentSession) return;
+  const { data, error } = await supabaseClient.from('notification_prefs').select('*').eq('user_id', currentSession.user.id).maybeSingle();
+  if(error){ console.warn("Impossible de charger les préférences de notification.", error); return; }
+  document.getElementById('notif-toggle').checked = !!(data && data.enabled);
+  ecrireJoursOffsetFormulaireNotif(data ? data.jours_offset : 0);
+  document.getElementById('notif-heure').value = data ? data.heure : '08:00';
+  document.getElementById('notif-reglages').style.display = (data && data.enabled) ? '' : 'none';
+  document.getElementById('notif-activite-toggle').checked = !!(data && data.notif_activite);
+}
+
+/* Correspondance auth user -> personne (p1/p2), pour que la fonction serveur sache qui est
+   "l'autre" quand elle notifie un ajout/modification de dépense conjointe. */
+async function enregistrerPersonneUtilisateur(){
+  if(!currentSession || !currentUser) return;
+  const { error } = await supabaseClient.from('personnes_utilisateurs').upsert({
+    user_id: currentSession.user.id, personne: currentUser, updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' });
+  if(error) console.warn("Impossible d'enregistrer la correspondance utilisateur.", error);
+}
+
+/* Prévient le partenaire (jamais soi-même) qu'une dépense conjointe vient d'être ajoutée ou
+   modifiée. Volontairement non bloquant : un échec ici ne doit jamais empêcher l'enregistrement
+   de la dépense elle-même. */
+function notifierActivitePartenaire(action, description){
+  if(!currentSession) return;
+  supabaseClient.functions.invoke('notify-partner-activity', { body: { action, description } })
+    .catch(err => console.warn("Notification d'activité au partenaire non envoyée.", err));
+}
+
+function afficherStatutNotif(message, estErreur){
+  const el = document.getElementById('notif-statut');
+  el.textContent = message || '';
+  el.style.color = estErreur ? 'var(--red)' : 'var(--text-secondary)';
+}
+
+async function enregistrerAbonnementPush(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+    afficherStatutNotif("Ce navigateur ne prend pas en charge les notifications.", true);
+    return false;
+  }
+  const permission = await Notification.requestPermission();
+  if(permission !== 'granted'){
+    afficherStatutNotif("Permission refusée : autorise les notifications pour ce site dans ton navigateur.", true);
+    return false;
+  }
+  const registration = await navigator.serviceWorker.register('sw.js');
+  await navigator.serviceWorker.ready;
+  let subscription = await registration.pushManager.getSubscription();
+  if(!subscription){
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+  }
+  const sub = subscription.toJSON();
+  const { error } = await supabaseClient.from('push_subscriptions').upsert({
+    user_id: currentSession.user.id,
+    endpoint: sub.endpoint,
+    p256dh: sub.keys.p256dh,
+    auth: sub.keys.auth
+  }, { onConflict: 'endpoint' });
+  if(error){
+    afficherStatutNotif("Erreur lors de l'enregistrement de l'abonnement.", true);
+    console.error(error);
+    return false;
+  }
+  return true;
+}
+
+async function sauvegarderPreferencesNotification(enabled){
+  const prefs = {
+    user_id: currentSession.user.id,
+    personne: currentUser,
+    enabled,
+    jours_offset: lireJoursOffsetFormulaireNotif(),
+    heure: document.getElementById('notif-heure').value || '08:00',
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await supabaseClient.from('notification_prefs').upsert(prefs, { onConflict: 'user_id' });
+  if(error){
+    afficherStatutNotif("Erreur lors de l'enregistrement des préférences.", true);
+    console.error(error);
+    return false;
+  }
+  return true;
+}
+
+document.getElementById('notif-toggle').addEventListener('change', async function(){
+  const actif = this.checked;
+  document.getElementById('notif-reglages').style.display = actif ? '' : 'none';
+  afficherStatutNotif('');
+  if(actif){
+    const ok = await enregistrerAbonnementPush();
+    if(!ok){ this.checked = false; document.getElementById('notif-reglages').style.display = 'none'; return; }
+  }
+  const ok = await sauvegarderPreferencesNotification(actif);
+  if(ok && actif) afficherStatutNotif("Notifications activées.");
+});
+document.getElementById('notif-quand').addEventListener('change', function(){
+  document.getElementById('notif-jours-field').style.display = this.value === 'le-jour' ? 'none' : '';
+  if(document.getElementById('notif-toggle').checked) sauvegarderPreferencesNotification(true);
+});
+document.getElementById('notif-jours').addEventListener('change', ()=>{
+  if(document.getElementById('notif-toggle').checked) sauvegarderPreferencesNotification(true);
+});
+document.getElementById('notif-heure').addEventListener('change', ()=>{
+  if(document.getElementById('notif-toggle').checked) sauvegarderPreferencesNotification(true);
+});
+
+function afficherStatutNotifActivite(message, estErreur){
+  const el = document.getElementById('notif-activite-statut');
+  el.textContent = message || '';
+  el.style.color = estErreur ? 'var(--red)' : 'var(--text-secondary)';
+}
+document.getElementById('notif-activite-toggle').addEventListener('change', async function(){
+  const actif = this.checked;
+  afficherStatutNotifActivite('');
+  if(actif){
+    const ok = await enregistrerAbonnementPush();
+    if(!ok){ this.checked = false; return; }
+  }
+  const { error } = await supabaseClient.from('notification_prefs').upsert({
+    user_id: currentSession.user.id,
+    personne: currentUser,
+    notif_activite: actif,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' });
+  if(error){
+    afficherStatutNotifActivite("Erreur lors de l'enregistrement.", true);
+    console.error(error);
+    return;
+  }
+  if(actif) afficherStatutNotifActivite("Notifications d'activité activées.");
+});
 
 /* Suppression d'une dépense */
 async function supprimerDepense(id){
@@ -5130,7 +5456,7 @@ async function supprimerDepense(id){
 
   const { error } = await supabaseClient.from('Depenses').delete().eq('id', id);
   if(error){
-    alert("Erreur lors de la suppression.");
+    afficherAlerte("Erreur lors de la suppression.");
     return;
   }
   depensesReelles = depensesReelles.filter(e=>e.id!==id);
@@ -5144,11 +5470,11 @@ document.getElementById('save-budgets-conjoint').addEventListener('click', ()=>s
 /* ===================== RENDU : SOUS-ONGLET MOIS (par section) ===================== */
 /* Calcule, du point de vue de la personne connectée, combien elle doit encore payer
    (ou a payé en trop) pour arriver à égalité avec l'autre sur les dépenses conjointes. */
-function carteEcartEqualisation(t1, t2){
-  const moi = currentUser==='p2' ? t2 : t1;
-  const autre = currentUser==='p2' ? t1 : t2;
+function carteEcartEqualisation(paidP1, paidP2, dueP1, dueP2){
+  const moiPaye = currentUser==='p2' ? paidP2 : paidP1;
+  const moiDu = currentUser==='p2' ? dueP2 : dueP1;
   const autreCle = currentUser==='p2' ? 'p1' : 'p2';
-  const ecart = (autre - moi) / 2; /* positif = je dois payer plus ; négatif = j'ai payé en trop */
+  const ecart = moiDu - moiPaye; /* positif = je dois payer plus ; négatif = j'ai payé en trop */
   if(Math.abs(ecart) < 0.005){
     return `<div class="label">Équilibré<span class="mobile-line"> avec ${nomsPersonnes[autreCle]}</span></div><div class="value">${formaterMonnaie(0)}</div>`;
   }
@@ -5178,8 +5504,16 @@ function afficherResumeUnifie(scope){
   /* La comparaison à un budget ne fait sens qu'au mois (les budgets sont mensuels) : pour
      les autres périodes, la 3e carte affiche autre chose de pertinent à cette échelle. */
   if(scope==='conjoint'){
-    const t1 = liste.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
-    const t2 = liste.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
+    /* L'équilibrage « payé par moi / reste à payer » ne concerne que l'argent sorti de la
+       poche de Gabriel ou Mélissa : une dépense payée par le compte conjoint n'est due par
+       personne en particulier (même si elle est attribuée à 100% à l'un des deux dans le
+       partage des %), donc elle est exclue de ce calcul. */
+    const listeHorsCompte = liste.filter(e=>!e.estCompte);
+    const t1 = listeHorsCompte.filter(e=>e.who==='p1').reduce((s,e)=>s+e.amount,0);
+    const t2 = listeHorsCompte.filter(e=>e.who==='p2').reduce((s,e)=>s+e.amount,0);
+    const totalHorsCompte = t1 + t2;
+    const dueP1 = listeHorsCompte.reduce((s,e)=>s + e.amount * ((e.pourcentageP1 != null ? e.pourcentageP1 : 50) / 100), 0);
+    const dueP2 = totalHorsCompte - dueP1;
     const moi = currentUser==='p2' ? t2 : t1;
     let troisiemeCarte;
     if(vue==='mois'){
@@ -5196,7 +5530,7 @@ function afficherResumeUnifie(scope){
     el.innerHTML = `
       <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> moi</span></div><div class="value ${currentUser}">${formaterMonnaie(moi)}</div></div>
       ${troisiemeCarte}
-      <div class="stat-card">${carteEcartEqualisation(t1, t2)}</div>
+      <div class="stat-card">${carteEcartEqualisation(t1, t2, dueP1, dueP2)}</div>
     `;
   } else {
     /* Même filtre que totalConjointPourInclusion() : les revenus conjoints sont exclus du
@@ -5487,7 +5821,7 @@ function remplirSelectsExport(){
 
 /* Export Excel (.xlsx) via SheetJS pour une liste de dépenses déjà filtrée */
 function exporterExcel(liste, suffixeFichier){
-  if(!liste.length){ alert("Aucune dépense à exporter pour cette période."); return; }
+  if(!liste.length){ afficherAlerte("Aucune dépense à exporter pour cette période."); return; }
   const data = liste
     .slice()
     .sort((a,b)=> a.date.localeCompare(b.date))
@@ -5599,7 +5933,7 @@ function valeurColonne(ligne, nomsPossibles){
 }
 
 async function importerLignes(lignes){
-  if(!lignes.length){ alert("Aucune ligne trouvée dans le fichier."); return; }
+  if(!lignes.length){ afficherAlerte("Aucune ligne trouvée dans le fichier."); return; }
 
   const utilisateurParDefaut = nomsPersonnes[currentUser] ? currentUser : 'p1';
   const aInserer = [];
@@ -5635,7 +5969,7 @@ async function importerLignes(lignes){
   });
 
   if(!aInserer.length){
-    alert("Aucune ligne valide n'a pu être importée. Vérifiez les colonnes Qui, Date, Montant, Categorie, Note.");
+    afficherAlerte("Aucune ligne valide n'a pu être importée. Vérifiez les colonnes Qui, Date, Montant, Categorie, Note.");
     return;
   }
 
@@ -5644,7 +5978,7 @@ async function importerLignes(lignes){
 
   const { error } = await supabaseClient.from('Depenses').insert(aInserer);
   if(error){
-    alert("Erreur lors de l'importation dans Supabase.");
+    afficherAlerte("Erreur lors de l'importation dans Supabase.");
     console.error(error);
     if(statut) statut.textContent = "";
     return;
@@ -5660,7 +5994,7 @@ async function importerLignes(lignes){
   const message = `${aInserer.length} dépense${aInserer.length>1?'s':''} importée${aInserer.length>1?'s':''}` +
     (ignorees ? ` (${ignorees} ligne${ignorees>1?'s':''} ignorée${ignorees>1?'s':''} car incomplète${ignorees>1?'s':''}).` : '.');
   if(statut) statut.textContent = message;
-  alert(message);
+  afficherAlerte(message);
 }
 
 document.getElementById('btn-export').addEventListener('click', ouvrirExport);
@@ -5707,7 +6041,7 @@ document.getElementById('import-file').addEventListener('change', async (e)=>{
   } catch(err){
     console.error(err);
     if(statut) statut.textContent = '';
-    alert("Impossible de lire ce fichier. Vérifiez qu'il s'agit bien d'un fichier CSV ou Excel valide.");
+    afficherAlerte("Impossible de lire ce fichier. Vérifiez qu'il s'agit bien d'un fichier CSV ou Excel valide.");
   }
   e.target.value = '';
 });
@@ -5796,6 +6130,16 @@ function suivreClavierVirtuel(){
   });
 }
 suivreClavierVirtuel();
+
+/* Boîte de message custom, à la place de alert() natif (dont l'entête "x dit" est
+   disgracieuse et affiche l'adresse du serveur local). */
+function afficherAlerte(message){
+  document.getElementById('alerte-message').textContent = message;
+  document.getElementById('alerte-modal').classList.add('visible');
+}
+document.getElementById('alerte-ok').addEventListener('click', ()=>{
+  document.getElementById('alerte-modal').classList.remove('visible');
+});
 
 /* Lancement au démarrage */
 initAuth();
