@@ -1435,12 +1435,15 @@
         <span class="toggle-field-label" id="edit-est-revenu-label">💰 Est un revenu</span>
         <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
       </div>
-      <div class="field toggle-field pleine-largeur" id="edit-actif-field">
-        <span class="toggle-field-label">Série active</span>
-        <label class="switch"><input type="checkbox" id="edit-actif" disabled checked><span class="switch-track"></span></label>
-      </div>
       <div class="field pleine-largeur" id="edit-toggle-type-field">
         <button type="button" class="btn-secondary" id="edit-toggle-type" style="width:100%;"></button>
+      </div>
+      <!-- Conversion d'une dépense ponctuelle en série. Masqué pour une occurrence, qui
+           appartient déjà à une série. -->
+      <div class="field pleine-largeur" id="edit-rendre-recurrente-field">
+        <button type="button" class="btn-secondary" id="edit-rendre-recurrente" style="width:100%;">
+          <span class="recurring-icon">↻</span> Rendre récurrente
+        </button>
       </div>
     </div>
   </div>
@@ -1545,10 +1548,16 @@
   <div id="depot-modal-content"></div>
 </div></div>
 
+<!-- Même squelette que les autres fenêtres : sans .modal-header, le bouton de fermeture
+     devenait un élément de la colonne flex et se retrouvait centré, sans marges. -->
 <div class="edit-modal" id="cal-filtres-modal"><div class="edit-card">
-  <button class="modal-close-btn" id="close-cal-filtres-modal" aria-label="Fermer">&times;</button>
-  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Filtres d'affichage</h3>
-  <div id="cal-filtres-modal-content"></div>
+  <div class="modal-header">
+    <h3>Filtres d'affichage<span class="modal-sous-titre">Ce qui apparaît dans le calendrier</span></h3>
+    <button class="modal-close-btn" id="close-cal-filtres-modal" aria-label="Fermer">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div id="cal-filtres-modal-content"></div>
+  </div>
 </div></div>
 
 
@@ -3680,14 +3689,18 @@ function afficherCalendrierRecurrent(scope){
 
 /* Barre d'outils commune, en haut du calendrier/liste : icône de filtres (🎚) à gauche,
    bascule grille/liste (📅) centrée — visible uniquement en vue "Mois" — et le contrôle de
-   tri (Date/Montant) à droite. Toujours sur la même ligne, pour rester compact et uniforme. */
+   tri (Date/Montant) à droite. Toujours sur la même ligne, pour rester compact et uniforme.
+
+   Le tri ne s'affiche PAS quand la grille de calendrier est active : les dépenses y sont
+   placées dans les cases des jours, l'ordre de tri n'a alors aucun effet visible. */
 function rendreBarreOutilsHTML(scope, tri){
   const vue = etatCalendrierPeriode.vue;
+  const triUtile = !(vue === 'mois' && afficherGrilleMois);
   return `
     <div class="cal-toolbar">
       <button type="button" class="cal-hamburger-btn" id="cal-filtre-btn-${scope}" aria-label="Filtres d'affichage">${ICONE_FILTRE_SVG}</button>
       ${vue==='mois' ? `<button type="button" class="cal-hamburger-btn cal-toolbar-centre" id="cal-grille-toggle-${scope}" aria-label="Basculer vue calendrier">📅</button>` : ''}
-      <div class="mobile-sort" id="cal-toolbar-tri-${scope}">
+      <div class="mobile-sort" id="cal-toolbar-tri-${scope}"${triUtile ? '' : ' style="display:none;"'}>
         <select id="agenda-tri-${scope}" aria-label="Trier les dépenses">
           <option value="Date">Date</option><option value="Montant">Montant</option>
         </select>
@@ -4952,6 +4965,48 @@ document.getElementById('edit-toggle-type').addEventListener('click', ()=>{
    moment de la sauvegarde (voir diviserRecurrenceAPartirDe). */
 let modeEditionDepense = 'normal';
 
+/* ===================== PONCTUELLE → RÉCURRENTE =====================
+   Une dépense ponctuelle vit dans `Depenses`, une série dans `Recurrences` — et les
+   occurrences d'une série ne sont jamais stockées, elles sont calculées à partir de la
+   règle. Convertir revient donc à un simple échange : on crée la règle à partir des valeurs
+   de la dépense, puis on supprime la ligne d'origine.
+
+   On propose d'emblée « tous les mois », le cas le plus courant, puis on ouvre l'éditeur de
+   série pour que la règle soit ajustée (hebdomadaire, aux deux semaines, date de fin…).
+   Le sens inverse n'existe pas : une série peut avoir des dizaines d'occurrences et des
+   exceptions, décider laquelle survivrait n'aurait pas de réponse évidente. */
+document.getElementById('edit-rendre-recurrente').addEventListener('click', async ()=>{
+  const depense = depenseEnEdition;
+  if(!depense || depense.virtuelle || depense.recurrenceId) return;
+
+  const nouvelId = await creerRecurrenceDepuisValeurs({
+    nom: depense.note || depense.category,
+    montant: depense.amount,
+    categorie: depense.category,
+    unite: 'mois', intervalle: 1, joursSemaine: null, typeMensuel: 'jour_mois',
+    dateDebut: depense.date,
+    finType: 'jamais', finNombre: null, finDate: null,
+    who: depense.who, type: depense.type,
+    estCompte: !!depense.estCompte, estRevenu: !!depense.estRevenu,
+    pourcentageP1: depense.pourcentageP1
+  });
+
+  /* La dépense d'origine disparaît : elle est désormais la première occurrence de la série. */
+  const { error } = await supabaseClient.from('Depenses').delete().eq('id', depense.id);
+  if(error){
+    alert("La série a été créée, mais la dépense d'origine n'a pas pu être supprimée : elle risque d'apparaître en double.");
+  } else {
+    depensesReelles = depensesReelles.filter(e => e.id !== depense.id);
+  }
+
+  document.getElementById('edit-modal').style.display = 'none';
+  depenseEnEdition = null;
+  recalculerDepenses();
+  rafraichirActif();
+  /* On enchaîne sur l'éditeur de série pour régler la fréquence tout de suite. */
+  ouvrirEditionRecurrence(nouvelId);
+});
+
 function ouvrirEdition(id, mode){
   const depense=depenses.find(e=>e.id===id); if(!depense) return;
   modeEditionDepense = mode || 'normal';
@@ -4984,19 +5039,16 @@ function ouvrirEdition(id, mode){
     inputFinNombre.value = rec.finType==='nombre' && rec.finNombre != null ? String(rec.finNombre) : '';
     inputFinDate.value = rec.finType==='date' && rec.finDate
       ? dateLocaleDepuisISO(rec.finDate).toLocaleDateString('fr-CA',{day:'numeric',month:'long',year:'numeric'}) : '';
-    document.getElementById('edit-actif').checked = !!rec.actif;
   } else {
     selRepetition.innerHTML = '<option>Ne se répète pas</option>';
     selFinType.innerHTML = '<option>—</option>';
     inputFinNombre.value = '';
     inputFinDate.value = '';
-    document.getElementById('edit-actif').checked = true;
   }
   activerChamp('edit-repetition-field', false);
   activerChamp('edit-fin-type-field', false);
   activerChamp('edit-fin-nombre-field', false);
   activerChamp('edit-fin-date-field', false);
-  activerChamp('edit-actif-field', false, 'edit-actif');
 
   editTypeActuel = depense.type==='personnelle' ? 'personnelle' : 'conjointe';
   appliquerVerrouEditType(editTypeActuel);
@@ -5004,6 +5056,10 @@ function ouvrirEdition(id, mode){
   /* Une occurrence de série ne peut pas basculer conjointe/personnelle toute seule :
      ça se change sur la série entière. */
   activerChamp('edit-toggle-type-field', !depense.virtuelle, 'edit-toggle-type');
+  /* « Rendre récurrente » n'a de sens que pour une dépense qui n'appartient à aucune série :
+     une occurrence en fait déjà partie, et sa règle se modifie depuis l'éditeur de série. */
+  document.getElementById('edit-rendre-recurrente-field').style.display =
+    (rec || depense.virtuelle) ? 'none' : '';
 
   document.getElementById('edit-modal-titre').firstChild.textContent = modeEditionDepense === 'suivantes'
     ? 'Modifier cette dépense et les suivantes'
