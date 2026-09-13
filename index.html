@@ -799,14 +799,6 @@
   .depot-ligne-nom{font-size:14px;font-weight:500;}
   .depot-ligne-montants{display:flex;gap:16px;flex:0 0 auto;}
   .depot-ligne-montants .value{min-width:76px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;}
-<<<<<<< HEAD
-=======
-  /* Mêmes couleurs que les cartes de stats, pour qu'une colonne se reconnaisse d'un coup d'œil. */
-  .depot-ligne-montants .value.p1{color:var(--blue-dark);}
-  .depot-ligne-montants .value.p2{color:var(--red);}
-  .depot-entete-montants span.p1{color:var(--blue-dark);}
-  .depot-entete-montants span.p2{color:var(--red);}
->>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
   .depot-ligne .cat-pill{margin-top:6px;}
   .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.45;}
   .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;
@@ -2760,11 +2752,7 @@ function ouvrirDetailDepot(iso){
   const sommeP2 = lignes.reduce((s,l)=>s+l.p2, 0);
   const ecart = Math.abs(sommeP1 - paie.p1) + Math.abs(sommeP2 - paie.p2);
   const controle = ecart < 0.005
-<<<<<<< HEAD
     ? ''
-=======
-    ? `<div class="depot-ligne-explication" style="margin-top:10px;">✓ La somme des lignes correspond exactement au montant affiché dans l'échéancier.</div>`
->>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
     : `<div class="depot-ligne-explication" style="margin-top:10px;color:var(--red);">⚠ Écart de ${formaterMonnaie(ecart)} entre le détail et le montant affiché.</div>`;
 
   document.getElementById('depot-modal-content').innerHTML = `
@@ -2814,7 +2802,6 @@ function afficherEcheancierCompteConjoint(){
   }
   carte.style.display = '';
 
-<<<<<<< HEAD
   /* Le nombre de paies à calculer doit couvrir toute la période affichée : 8 paies (~4 mois)
      suffisent pour Jour/Semaine/Paie/Mois, mais "Année" doit pouvoir couvrir toute l'année
      sélectionnée, sinon l'échéancier s'arrête en cours d'année au lieu de continuer. */
@@ -2823,9 +2810,6 @@ function afficherEcheancierCompteConjoint(){
     : bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
   const nbPaiesNecessaires = Math.max(8, Math.ceil(joursEntreDates(debutJour(new Date()), finPeriodeAffichee)/14) + 2);
   const echeancierComplet = calculerEcheancierCompte(nbPaiesNecessaires);
-=======
-  const echeancierComplet = calculerEcheancierCompte(8);
->>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
   /* Conservé pour la fenêtre de détail : elle réutilise exactement le calcul affiché plutôt
      que de le refaire, sinon les deux pourraient diverger sans qu'on s'en aperçoive. */
   dernierEcheancier = echeancierComplet || [];
@@ -2987,22 +2971,11 @@ function activerChamp(fieldId, actif, controlId){
 function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
   const select = document.getElementById(selectId);
   const val = select.value;
-<<<<<<< HEAD
   /* On MASQUE le champ qui ne s'applique pas, partout de la même façon. La fenêtre
      d'édition se contentait de le griser, si bien qu'en choisissant « À une date précise »
      le champ « Nombre » restait affiché à côté, vide et sans objet. */
   document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
   document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
-=======
-  const dansModal = nombreFieldId.startsWith('edit-rec-');
-  if(dansModal){
-    activerChamp(nombreFieldId, val==='nombre');
-    activerChamp(dateFieldId, val==='date');
-  } else {
-    document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
-    document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
-  }
->>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
   /* « Après un nombre de paiements » est trop long pour une demi-largeur : on lui donne
      trois quarts de la rangée et le quart restant au nombre, qui n'a besoin que de deux ou
      trois chiffres. Avec « À une date précise », les deux champs reprennent leur moitié. */
@@ -3706,15 +3679,10 @@ function afficherCalendrierRecurrent(scope){
    bascule grille/liste (📅) centrée — visible uniquement en vue "Mois" — et le contrôle de
    tri (Date/Montant) à droite. Toujours sur la même ligne, pour rester compact et uniforme.
 
-<<<<<<< HEAD
    Le tri n'est PAS produit quand la grille de calendrier est active : les dépenses y sont
    placées dans les cases des jours, l'ordre de tri n'a alors aucun effet visible. On retire
    le bloc du HTML plutôt que de le masquer, parce que `.cal-toolbar .mobile-sort` porte un
    `display:flex!important` qui l'emporterait sur un style en ligne. */
-=======
-   Le tri ne s'affiche PAS quand la grille de calendrier est active : les dépenses y sont
-   placées dans les cases des jours, l'ordre de tri n'a alors aucun effet visible. */
->>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
 function rendreBarreOutilsHTML(scope, tri){
   const vue = etatCalendrierPeriode.vue;
   const triUtile = !(vue === 'mois' && afficherGrilleMois);
@@ -3722,11 +3690,7 @@ function rendreBarreOutilsHTML(scope, tri){
     <div class="cal-toolbar">
       <button type="button" class="cal-hamburger-btn" id="cal-filtre-btn-${scope}" aria-label="Filtres d'affichage">${ICONE_FILTRE_SVG}</button>
       ${vue==='mois' ? `<button type="button" class="cal-hamburger-btn cal-toolbar-centre" id="cal-grille-toggle-${scope}" aria-label="Basculer vue calendrier">📅</button>` : ''}
-<<<<<<< HEAD
       ${triUtile ? `<div class="mobile-sort" id="cal-toolbar-tri-${scope}">
-=======
-      <div class="mobile-sort" id="cal-toolbar-tri-${scope}"${triUtile ? '' : ' style="display:none;"'}>
->>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
         <select id="agenda-tri-${scope}" aria-label="Trier les dépenses">
           <option value="Date">Date</option><option value="Montant">Montant</option>
         </select>
