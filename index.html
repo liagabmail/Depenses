@@ -424,13 +424,14 @@
      et les champs ne tombaient plus au même endroit d'un formulaire à l'autre. */
   .form-grid{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:repeat(4, 1fr);
     gap:14px 16px;
     align-items:start;
   }
-  .form-grid>.field{margin:0;min-width:0;}
+  .form-grid>.field{margin:0;min-width:0;grid-column:span 2;}
   .form-grid>.field.pleine-largeur{grid-column:1 / -1;}
   .form-grid>.btn-add{grid-column:1 / -1;width:100%;margin-top:4px;}
+
   /* Formulaires d'ajout ET fenêtres d'édition gardent leurs deux colonnes jusqu'en bas :
      mêmes champs aux mêmes endroits, qu'on ajoute ou qu'on modifie. Les champs qui ont
      besoin de largeur (Note, réglages de récurrence) demandent .pleine-largeur. */
@@ -709,9 +710,19 @@
   }
   .modal-footer .btn-danger{margin-right:auto;}
   /* Grille de champs identique dans toutes les fenêtres */
-  .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;align-items:start;}
-  .modal-grid .field{margin:0;min-width:0;}
+  /* Grille sur QUATRE colonnes, chaque champ en occupant deux : visuellement identique à
+     deux colonnes (2 colonnes + 1 gouttière = exactement la moitié), mais ça permet de
+     déséquilibrer une rangée quand il le faut. Cas concret : « Après un nombre de paiements »
+     ne tenait pas dans une demi-largeur, alors que le nombre à côté n'a besoin que de
+     quelques caractères. */
+  .modal-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:14px 16px;align-items:start;}
+  .modal-grid .field{margin:0;min-width:0;grid-column:span 2;}
   .modal-grid .field.pleine-largeur{grid-column:1 / -1;}
+  /* Rangée déséquilibrée : le libellé long prend trois quarts, le nombre un quart.
+     Posé par appliquerAffichageFinRecurrence() uniquement quand le champ nombre est
+     affiché — avec « À une date précise », la date a besoin de sa demi-largeur. */
+  .field.fin-type-large{grid-column:span 3;}
+  .field.fin-nombre-etroit{grid-column:span 1;}
   /* Un champ grisé garde sa place : seul son aspect change */
   .field.est-desactive label{opacity:.55;}
   .field select:disabled, .field input:disabled{opacity:.5;cursor:not-allowed;}
@@ -931,7 +942,7 @@
           </div>
           <div class="field" id="f-compte-repartition-field-conjoint">
             <label>Part de <span id="f-compte-nom-p1-conjoint"></span> (%)</label>
-            <input type="number" id="f-compte-repartition-conjoint" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
+            <input type="number" id="f-compte-repartition-conjoint" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
           </div>
           <div class="field" id="f-category-field-conjoint">
             <label>Catégorie</label>
@@ -943,16 +954,16 @@
           </div>
           <div class="field pleine-largeur">
             <label>Note</label>
-            <input type="text" id="f-note-conjoint" placeholder="Optionnel">
+            <input type="text" id="f-note-conjoint" placeholder="Optionnel" autocomplete="off">
           </div>
           <div class="field">
             <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
                  est un point de départ, pas forcément la première occurrence. -->
             <label id="f-date-label-conjoint">Date</label>
-            <input type="date" id="f-date-conjoint">
+            <input type="date" id="f-date-conjoint" autocomplete="off">
           </div>
           <div class="field toggle-field champ-bascule" id="f-repete-field-conjoint">
-            <span class="toggle-field-label">🔁 Se répète</span>
+            <span class="toggle-field-label"><span class="recurring-icon">↻</span> Se répète</span>
             <label class="switch"><input type="checkbox" id="f-repete-conjoint"><span class="switch-track"></span></label>
           </div>
           <!-- Options de récurrence : dépliées dans le formulaire quand la bascule est à ON,
@@ -960,7 +971,7 @@
           <div class="field pleine-largeur bloc-recurrence" id="f-rec-intervalle-field-conjoint" style="display:none;">
             <label>Se répète tous les</label>
             <div class="rec-intervalle">
-              <input type="number" id="f-rec-intervalle-conjoint" data-num="entier" min="1" step="1" value="1" inputmode="numeric">
+              <input type="number" id="f-rec-intervalle-conjoint" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
               <select id="f-rec-unite-conjoint">
                 <option value="jour">jour(s)</option>
                 <option value="semaine">semaine(s)</option>
@@ -989,11 +1000,11 @@
           </div>
           <div class="field bloc-recurrence" id="f-fin-nombre-field-conjoint" style="display:none;">
             <label>Nombre de paiements</label>
-            <input type="number" id="f-fin-nombre-conjoint" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric">
+            <input type="number" id="f-fin-nombre-conjoint" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric" autocomplete="off">
           </div>
           <div class="field bloc-recurrence" id="f-fin-date-field-conjoint" style="display:none;">
             <label>Date de fin</label>
-            <input type="date" id="f-fin-date-conjoint">
+            <input type="date" id="f-fin-date-conjoint" autocomplete="off">
           </div>
           <div class="field pleine-largeur bloc-recurrence apercu-recurrence" id="f-apercu-field-conjoint" style="display:none;">
             <span id="f-apercu-conjoint"></span>
@@ -1117,16 +1128,16 @@
           </div>
           <div class="field pleine-largeur">
             <label>Note</label>
-            <input type="text" id="f-note-personnel" placeholder="Optionnel">
+            <input type="text" id="f-note-personnel" placeholder="Optionnel" autocomplete="off">
           </div>
           <div class="field">
             <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
                  est un point de départ, pas forcément la première occurrence. -->
             <label id="f-date-label-personnel">Date</label>
-            <input type="date" id="f-date-personnel">
+            <input type="date" id="f-date-personnel" autocomplete="off">
           </div>
           <div class="field toggle-field champ-bascule" id="f-repete-field-personnel">
-            <span class="toggle-field-label">🔁 Se répète</span>
+            <span class="toggle-field-label"><span class="recurring-icon">↻</span> Se répète</span>
             <label class="switch"><input type="checkbox" id="f-repete-personnel"><span class="switch-track"></span></label>
           </div>
           <!-- Options de récurrence : dépliées dans le formulaire quand la bascule est à ON,
@@ -1134,7 +1145,7 @@
           <div class="field pleine-largeur bloc-recurrence" id="f-rec-intervalle-field-personnel" style="display:none;">
             <label>Se répète tous les</label>
             <div class="rec-intervalle">
-              <input type="number" id="f-rec-intervalle-personnel" data-num="entier" min="1" step="1" value="1" inputmode="numeric">
+              <input type="number" id="f-rec-intervalle-personnel" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
               <select id="f-rec-unite-personnel">
                 <option value="jour">jour(s)</option>
                 <option value="semaine">semaine(s)</option>
@@ -1163,11 +1174,11 @@
           </div>
           <div class="field bloc-recurrence" id="f-fin-nombre-field-personnel" style="display:none;">
             <label>Nombre de paiements</label>
-            <input type="number" id="f-fin-nombre-personnel" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric">
+            <input type="number" id="f-fin-nombre-personnel" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric" autocomplete="off">
           </div>
           <div class="field bloc-recurrence" id="f-fin-date-field-personnel" style="display:none;">
             <label>Date de fin</label>
-            <input type="date" id="f-fin-date-personnel">
+            <input type="date" id="f-fin-date-personnel" autocomplete="off">
           </div>
           <div class="field pleine-largeur bloc-recurrence apercu-recurrence" id="f-apercu-field-personnel" style="display:none;">
             <span id="f-apercu-personnel"></span>
@@ -1399,11 +1410,11 @@
 <div class="field"><label>Montant</label><input type="number" id="edit-amount" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
       <div class="field" id="edit-compte-repartition-field">
         <label>Part de <span id="edit-compte-nom-p1"></span> (%)</label>
-        <input type="number" id="edit-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
+        <input type="number" id="edit-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
       </div>
 <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
-<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note"></div>
-<div class="field" id="edit-date-field"><label>Date</label><input type="date" id="edit-date"></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note" autocomplete="off"></div>
+<div class="field" id="edit-date-field"><label>Date</label><input type="date" id="edit-date" autocomplete="off"></div>
       <div class="field" id="edit-repetition-field">
         <label>Se répète</label>
         <select id="edit-repetition" disabled></select>
@@ -1414,11 +1425,11 @@
       </div>
       <div class="field" id="edit-fin-nombre-field">
         <label>Nombre de paiements</label>
-        <input type="text" id="edit-fin-nombre" disabled>
+        <input type="text" id="edit-fin-nombre" disabled autocomplete="off">
       </div>
       <div class="field" id="edit-fin-date-field">
         <label>Date de fin</label>
-        <input type="text" id="edit-fin-date" disabled>
+        <input type="text" id="edit-fin-date" disabled autocomplete="off">
       </div>
       <div class="field toggle-field pleine-largeur" id="edit-est-revenu-field">
         <span class="toggle-field-label" id="edit-est-revenu-label">💰 Est un revenu</span>
@@ -1453,15 +1464,21 @@
 <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
       <div class="field" id="edit-rec-compte-repartition-field">
         <label>Part de <span id="edit-rec-compte-nom-p1"></span> (%)</label>
-        <input type="number" id="edit-rec-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric">
+        <input type="number" id="edit-rec-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
       </div>
 <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
-<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom"></div>
-<div class="field"><label>Date</label><input type="date" id="edit-rec-date-debut"></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom" autocomplete="off"></div>
+<div class="field">
+        <!-- Une récurrence part toujours d'une date d'ancrage, jamais d'une date unique :
+             le libellé est donc « À partir de » en permanence, comme dans le formulaire
+             d'ajout quand la bascule est active. -->
+        <label>À partir de</label>
+        <input type="date" id="edit-rec-date-debut" autocomplete="off">
+      </div>
       <div class="field pleine-largeur" id="edit-rec-intervalle-field">
         <label>Se répète tous les</label>
         <div class="rec-intervalle">
-          <input type="number" id="edit-rec-intervalle" data-num="entier" min="1" step="1" value="1" inputmode="numeric">
+          <input type="number" id="edit-rec-intervalle" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
           <select id="edit-rec-unite">
             <option value="jour">jour(s)</option>
             <option value="semaine">semaine(s)</option>
@@ -1488,11 +1505,11 @@
       </div>
       <div class="field" id="edit-rec-fin-nombre-field">
         <label>Nombre de paiements</label>
-        <input type="number" id="edit-rec-fin-nombre" data-num="entier" min="1" step="1" inputmode="numeric">
+        <input type="number" id="edit-rec-fin-nombre" data-num="entier" min="1" step="1" inputmode="numeric" autocomplete="off">
       </div>
       <div class="field" id="edit-rec-fin-date-field">
         <label>Date de fin</label>
-        <input type="date" id="edit-rec-fin-date">
+        <input type="date" id="edit-rec-fin-date" autocomplete="off">
       </div>
       <div class="field toggle-field pleine-largeur" id="edit-rec-est-revenu-field">
         <span class="toggle-field-label" id="edit-rec-est-revenu-label">💰 Est un revenu</span>
@@ -2944,7 +2961,8 @@ function activerChamp(fieldId, actif, controlId){
 }
 
 function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
-  const val = document.getElementById(selectId).value;
+  const select = document.getElementById(selectId);
+  const val = select.value;
   const dansModal = nombreFieldId.startsWith('edit-rec-');
   if(dansModal){
     activerChamp(nombreFieldId, val==='nombre');
@@ -2953,6 +2971,13 @@ function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
     document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
     document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
   }
+  /* « Après un nombre de paiements » est trop long pour une demi-largeur : on lui donne
+     trois quarts de la rangée et le quart restant au nombre, qui n'a besoin que de deux ou
+     trois chiffres. Avec « À une date précise », les deux champs reprennent leur moitié. */
+  const champType = select.closest('.field');
+  const champNombre = document.getElementById(nombreFieldId);
+  if(champType) champType.classList.toggle('fin-type-large', val==='nombre');
+  if(champNombre) champNombre.classList.toggle('fin-nombre-etroit', val==='nombre');
 }
 document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field'));
@@ -5350,7 +5375,7 @@ function afficherSectionBudget(scope){
     <div class="field budget-input-field">
       <label><span class="swatch" style="background:${COULEURS_CATEGORIES[cat]||'#9aa0a6'}"></span>${cat}</label>
       <div class="input-money">
-        <input type="number" id="budget-input-${scope}-${cat}" step="1" min="0" value="${budgetActuel[cat]||''}" placeholder="0">
+        <input type="number" id="budget-input-${scope}-${cat}" step="1" min="0" value="${budgetActuel[cat]||''}" placeholder="0" autocomplete="off">
         <span class="suffix">$ / mois</span>
       </div>
     </div>
@@ -5621,7 +5646,7 @@ document.getElementById('import-file').addEventListener('change', async (e)=>{
 });
 
 /* ===================== CONTRAINTES DE SAISIE NUMÉRIQUE =====================
-   Les attributs min/max/step d'un <input type="number"> ne sont vérifiés par le navigateur
+   Les attributs min/max/step d'un <input type="number" autocomplete="off"> ne sont vérifiés par le navigateur
    qu'à la validation d'un formulaire — ici il n'y en a pas, donc rien n'empêchait de taper
    un pourcentage de 250 ou un montant à cinq décimales. Chaque champ marqué `data-num`
    est donc corrigé en direct, à la frappe comme au collage.
