@@ -44,18 +44,38 @@
     --border:#dadce0;
     --text:#202124;
     --text-secondary:#5f6368;
-    --radius:12px;
+    /* Échelle de rayons : quatre valeurs seulement, choisies par rôle. Avant, treize rayons
+       différents cohabitaient (3, 5, 6, 8, 10, 12, 18, 20, 24…) et deux éléments de même
+       nature n'avaient pas la même courbe. */
+    --r-xs:6px;    /* petits contrôles posés à l'intérieur d'un autre élément */
+    --r-sm:8px;    /* champs, boutons */
+    --r-md:12px;   /* cartes, fenêtres, panneaux */
+    --r-pill:999px;/* pastilles, bascules, chips : toujours un demi-cercle net */
+    --radius:var(--r-md);
+    /* Mouvement : une durée courte pour les changements d'état, une plus longue pour ce qui
+       se déplace ou se remplit. La courbe sort vite et arrive en douceur. */
+    --t:150ms;
+    --t-slow:260ms;
+    --ease:cubic-bezier(.2,0,0,1);
+    --ring:0 0 0 3px rgba(26,115,232,.18);
     /* Bleu d'accent pour le TEXTE des menus actifs. En thème clair c'est --blue ; en sombre
        ce bleu devient illisible sur fond foncé, d'où une variable dédiée (voir body.dark).
        --blue reste réservé aux fonds pleins avec texte blanc (boutons, bascules). */
     --accent-menu:#1a73e8;
-    --shadow-1: 0 1px 2px 0 rgba(60,64,67,.30), 0 1px 3px 1px rgba(60,64,67,.15);
-    --shadow-2: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
+    /* Ombres à deux couches : un contact net et serré, puis une diffusion large et très
+       légère. Les ombres d'origine (rgba(60,64,67,.30)) étaient assez denses pour grisailler
+       le blanc des cartes posées dessus. */
+    --shadow-1: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.10);
+    --shadow-2: 0 4px 8px -2px rgba(16,24,40,.08), 0 16px 32px -8px rgba(16,24,40,.16);
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    font-family:'Google Sans','Roboto',Arial,sans-serif;
+    /* 'Google Sans' n'est pas distribuée publiquement et 'Roboto' n'est pas installée
+       partout : la pile retombait donc sur Arial, qui n'est la police d'aucun système
+       moderne. On intercale les polices d'interface natives avant, pour que le texte soit
+       rendu avec celle que l'appareil utilise déjà partout ailleurs. */
+    font-family:'Google Sans','Roboto',system-ui,-apple-system,'Segoe UI',sans-serif;
     background:var(--bg);
     color:var(--text);
     /* Zones de sécurité pour l'affichage plein écran en mode app (encoches / barres système) */
@@ -87,9 +107,9 @@
   .auth-card p.subtitle{color:var(--text-secondary);font-size:13px;margin:0 0 20px;}
   .auth-form{text-align:left;display:flex;flex-direction:column;gap:14px;}
   .auth-form .field label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:500;}
-  .auth-form .field input{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
-  .auth-form .field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,115,232,.15);}
-  .auth-submit{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;}
+  .auth-form .field input{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);outline:none;}
+  .auth-form .field input:focus{border-color:var(--blue);box-shadow:var(--ring);}
+  .auth-submit{background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);padding:12px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;}
   .auth-submit:hover{background:var(--blue-dark);}
   .auth-submit:disabled{opacity:.6;cursor:default;}
   .auth-error{color:var(--red);font-size:13px;margin:0;min-height:16px;}
@@ -120,7 +140,7 @@
     margin-bottom:24px;
   }
   .logo-mark{
-    width:40px;height:40px;border-radius:10px;
+    width:40px;height:40px;border-radius:var(--r-md);
     background:var(--blue);
     display:flex;align-items:center;justify-content:center;
     flex-shrink:0;
@@ -143,7 +163,7 @@
     display:flex;align-items:center;gap:6px;
     background:var(--surface);
     border:1px solid var(--border);
-    border-radius:20px;
+    border-radius:var(--r-pill);
     padding:6px 14px 6px 8px;
     font-size:13px;
     font-weight: 500;
@@ -153,7 +173,7 @@
   .dot.p2{background:var(--red);}
   .dot.compte{background:var(--green);}
   .change-user-btn {
-    background: none; border: 1px solid var(--border); border-radius: 8px;
+    background: none; border: 1px solid var(--border); border-radius:var(--r-sm);
     padding: 6px 10px; font-family: inherit; font-size: 12px; cursor: pointer; color: var(--text-secondary);
   }
   .change-user-btn:hover { border-color: var(--text); color: var(--text); }
@@ -175,14 +195,14 @@
   .period-type-row{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:38px;}
   .period-nav button,.icon-btn{
     border:1px solid var(--border);background:var(--surface);color:var(--text);
-    border-radius:8px;padding:8px 12px;font-family:inherit;cursor:pointer;
+    border-radius:var(--r-sm);padding:8px 12px;font-family:inherit;cursor:pointer;
   }
   .period-nav button:hover,.icon-btn:hover{border-color:var(--blue);color:var(--blue);}
-  .period-label{min-width:150px;text-align:center;font-weight:500;cursor:pointer;border-radius:6px;padding:4px 6px;}
+  .period-label{min-width:150px;text-align:center;font-weight:500;cursor:pointer;border-radius:var(--r-xs);padding:4px 6px;}
   .period-label:hover{color:var(--blue);text-decoration:underline;}
-  .period-type-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-wrap:wrap;justify-content:center;}
+  .period-type-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:var(--r-sm);padding:3px;flex-wrap:wrap;justify-content:center;}
   body.dark .period-type-switch{background:#2c3136;}
-  .period-type-switch button{border:none!important;background:transparent;color:var(--text-secondary);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
+  .period-type-switch button{border:none!important;background:transparent;color:var(--text-secondary);font-size:12px;padding:6px 10px;border-radius:var(--r-xs);cursor:pointer;white-space:nowrap;}
   .period-type-switch button.active{background:var(--surface);color:var(--blue);font-weight:600;box-shadow:var(--shadow-1);}
   .tab-btn{
     background:none;border:none;cursor:pointer;
@@ -190,7 +210,7 @@
     color:var(--text-secondary);
     padding:14px 18px;
     position:relative;
-    transition:color .15s ease;
+    transition:color var(--t) var(--ease);
   }
   .tab-btn:hover{color:var(--text);}
   .tab-btn.active{color:var(--accent-menu);}
@@ -208,7 +228,7 @@
   .section-header h2{margin:0 0 4px;font-size:19px;font-weight:500;display:flex;align-items:center;gap:8px;}
   .section-header p{margin:0;font-size:13px;color:var(--text-secondary);}
   .subtabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;}
-  .subtab-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text-secondary);padding:10px 16px;position:relative;transition:color .15s ease;}
+  .subtab-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text-secondary);padding:10px 16px;position:relative;transition:color var(--t) var(--ease);}
   .subtab-btn:hover{color:var(--text);}
   .subtab-btn.active{color:var(--accent-menu);}
   .subtab-btn.active::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent-menu);}
@@ -221,7 +241,7 @@
   .recurrent-info{display:flex;flex-direction:column;gap:5px;min-width:0;}
   .recurrent-nom{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .recurrent-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .freq-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f1f3f4;color:var(--text-secondary);white-space:nowrap;}
+  .freq-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--r-pill);background:#f1f3f4;color:var(--text-secondary);white-space:nowrap;}
   body.dark .freq-pill{background:#2c3136;}
   input[type="range"]{accent-color:var(--blue);width:100%;cursor:pointer;}
   .recurrent-actions{display:flex;align-items:center;gap:14px;flex-shrink:0;}
@@ -234,11 +254,11 @@
   .portee-choix{display:flex;flex-direction:column;gap:10px;}
   .portee-option{
     width:100%;text-align:left;cursor:pointer;
-    border:1px solid var(--border);border-radius:10px;
+    border:1px solid var(--border);border-radius:var(--r-md);
     background:var(--surface);color:var(--text);
     padding:14px 16px;font:inherit;
     display:flex;flex-direction:column;gap:3px;
-    transition:border-color .15s ease, background .15s ease;
+    transition:border-color var(--t) var(--ease), background var(--t) var(--ease);
   }
   .portee-option:hover{border-color:var(--blue);background:color-mix(in srgb, var(--blue) 6%, var(--surface));}
   .portee-titre{font-size:14px;font-weight:600;}
@@ -262,7 +282,7 @@
 
   /* Aperçu de la première occurrence, sous les réglages de récurrence. */
   .apercu-recurrence{font-size:12px;color:var(--text-secondary);line-height:1.45;
-    background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;}
+    background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;}
   .apercu-recurrence .apercu-alerte{color:var(--red);}
   @media (max-width:760px){
     .recurrent-row{flex-wrap:wrap;}
@@ -280,21 +300,21 @@
   #calendrier-recurrent-card-conjoint .cal-head, #calendrier-recurrent-card-personnel .cal-head,
   #calendrier-recurrent-card-conjoint .cal-nav, #calendrier-recurrent-card-personnel .cal-nav{padding:0 14px;}
   .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
-  .cal-mode-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-shrink:0;}
+  .cal-mode-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:var(--r-sm);padding:3px;flex-shrink:0;}
   body.dark .cal-mode-switch{background:#2c3136;}
-  .cal-mode-switch button{border:none;background:transparent;color:var(--text-secondary);font-size:14px;padding:5px 9px;border-radius:6px;cursor:pointer;line-height:1;}
+  .cal-mode-switch button{border:none;background:transparent;color:var(--text-secondary);font-size:14px;padding:5px 9px;border-radius:var(--r-xs);cursor:pointer;line-height:1;}
   .cal-mode-switch button.active{background:var(--surface);box-shadow:var(--shadow-1);}
-  .cal-hamburger-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .cal-hamburger-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:var(--r-sm);font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
   .cal-hamburger-btn.active{border-color:var(--blue);color:var(--blue);}
   /* Barre d'outils du calendrier/liste : filtres à gauche, bascule grille/liste centrée
      (visible seulement en vue Mois), tri à droite — toujours sur une seule ligne. */
   .cal-toolbar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 14px 10px;gap:8px;}
   .cal-toolbar-centre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);}
   .cal-toolbar .mobile-sort{display:flex!important;gap:6px;align-items:center;}
-  .cal-menu-panel{margin:0 14px 12px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface);box-shadow:var(--shadow-1);}
+  .cal-menu-panel{margin:0 14px 12px;border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;background:var(--surface);box-shadow:var(--shadow-1);}
   .cal-menu-section-title{font-size:11px;text-transform:uppercase;color:var(--text-secondary);font-weight:600;margin:10px 0 4px;}
   .cal-menu-section-title:first-child{margin-top:0;}
-  .cal-menu-vue-option{display:flex;align-items:center;gap:10px;padding:7px 4px;border-radius:6px;cursor:pointer;font-size:13px;}
+  .cal-menu-vue-option{display:flex;align-items:center;gap:10px;padding:7px 4px;border-radius:var(--r-xs);cursor:pointer;font-size:13px;}
   .cal-menu-vue-option:hover{background:#f1f3f4;}
   body.dark .cal-menu-vue-option:hover{background:#2c3136;}
   .cal-menu-vue-option.active{color:var(--blue);font-weight:600;}
@@ -307,7 +327,7 @@
   .cal-menu-montant-sliders input[type="range"]::-webkit-slider-thumb{pointer-events:auto;}
   .cal-menu-montant-sliders input[type="range"]::-moz-range-thumb{pointer-events:auto;}
   .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
-  .cal-nav-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;}
+  .cal-nav-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:var(--r-sm);font-size:16px;cursor:pointer;flex-shrink:0;}
   .cal-titre{font-weight:600;font-size:14px;text-align:center;text-transform:capitalize;flex:1;}
 
   /* Grille mensuelle pleine largeur, style Google Agenda : pas de coins arrondis/bordures
@@ -332,13 +352,13 @@
   .cal-agenda-day-header{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:capitalize;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border);}
   .cal-agenda-day-header.today{color:var(--blue);}
   .cal-agenda-empty{font-size:12px;color:var(--text-secondary);padding:4px 0 10px;}
-  .cal-agenda-item{display:block;padding:9px 10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
+  .cal-agenda-item{display:block;padding:9px 10px;border-radius:var(--r-sm);margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
   body.dark .cal-agenda-item{background:#2c3136;}
   .cal-agenda-item-ligne1{display:flex;align-items:center;gap:6px;}
   .cal-agenda-item-ligne2{display:flex;align-items:center;gap:6px;margin-top:5px;}
   /* Largeur fixe pour la date, pour que "1 sept" et "23 sept" prennent la même place et
      que tout s'aligne d'une ligne à l'autre. */
-  .cal-agenda-item-date{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--border);padding:2px 6px;border-radius:5px;flex-shrink:0;min-width:52px;text-align:center;}
+  .cal-agenda-item-date{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--border);padding:2px 6px;border-radius:var(--r-xs);flex-shrink:0;min-width:52px;text-align:center;}
   /* % et Montant regroupés, collés ensemble, complètement à droite. */
   .cal-agenda-item-right{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;}
   .cal-agenda-pct{font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;min-width:28px;text-align:right;}
@@ -394,7 +414,6 @@
     .grid-2{grid-template-columns:minmax(0,1fr);}
     .grid-2 .card{min-width:0;}
     .chart-wrap canvas{max-width:100%!important;}
-    .form-grid{grid-template-columns:minmax(0,1fr);}
     .stats-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
     #donnees-section{display:none;}
   }
@@ -456,15 +475,15 @@
     font-size:14px;
     padding:10px 12px;
     border:1px solid var(--border);
-    border-radius:8px;
+    border-radius:var(--r-sm);
     background:var(--surface);
     color:var(--text);
     outline:none;
-    transition:border-color .15s ease, box-shadow .15s ease;
+    transition:border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
   }
   .field select:focus, .field input:focus{
     border-color:var(--accent-menu);
-    box-shadow:0 0 0 3px rgba(26,115,232,.15);
+    box-shadow:var(--ring);
   }
   /* Les <select> gardaient le rendu natif du système : flèche, hauteur et couleurs
      différentes des <input> voisins, et fond clair en thème sombre. On neutralise le style
@@ -494,26 +513,26 @@
     background:var(--blue);
     color:#fff;
     border:none;
-    border-radius:8px;
+    border-radius:var(--r-sm);
     padding:11px 20px;
     font-family:inherit;
     font-size:14px;
     font-weight:500;
     cursor:pointer;
     white-space:nowrap;
-    transition:background .15s ease, box-shadow .15s ease;
+    transition:background var(--t) var(--ease), box-shadow var(--t) var(--ease);
   }
   .btn-add:hover{background:var(--blue-dark);box-shadow:var(--shadow-1);}
   .type-toggle{display:flex;gap:8px;}
   .type-btn{
-    flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+    flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
     background:var(--surface);color:var(--text-secondary);font-family:inherit;font-size:13px;font-weight:500;
-    cursor:pointer;transition:all .15s ease;
+    cursor:pointer;transition:border-color var(--t) var(--ease), background var(--t) var(--ease), color var(--t) var(--ease);
   }
   .type-btn:hover{border-color:var(--blue);color:var(--blue);}
   .type-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
   .type-pill{
-    display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
+    display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--r-pill);
     background:#f1f3f4;color:var(--text-secondary);margin-left:6px;white-space:nowrap;
   }
   body.dark .type-pill{background:#2c3136;}
@@ -531,7 +550,7 @@
     cursor:pointer;
     padding:4px;
     margin:-6px -6px 0 0;
-    border-radius:6px;
+    border-radius:var(--r-xs);
   }
   .modal-close-btn:hover{color:var(--text);background:rgba(0,0,0,.06);}
   body.dark .modal-close-btn:hover{background:rgba(255,255,255,.08);}
@@ -578,13 +597,13 @@
     justify-content:space-between;
   }
   .mobile-sort{display:none;}
-  .mobile-sort select{border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:13px inherit;padding:7px 9px;}
+  .mobile-sort select{border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font:13px inherit;padding:7px 9px;}
   .mobile-sort{display:none;gap:6px;align-items:center;}
-  .sort-direction{width:34px;height:34px;padding:0!important;font-size:16px!important;line-height:1;cursor:pointer;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:inherit;}
+  .sort-direction{width:34px;height:34px;padding:0!important;font-size:16px!important;line-height:1;cursor:pointer;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:inherit;}
   .sort-direction:hover{border-color:var(--blue);color:var(--blue);}
   .table-filters{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px;gap:10px;flex-wrap:wrap;}
   .table-filters .field{margin-bottom:0;}
-  .table-filters select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);}
+  .table-filters select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);}
   .table-card h3{margin:0;font-size:15px;color:var(--text);font-weight:500;}
   .row-count{font-size:13px;color:var(--text-secondary);}
   table{width:100%;border-collapse:collapse;font-size:14px;}
@@ -616,7 +635,7 @@
     display:inline-block;
     font-size:12px;
     padding:3px 10px;
-    border-radius:12px;
+    border-radius:var(--r-pill);
     background:#e8f0fe;
     color:var(--blue-dark);
   }
@@ -640,9 +659,9 @@
   .budget-row-amounts{font-size:12px;color:var(--text-secondary);white-space:nowrap;}
   .budget-row-amounts strong{color:var(--text);font-weight:500;}
   .budget-row-conjoint{font-size:11px;color:var(--text-secondary);text-align:right;margin:-2px 0 6px;}
-  .budget-bar{height:8px;border-radius:6px;background:#eef0f3;overflow:hidden;}
+  .budget-bar{height:8px;border-radius:var(--r-pill);background:#eef0f3;overflow:hidden;}
   body.dark .budget-bar{background:#2c3136;}
-  .budget-bar-fill{height:100%;border-radius:6px;transition:width .25s ease;}
+  .budget-bar-fill{height:100%;border-radius:var(--r-pill);transition:width var(--t-slow) var(--ease);}
   .budget-empty{font-size:13px;color:var(--text-secondary);padding:8px 0;}
   .budget-input-field{margin-bottom:0;}
   .budget-input-field label{display:flex;align-items:center;gap:6px;}
@@ -654,22 +673,28 @@
   .settings-section h3{margin:0 0 12px;font-size:15px;font-weight:500;}
   .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
   .settings-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
-  .settings-row input[type="color"]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:var(--surface);}
+  .settings-row input[type="color"]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:var(--r-xs);background:var(--surface);}
   .theme-toggle{display:flex;align-items:center;gap:10px;}
   .toggle-field{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .toggle-field-label{font-size:14px;}
   .switch{position:relative;display:inline-flex;width:48px;height:28px;cursor:pointer;flex-shrink:0;}
   .switch input{position:absolute;opacity:0;width:0;height:0;}
-  .switch-track{position:absolute;inset:0;border-radius:18px;background:#9aa0a6;transition:background .2s;}
-  .switch-track::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s;}
+  .switch-track{position:absolute;inset:0;border-radius:var(--r-pill);background:#9aa0a6;transition:background var(--t) var(--ease);}
+  .switch-track::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform var(--t) var(--ease);}
   .switch input:checked + .switch-track{background:var(--blue);}
   .switch input:checked + .switch-track::after{transform:translateX(20px);}
-  body.dark{--accent-menu:#8ab4f8;--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
+  body.dark{--accent-menu:#8ab4f8;--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;
+    /* Sur fond foncé une ombre portée ne se voit presque plus : on l'assombrit et on garde
+       le même rapport entre les deux couches, et l'anneau de focus reprend le bleu clair
+       lisible du thème. */
+    --shadow-1:0 1px 2px rgba(0,0,0,.40), 0 1px 3px rgba(0,0,0,.28);
+    --shadow-2:0 4px 8px -2px rgba(0,0,0,.40), 0 16px 32px -8px rgba(0,0,0,.50);
+    --ring:0 0 0 3px rgba(138,180,248,.28);}
   body.dark tbody tr:hover{background:#2b3035;} body.dark tbody td{border-bottom-color:#343a40;}
   body.dark .cat-pill{background:#303b4a;color:#b8d1f5;}
-  .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
+  .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-pill);padding:4px;margin-bottom:20px;}
   .toggle-perso-scope{display:flex;width:fit-content;margin-left:auto;margin-right:auto;}
-  .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:20px;cursor:pointer;}
+  .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:var(--r-pill);cursor:pointer;}
   .compare-toggle button.active{background:var(--blue);color:#fff;}
   .compare-selects{display:flex;gap:16px;align-items:center;margin-bottom:24px;flex-wrap:wrap;}
   #tab-comparer{text-align:center;}
@@ -747,7 +772,7 @@
   .field select:disabled, .field input:disabled{opacity:.5;cursor:not-allowed;}
   .edit-card h2{margin:0 0 18px;font-size:20px;font-weight:500;}
   .edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
-  .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
+  .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:var(--r-sm);padding:10px 16px;font:500 14px inherit;cursor:pointer;}
   .btn-danger{background:#d93025;color:#fff;border-color:#d93025;}
   .btn-danger:hover{background:#b0261a;border-color:#b0261a;}
   #save-edit{background:var(--blue);}
@@ -818,11 +843,49 @@
   .depot-ligne-montants .value{min-width:76px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;}
   .depot-ligne .cat-pill{margin-top:6px;}
   .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.45;}
-  .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;
+  .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:var(--r-pill);margin-left:6px;
     background:var(--border);color:var(--text-secondary);vertical-align:middle;}
   .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
   .depot-total.final .value{font-weight:600;}
+  /* ===================== Finitions communes =====================
+     Règles transversales, volontairement à la fin : elles s'appliquent à des éléments
+     définis un peu partout plus haut et doivent donc gagner à égalité de spécificité. */
+
+  /* Le focus n'était visible que sur les champs de saisie ; au clavier, les dizaines de
+     boutons de l'app ne montraient rien. :focus-visible ne se déclenche pas au doigt ni à
+     la souris, donc ça n'ajoute aucun contour parasite à l'usage normal. */
+  :focus-visible{outline:2px solid var(--accent-menu);outline-offset:2px;}
+  .field select:focus-visible, .field input:focus-visible{outline:none;}
+
+  /* Retour au toucher. Le survol n'existe pas sur mobile : sans état actif, appuyer sur un
+     bouton ne produisait aucun signe avant que l'écran ne change. */
+  .btn-add:active, .auth-submit:active, .btn-secondary:active,
+  .type-btn:active, .mobile-add-btn:active, .portee-option:active{transform:scale(.98);}
+  .btn-add, .auth-submit, .btn-secondary, .type-btn, .portee-option{
+    transition:background var(--t) var(--ease), border-color var(--t) var(--ease),
+               color var(--t) var(--ease), box-shadow var(--t) var(--ease),
+               transform var(--t) var(--ease);
+  }
+
+  /* Chiffres à chasse fixe partout où des montants se lisent en colonne : sans ça, un 1 est
+     plus étroit qu'un 8 et les virgules des lignes successives ne tombent pas l'une sous
+     l'autre. */
+  .amount-cell, .stat-card .value, .recurrent-montant, .cal-agenda-item-montant,
+  .budget-row-amounts, .depot-ligne-montants .value, .depot-total.final .value,
+  .cal-menu-montant-valeurs{font-variant-numeric:tabular-nums;}
+
+  /* Texte d'explication sous un titre de section. Remplace autant de styles en ligne, qui
+     divergeaient d'un endroit à l'autre (13px ici, 12px là, marges différentes). */
+  .note-aide{font-size:13px;color:var(--text-secondary);line-height:1.5;margin:0 0 14px;}
+  .note-aide:last-child{margin-bottom:0;}
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration:.01ms!important;animation-iteration-count:1!important;
+      transition-duration:.01ms!important;scroll-behavior:auto!important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1086,11 +1149,10 @@
       </div>
       <div class="card" id="budget-edit-card-conjoint">
         <h3 style="margin-bottom:12px;">Gérer le budget conjoint de <span id="periode-label-conjoint"></span></h3>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ce budget est partagé : vous et votre partenaire pouvez tous les deux le consulter et le modifier. Il concerne seulement les dépenses <em>conjointes</em>. Le budget est propre à chaque mois — ajustable seulement en vue "Paie".</p>
+        <p class="note-aide">Budget des dépenses conjointes, modifiable par vous deux. Il vaut pour un mois à la fois et se règle en vue Paie.</p>
 
         <div style="padding-top:14px;border-top:1px solid var(--border);">
-          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
-          <div id="budget-form-conjoint" class="settings-grid"></div>
+                    <div id="budget-form-conjoint" class="settings-grid"></div>
         </div>
 
         <button class="btn-add" id="save-budgets-conjoint" style="margin-top:16px;">Sauvegarder le budget conjoint</button>
@@ -1261,11 +1323,10 @@
       </div>
       <div class="card" id="budget-edit-card-personnel">
         <h3 style="margin-bottom:12px;">Gérer mon budget de <span id="periode-label-personnel"></span></h3>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ces montants ne concernent que vous et servent à suivre vos dépenses <em>personnelles</em> (pas les dépenses conjointes). Cette section n'est visible que par vous. Le budget est propre à chaque mois — ajustable seulement en vue "Paie".</p>
+        <p class="note-aide">Budget de vos dépenses personnelles, visible par vous seul. Il vaut pour un mois à la fois et se règle en vue Paie.</p>
 
         <div style="padding-top:14px;border-top:1px solid var(--border);">
-          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
-          <div id="budget-form-personnel" class="settings-grid"></div>
+                    <div id="budget-form-personnel" class="settings-grid"></div>
         </div>
 
         <button class="btn-add" id="save-budgets-personnel" style="margin-top:16px;">Sauvegarder mon budget</button>
@@ -1360,8 +1421,8 @@
     </div>
     <div class="card settings-section" id="donnees-section">
       <h3>Données</h3>
-      <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">
-        Exportez vos dépenses d'un mois ou d'une année vers un fichier Excel, ou importez-en depuis un fichier CSV ou Excel.
+      <p class="note-aide">
+        Exportez vos dépenses d'un mois ou d'une année vers Excel, ou importez-en depuis un fichier CSV ou Excel.
       </p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn-secondary" id="btn-export">Exporter</button>
@@ -1372,7 +1433,7 @@
 
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
         <h3 style="margin:0 0 10px;">Format du fichier</h3>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 10px;">Voici à quoi doit ressembler le fichier à importer (les mêmes colonnes que celles exportées par l'application) :</p>
+        <p class="note-aide">Le fichier à importer doit avoir ces colonnes, comme celui que l'application exporte.</p>
         <div style="overflow-x:auto;margin-bottom:14px;">
           <table style="width:100%;border-collapse:collapse;font-size:12px;">
             <thead>
