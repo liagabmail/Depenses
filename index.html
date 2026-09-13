@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Dépenses</title>
 
 <!-- ===================== PWA : installation "app" sans barre de navigateur ===================== -->
@@ -45,6 +45,10 @@
     --text:#202124;
     --text-secondary:#5f6368;
     --radius:12px;
+    /* Bleu d'accent pour le TEXTE des menus actifs. En thème clair c'est --blue ; en sombre
+       ce bleu devient illisible sur fond foncé, d'où une variable dédiée (voir body.dark).
+       --blue reste réservé aux fonds pleins avec texte blanc (boutons, bascules). */
+    --accent-menu:#1a73e8;
     --shadow-1: 0 1px 2px 0 rgba(60,64,67,.30), 0 1px 3px 1px rgba(60,64,67,.15);
     --shadow-2: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
   }
@@ -176,12 +180,12 @@
     transition:color .15s ease;
   }
   .tab-btn:hover{color:var(--text);}
-  .tab-btn.active{color:var(--blue);}
+  .tab-btn.active{color:var(--accent-menu);}
   .tab-btn.active::after{
     content:"";
     position:absolute;left:10px;right:10px;bottom:-1px;
     height:3px;border-radius:3px 3px 0 0;
-    background:var(--blue);
+    background:var(--accent-menu);
   }
 
   .tab-panel{display:none;}
@@ -193,8 +197,8 @@
   .subtabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;}
   .subtab-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text-secondary);padding:10px 16px;position:relative;transition:color .15s ease;}
   .subtab-btn:hover{color:var(--text);}
-  .subtab-btn.active{color:var(--blue);}
-  .subtab-btn.active::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--blue);}
+  .subtab-btn.active{color:var(--accent-menu);}
+  .subtab-btn.active::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent-menu);}
   .subtab-panel{display:none;}
   .subtab-panel.active{display:block;}
 
@@ -229,6 +233,24 @@
   .jours-semaine-select{display:flex;gap:6px;flex-wrap:wrap;}
   .jour-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:12px;font-weight:500;}
   .jour-btn.selected{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+  /* Couple « intervalle + unité » sur une seule ligne, comme dans Google Agenda. */
+  .rec-intervalle{display:flex;gap:8px;}
+  .rec-intervalle input{flex:0 0 72px;}
+  .rec-intervalle select{flex:1;min-width:0;}
+
+  /* Bascule occupant une cellule de la grille : elle doit s'aligner sur la hauteur du champ
+     voisin (Date), dont le libellé occupe la ligne du dessus. */
+  .field.champ-bascule{display:flex;align-items:center;justify-content:space-between;
+    gap:10px;align-self:end;min-height:41px;}
+  .field.champ-bascule .toggle-field-label{font-size:14px;}
+
+  .titre-formulaire{margin-bottom:14px;}
+
+  /* Aperçu de la première occurrence, sous les réglages de récurrence. */
+  .apercu-recurrence{font-size:12px;color:var(--text-secondary);line-height:1.45;
+    background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;}
+  .apercu-recurrence .apercu-alerte{color:var(--red);}
   @media (max-width:760px){
     .recurrent-row{flex-wrap:wrap;}
     .recurrent-actions{margin-left:auto;}
@@ -290,8 +312,7 @@
   .cal-dot-mini{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
   .cal-dot-mini.cal-p1{background:var(--blue);}
   .cal-dot-mini.cal-p2{background:var(--red);}
-  .cal-dot-mini.cal-compte{background:#c9a227;}
-  .cal-dot-mini.cal-revenu{background:var(--green);}
+  .cal-dot-mini.cal-compte{background:var(--green);}
   .cal-month-count{font-size:9px;color:var(--text-secondary);font-weight:700;line-height:1;margin-left:1px;}
 
   .cal-agenda-day{margin-bottom:14px;padding:0 14px;}
@@ -316,8 +337,7 @@
   /* Couleurs des pastilles/items par type, cohérentes avec le reste de l'app */
   .cal-pill.cal-p1,.cal-agenda-item.cal-p1{background:color-mix(in srgb, var(--blue-dark) 16%, transparent);}
   .cal-pill.cal-p2,.cal-agenda-item.cal-p2{background:color-mix(in srgb, var(--red) 16%, transparent);}
-  .cal-pill.cal-compte,.cal-agenda-item.cal-compte{background:color-mix(in srgb, #c9a227 20%, transparent);}
-  .cal-pill.cal-revenu,.cal-agenda-item.cal-revenu{background:color-mix(in srgb, var(--green) 18%, transparent);}
+  .cal-pill.cal-compte,.cal-agenda-item.cal-compte{background:color-mix(in srgb, var(--green) 18%, transparent);}
 
   /* Cartes / Grille */
   .grid-2{
@@ -387,18 +407,32 @@
   }
 
   /* Formulaire */
-  .form-card{margin-bottom:24px;}
+  /* La carte d'ajout partage le squelette des fenêtres d'édition (.modal-header /
+     .modal-body / .modal-footer) : mêmes marges, même séparateur, même alignement du titre.
+     Elle annule donc le padding de .card, que ces trois blocs fournissent eux-mêmes. */
+  .form-card{margin-bottom:24px;padding:0;overflow:hidden;}
+  .form-card .modal-footer{justify-content:stretch;}
+  .form-card .modal-footer .btn-add{width:100%;}
+  /* Le bouton de fermeture ne sert que sur mobile, où la carte s'ouvre en plein écran. */
+  .form-card .mobile-close-btn{display:none;}
+  /* Les formulaires d'ajout utilisent EXACTEMENT la même grille que les fenêtres d'édition
+     (.modal-grid) : deux colonnes, mêmes espacements, et la largeur pleine demandée
+     explicitement via .pleine-largeur. Avant, cette grille avait 5 colonnes et forçait la
+     pleine largeur sur le 5e enfant : dès qu'un champ était masqué, le placement changeait
+     et les champs ne tombaient plus au même endroit d'un formulaire à l'autre. */
   .form-grid{
     display:grid;
-    grid-template-columns:1fr 1fr 1fr 1.6fr auto;
-    gap:12px;
-    align-items:end;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px 16px;
+    align-items:start;
   }
-  .form-grid>.field:nth-child(5){grid-column:1 / -1;}
-  .form-grid>.btn-add{grid-column:1 / -1;width:100%;}
-  @media (max-width:900px){
-    .form-grid{grid-template-columns:1fr 1fr;}
-  }
+  .form-grid>.field{margin:0;min-width:0;grid-column:span 2;}
+  .form-grid>.field.pleine-largeur{grid-column:1 / -1;}
+  .form-grid>.btn-add{grid-column:1 / -1;width:100%;margin-top:4px;}
+
+  /* Formulaires d'ajout ET fenêtres d'édition gardent leurs deux colonnes jusqu'en bas :
+     mêmes champs aux mêmes endroits, qu'on ajoute ou qu'on modifie. Les champs qui ont
+     besoin de largeur (Note, réglages de récurrence) demandent .pleine-largeur. */
   .field label{
     display:block;font-size:12px;color:var(--text-secondary);
     margin-bottom:6px;font-weight:500;
@@ -416,9 +450,27 @@
     transition:border-color .15s ease, box-shadow .15s ease;
   }
   .field select:focus, .field input:focus{
-    border-color:var(--blue);
+    border-color:var(--accent-menu);
     box-shadow:0 0 0 3px rgba(26,115,232,.15);
   }
+  /* Les <select> gardaient le rendu natif du système : flèche, hauteur et couleurs
+     différentes des <input> voisins, et fond clair en thème sombre. On neutralise le style
+     natif et on redessine le chevron pour que tous les champs se ressemblent. */
+  .field select{
+    appearance:none;
+    -webkit-appearance:none;
+    padding-right:34px;
+    background-repeat:no-repeat;
+    background-position:right 11px center;
+    background-size:14px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6l4 4 4-4'/></svg>");
+  }
+  body.dark .field select{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23bdc1c6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6l4 4 4-4'/></svg>");
+  }
+  /* Le menu déroulant lui-même est dessiné par le système : sans ça, il reste blanc en
+     thème sombre sur plusieurs navigateurs. */
+  .field select option{background:var(--surface);color:var(--text);}
   .field select:disabled, .field input:disabled{
     opacity:.45;
     cursor:not-allowed;
@@ -471,10 +523,37 @@
   .modal-close-btn:hover{color:var(--text);background:rgba(0,0,0,.06);}
   body.dark .modal-close-btn:hover{background:rgba(255,255,255,.08);}
   @media (max-width:760px){
-    .form-card{display:none;position:fixed;inset:0;margin:0;padding:24px 20px;z-index:800;border-radius:0;overflow:auto;}
-    .form-card.mobile-add-open{display:block;}
+    /* Même correctif que les fenêtres d'édition : `inset:0` valait la hauteur de la fenêtre,
+       donc le bouton « Ajouter » passait sous le clavier. On borne sur la hauteur réellement
+       visible et on resserre les marges pour gagner des lignes. */
+    /* En plein écran, la carte d'ajout se comporte EXACTEMENT comme une fenêtre d'édition :
+       entête figé, corps défilant, pied figé, bornés sur la hauteur réellement visible. */
+    .form-card{display:none;position:fixed;left:0;top:0;right:0;margin:0;padding:0;z-index:800;
+      border-radius:0;
+      height:var(--hauteur-visible, 100dvh);max-height:var(--hauteur-visible, 100dvh);
+      flex-direction:column;}
+    .form-card.mobile-add-open{display:flex;}
+    .form-card .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    .form-card .modal-header, .form-card .modal-footer{flex:0 0 auto;}
+    .form-card .mobile-close-btn{display:block;}
+
+    /* Clavier ouvert : mêmes règles que les fenêtres d'édition, l'entête et le pied
+       repassent dans le flux pour que tous les champs restent atteignables. */
+    body.clavier-ouvert .form-card{display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    body.clavier-ouvert .form-card .modal-body{overflow:visible;}
+    body.clavier-ouvert .form-card .modal-header{position:sticky;top:0;z-index:2;}
+
+    /* Champs resserrés pour tenir au-dessus du clavier — appliqué aussi aux fenêtres
+       d'édition, pour que la densité soit la même partout. */
+    .form-card .form-grid, .edit-card .modal-grid{gap:10px 12px;}
+    .form-card .field label, .edit-card .field label{margin-bottom:4px;}
+    .form-card .field select, .form-card .field input,
+    .edit-card .field select, .edit-card .field input{padding:9px 10px;}
+    .modal-header{padding:14px 16px;}
+    .modal-body{padding:14px 16px;}
+    .modal-footer{padding:12px 16px;}
+
     .mobile-add-btn{display:flex;position:fixed;right:20px;bottom:20px;width:56px;height:56px;border:0;border-radius:50%;background:var(--blue);color:#fff;font-size:32px;line-height:1;align-items:center;justify-content:center;box-shadow:var(--shadow-2);z-index:700;cursor:pointer;}
-    .mobile-close-btn{display:block;float:right;border:0;background:none;color:var(--text-secondary);font-size:24px;cursor:pointer;}
   }
 
   /* Tableau */
@@ -572,7 +651,7 @@
   .switch-track::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s;}
   .switch input:checked + .switch-track{background:var(--blue);}
   .switch input:checked + .switch-track::after{transform:translateX(20px);}
-  body.dark{--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
+  body.dark{--accent-menu:#8ab4f8;--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
   body.dark tbody tr:hover{background:#2b3035;} body.dark tbody td{border-bottom-color:#343a40;}
   body.dark .cat-pill{background:#303b4a;color:#b8d1f5;}
   .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
@@ -606,6 +685,10 @@
     overflow:hidden;
     position:relative;
   }
+  /* Le détail d'un dépôt (et tout contenu injecté via un conteneur intermédiaire) ne doit
+     pas casser la mise en page flex de .edit-card sur mobile : sans ça, .modal-body perd
+     son "flex:1;overflow-y:auto" et la fenêtre ne défile plus une fois le contenu long. */
+  #depot-modal-content{display:contents;}
   /* En-tête commun à toutes les fenêtres */
   .modal-header{
     display:flex;align-items:center;gap:10px;
@@ -629,10 +712,19 @@
   }
   .modal-footer .btn-danger{margin-right:auto;}
   /* Grille de champs identique dans toutes les fenêtres */
-  .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;align-items:start;}
-  .modal-grid .field{margin:0;min-width:0;}
+  /* Grille sur QUATRE colonnes, chaque champ en occupant deux : visuellement identique à
+     deux colonnes (2 colonnes + 1 gouttière = exactement la moitié), mais ça permet de
+     déséquilibrer une rangée quand il le faut. Cas concret : « Après un nombre de paiements »
+     ne tenait pas dans une demi-largeur, alors que le nombre à côté n'a besoin que de
+     quelques caractères. */
+  .modal-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:14px 16px;align-items:start;}
+  .modal-grid .field{margin:0;min-width:0;grid-column:span 2;}
   .modal-grid .field.pleine-largeur{grid-column:1 / -1;}
-  @media (max-width:620px){ .modal-grid{grid-template-columns:1fr;} }
+  /* Rangée déséquilibrée : le libellé long prend trois quarts, le nombre un quart.
+     Posé par appliquerAffichageFinRecurrence() uniquement quand le champ nombre est
+     affiché — avec « À une date précise », la date a besoin de sa demi-largeur. */
+  .field.fin-type-large{grid-column:span 3;}
+  .field.fin-nombre-etroit{grid-column:span 1;}
   /* Un champ grisé garde sa place : seul son aspect change */
   .field.est-desactive label{opacity:.55;}
   .field select:disabled, .field input:disabled{opacity:.5;cursor:not-allowed;}
@@ -645,27 +737,35 @@
   .edit-actions{grid-column:1 / -1;display:flex;justify-content:flex-end;gap:12px;}
   @media (max-width:760px){
     .edit-modal{align-items:stretch;justify-content:stretch;background:var(--surface);padding:0;}
-    .edit-card{width:100%;height:100%;min-height:100%;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;}
-    .edit-card .modal-body{flex:1;overflow-y:auto;}
+    /* Hauteur = ce qui est RÉELLEMENT visible. `100%` valait la hauteur de la fenêtre, donc
+       à l'ouverture du clavier le bas de la fenêtre (et le pied avec ses boutons) passait
+       dessous, hors d'atteinte. `--hauteur-visible` est tenu à jour depuis visualViewport ;
+       100dvh sert de repli quand l'API n'est pas disponible. */
+    .edit-card{width:100%;height:var(--hauteur-visible, 100dvh);min-height:0;max-height:var(--hauteur-visible, 100dvh);
+      border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;}
+    .edit-card .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
     .edit-card .modal-header, .edit-card .modal-footer{flex:0 0 auto;}
+
+    /* Clavier ouvert : la place est comptée. L'entête et le pied cessent d'être figés et
+       repassent dans le flux, si bien que TOUT le formulaire devient atteignable en
+       faisant défiler — les boutons d'action se retrouvent simplement en dessous des
+       champs, ce qui est le bon ordre de lecture quand on est en train de saisir. */
+    body.clavier-ouvert .edit-card{display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    body.clavier-ouvert .edit-card .modal-body{overflow:visible;}
+    body.clavier-ouvert .edit-card .modal-header{position:sticky;top:0;z-index:2;background:var(--surface);}
+    body.clavier-ouvert .edit-card .modal-footer{position:static;}
+    /* Marge de sécurité pour qu'un champ visé par le défilement automatique ne colle pas
+       au bord de l'entête ni au haut du clavier. */
+    body.clavier-ouvert .edit-card .field{scroll-margin-top:64px;scroll-margin-bottom:24px;}
+
     .edit-card .edit-actions{grid-column:1 / -1;align-items:stretch;}
     .edit-card .edit-actions button{flex:1;padding-left:8px;padding-right:8px;}
     .modal-footer button{flex:1;padding-left:8px;padding-right:8px;}
   }
   #table-personnel.hide-qui-column th:first-child,
   #table-personnel.hide-qui-column td:first-child{display:none;}
-  #tab-conjoint .card,
-  #tab-conjoint .stat-card{background:color-mix(in srgb, var(--mauve) 5%, var(--surface));}
-  .row-conjoint-share{background:color-mix(in srgb, var(--mauve) 8%, transparent);}
-  body.dark .row-conjoint-share{background:color-mix(in srgb, var(--mauve) 16%, transparent);}
-  .row-compte-item{background:color-mix(in srgb, var(--yellow) 16%, transparent);}
-  body.dark .row-compte-item{background:color-mix(in srgb, var(--yellow) 22%, transparent);}
-  .row-revenu-item{background:color-mix(in srgb, var(--green) 10%, transparent);}
-  body.dark .row-revenu-item{background:color-mix(in srgb, var(--green) 18%, transparent);}
-  .badge-compte{background:color-mix(in srgb, var(--yellow) 25%, transparent);color:#8a6d00;}
-  body.dark .badge-compte{background:color-mix(in srgb, var(--yellow) 30%, transparent);color:#f4d35e;}
-  .badge-revenu{background:color-mix(in srgb, var(--green) 18%, transparent);color:var(--green);}
-  body.dark .badge-revenu{color:#81c995;}
+  .row-conjoint-share,.row-compte-item,.row-revenu-item{background:#f8f9fa;}
+  body.dark .row-conjoint-share,body.dark .row-compte-item,body.dark .row-revenu-item{background:#2b3035;}
   @media (max-width:760px){
     .table-card>div[style]{overflow:visible!important;}
     .table-card table,.table-card tbody,.table-card tr,.table-card td{display:block;width:100%;}
@@ -686,6 +786,26 @@
     .mobile-date{display:inline;}
     .mobile-who{display:inline-flex;font-size:12px;}
   }
+  /* Détail d'un dépôt au compte conjoint (fenêtre de vérification du calcul) */
+  .depot-row:hover{background:var(--bg);}
+  .depot-section-titre{font-size:12px;font-weight:600;color:var(--text-secondary);
+    text-transform:uppercase;letter-spacing:.04em;margin:18px 0 6px;}
+  .depot-entete{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    font-size:12px;color:var(--text-secondary);font-weight:500;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .depot-entete-montants{display:flex;gap:16px;}
+  .depot-entete-montants span{min-width:76px;text-align:right;}
+  .depot-ligne{padding:11px 0;border-bottom:1px solid var(--border);}
+  .depot-ligne-haut{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .depot-ligne-nom{font-size:14px;font-weight:500;}
+  .depot-ligne-montants{display:flex;gap:16px;flex:0 0 auto;}
+  .depot-ligne-montants .value{min-width:76px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;}
+  .depot-ligne .cat-pill{margin-top:6px;}
+  .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.45;}
+  .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;
+    background:var(--border);color:var(--text-secondary);vertical-align:middle;}
+  .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
+  .depot-total.final .value{font-weight:600;}
 </style>
 </head>
 <body>
@@ -793,24 +913,23 @@
       </div>
 
       <div class="card form-card" id="form-card-conjoint">
-        <button class="mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
-        <h3 style="margin-bottom:14px;">Ajouter une dépense conjointe</h3>
+        <div class="modal-header">
+          <h3>Ajouter une dépense conjointe<span class="modal-sous-titre">Partagée entre vous deux</span></h3>
+          <button class="modal-close-btn mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
+        </div>
+        <div class="modal-body">
         <div class="form-grid">
           <div class="field" id="f-who-field-conjoint">
             <label>Qui</label>
             <select id="f-who-conjoint"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select>
           </div>
-          <div class="field" id="f-compte-repartition-field-conjoint">
-            <label>Part de <span id="f-compte-nom-p1-conjoint"></span> (%)</label>
-            <input type="number" id="f-compte-repartition-conjoint" min="0" max="100" step="0.1" value="50">
-          </div>
-          <div class="field">
-            <label>Date</label>
-            <input type="date" id="f-date-conjoint">
-          </div>
           <div class="field">
             <label>Montant</label>
-            <input type="number" id="f-amount-conjoint" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
+            <input type="number" id="f-amount-conjoint" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
+          </div>
+          <div class="field" id="f-compte-repartition-field-conjoint">
+            <label>Part de <span id="f-compte-nom-p1-conjoint"></span> (%)</label>
+            <input type="number" id="f-compte-repartition-conjoint" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
           </div>
           <div class="field" id="f-category-field-conjoint">
             <label>Catégorie</label>
@@ -820,21 +939,45 @@
               <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
             </select>
           </div>
-          <div class="field">
+          <div class="field pleine-largeur">
             <label>Note</label>
-            <input type="text" id="f-note-conjoint" placeholder="Optionnel">
+            <input type="text" id="f-note-conjoint" placeholder="Optionnel" autocomplete="off">
           </div>
           <div class="field">
-            <label>Se répète</label>
-            <select id="f-repete-conjoint">
-              <option value="jamais" selected>Jamais</option>
-              <option value="semaine">Chaque semaine</option>
-              <option value="2semaines">Chaque 2 semaines</option>
-              <option value="mois">Chaque mois</option>
-              <option value="annee">Chaque année</option>
-            </select>
+            <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
+                 est un point de départ, pas forcément la première occurrence. -->
+            <label id="f-date-label-conjoint">Date</label>
+            <input type="date" id="f-date-conjoint" autocomplete="off">
           </div>
-          <div class="field" id="f-fin-type-field-conjoint" style="display:none;">
+          <div class="field toggle-field champ-bascule" id="f-repete-field-conjoint">
+            <span class="toggle-field-label"><span class="recurring-icon">↻</span> Se répète</span>
+            <label class="switch"><input type="checkbox" id="f-repete-conjoint"><span class="switch-track"></span></label>
+          </div>
+          <!-- Options de récurrence : dépliées dans le formulaire quand la bascule est à ON,
+               plus de fenêtre séparée. -->
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-intervalle-field-conjoint" style="display:none;">
+            <label>Se répète tous les</label>
+            <div class="rec-intervalle">
+              <input type="number" id="f-rec-intervalle-conjoint" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
+              <select id="f-rec-unite-conjoint">
+                <option value="jour">jour(s)</option>
+                <option value="semaine">semaine(s)</option>
+                <option value="mois">mois</option>
+                <option value="annee">an(s)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-jours-field-conjoint" style="display:none;">
+            <label>Se répète le</label>
+            <div class="jours-semaine-select" id="f-rec-jours-conjoint"></div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-mensuel-field-conjoint" style="display:none;">
+            <label>Chaque mois</label>
+            <!-- « Le dernier jour du mois » n'est proposé que si la date choisie tombe
+                 effectivement le dernier jour : options reconstruites à chaque changement. -->
+            <select id="f-rec-type-mensuel-conjoint"></select>
+          </div>
+          <div class="field bloc-recurrence" id="f-fin-type-field-conjoint" style="display:none;">
             <label>Se termine</label>
             <select id="f-fin-type-conjoint">
               <option value="jamais">Jamais</option>
@@ -842,18 +985,24 @@
               <option value="date">À une date précise</option>
             </select>
           </div>
-          <div class="field" id="f-fin-nombre-field-conjoint" style="display:none;">
-            <label>Nombre de paiements</label>
-            <input type="number" id="f-fin-nombre-conjoint" min="1" step="1" placeholder="ex: 12">
+          <div class="field bloc-recurrence" id="f-fin-nombre-field-conjoint" style="display:none;">
+            <label>Nombre</label>
+            <input type="number" id="f-fin-nombre-conjoint" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric" autocomplete="off">
           </div>
-          <div class="field" id="f-fin-date-field-conjoint" style="display:none;">
+          <div class="field bloc-recurrence" id="f-fin-date-field-conjoint" style="display:none;">
             <label>Date de fin</label>
-            <input type="date" id="f-fin-date-conjoint">
+            <input type="date" id="f-fin-date-conjoint" autocomplete="off">
           </div>
-          <div class="field toggle-field" id="f-est-revenu-field-conjoint" style="grid-column:1/-1;display:none;">
+          <div class="field pleine-largeur bloc-recurrence apercu-recurrence" id="f-apercu-field-conjoint" style="display:none;">
+            <span id="f-apercu-conjoint"></span>
+          </div>
+          <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-conjoint" style="display:none;">
             <span class="toggle-field-label">💰 Est un revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
+        </div>
+        </div>
+        <div class="modal-footer">
           <button class="btn-add" id="btn-add-conjoint">Ajouter</button>
         </div>
       </div>
@@ -946,16 +1095,15 @@
       </div>
 
       <div class="card form-card" id="form-card-personnel">
-        <button class="mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
-        <h3 style="margin-bottom:14px;">Ajouter une dépense personnelle</h3>
+        <div class="modal-header">
+          <h3>Ajouter une dépense personnelle<span class="modal-sous-titre">Visible par vous seul</span></h3>
+          <button class="modal-close-btn mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
+        </div>
+        <div class="modal-body">
         <div class="form-grid">
           <div class="field">
-            <label>Date</label>
-            <input type="date" id="f-date-personnel">
-          </div>
-          <div class="field">
             <label>Montant</label>
-            <input type="number" id="f-amount-personnel" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
+            <input type="number" id="f-amount-personnel" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
           </div>
           <div class="field" id="f-category-field-personnel">
             <label>Catégorie</label>
@@ -965,21 +1113,45 @@
               <option>Vêtements</option><option>Abonnements</option><option>Épargne</option><option>Autre</option>
             </select>
           </div>
-          <div class="field">
+          <div class="field pleine-largeur">
             <label>Note</label>
-            <input type="text" id="f-note-personnel" placeholder="Optionnel">
+            <input type="text" id="f-note-personnel" placeholder="Optionnel" autocomplete="off">
           </div>
           <div class="field">
-            <label>Se répète</label>
-            <select id="f-repete-personnel">
-              <option value="jamais" selected>Jamais</option>
-              <option value="semaine">Chaque semaine</option>
-              <option value="2semaines">Chaque 2 semaines</option>
-              <option value="mois">Chaque mois</option>
-              <option value="annee">Chaque année</option>
-            </select>
+            <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
+                 est un point de départ, pas forcément la première occurrence. -->
+            <label id="f-date-label-personnel">Date</label>
+            <input type="date" id="f-date-personnel" autocomplete="off">
           </div>
-          <div class="field" id="f-fin-type-field-personnel" style="display:none;">
+          <div class="field toggle-field champ-bascule" id="f-repete-field-personnel">
+            <span class="toggle-field-label"><span class="recurring-icon">↻</span> Se répète</span>
+            <label class="switch"><input type="checkbox" id="f-repete-personnel"><span class="switch-track"></span></label>
+          </div>
+          <!-- Options de récurrence : dépliées dans le formulaire quand la bascule est à ON,
+               plus de fenêtre séparée. -->
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-intervalle-field-personnel" style="display:none;">
+            <label>Se répète tous les</label>
+            <div class="rec-intervalle">
+              <input type="number" id="f-rec-intervalle-personnel" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
+              <select id="f-rec-unite-personnel">
+                <option value="jour">jour(s)</option>
+                <option value="semaine">semaine(s)</option>
+                <option value="mois">mois</option>
+                <option value="annee">an(s)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-jours-field-personnel" style="display:none;">
+            <label>Se répète le</label>
+            <div class="jours-semaine-select" id="f-rec-jours-personnel"></div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-mensuel-field-personnel" style="display:none;">
+            <label>Chaque mois</label>
+            <!-- « Le dernier jour du mois » n'est proposé que si la date choisie tombe
+                 effectivement le dernier jour : options reconstruites à chaque changement. -->
+            <select id="f-rec-type-mensuel-personnel"></select>
+          </div>
+          <div class="field bloc-recurrence" id="f-fin-type-field-personnel" style="display:none;">
             <label>Se termine</label>
             <select id="f-fin-type-personnel">
               <option value="jamais">Jamais</option>
@@ -987,18 +1159,24 @@
               <option value="date">À une date précise</option>
             </select>
           </div>
-          <div class="field" id="f-fin-nombre-field-personnel" style="display:none;">
-            <label>Nombre de paiements</label>
-            <input type="number" id="f-fin-nombre-personnel" min="1" step="1" placeholder="ex: 12">
+          <div class="field bloc-recurrence" id="f-fin-nombre-field-personnel" style="display:none;">
+            <label>Nombre</label>
+            <input type="number" id="f-fin-nombre-personnel" data-num="entier" min="1" step="1" placeholder="ex: 12" inputmode="numeric" autocomplete="off">
           </div>
-          <div class="field" id="f-fin-date-field-personnel" style="display:none;">
+          <div class="field bloc-recurrence" id="f-fin-date-field-personnel" style="display:none;">
             <label>Date de fin</label>
-            <input type="date" id="f-fin-date-personnel">
+            <input type="date" id="f-fin-date-personnel" autocomplete="off">
           </div>
-          <div class="field toggle-field" style="grid-column:1/-1;">
+          <div class="field pleine-largeur bloc-recurrence apercu-recurrence" id="f-apercu-field-personnel" style="display:none;">
+            <span id="f-apercu-personnel"></span>
+          </div>
+          <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-personnel">
             <span class="toggle-field-label">💰 Est un revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
+        </div>
+        </div>
+        <div class="modal-footer">
           <button class="btn-add" id="btn-add-personnel">Ajouter</button>
         </div>
       </div>
@@ -1215,14 +1393,15 @@
   </div>
   <div class="modal-body">
     <div class="modal-grid">
-      <div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select></div>
+<div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select></div>
+<div class="field"><label>Montant</label><input type="number" id="edit-amount" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
       <div class="field" id="edit-compte-repartition-field">
         <label>Part de <span id="edit-compte-nom-p1"></span> (%)</label>
-        <input type="number" id="edit-compte-repartition" min="0" max="100" step="0.1" value="50">
+        <input type="number" id="edit-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
       </div>
-      <div class="field"><label>Montant</label><input type="number" id="edit-amount" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
-      <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
-      <div class="field" id="edit-date-field"><label>Date</label><input type="date" id="edit-date"></div>
+<div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note" autocomplete="off"></div>
+<div class="field" id="edit-date-field"><label>Date</label><input type="date" id="edit-date" autocomplete="off"></div>
       <div class="field" id="edit-repetition-field">
         <label>Se répète</label>
         <select id="edit-repetition" disabled></select>
@@ -1232,24 +1411,26 @@
         <select id="edit-fin-type" disabled></select>
       </div>
       <div class="field" id="edit-fin-nombre-field">
-        <label>Nombre de paiements</label>
-        <input type="text" id="edit-fin-nombre" disabled>
+        <label>Nombre</label>
+        <input type="text" id="edit-fin-nombre" disabled autocomplete="off">
       </div>
       <div class="field" id="edit-fin-date-field">
         <label>Date de fin</label>
-        <input type="text" id="edit-fin-date" disabled>
+        <input type="text" id="edit-fin-date" disabled autocomplete="off">
       </div>
-      <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note"></div>
       <div class="field toggle-field pleine-largeur" id="edit-est-revenu-field">
         <span class="toggle-field-label" id="edit-est-revenu-label">💰 Est un revenu</span>
         <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
       </div>
-      <div class="field toggle-field pleine-largeur" id="edit-actif-field">
-        <span class="toggle-field-label">Série active</span>
-        <label class="switch"><input type="checkbox" id="edit-actif" disabled checked><span class="switch-track"></span></label>
-      </div>
       <div class="field pleine-largeur" id="edit-toggle-type-field">
         <button type="button" class="btn-secondary" id="edit-toggle-type" style="width:100%;"></button>
+      </div>
+      <!-- Conversion d'une dépense ponctuelle en série. Masqué pour une occurrence, qui
+           appartient déjà à une série. -->
+      <div class="field pleine-largeur" id="edit-rendre-recurrente-field">
+        <button type="button" class="btn-secondary" id="edit-rendre-recurrente" style="width:100%;">
+          <span class="recurring-icon">↻</span> Rendre récurrente
+        </button>
       </div>
     </div>
   </div>
@@ -1270,16 +1451,39 @@
         <label>Qui</label>
         <select id="edit-rec-qui"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select>
       </div>
+<div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
       <div class="field" id="edit-rec-compte-repartition-field">
         <label>Part de <span id="edit-rec-compte-nom-p1"></span> (%)</label>
-        <input type="number" id="edit-rec-compte-repartition" min="0" max="100" step="0.1" value="50">
+        <input type="number" id="edit-rec-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
       </div>
-      <div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
-      <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
-      <div class="field"><label>Date</label><input type="date" id="edit-rec-date-debut"></div>
-      <div class="field">
-        <label>Se répète</label>
-        <select id="edit-rec-frequence"></select>
+<div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom" autocomplete="off"></div>
+<div class="field">
+        <!-- Une récurrence part toujours d'une date d'ancrage, jamais d'une date unique :
+             le libellé est donc « À partir de » en permanence, comme dans le formulaire
+             d'ajout quand la bascule est active. -->
+        <label>À partir de</label>
+        <input type="date" id="edit-rec-date-debut" autocomplete="off">
+      </div>
+      <div class="field pleine-largeur" id="edit-rec-intervalle-field">
+        <label>Se répète tous les</label>
+        <div class="rec-intervalle">
+          <input type="number" id="edit-rec-intervalle" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
+          <select id="edit-rec-unite">
+            <option value="jour">jour(s)</option>
+            <option value="semaine">semaine(s)</option>
+            <option value="mois">mois</option>
+            <option value="annee">an(s)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field pleine-largeur" id="edit-rec-jours-field" style="display:none;">
+        <label>Se répète le</label>
+        <div class="jours-semaine-select" id="edit-rec-jours"></div>
+      </div>
+      <div class="field pleine-largeur" id="edit-rec-mensuel-field" style="display:none;">
+        <label>Chaque mois</label>
+        <select id="edit-rec-type-mensuel"></select>
       </div>
       <div class="field">
         <label>Se termine</label>
@@ -1290,21 +1494,16 @@
         </select>
       </div>
       <div class="field" id="edit-rec-fin-nombre-field">
-        <label>Nombre de paiements</label>
-        <input type="number" id="edit-rec-fin-nombre" min="1" step="1">
+        <label>Nombre</label>
+        <input type="number" id="edit-rec-fin-nombre" data-num="entier" min="1" step="1" inputmode="numeric" autocomplete="off">
       </div>
       <div class="field" id="edit-rec-fin-date-field">
         <label>Date de fin</label>
-        <input type="date" id="edit-rec-fin-date">
+        <input type="date" id="edit-rec-fin-date" autocomplete="off">
       </div>
-      <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom"></div>
       <div class="field toggle-field pleine-largeur" id="edit-rec-est-revenu-field">
         <span class="toggle-field-label" id="edit-rec-est-revenu-label">💰 Est un revenu</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
-      </div>
-      <div class="field toggle-field pleine-largeur">
-        <span class="toggle-field-label">Série active</span>
-        <label class="switch"><input type="checkbox" id="edit-rec-actif"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur">
         <button type="button" class="btn-secondary" id="edit-rec-toggle-type" style="width:100%;" disabled></button>
@@ -1317,47 +1516,6 @@
   </div>
 </div></div>
 
-<!-- Modal partagé de récurrence personnalisée (façon Google Agenda), utilisé par les 3
-     sélecteurs "Se répète" (ajout conjoint, ajout personnel, édition d'une récurrence). -->
-<div class="edit-modal" id="custom-repetition-modal"><div class="edit-card">
-  <div class="modal-header">
-    <h3>Récurrence personnalisée</h3>
-    <button class="modal-close-btn" id="close-custom-repetition" aria-label="Fermer">&times;</button>
-  </div>
-  <div class="modal-body">
-    <div class="modal-grid">
-      <div class="field">
-        <label>Tous/toutes les</label>
-        <input type="number" id="custom-rep-intervalle" min="1" step="1" value="1">
-      </div>
-      <div class="field">
-        <label>Unité</label>
-        <select id="custom-rep-unite">
-          <option value="jour">jour(s)</option>
-          <option value="semaine">semaine(s)</option>
-          <option value="mois">mois</option>
-          <option value="annee">année(s)</option>
-        </select>
-      </div>
-      <div class="field pleine-largeur" id="custom-rep-jours-field">
-        <label>Répéter le</label>
-        <div class="jours-semaine-select" id="custom-rep-jours"></div>
-      </div>
-      <div class="field pleine-largeur" id="custom-rep-mensuel-field">
-        <label>Chaque mois</label>
-        <select id="custom-rep-type-mensuel">
-          <option value="jour_mois">Le même jour du mois</option>
-          <option value="dernier_jour">Le dernier jour du mois</option>
-        </select>
-      </div>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button class="btn-secondary" id="custom-repetition-annuler">Annuler</button>
-    <button class="btn-add" id="custom-repetition-terminer">Terminé</button>
-  </div>
-</div></div>
-
 <div class="edit-modal" id="occurrence-modal"><div class="edit-card" id="occurrence-modal-card">
   <div id="occurrence-modal-content"></div>
 </div></div>
@@ -1367,10 +1525,22 @@
   <div id="jour-modal-content"></div>
 </div></div>
 
+<!-- Détail d'un dépôt au compte conjoint : montre ligne par ligne d'où vient le montant
+     demandé à chaque paie, pour pouvoir vérifier le calcul à la main. -->
+<div class="edit-modal" id="depot-modal"><div class="edit-card">
+  <div id="depot-modal-content"></div>
+</div></div>
+
+<!-- Même squelette que les autres fenêtres : sans .modal-header, le bouton de fermeture
+     devenait un élément de la colonne flex et se retrouvait centré, sans marges. -->
 <div class="edit-modal" id="cal-filtres-modal"><div class="edit-card">
-  <button class="modal-close-btn" id="close-cal-filtres-modal" aria-label="Fermer">&times;</button>
-  <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Filtres d'affichage</h3>
-  <div id="cal-filtres-modal-content"></div>
+  <div class="modal-header">
+    <h3>Filtres d'affichage<span class="modal-sous-titre">Ce qui apparaît dans le calendrier</span></h3>
+    <button class="modal-close-btn" id="close-cal-filtres-modal" aria-label="Fermer">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div id="cal-filtres-modal-content"></div>
+  </div>
 </div></div>
 
 
@@ -1723,10 +1893,17 @@ function appliquerTheme(){
 document.getElementById('f-date-conjoint').value = formaterDateISO(debutJour(new Date()));
 document.getElementById('f-date-personnel').value = formaterDateISO(debutJour(new Date()));
 
-document.getElementById('mobile-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.add('mobile-add-open'));
-document.getElementById('close-add-conjoint').addEventListener('click',()=>document.getElementById('form-card-conjoint').classList.remove('mobile-add-open'));
-document.getElementById('mobile-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.add('mobile-add-open'));
-document.getElementById('close-add-personnel').addEventListener('click',()=>document.getElementById('form-card-personnel').classList.remove('mobile-add-open'));
+/* Le formulaire repart toujours des valeurs de base : on remet à zéro À L'OUVERTURE comme à
+   la fermeture, pour qu'une saisie abandonnée ne réapparaisse jamais à la fois suivante. */
+['conjoint','personnel'].forEach(scope=>{
+  document.getElementById(`mobile-add-${scope}`).addEventListener('click', ()=>{
+    reinitialiserFormulaireAjoutDepense(scope);
+    document.getElementById(`form-card-${scope}`).classList.add('mobile-add-open');
+  });
+  document.getElementById(`close-add-${scope}`).addEventListener('click', ()=>{
+    reinitialiserFormulaireAjoutDepense(scope);
+  });
+});
 
 /* Chargement initial depuis Supabase (avec les noms exacts des colonnes) */
 async function chargerDepensesSupabase() {
@@ -2067,6 +2244,52 @@ function libelleRecurrence(rec){
   return intervalle === 1 ? `Tous les mois${suffixeJour}` : `Tous les ${intervalle} mois${suffixeJour}`;
 }
 
+/* Ramène une config de répétition à une forme CANONIQUE unique. Plusieurs réglages
+   différents décrivaient exactement la même récurrence, ce qui produisait des entrées en
+   double dans le sélecteur et des libellés incohérents pour un comportement identique :
+
+     · « tous les 7 jours »              ≡ « toutes les semaines le <jour de la date> »
+     · « toutes les semaines » sans jour ≡ « toutes les semaines le <jour de la date> »
+     · « toutes les semaines », 7 jours  ≡ « tous les jours »
+
+   En normalisant à l'enregistrement, un réglage personnalisé qui retombe sur un préréglage
+   existant se confond avec lui au lieu de s'ajouter à côté. */
+function normaliserConfigRepetition(cfg, dateISO){
+  if(!cfg || cfg === 'jamais') return cfg;
+  const normalisee = {...cfg};
+  normalisee.intervalle = Math.max(1, normalisee.intervalle || 1);
+  const jourDeLaDate = dateISO ? new Date(dateISO+"T00:00:00").getDay() : new Date().getDay();
+
+  /* Un intervalle en jours multiple de 7 est une récurrence hebdomadaire. */
+  if(normalisee.unite === 'jour' && normalisee.intervalle % 7 === 0){
+    normalisee.unite = 'semaine';
+    normalisee.intervalle = normalisee.intervalle / 7;
+    normalisee.joursSemaine = [jourDeLaDate];
+  }
+
+  if(normalisee.unite === 'semaine'){
+    let jours = Array.isArray(normalisee.joursSemaine) ? [...new Set(normalisee.joursSemaine)].sort((a,b)=>a-b) : [];
+    /* Aucun jour coché : la règle implicite était « le jour de la date de début ». On la
+       rend explicite, pour qu'il n'y ait qu'une seule écriture possible. */
+    if(!jours.length) jours = [jourDeLaDate];
+    /* Les 7 jours cochés chaque semaine, c'est tous les jours. */
+    if(jours.length === 7 && normalisee.intervalle === 1){
+      return { unite:'jour', intervalle:1 };
+    }
+    normalisee.joursSemaine = jours;
+  } else {
+    delete normalisee.joursSemaine;
+  }
+
+  if(normalisee.unite === 'mois'){
+    normalisee.typeMensuel = normalisee.typeMensuel === 'dernier_jour' ? 'dernier_jour' : 'jour_mois';
+  } else {
+    delete normalisee.typeMensuel;
+  }
+
+  return normalisee;
+}
+
 /* Compare deux configs de répétition (unite/intervalle/joursSemaine/typeMensuel) pour savoir
    si une config donnée correspond exactement à un des préréglages proposés dans le select. */
 function configsEquivalentes(a, b){
@@ -2267,48 +2490,92 @@ function calculerEcheancierCompte(nbPaies){
   if(!paies.length) return null;
   const derniere = paies[paies.length-1];
   const totaux = {};
-  paies.forEach(p => totaux[formaterDateISO(p)] = {p1:0, p2:0});
+  /* Trace de vérification : pour chaque paie, la liste des contributions qui composent le
+     montant affiché. Purement descriptif — aucune de ces lignes n'influence le calcul, elles
+     sont seulement enregistrées au passage pour pouvoir expliquer le résultat (voir
+     ouvrirDetailDepot). La somme des lignes d'une paie doit toujours redonner exactement le
+     montant affiché pour cette paie : c'est ce qui permet de valider les calculs. */
+  const lignes = {};
+  paies.forEach(p => {
+    const iso = formaterDateISO(p);
+    totaux[iso] = {p1:0, p2:0};
+    lignes[iso] = [];
+  });
   const premierePaieIso = formaterDateISO(paies[0]);
 
   function pct(pourcentageP1){ return (pourcentageP1 != null ? pourcentageP1 : 50) / 100; }
-  function reporterSurPremierePaie(signe, montant, p1Pct){
-    totaux[premierePaieIso].p1 += signe*montant*p1Pct;
-    totaux[premierePaieIso].p2 += signe*montant*(1-p1Pct);
+
+  /* Applique une contribution à une paie ET l'enregistre dans la trace.
+     `signe` vaut +1 pour une dépense à provisionner, -1 pour un revenu qui réduit le dépôt. */
+  function contribuer(iso, signe, montant, p1Pct, info){
+    if(!totaux[iso]) return;
+    const partP1 = signe*montant*p1Pct;
+    const partP2 = signe*montant*(1-p1Pct);
+    totaux[iso].p1 += partP1;
+    totaux[iso].p2 += partP2;
+    lignes[iso].push({
+      libelle: info.libelle,
+      categorie: info.categorie,
+      explication: info.explication,
+      nature: info.nature,        /* 'depense' | 'revenu' | 'ajustement' */
+      rattrapage: !!info.rattrapage,
+      pourcentageP1: Math.round(p1Pct*1000)/10,
+      p1: partP1,
+      p2: partP2
+    });
+  }
+
+  function reporterSurPremierePaie(signe, montant, p1Pct, info){
+    contribuer(premierePaieIso, signe, montant, p1Pct, Object.assign({}, info, { rattrapage:true }));
   }
 
   /* DÉPENSE : étalée entre `previousDate` (ou aujourd'hui si null) et `dueDate`. */
-  function ajouterDepense(dueDate, montant, pourcentageP1, previousDate, inclusifFin){
+  function ajouterDepense(dueDate, montant, pourcentageP1, previousDate, inclusifFin, info){
     const p1Pct = pct(pourcentageP1);
     const debut = previousDate || aujourdhui;
     const finBorne = inclusifFin ? dueDate : ajouterJours(dueDate, -1);
-    if(finBorne < debut){ reporterSurPremierePaie(1, montant, p1Pct); return; }
+    const echeance = formaterDateISO(dueDate);
+    if(finBorne < debut){
+      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature:'depense',
+        explication:`Échéance du ${echeance} déjà dépassée : le montant complet de ${formaterMonnaie(montant)} est rattrapé sur cette paie.` }));
+      return;
+    }
     const slots = paiesDansIntervalle(ancrage, debut, finBorne);
-    if(!slots.length){ reporterSurPremierePaie(1, montant, p1Pct); return; }
+    if(!slots.length){
+      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature:'depense',
+        explication:`Aucune paie ne tombe avant l'échéance du ${echeance} : les ${formaterMonnaie(montant)} sont mis en entier sur cette paie.` }));
+      return;
+    }
     const part = montant / slots.length;
+    const base = `${formaterMonnaie(montant)} à provisionner d'ici le ${echeance}, réparti sur ${slots.length} paie${slots.length>1?'s':''} = ${formaterMonnaie(part)} par paie.`;
     slots.forEach(s=>{
       const sIso = formaterDateISO(s);
       if(s < aujourdhui){
-        reporterSurPremierePaie(1, part, p1Pct); /* paie déjà passée : report automatique */
+        /* paie déjà passée : report automatique */
+        reporterSurPremierePaie(1, part, p1Pct, Object.assign({}, info, { nature:'depense',
+          explication:`${base} La part du ${sIso} est déjà passée, elle est rattrapée ici.` }));
       } else if(totaux[sIso]){
-        totaux[sIso].p1 += part*p1Pct;
-        totaux[sIso].p2 += part*(1-p1Pct);
+        contribuer(sIso, 1, part, p1Pct, Object.assign({}, info, { nature:'depense', explication: base }));
       }
       /* sinon : paie à venir mais au-delà de l'horizon affiché -> ignorée pour l'instant. */
     });
   }
 
   /* REVENU : jamais étalé. Montant plein sur la première paie sur/après `dateArrivee`. */
-  function ajouterRevenu(dateArrivee, montant, pourcentageP1){
+  function ajouterRevenu(dateArrivee, montant, pourcentageP1, info){
     const p1Pct = pct(pourcentageP1);
     const cible = premierePaieDepuis(ancrage, dateArrivee);
+    const arrivee = formaterDateISO(dateArrivee);
     if(cible < aujourdhui){
-      reporterSurPremierePaie(-1, montant, p1Pct); /* paie visée déjà passée : report automatique */
+      /* paie visée déjà passée : report automatique */
+      reporterSurPremierePaie(-1, montant, p1Pct, Object.assign({}, info, { nature:'revenu',
+        explication:`Revenu du ${arrivee} dont la paie visée est déjà passée : il est déduit ici à la place.` }));
       return;
     }
     const cIso = formaterDateISO(cible);
     if(totaux[cIso]){
-      totaux[cIso].p1 -= montant*p1Pct;
-      totaux[cIso].p2 -= montant*(1-p1Pct);
+      contribuer(cIso, -1, montant, p1Pct, Object.assign({}, info, { nature:'revenu',
+        explication:`Revenu de ${formaterMonnaie(montant)} arrivant le ${arrivee} : jamais étalé, il est déduit en entier de la première paie qui suit.` }));
     }
     /* sinon : paie visée au-delà de l'horizon affiché -> ignorée pour l'instant. */
   }
@@ -2316,12 +2583,15 @@ function calculerEcheancierCompte(nbPaies){
   /* 1) Dépenses/revenus "compte" ponctuels (sans récurrence) */
   depenses.filter(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId).forEach(e=>{
     const due = debutJour(dateLocaleDepuisISO(e.date));
-    if(e.estRevenu) ajouterRevenu(due, e.amount, e.pourcentageP1);
-    else ajouterDepense(due, e.amount, e.pourcentageP1, null, true);
+    const info = { libelle: e.note || e.category, categorie: e.category, source:'ponctuelle' };
+    if(e.estRevenu) ajouterRevenu(due, e.amount, e.pourcentageP1, info);
+    else ajouterDepense(due, e.amount, e.pourcentageP1, null, true, info);
   });
 
   /* 2) Récurrences "compte" actives */
   recurrences.filter(r=>r.type==='conjointe' && r.estCompte && r.actif).forEach(rec=>{
+    const libelle = rec.nom || rec.categorie;
+    const categorie = rec.categorie;
     if(rec.estRevenu){
       /* Chaque occurrence est indépendante (pas de fenêtre à fermer) : seules celles dont
          la première paie visée n'est pas encore passée sont encore pertinentes. Les
@@ -2332,7 +2602,7 @@ function calculerEcheancierCompte(nbPaies){
         const due = debutJour(occDate);
         const cible = premierePaieDepuis(ancrage, due);
         if(cible < aujourdhui) return; /* déjà réglé dans le passé, on n'y retouche plus */
-        ajouterRevenu(due, rec.montant, rec.pourcentageP1);
+        ajouterRevenu(due, rec.montant, rec.pourcentageP1, { libelle, categorie, source:'recurrence' });
       });
     } else {
       /* Dépense récurrente : pour obtenir un montant STABLE d'une paie à l'autre (plutôt que
@@ -2349,10 +2619,10 @@ function calculerEcheancierCompte(nbPaies){
         const totalAnnuel = rec.montant * multiplicateurAnnuel(rec);
         const partParPaie = totalAnnuel / PAIES_PAR_ANNEE;
         const p1Pct = pct(rec.pourcentageP1);
+        const occAn = Math.round(occurrencesParAnnee(rec)*100)/100;
+        const explication = `Récurrence sans date de fin : ${formaterMonnaie(rec.montant)} × ${occAn} occurrence${occAn>1?'s':''} par an = ${formaterMonnaie(totalAnnuel)}, lissé sur les ${PAIES_PAR_ANNEE} paies de l'année = ${formaterMonnaie(partParPaie)} par paie.`;
         paies.forEach(p=>{
-          const pIso = formaterDateISO(p);
-          totaux[pIso].p1 += partParPaie*p1Pct;
-          totaux[pIso].p2 += partParPaie*(1-p1Pct);
+          contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
         });
       } else {
         const occs = genererOccurrences(rec, horizonMaximal());
@@ -2364,11 +2634,10 @@ function calculerEcheancierCompte(nbPaies){
         const nPaies = paiesRestantes.length || 1;
         const partParPaie = montantTotalRestant / nPaies;
         const p1Pct = pct(rec.pourcentageP1);
+        const explication = `${occsRestantes.length} paiement${occsRestantes.length>1?'s':''} de ${formaterMonnaie(rec.montant)} restant${occsRestantes.length>1?'s':''} d'ici le ${formaterDateISO(finRecurrence)} = ${formaterMonnaie(montantTotalRestant)}, réparti sur les ${nPaies} paie${nPaies>1?'s':''} de cette période = ${formaterMonnaie(partParPaie)} par paie.`;
         paies.forEach(p=>{
           if(p >= aujourdhui && p <= finRecurrence){
-            const pIso = formaterDateISO(p);
-            totaux[pIso].p1 += partParPaie*p1Pct;
-            totaux[pIso].p2 += partParPaie*(1-p1Pct);
+            contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
           }
         });
       }
@@ -2378,14 +2647,23 @@ function calculerEcheancierCompte(nbPaies){
   /* Report du surplus : un montant "dû" négatif à une paie (revenu plus gros que ce qui
      était attendu) ne peut pas se traduire par un dépôt négatif — on affiche 0$ et le
      surplus réduit d'autant le montant dû à la PROCHAINE paie, en chaîne si besoin.
-     Appliqué séparément pour Gabriel et Mélissa, dans l'ordre chronologique. */
+     Appliqué séparément pour Gabriel et Mélissa, dans l'ordre chronologique.
+
+     On note au passage les deux mouvements (surplus reçu / surplus renvoyé plus loin) pour
+     que la somme des lignes de la fenêtre de détail redonne exactement le montant affiché,
+     même quand un report entre en jeu. */
+  const surplusRecu = {}, surplusRenvoye = {};
+  paies.forEach(p=>{ const iso = formaterDateISO(p); surplusRecu[iso] = {p1:0,p2:0}; surplusRenvoye[iso] = {p1:0,p2:0}; });
+
   ['p1','p2'].forEach(personne=>{
     let report = 0;
     paies.forEach(p=>{
       const iso = formaterDateISO(p);
+      if(report < 0) surplusRecu[iso][personne] = report;
       const brut = totaux[iso][personne] + report;
       if(brut < 0){
         report = brut; /* surplus à reporter sur la paie suivante */
+        surplusRenvoye[iso][personne] = -brut;
         totaux[iso][personne] = 0;
       } else {
         report = 0;
@@ -2394,7 +2672,113 @@ function calculerEcheancierCompte(nbPaies){
     });
   });
 
-  return paies.map(p=>({ date:p, iso:formaterDateISO(p), p1: totaux[formaterDateISO(p)].p1, p2: totaux[formaterDateISO(p)].p2 }));
+  paies.forEach(p=>{
+    const iso = formaterDateISO(p);
+    const recu = surplusRecu[iso], renvoye = surplusRenvoye[iso];
+    if(recu.p1 || recu.p2){
+      lignes[iso].push({ libelle:'Surplus de la paie précédente', nature:'ajustement',
+        explication:"Un revenu a dépassé ce qui était dû à la paie précédente : le surplus vient réduire le dépôt de cette paie-ci.",
+        p1: recu.p1, p2: recu.p2 });
+    }
+    if(renvoye.p1 || renvoye.p2){
+      lignes[iso].push({ libelle:'Surplus reporté sur la paie suivante', nature:'ajustement',
+        explication:"Le solde de cette paie serait négatif : on ne demande pas un dépôt négatif, donc le dépôt est ramené à 0 $ et le surplus est repoussé sur la paie suivante.",
+        p1: renvoye.p1, p2: renvoye.p2 });
+    }
+  });
+
+  return paies.map(p=>{
+    const iso = formaterDateISO(p);
+    return { date:p, iso, p1: totaux[iso].p1, p2: totaux[iso].p2, lignes: lignes[iso] };
+  });
+}
+
+/* ===================== DÉTAIL D'UN DÉPÔT (vérification du calcul) =====================
+   Cliquer une paie dans "Prochains dépôts au compte conjoint" ouvre le détail ligne par
+   ligne du montant demandé : d'où vient chaque part, comment elle a été répartie, et le
+   total qui doit correspondre exactement au montant de la ligne cliquée. */
+let dernierEcheancier = [];
+
+function fermerDepotModal(){ document.getElementById('depot-modal').style.display = 'none'; }
+
+function ouvrirDetailDepot(iso){
+  const paie = dernierEcheancier.find(l => l.iso === iso);
+  if(!paie) return;
+
+  const dateLisible = capitaliser(paie.date.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'}));
+  const lignes = paie.lignes || [];
+
+  /* Les lignes sont regroupées par nature pour que la lecture suive le raisonnement :
+     ce qu'il faut provisionner, ce qui vient en déduction, puis les reports. */
+  const groupes = [
+    ['depense',    'À provisionner'],
+    ['revenu',     'Revenus déduits'],
+    ['ajustement', 'Reports']
+  ];
+
+  const montantHTML = (v, classe) =>
+    `<span class="value ${classe}">${v < 0 ? '−' : ''}${formaterMonnaie(Math.abs(v))}</span>`;
+
+  /* Pastille de catégorie, aux mêmes couleurs que partout ailleurs dans l'app. */
+  const pastilleCategorie = (cat) => {
+    if(!cat) return '';
+    const c = COULEURS_CATEGORIES[cat] || '#9aa0a6';
+    return `<span class="cat-pill" style="background:${c}22;color:${c};">${echapperHTML(cat)}</span>`;
+  };
+
+  let corps = '';
+  groupes.forEach(([nature, titre])=>{
+    const duGroupe = lignes.filter(l => l.nature === nature);
+    if(!duGroupe.length) return;
+    corps += `<div class="depot-section-titre">${titre}</div>`;
+    corps += duGroupe.map(l => `
+      <div class="depot-ligne">
+        <div class="depot-ligne-haut">
+          <span class="depot-ligne-nom">${echapperHTML(l.libelle)}${l.rattrapage ? '<span class="depot-pill">rattrapage</span>' : ''}</span>
+          <span class="depot-ligne-montants">${montantHTML(l.p1,'p1')}${montantHTML(l.p2,'p2')}</span>
+        </div>
+        ${pastilleCategorie(l.categorie)}
+        <div class="depot-ligne-explication">${echapperHTML(l.explication || '')}${l.pourcentageP1 != null ? ` Partagé ${l.pourcentageP1}% / ${Math.round((100-l.pourcentageP1)*10)/10}%.` : ''}</div>
+      </div>`).join('');
+  });
+
+  if(!lignes.length){
+    corps = `<div class="budget-empty">Aucune dépense ni revenu ne vise cette paie : rien à déposer.</div>`;
+  }
+
+  /* Contrôle de cohérence : la somme des lignes doit redonner le montant affiché. S'il y a
+     un écart, on le montre au lieu de le cacher — c'est tout l'intérêt de cette fenêtre. */
+  const sommeP1 = lignes.reduce((s,l)=>s+l.p1, 0);
+  const sommeP2 = lignes.reduce((s,l)=>s+l.p2, 0);
+  const ecart = Math.abs(sommeP1 - paie.p1) + Math.abs(sommeP2 - paie.p2);
+  const controle = ecart < 0.005
+    ? ''
+    : `<div class="depot-ligne-explication" style="margin-top:10px;color:var(--red);">⚠ Écart de ${formaterMonnaie(ecart)} entre le détail et le montant affiché.</div>`;
+
+  document.getElementById('depot-modal-content').innerHTML = `
+    <div class="modal-header">
+      <h3>Dépôt au compte conjoint<span class="modal-sous-titre">${dateLisible}</span></h3>
+      <button class="modal-close-btn" id="depot-fermer" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="depot-entete">
+        <span>Provenance</span>
+        <span class="depot-entete-montants"><span class="p1">${nomsPersonnes.p1}</span><span class="p2">${nomsPersonnes.p2}</span></span>
+      </div>
+      ${corps}
+      <div class="depot-total final">
+        <span>Total à déposer</span>
+        <span class="depot-ligne-montants">${montantHTML(paie.p1,'p1')}${montantHTML(paie.p2,'p2')}</span>
+      </div>
+      ${controle}
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="depot-fermer-bas">Fermer</button>
+    </div>
+  `;
+  document.getElementById('depot-fermer').addEventListener('click', fermerDepotModal);
+  document.getElementById('depot-fermer-bas').addEventListener('click', fermerDepotModal);
+  document.getElementById('depot-modal').style.display = 'flex';
 }
 
 /* Affiche l'échéancier calculé dans la carte "🏦 Prochains dépôts au compte conjoint". */
@@ -2418,7 +2802,17 @@ function afficherEcheancierCompteConjoint(){
   }
   carte.style.display = '';
 
-  const echeancierComplet = calculerEcheancierCompte(8);
+  /* Le nombre de paies à calculer doit couvrir toute la période affichée : 8 paies (~4 mois)
+     suffisent pour Jour/Semaine/Paie/Mois, mais "Année" doit pouvoir couvrir toute l'année
+     sélectionnée, sinon l'échéancier s'arrête en cours d'année au lieu de continuer. */
+  const { fin: finPeriodeAffichee } = etatCalendrierPeriode.vue === 'paie'
+    ? { fin: debutJour(new Date()) }
+    : bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+  const nbPaiesNecessaires = Math.max(8, Math.ceil(joursEntreDates(debutJour(new Date()), finPeriodeAffichee)/14) + 2);
+  const echeancierComplet = calculerEcheancierCompte(nbPaiesNecessaires);
+  /* Conservé pour la fenêtre de détail : elle réutilise exactement le calcul affiché plutôt
+     que de le refaire, sinon les deux pourraient diverger sans qu'on s'en aperçoive. */
+  dernierEcheancier = echeancierComplet || [];
   if(!echeancierComplet || !echeancierComplet.length){
     conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
     return;
@@ -2427,8 +2821,8 @@ function afficherEcheancierCompteConjoint(){
   /* Le contenu de l'échéancier suit le type de période choisi (Jour/Semaine/Paie/Mois/
      Année, partagé avec Transactions et Résumé) : "Paie" ne montre que le tout prochain
      dépôt, les autres périodes montrent les paies tombant dans la période choisie —
-     "Année" affiche par défaut le mois en cours avec un "voir plus" vers les 7 prochaines
-     paies plutôt que les 365 jours de l'année. */
+     "Année" affiche par défaut le mois en cours avec un "voir plus" vers le reste des
+     paies de l'année sélectionnée. */
   let echeancier;
   let afficherVoirPlus = false;
   let afficherVoirMoins = false;
@@ -2442,7 +2836,9 @@ function afficherEcheancierCompteConjoint(){
       echeancier = echeancierComplet.filter(l => l.iso >= debutMoisStr && l.iso <= finMoisStr);
       afficherVoirPlus = echeancier.length < echeancierComplet.length;
     } else {
-      echeancier = echeancierComplet.slice(0, 7);
+      const { debut, fin } = bornePeriode('annee', etatCalendrierPeriode.dateRef);
+      const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
+      echeancier = echeancierComplet.filter(l => l.iso >= debutStr && l.iso <= finStr);
       afficherVoirMoins = true;
     }
   } else {
@@ -2466,7 +2862,7 @@ function afficherEcheancierCompteConjoint(){
       </div>
     </div>
   ` + echeancier.map(ligne => `
-    <div class="recurrent-row">
+    <div class="recurrent-row depot-row" onclick="ouvrirDetailDepot('${ligne.iso}')" style="cursor:pointer;" title="Voir le détail du calcul">
       <div class="recurrent-nom">${formatDate(ligne.date)}</div>
       <div style="display:flex;gap:18px;">
         <span class="value p1" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p1)}</span>
@@ -2474,7 +2870,7 @@ function afficherEcheancierCompteConjoint(){
       </div>
     </div>
   `).join('') + (afficherVoirPlus ? `
-    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir plus (7 prochaines paies)</div>
+    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir plus (le reste de l'année)</div>
   ` : (afficherVoirMoins ? `
     <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-moins">Voir moins</div>
   ` : ''));
@@ -2573,30 +2969,28 @@ function activerChamp(fieldId, actif, controlId){
 }
 
 function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
-  const val = document.getElementById(selectId).value;
-  const dansModal = nombreFieldId.startsWith('edit-rec-');
-  if(dansModal){
-    activerChamp(nombreFieldId, val==='nombre');
-    activerChamp(dateFieldId, val==='date');
-  } else {
-    document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
-    document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
-  }
+  const select = document.getElementById(selectId);
+  const val = select.value;
+  /* On MASQUE le champ qui ne s'applique pas, partout de la même façon. La fenêtre
+     d'édition se contentait de le griser, si bien qu'en choisissant « À une date précise »
+     le champ « Nombre » restait affiché à côté, vide et sans objet. */
+  document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
+  document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
+  /* « Après un nombre de paiements » est trop long pour une demi-largeur : on lui donne
+     trois quarts de la rangée et le quart restant au nombre, qui n'a besoin que de deux ou
+     trois chiffres. Avec « À une date précise », les deux champs reprennent leur moitié. */
+  const champType = select.closest('.field');
+  const champNombre = document.getElementById(nombreFieldId);
+  if(champType) champType.classList.toggle('fin-type-large', val==='nombre');
+  if(champNombre) champNombre.classList.toggle('fin-nombre-etroit', val==='nombre');
 }
 document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field'));
 
-/* "Se répète" du modal d'édition d'une récurrence : mêmes règles que les formulaires
-   d'ajout (interception de "Personnaliser…", régénération des préréglages si la date de
-   début change), voir le module partagé plus bas dans le fichier. */
-document.getElementById('edit-rec-frequence').addEventListener('change', function(){
-  if(this.value === '__custom__'){ ouvrirRecurrencePersonnalisee('edit-rec-frequence', 'edit-rec-date-debut'); return; }
-  this.dataset.valeurPrecedente = this.value;
-});
-document.getElementById('edit-rec-date-debut').addEventListener('change', function(){
-  const cfgActuel = lireConfigRepetition('edit-rec-frequence');
-  peuplerSelectRepetition('edit-rec-frequence', this.value, cfgActuel, false);
-});
+/* La fenêtre d'édition d'une récurrence utilise les MÊMES contrôles que les formulaires
+   d'ajout (module partagé plus bas). Pas de bascule ici : une récurrence se répète par
+   définition, les réglages sont donc toujours visibles. Le branchement se fait avec le
+   module, plus bas dans le fichier (les contrôles y sont définis). */
 
 async function basculerActifRecurrence(id){
   const rec = recurrences.find(r=>r.id===id); if(!rec) return;
@@ -3227,7 +3621,6 @@ function libellePeriodeCalendrier(vue, debut, fin){
   return `${formatCourtDate(debut)} – ${formatCourtDate(fin)} ${fin.getFullYear()}`;
 }
 function classeTypeDepense(e){
-  if(e.estRevenu) return 'cal-revenu';
   if(e.estCompte) return 'cal-compte';
   if(e.who==='p2') return 'cal-p2';
   return 'cal-p1';
@@ -3284,19 +3677,25 @@ function afficherCalendrierRecurrent(scope){
 
 /* Barre d'outils commune, en haut du calendrier/liste : icône de filtres (🎚) à gauche,
    bascule grille/liste (📅) centrée — visible uniquement en vue "Mois" — et le contrôle de
-   tri (Date/Montant) à droite. Toujours sur la même ligne, pour rester compact et uniforme. */
+   tri (Date/Montant) à droite. Toujours sur la même ligne, pour rester compact et uniforme.
+
+   Le tri n'est PAS produit quand la grille de calendrier est active : les dépenses y sont
+   placées dans les cases des jours, l'ordre de tri n'a alors aucun effet visible. On retire
+   le bloc du HTML plutôt que de le masquer, parce que `.cal-toolbar .mobile-sort` porte un
+   `display:flex!important` qui l'emporterait sur un style en ligne. */
 function rendreBarreOutilsHTML(scope, tri){
   const vue = etatCalendrierPeriode.vue;
+  const triUtile = !(vue === 'mois' && afficherGrilleMois);
   return `
     <div class="cal-toolbar">
       <button type="button" class="cal-hamburger-btn" id="cal-filtre-btn-${scope}" aria-label="Filtres d'affichage">${ICONE_FILTRE_SVG}</button>
       ${vue==='mois' ? `<button type="button" class="cal-hamburger-btn cal-toolbar-centre" id="cal-grille-toggle-${scope}" aria-label="Basculer vue calendrier">📅</button>` : ''}
-      <div class="mobile-sort" id="cal-toolbar-tri-${scope}">
+      ${triUtile ? `<div class="mobile-sort" id="cal-toolbar-tri-${scope}">
         <select id="agenda-tri-${scope}" aria-label="Trier les dépenses">
           <option value="Date">Date</option><option value="Montant">Montant</option>
         </select>
         <button type="button" class="sort-direction" id="agenda-tri-dir-${scope}" aria-label="${tri.dir==='asc'?'Tri croissant':'Tri décroissant'}">${tri.dir==='asc'?'↑':'↓'}</button>
-      </div>
+      </div>` : ''}
     </div>`;
 }
 function wirerBarreOutils(scope){
@@ -3628,14 +4027,13 @@ function ouvrirEditionRecurrence(id){
   recurrenceEnEdition = rec;
   document.getElementById('edit-rec-nom').value = rec.nom;
   document.getElementById('edit-rec-montant').value = rec.montant;
-  document.getElementById('edit-rec-categorie').innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+  document.getElementById('edit-rec-categorie').innerHTML = categories.map(c=>`<option>${echapperHTML(c)}</option>`).join('');
   document.getElementById('edit-rec-categorie').value = rec.categorie;
-  peuplerSelectRepetition('edit-rec-frequence', rec.dateDebut, { unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel }, false);
+  remplirControlesRecurrence(CONTROLES_RECURRENCE_EDITION, { unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel });
   document.getElementById('edit-rec-date-debut').value = rec.dateDebut || '';
   document.getElementById('edit-rec-fin-type').value = rec.finType || 'jamais';
   document.getElementById('edit-rec-fin-nombre').value = rec.finNombre || '';
   document.getElementById('edit-rec-fin-date').value = rec.finDate || '';
-  document.getElementById('edit-rec-actif').checked = rec.actif;
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field');
 
   const quiField = document.getElementById('edit-rec-qui-field');
@@ -3699,12 +4097,14 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   const montant = parseFloat(document.getElementById('edit-rec-montant').value);
   if(!nom || !montant || montant<=0){ alert("Merci d'entrer un nom et un montant valides."); return; }
   const categorie = document.getElementById('edit-rec-categorie').value;
-  const cfgRepetition = lireConfigRepetition('edit-rec-frequence') || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
   const dateDebutFormulaire = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
+  const cfgRepetition = lireControlesRecurrence(CONTROLES_RECURRENCE_EDITION) || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
   const finType = document.getElementById('edit-rec-fin-type').value;
   const finNombreFormulaire = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
   const finDateFormulaire = finType==='date' ? (document.getElementById('edit-rec-fin-date').value || null) : null;
-  const actif = document.getElementById('edit-rec-actif').checked;
+  /* L'état actif/inactif se règle depuis la liste des récurrences ; la sauvegarde le
+     conserve tel quel plutôt que de le réinitialiser. */
+  const actif = recurrenceEnEdition.actif;
 
   if(finType==='nombre' && !finNombreFormulaire){ alert("Merci d'entrer un nombre de paiements valide."); return; }
   if(finType==='date' && !finDateFormulaire){ alert("Merci d'entrer une date de fin."); return; }
@@ -3832,13 +4232,13 @@ function rafraichirOptionsFormulaires(){
   ['conjoint','personnel'].forEach(scope=>{
     const select = document.getElementById(`f-category-${scope}`);
     const current = select.value;
-    select.innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+    select.innerHTML = categories.map(c=>`<option>${echapperHTML(c)}</option>`).join('');
     if(categories.includes(current)) select.value = current;
 
     const selectRec = document.getElementById(`rec-categorie-${scope}`);
     if(selectRec){
       const currentRec = selectRec.value;
-      selectRec.innerHTML = categories.map(c=>`<option style="color:${COULEURS_CATEGORIES[c]||'#9aa0a6'};background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}22">${c}</option>`).join('');
+      selectRec.innerHTML = categories.map(c=>`<option>${echapperHTML(c)}</option>`).join('');
       if(categories.includes(currentRec)) selectRec.value = currentRec;
     }
   });
@@ -4112,7 +4512,11 @@ async function ajouterDepense(scope){
   const date = document.getElementById(`f-date-${scope}`).value;
   const category = estRevenu ? 'Revenu' : document.getElementById(`f-category-${scope}`).value;
   const note = document.getElementById(`f-note-${scope}`).value.trim();
-  const cfgRepetition = lireConfigRepetition(`f-repete-${scope}`);
+  /* La bascule « Se répète » décide : à OFF c'est une dépense ponctuelle, à ON on lit les
+     réglages dépliés juste en dessous. */
+  const cfgRepetition = document.getElementById(`f-repete-${scope}`).checked
+    ? lireControlesRecurrence(controlesRecurrenceAjout(scope))
+    : null;
 
   if(!amount || amount<=0 || !date){
     alert("Merci d'entrer un montant et une date valides.");
@@ -4196,184 +4600,250 @@ async function ajouterDepense(scope){
 function reinitialiserFormulaireAjoutDepense(scope){
   document.getElementById(`f-amount-${scope}`).value = '';
   document.getElementById(`f-note-${scope}`).value = '';
-  document.getElementById(`f-repete-${scope}`).value = 'jamais';
-  document.getElementById(`f-repete-${scope}`).dataset.valeurPrecedente = 'jamais';
+  document.getElementById(`f-repete-${scope}`).checked = false;
+  /* Formulaire vidé : les jours redeviennent libres de suivre la prochaine date choisie. */
+  const conteneurJours = document.getElementById(`f-rec-jours-${scope}`);
+  if(conteneurJours) conteneurJours.dataset.choisiParUtilisateur = '0';
+  document.getElementById(`f-rec-unite-${scope}`).dataset.initialise = '';
+  appliquerAffichageRepetition(scope, false);
   document.getElementById(`f-fin-type-${scope}`).value = 'jamais';
   document.getElementById(`f-fin-nombre-${scope}`).value = '';
   document.getElementById(`f-fin-date-${scope}`).value = '';
   appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
   document.getElementById(`f-fin-type-field-${scope}`).style.display = 'none';
   document.getElementById(`form-card-${scope}`).classList.remove('mobile-add-open');
+  /* Valeurs de base : date du jour, catégorie par défaut, et côté conjoint la personne qui
+     utilise l'application avec un partage à parts égales. Sans ça, rouvrir le formulaire
+     réaffichait la saisie précédente, ce qui fait facilement enregistrer une dépense avec la
+     date ou la catégorie de la fois d'avant. */
+  document.getElementById(`f-date-${scope}`).value = formaterDateISO(new Date());
+  document.getElementById(`f-category-${scope}`).value = 'Épicerie';
   if(scope==='conjoint'){
     document.getElementById('f-est-revenu-conjoint').checked = false;
     document.getElementById('f-compte-repartition-conjoint').value = 50;
+    document.getElementById('f-who-conjoint').value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
     appliquerChoixQuiConjoint('f-who-conjoint','f-compte-repartition-conjoint','f-est-revenu-field-conjoint');
   } else {
     document.getElementById('f-est-revenu-personnel').checked = false;
   }
+  rafraichirOptionsFormulaires();
 }
 document.getElementById('btn-add-conjoint').addEventListener('click', ()=>ajouterDepense('conjoint'));
 document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajouterDepense('personnel'));
 
-/* ===================== SÉLECTEUR "SE RÉPÈTE" FAÇON GOOGLE AGENDA =====================
-   Un seul module partagé par les 3 sélecteurs concernés (ajout conjoint, ajout personnel,
-   édition d'une récurrence) : préréglages calculés dynamiquement selon la date choisie
-   (comme Google Agenda qui propose "Toutes les semaines le mardi" si la date tombe un
-   mardi), + une option "Personnaliser…" qui ouvre le modal partagé pour choisir un
-   intervalle libre (ex: toutes les 3 semaines), plusieurs jours de la semaine à la fois, ou
-   "le dernier jour du mois" pour les dépenses dont la date de facturation varie selon la
-   longueur du mois. */
-function construirePresetsRepetition(dateISO){
-  const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
-  const jourSemaine = d.getDay();
-  const jourMois = d.getDate();
-  const estDernierJourDuMois = jourMois === dernierJourDuMois(d).getDate();
-  const configs = [
-    { unite:'jour', intervalle:1 },
-    { unite:'semaine', intervalle:1, joursSemaine:[jourSemaine] },
-    estDernierJourDuMois
-      ? { unite:'mois', intervalle:1, typeMensuel:'dernier_jour' }
-      : { unite:'mois', intervalle:1, typeMensuel:'jour_mois' },
-    { unite:'annee', intervalle:1 },
-    { unite:'semaine', intervalle:1, joursSemaine:[1,2,3,4,5] }
-  ];
-  return configs.map(cfg => ({ value: JSON.stringify(cfg), config: cfg, label: libelleRecurrence({...cfg, dateDebut: dateISO}) }));
+/* ===================== RÉCURRENCE : CONTRÔLES EN LIGNE =====================
+   Une bascule « Se répète » dans le formulaire ; quand elle est à ON, les réglages se
+   déplient juste en dessous, dans le même écran. Il n'y a plus de fenêtre « Personnaliser… »
+   ni de liste de préréglages : un seul chemin pour un seul résultat.
+
+   Les mêmes contrôles servent aux deux formulaires d'ajout et à la fenêtre d'édition d'une
+   récurrence ; chaque emplacement fournit simplement les identifiants de SES éléments. */
+
+function controlesRecurrenceAjout(scope){
+  return {
+    intervalle: `f-rec-intervalle-${scope}`,
+    unite: `f-rec-unite-${scope}`,
+    jours: `f-rec-jours-${scope}`,
+    joursField: `f-rec-jours-field-${scope}`,
+    typeMensuel: `f-rec-type-mensuel-${scope}`,
+    mensuelField: `f-rec-mensuel-field-${scope}`,
+    date: `f-date-${scope}`
+  };
 }
+const CONTROLES_RECURRENCE_EDITION = {
+  intervalle:'edit-rec-intervalle', unite:'edit-rec-unite',
+  jours:'edit-rec-jours', joursField:'edit-rec-jours-field',
+  typeMensuel:'edit-rec-type-mensuel', mensuelField:'edit-rec-mensuel-field',
+  date:'edit-rec-date-debut'
+};
 
-/* Reconstruit entièrement les <option> d'un sélecteur "Se répète" à partir de la date
-   choisie. Si `cfgActuel` (config déjà en place, ex. en édition) ne correspond à aucun
-   préréglage, on l'ajoute quand même comme option supplémentaire pour ne jamais perdre une
-   récurrence personnalisée existante. `avecJamais` est à false pour le select du modal
-   d'édition d'une récurrence (une récurrence, par définition, se répète déjà). */
-function peuplerSelectRepetition(selectId, dateISO, cfgActuel, avecJamais){
-  const select = document.getElementById(selectId);
-  const presets = construirePresetsRepetition(dateISO);
-  let html = avecJamais ? `<option value="jamais">Ne se répète pas</option>` : '';
-  html += presets.map(p => `<option value='${p.value}'>${p.label}</option>`).join('');
-  let valeurCourante = avecJamais ? 'jamais' : (presets[0] ? presets[0].value : 'jamais');
-  if(cfgActuel){
-    const correspondance = presets.find(p => configsEquivalentes(p.config, cfgActuel));
-    if(correspondance){
-      valeurCourante = correspondance.value;
-    } else {
-      const valeurCustom = JSON.stringify(cfgActuel);
-      html += `<option value='${valeurCustom}' data-custom="1">${libelleRecurrence({...cfgActuel, dateDebut: dateISO})}</option>`;
-      valeurCourante = valeurCustom;
-    }
-  }
-  html += `<option value="__custom__">Personnaliser…</option>`;
-  select.innerHTML = html;
-  select.value = valeurCourante;
-  select.dataset.valeurPrecedente = valeurCourante;
-}
-
-/* Contexte du sélecteur actuellement en train d'ouvrir le modal "Récurrence personnalisée"
-   (un seul modal partagé pour les 3 sélecteurs, un seul peut être ouvert à la fois). */
-let contexteRecurrencePersonnalisee = null;
-
-function peuplerJoursSemaineBoutons(joursSelectionnes){
-  const conteneur = document.getElementById('custom-rep-jours');
+function peuplerJoursSemaineBoutons(conteneurId, joursSelectionnes){
+  const conteneur = document.getElementById(conteneurId);
+  if(!conteneur) return;
   conteneur.innerHTML = NOMS_JOURS_LETTRE.map((lettre,i)=>
     `<button type="button" class="jour-btn${joursSelectionnes.includes(i)?' selected':''}" data-jour="${i}">${lettre}</button>`
   ).join('');
-  conteneur.querySelectorAll('.jour-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> btn.classList.toggle('selected'));
-  });
 }
-function appliquerAffichageChampsCustomRepetition(){
-  const unite = document.getElementById('custom-rep-unite').value;
-  document.getElementById('custom-rep-jours-field').style.display = unite==='semaine' ? '' : 'none';
-  document.getElementById('custom-rep-mensuel-field').style.display = unite==='mois' ? '' : 'none';
-}
-document.getElementById('custom-rep-unite').addEventListener('change', appliquerAffichageChampsCustomRepetition);
 
-function ouvrirRecurrencePersonnalisee(selectId, dateInputId){
-  const select = document.getElementById(selectId);
-  contexteRecurrencePersonnalisee = { selectId, dateInputId, valeurPrecedente: select.dataset.valeurPrecedente || 'jamais' };
-  const dateISO = document.getElementById(dateInputId).value;
+/* « Le dernier jour du mois » n'est proposé QUE si la date choisie tombe effectivement le
+   dernier jour : partout ailleurs ce serait un réglage impossible à deviner à la lecture de
+   la date. Si l'option disparaît alors qu'elle était sélectionnée, on retombe sur le jour
+   du mois. */
+function peuplerTypeMensuel(ids){
+  const select = document.getElementById(ids.typeMensuel);
+  if(!select) return;
+  const dateISO = document.getElementById(ids.date).value;
   const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
-  let cfg = null;
-  try{ cfg = JSON.parse(contexteRecurrencePersonnalisee.valeurPrecedente); }catch(e){ cfg = null; }
-  if(!cfg || !cfg.unite) cfg = { unite:'semaine', intervalle:1, joursSemaine:[d.getDay()], typeMensuel:'jour_mois' };
-
-  document.getElementById('custom-rep-intervalle').value = cfg.intervalle || 1;
-  document.getElementById('custom-rep-unite').value = cfg.unite;
-  peuplerJoursSemaineBoutons(cfg.joursSemaine && cfg.joursSemaine.length ? cfg.joursSemaine : [d.getDay()]);
-  document.getElementById('custom-rep-type-mensuel').value = cfg.typeMensuel === 'dernier_jour' ? 'dernier_jour' : 'jour_mois';
-  appliquerAffichageChampsCustomRepetition();
-  document.getElementById('custom-repetition-modal').style.display = 'flex';
+  const estDernierJour = d.getDate() === dernierJourDuMois(d).getDate();
+  const ancienChoix = select.value;
+  let html = `<option value="jour_mois">Le ${d.getDate()} de chaque mois</option>`;
+  if(estDernierJour) html += `<option value="dernier_jour">Le dernier jour du mois</option>`;
+  select.innerHTML = html;
+  select.value = (ancienChoix === 'dernier_jour' && estDernierJour) ? 'dernier_jour' : 'jour_mois';
 }
-document.getElementById('close-custom-repetition').addEventListener('click', ()=>{
-  document.getElementById('custom-repetition-modal').style.display = 'none';
-  if(contexteRecurrencePersonnalisee) document.getElementById(contexteRecurrencePersonnalisee.selectId).value = contexteRecurrencePersonnalisee.valeurPrecedente;
-});
-document.getElementById('custom-repetition-annuler').addEventListener('click', ()=>{
-  document.getElementById('custom-repetition-modal').style.display = 'none';
-  if(contexteRecurrencePersonnalisee) document.getElementById(contexteRecurrencePersonnalisee.selectId).value = contexteRecurrencePersonnalisee.valeurPrecedente;
-});
-document.getElementById('custom-repetition-terminer').addEventListener('click', ()=>{
-  if(!contexteRecurrencePersonnalisee) return;
-  const intervalle = Math.max(1, parseInt(document.getElementById('custom-rep-intervalle').value,10) || 1);
-  const unite = document.getElementById('custom-rep-unite').value;
-  const joursSemaine = unite==='semaine'
-    ? Array.from(document.querySelectorAll('#custom-rep-jours .jour-btn.selected')).map(b=>parseInt(b.dataset.jour,10)).sort((a,b)=>a-b)
+
+/* Les jours de la semaine ne concernent qu'une règle hebdomadaire, le choix du jour du mois
+   qu'une règle mensuelle : on n'affiche que ce qui s'applique. */
+function appliquerAffichageRecurrence(ids){
+  const unite = document.getElementById(ids.unite).value;
+  document.getElementById(ids.joursField).style.display = unite === 'semaine' ? '' : 'none';
+  document.getElementById(ids.mensuelField).style.display = unite === 'mois' ? '' : 'none';
+  if(unite === 'mois') peuplerTypeMensuel(ids);
+  if(unite === 'semaine') semerJoursDepuisDate(ids);
+}
+
+/* Les jours cochés SUIVENT la date choisie, tant que l'utilisateur n'en a pas coché
+   lui-même. Sans ça, passer sur « semaine » laissait en place les jours d'un réglage
+   précédent : on pouvait croire avoir choisi « le samedi » alors qu'un autre jour restait
+   coché en dessous, et la première occurrence tombait au mauvais endroit. */
+function semerJoursDepuisDate(ids){
+  const conteneur = document.getElementById(ids.jours);
+  if(!conteneur || conteneur.dataset.choisiParUtilisateur === '1') return;
+  const dateISO = document.getElementById(ids.date).value;
+  const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
+  peuplerJoursSemaineBoutons(ids.jours, [d.getDay()]);
+}
+
+function remplirControlesRecurrence(ids, cfg){
+  const dateISO = document.getElementById(ids.date).value;
+  const d = dateISO ? new Date(dateISO+"T00:00:00") : new Date();
+  const c = cfg || { unite:'mois', intervalle:1 };
+  document.getElementById(ids.intervalle).value = Math.max(1, c.intervalle || 1);
+  document.getElementById(ids.unite).value = c.unite || 'mois';
+  const joursExplicites = !!(c.joursSemaine && c.joursSemaine.length);
+  peuplerJoursSemaineBoutons(ids.jours, joursExplicites ? c.joursSemaine : [d.getDay()]);
+  document.getElementById(ids.jours).dataset.choisiParUtilisateur = joursExplicites ? '1' : '0';
+  appliquerAffichageRecurrence(ids);
+  const selMensuel = document.getElementById(ids.typeMensuel);
+  if(selMensuel && c.typeMensuel === 'dernier_jour'){
+    selMensuel.value = 'dernier_jour';
+    if(selMensuel.value !== 'dernier_jour') selMensuel.value = 'jour_mois'; /* option absente */
+  }
+}
+
+function lireControlesRecurrence(ids){
+  const unite = document.getElementById(ids.unite).value;
+  const intervalle = Math.max(1, parseInt(document.getElementById(ids.intervalle).value,10) || 1);
+  const joursSemaine = unite === 'semaine'
+    ? Array.from(document.querySelectorAll(`#${ids.jours} .jour-btn.selected`)).map(b=>parseInt(b.dataset.jour,10)).sort((a,b)=>a-b)
     : null;
-  if(unite==='semaine' && (!joursSemaine || !joursSemaine.length)){ alert('Sélectionnez au moins un jour de la semaine.'); return; }
-  const typeMensuel = unite==='mois' ? document.getElementById('custom-rep-type-mensuel').value : null;
-  const cfg = { unite, intervalle, joursSemaine, typeMensuel };
-
-  const { selectId, dateInputId } = contexteRecurrencePersonnalisee;
-  const select = document.getElementById(selectId);
-  const dateISO = document.getElementById(dateInputId).value;
-  const valeur = JSON.stringify(cfg);
-  Array.from(select.options).forEach(o => { if(o.dataset.custom==='1') o.remove(); });
-  const option = document.createElement('option');
-  option.value = valeur;
-  option.textContent = libelleRecurrence({...cfg, dateDebut: dateISO});
-  option.dataset.custom = '1';
-  select.insertBefore(option, select.querySelector('option[value="__custom__"]'));
-  select.value = valeur;
-  select.dataset.valeurPrecedente = valeur;
-  select.dispatchEvent(new Event('change'));
-  document.getElementById('custom-repetition-modal').style.display = 'none';
-});
-
-/* Convertit la valeur choisie dans un sélecteur "Se répète" ('jamais', un JSON de config, ou
-   '__custom__' — mais ce dernier ne devrait jamais arriver ici, il est intercepté avant) en
-   config utilisable par creerRecurrenceDepuisValeurs / la mise à jour d'une récurrence. */
-function lireConfigRepetition(selectId){
-  const valeur = document.getElementById(selectId).value;
-  if(valeur === 'jamais' || valeur === '__custom__') return null;
-  try{ return JSON.parse(valeur); }catch(e){ return null; }
+  const selMensuel = document.getElementById(ids.typeMensuel);
+  const typeMensuel = unite === 'mois' && selMensuel ? selMensuel.value : null;
+  const dateISO = document.getElementById(ids.date).value;
+  return normaliserConfigRepetition({ unite, intervalle, joursSemaine, typeMensuel }, dateISO);
 }
 
-/* Affiche les champs "Se termine" seulement quand "Se répète" n'est pas "Jamais", et les
-   champs nombre/date selon le sous-choix. Intercepte "Personnaliser…" pour ouvrir le modal
-   partagé, et régénère les préréglages quand la date choisie change (comme Google Agenda,
-   qui adapte "Toutes les semaines le ..." au jour réellement sélectionné). */
-['conjoint','personnel'].forEach(scope=>{
-  const selectId = `f-repete-${scope}`;
-  peuplerSelectRepetition(selectId, document.getElementById(`f-date-${scope}`).value, null, true);
+function brancherControlesRecurrence(ids){
+  document.getElementById(ids.unite).addEventListener('change', ()=>appliquerAffichageRecurrence(ids));
+  document.getElementById(ids.jours).addEventListener('click', (e)=>{
+    const btn = e.target.closest('.jour-btn');
+    if(!btn) return;
+    btn.classList.toggle('selected');
+    /* Au moins un jour doit rester coché, sinon la règle n'a plus de sens. */
+    if(!document.querySelector(`#${ids.jours} .jour-btn.selected`)) btn.classList.add('selected');
+    /* À partir d'ici, le choix appartient à l'utilisateur : la date ne le réécrit plus. */
+    e.currentTarget.dataset.choisiParUtilisateur = '1';
+  });
+  document.getElementById(ids.date).addEventListener('change', ()=>{
+    const unite = document.getElementById(ids.unite).value;
+    if(unite === 'mois') peuplerTypeMensuel(ids);
+    if(unite === 'semaine') semerJoursDepuisDate(ids);
+  });
+}
 
-  document.getElementById(selectId).addEventListener('change', function(){
-    if(this.value === '__custom__'){ ouvrirRecurrencePersonnalisee(selectId, `f-date-${scope}`); return; }
-    this.dataset.valeurPrecedente = this.value;
-    const repete = this.value;
-    document.getElementById(`f-fin-type-field-${scope}`).style.display = repete==='jamais' ? 'none' : '';
-    if(repete==='jamais'){
-      document.getElementById(`f-fin-nombre-field-${scope}`).style.display = 'none';
-      document.getElementById(`f-fin-date-field-${scope}`).style.display = 'none';
-    } else {
-      appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
-    }
+/* Fenêtre d'édition d'une récurrence : contrôles toujours visibles, pas de bascule. */
+brancherControlesRecurrence(CONTROLES_RECURRENCE_EDITION);
+
+/* Bascule « Se répète » des deux formulaires d'ajout : à ON, tous les réglages de récurrence
+   se déplient sous la ligne « Date / Se répète ». */
+['conjoint','personnel'].forEach(scope=>{
+  const ids = controlesRecurrenceAjout(scope);
+  brancherControlesRecurrence(ids);
+
+  /* Tout changement de réglage (unité, intervalle, jours, date) refait l'aperçu. */
+  [ids.unite, ids.intervalle, ids.jours, ids.typeMensuel, ids.date].forEach(elId=>{
+    const el = document.getElementById(elId);
+    if(el) ['change','click','input'].forEach(evt => el.addEventListener(evt, ()=>{
+      if(document.getElementById(`f-repete-${scope}`).checked) rafraichirApercuRecurrence(scope);
+    }));
   });
-  document.getElementById(`f-date-${scope}`).addEventListener('change', function(){
-    const cfgActuel = lireConfigRepetition(selectId);
-    peuplerSelectRepetition(selectId, this.value, cfgActuel, true);
+
+  document.getElementById(`f-repete-${scope}`).addEventListener('change', function(){
+    appliquerAffichageRepetition(scope, this.checked);
+    if(!this.checked) return;
+    /* Les réglages viennent d'apparaître sous la ligne 4. Sur mobile ils seraient cachés par
+       le clavier : on le referme et on les amène dans le champ de vision. */
+    if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    setTimeout(()=>{
+      const bloc = document.getElementById(`f-rec-intervalle-field-${scope}`);
+      if(bloc) bloc.scrollIntoView({block:'nearest', behavior:'smooth'});
+    }, 250);
   });
+
   document.getElementById(`f-fin-type-${scope}`).addEventListener('change', ()=>
     appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`));
+
+  appliquerAffichageRepetition(scope, false);
 });
+
+/* Affiche ou masque d'un bloc tous les réglages de récurrence d'un formulaire d'ajout. */
+function appliquerAffichageRepetition(scope, actif){
+  const ids = controlesRecurrenceAjout(scope);
+  if(actif){
+    /* Re-déplier le bloc relit ses propres contrôles : ça ne doit pas être compris comme un
+       choix de l'utilisateur, sinon les jours cesseraient de suivre la date. */
+    const conteneurJours = document.getElementById(ids.jours);
+    const choixAnterieur = conteneurJours ? conteneurJours.dataset.choisiParUtilisateur : '0';
+    remplirControlesRecurrence(ids, lireConfigCouranteOuDefaut(scope));
+    if(conteneurJours) conteneurJours.dataset.choisiParUtilisateur = choixAnterieur || '0';
+  }
+  document.querySelectorAll(`#form-card-${scope} .bloc-recurrence`).forEach(el=>{
+    el.style.display = actif ? '' : 'none';
+  });
+  /* Pour une série, la date saisie est un point de DÉPART : la première occurrence peut
+     tomber plus tard (choisir le 11 septembre avec « toutes les semaines le samedi » donne
+     une première occurrence le 12). Le libellé le dit, et l'aperçu la donne explicitement. */
+  document.getElementById(`f-date-label-${scope}`).textContent = actif ? 'À partir de' : 'Date';
+  if(actif){
+    appliquerAffichageRecurrence(ids);
+    appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
+    rafraichirApercuRecurrence(scope);
+  }
+}
+
+/* Annonce la première occurrence réellement générée par les réglages en cours. */
+function rafraichirApercuRecurrence(scope){
+  const champ = document.getElementById(`f-apercu-${scope}`);
+  const bloc = document.getElementById(`f-apercu-field-${scope}`);
+  if(!champ || !bloc) return;
+  const dateISO = document.getElementById(`f-date-${scope}`).value;
+  if(!dateISO){ bloc.style.display = 'none'; return; }
+  const cfg = lireControlesRecurrence(controlesRecurrenceAjout(scope));
+  const apercu = { ...cfg, dateDebut: dateISO, finType:'jamais' };
+  const occs = genererOccurrences(apercu, ajouterJours(new Date(dateISO+"T00:00:00"), 800));
+  bloc.style.display = '';
+  if(!occs.length){
+    champ.textContent = "Aucune occurrence ne correspond à ces réglages.";
+    champ.className = 'apercu-alerte';
+    return;
+  }
+  const premiere = occs[0];
+  const memeJour = formaterDateISO(premiere) === dateISO;
+  champ.className = '';
+  champ.textContent = memeJour
+    ? `Première occurrence : ${premiere.toLocaleDateString('fr-CA',{weekday:'long', day:'numeric', month:'long', year:'numeric'})}.`
+    : `Première occurrence : ${premiere.toLocaleDateString('fr-CA',{weekday:'long', day:'numeric', month:'long', year:'numeric'})} — la date choisie sert de point de départ.`;
+}
+
+/* Au premier dépliage, on propose « tous les mois », le réglage le plus courant pour une
+   dépense; ensuite on conserve ce que l'utilisateur avait déjà réglé. */
+function lireConfigCouranteOuDefaut(scope){
+  const ids = controlesRecurrenceAjout(scope);
+  const dejaRegle = document.getElementById(ids.unite).dataset.initialise === '1';
+  if(dejaRegle) return lireControlesRecurrence(ids);
+  document.getElementById(ids.unite).dataset.initialise = '1';
+  return { unite:'mois', intervalle:1 };
+}
 
 /* Bascule générique : quand la case "payé par le compte conjoint" est cochée, on cache le
    sélecteur "Qui" et on montre le champ de répartition en %, et vice-versa. */
@@ -4395,9 +4865,14 @@ document.getElementById('edit-rec-est-revenu').addEventListener('change', ()=>
 
 /* Génère les options du sélecteur "Qui" : Gabriel/Mélissa, plus "Compte conjoint" si
    `includeCompte` est vrai (pertinent seulement pour les dépenses conjointes). */
+/* Options sans teinte : la couleur de fond des <option> est rendue par le système et pas par
+   la page, elle ressortait donc différemment d'un navigateur et d'un thème à l'autre — et
+   illisible en thème sombre. Les couleurs de personne et de catégorie restent partout où
+   elles sont vraiment utiles (pastilles, montants, graphiques). */
 function remplirOptionsQui(selectId, includeCompte){
-  let html = ['p1','p2'].map(key=>[key,nomsPersonnes[key]]).map(([key,name])=>`<option value="${name}" style="color:${couleursPersonnes[key]};background:${couleursPersonnes[key]}22">${name}</option>`).join('');
-  if(includeCompte) html += `<option value="Compte conjoint" style="color:${couleursPersonnes.compte};background:${couleursPersonnes.compte}22">Compte conjoint</option>`;
+  let html = ['p1','p2'].map(key=>nomsPersonnes[key])
+    .map(name=>`<option value="${echapperHTML(name)}">${echapperHTML(name)}</option>`).join('');
+  if(includeCompte) html += `<option value="Compte conjoint">Compte conjoint</option>`;
   document.getElementById(selectId).innerHTML = html;
 }
 
@@ -4481,6 +4956,48 @@ document.getElementById('edit-toggle-type').addEventListener('click', ()=>{
    moment de la sauvegarde (voir diviserRecurrenceAPartirDe). */
 let modeEditionDepense = 'normal';
 
+/* ===================== PONCTUELLE → RÉCURRENTE =====================
+   Une dépense ponctuelle vit dans `Depenses`, une série dans `Recurrences` — et les
+   occurrences d'une série ne sont jamais stockées, elles sont calculées à partir de la
+   règle. Convertir revient donc à un simple échange : on crée la règle à partir des valeurs
+   de la dépense, puis on supprime la ligne d'origine.
+
+   On propose d'emblée « tous les mois », le cas le plus courant, puis on ouvre l'éditeur de
+   série pour que la règle soit ajustée (hebdomadaire, aux deux semaines, date de fin…).
+   Le sens inverse n'existe pas : une série peut avoir des dizaines d'occurrences et des
+   exceptions, décider laquelle survivrait n'aurait pas de réponse évidente. */
+document.getElementById('edit-rendre-recurrente').addEventListener('click', async ()=>{
+  const depense = depenseEnEdition;
+  if(!depense || depense.virtuelle || depense.recurrenceId) return;
+
+  const nouvelId = await creerRecurrenceDepuisValeurs({
+    nom: depense.note || depense.category,
+    montant: depense.amount,
+    categorie: depense.category,
+    unite: 'mois', intervalle: 1, joursSemaine: null, typeMensuel: 'jour_mois',
+    dateDebut: depense.date,
+    finType: 'jamais', finNombre: null, finDate: null,
+    who: depense.who, type: depense.type,
+    estCompte: !!depense.estCompte, estRevenu: !!depense.estRevenu,
+    pourcentageP1: depense.pourcentageP1
+  });
+
+  /* La dépense d'origine disparaît : elle est désormais la première occurrence de la série. */
+  const { error } = await supabaseClient.from('Depenses').delete().eq('id', depense.id);
+  if(error){
+    alert("La série a été créée, mais la dépense d'origine n'a pas pu être supprimée : elle risque d'apparaître en double.");
+  } else {
+    depensesReelles = depensesReelles.filter(e => e.id !== depense.id);
+  }
+
+  document.getElementById('edit-modal').style.display = 'none';
+  depenseEnEdition = null;
+  recalculerDepenses();
+  rafraichirActif();
+  /* On enchaîne sur l'éditeur de série pour régler la fréquence tout de suite. */
+  ouvrirEditionRecurrence(nouvelId);
+});
+
 function ouvrirEdition(id, mode){
   const depense=depenses.find(e=>e.id===id); if(!depense) return;
   modeEditionDepense = mode || 'normal';
@@ -4513,19 +5030,16 @@ function ouvrirEdition(id, mode){
     inputFinNombre.value = rec.finType==='nombre' && rec.finNombre != null ? String(rec.finNombre) : '';
     inputFinDate.value = rec.finType==='date' && rec.finDate
       ? dateLocaleDepuisISO(rec.finDate).toLocaleDateString('fr-CA',{day:'numeric',month:'long',year:'numeric'}) : '';
-    document.getElementById('edit-actif').checked = !!rec.actif;
   } else {
     selRepetition.innerHTML = '<option>Ne se répète pas</option>';
     selFinType.innerHTML = '<option>—</option>';
     inputFinNombre.value = '';
     inputFinDate.value = '';
-    document.getElementById('edit-actif').checked = true;
   }
   activerChamp('edit-repetition-field', false);
   activerChamp('edit-fin-type-field', false);
   activerChamp('edit-fin-nombre-field', false);
   activerChamp('edit-fin-date-field', false);
-  activerChamp('edit-actif-field', false, 'edit-actif');
 
   editTypeActuel = depense.type==='personnelle' ? 'personnelle' : 'conjointe';
   appliquerVerrouEditType(editTypeActuel);
@@ -4533,6 +5047,10 @@ function ouvrirEdition(id, mode){
   /* Une occurrence de série ne peut pas basculer conjointe/personnelle toute seule :
      ça se change sur la série entière. */
   activerChamp('edit-toggle-type-field', !depense.virtuelle, 'edit-toggle-type');
+  /* « Rendre récurrente » n'a de sens que pour une dépense qui n'appartient à aucune série :
+     une occurrence en fait déjà partie, et sa règle se modifie depuis l'éditeur de série. */
+  document.getElementById('edit-rendre-recurrente-field').style.display =
+    (rec || depense.virtuelle) ? 'none' : '';
 
   document.getElementById('edit-modal-titre').firstChild.textContent = modeEditionDepense === 'suivantes'
     ? 'Modifier cette dépense et les suivantes'
@@ -4924,7 +5442,7 @@ function afficherSectionBudget(scope){
     <div class="field budget-input-field">
       <label><span class="swatch" style="background:${COULEURS_CATEGORIES[cat]||'#9aa0a6'}"></span>${cat}</label>
       <div class="input-money">
-        <input type="number" id="budget-input-${scope}-${cat}" step="1" min="0" value="${budgetActuel[cat]||''}" placeholder="0">
+        <input type="number" id="budget-input-${scope}-${cat}" step="1" min="0" value="${budgetActuel[cat]||''}" placeholder="0" autocomplete="off">
         <span class="suffix">$ / mois</span>
       </div>
     </div>
@@ -5193,6 +5711,91 @@ document.getElementById('import-file').addEventListener('change', async (e)=>{
   }
   e.target.value = '';
 });
+
+/* ===================== CONTRAINTES DE SAISIE NUMÉRIQUE =====================
+   Les attributs min/max/step d'un <input type="number" autocomplete="off"> ne sont vérifiés par le navigateur
+   qu'à la validation d'un formulaire — ici il n'y en a pas, donc rien n'empêchait de taper
+   un pourcentage de 250 ou un montant à cinq décimales. Chaque champ marqué `data-num`
+   est donc corrigé en direct, à la frappe comme au collage.
+
+   La valeur est TRONQUÉE et non arrondie : taper un chiffre de trop ne doit jamais modifier
+   les chiffres déjà saisis. */
+const REGLES_NUMERIQUES = {
+  pourcentage: { decimales:0, min:0,  max:100 },  /* part d'une personne : 0 à 100, entier */
+  montant:     { decimales:2, min:0 },            /* dollars : 2 décimales maximum */
+  entier:      { decimales:0, min:1 }             /* nombre de paiements, intervalle */
+};
+
+function appliquerRegleNumerique(champ){
+  const regle = REGLES_NUMERIQUES[champ.dataset.num];
+  if(!regle) return;
+  /* Saisie en cours d'être invalide (ex: "12.") : le navigateur renvoie une valeur vide,
+     on le laisse finir plutôt que d'effacer ce qu'il tape. */
+  if(champ.value === '') return;
+  const saisi = Number(champ.value);
+  if(!isFinite(saisi)) return;
+
+  const facteur = Math.pow(10, regle.decimales);
+  let corrige = Math.trunc(saisi * facteur) / facteur;
+  if(regle.min != null && corrige < regle.min) corrige = regle.min;
+  if(regle.max != null && corrige > regle.max) corrige = regle.max;
+
+  /* On ne réécrit le champ que si la valeur change VRAIMENT : sinon taper "12,30" se
+     ferait réécrire en "12,3" au troisième caractère, avec le curseur qui saute. */
+  if(corrige !== saisi) champ.value = String(corrige);
+}
+
+function activerContraintesNumeriques(){
+  document.querySelectorAll('[data-num]').forEach(champ=>{
+    champ.addEventListener('input', ()=>appliquerRegleNumerique(champ));
+    champ.addEventListener('blur',  ()=>appliquerRegleNumerique(champ));
+  });
+}
+activerContraintesNumeriques();
+
+/* ===================== CLAVIER VIRTUEL SUR MOBILE =====================
+   Sur mobile, les fenêtres d'édition occupent tout l'écran. Tant qu'elles se dimensionnaient
+   sur la hauteur de la FENÊTRE, l'ouverture du clavier poussait le bas du formulaire (et le
+   pied avec ses boutons) sous le clavier, sans moyen d'y accéder.
+
+   visualViewport donne la hauteur réellement visible. On la publie dans une variable CSS et
+   on marque le body quand le clavier est ouvert, ce qui laisse la mise en page rendre
+   l'entête et le pied défilants : tous les champs redeviennent atteignables. */
+function suivreClavierVirtuel(){
+  const vv = window.visualViewport;
+  if(!vv) return; /* repli CSS : 100dvh */
+
+  /* Seuil : en dessous, une variation de hauteur vient d'une barre d'adresse qui se replie,
+     pas d'un clavier. */
+  const SEUIL_CLAVIER = 140;
+  let hauteurMax = vv.height;
+
+  const majuster = () => {
+    hauteurMax = Math.max(hauteurMax, vv.height);
+    document.documentElement.style.setProperty('--hauteur-visible', `${Math.round(vv.height)}px`);
+    const clavierOuvert = (hauteurMax - vv.height) > SEUIL_CLAVIER;
+    document.body.classList.toggle('clavier-ouvert', clavierOuvert);
+  };
+
+  vv.addEventListener('resize', majuster);
+  vv.addEventListener('scroll', majuster);
+  window.addEventListener('orientationchange', ()=>{ hauteurMax = 0; setTimeout(majuster, 250); });
+  majuster();
+
+  /* Quand on passe d'un champ à l'autre, le navigateur ne ramène pas toujours le champ visé
+     au-dessus du clavier : on s'en assure une fois la mise en page stabilisée. */
+  document.addEventListener('focusin', (e)=>{
+    const champ = e.target;
+    if(!champ.matches || !champ.matches('input, select, textarea')) return;
+    if(!champ.closest('.edit-card')) return;
+    setTimeout(()=>{
+      if(document.activeElement === champ){
+        champ.scrollIntoView({block:'nearest', behavior:'smooth'});
+      }
+    }, 300);
+  });
+}
+suivreClavierVirtuel();
 
 /* Lancement au démarrage */
 initAuth();
