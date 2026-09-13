@@ -5381,15 +5381,23 @@ async function enregistrerAbonnementPush(){
   return true;
 }
 
-async function sauvegarderPreferencesNotification(enabled){
-  const prefs = {
+/* Un upsert PostgREST remplace la ligne entière : toute colonne omise retombe à son défaut.
+   Les deux réglages (dépôt et activité) vivant dans la même ligne, chaque écriture doit
+   renvoyer l'état complet du formulaire, sinon activer l'un éteint silencieusement l'autre. */
+function lirePreferencesNotificationCompletes(){
+  return {
     user_id: currentSession.user.id,
     personne: currentUser,
-    enabled,
+    enabled: document.getElementById('notif-toggle').checked,
     jours_offset: lireJoursOffsetFormulaireNotif(),
     heure: document.getElementById('notif-heure').value || '08:00',
+    notif_activite: document.getElementById('notif-activite-toggle').checked,
     updated_at: new Date().toISOString()
   };
+}
+
+async function sauvegarderPreferencesNotification(enabled){
+  const prefs = { ...lirePreferencesNotificationCompletes(), enabled };
   const { error } = await supabaseClient.from('notification_prefs').upsert(prefs, { onConflict: 'user_id' });
   if(error){
     afficherStatutNotif("Erreur lors de l'enregistrement des préférences.", true);
@@ -5434,10 +5442,7 @@ document.getElementById('notif-activite-toggle').addEventListener('change', asyn
     if(!ok){ this.checked = false; return; }
   }
   const { error } = await supabaseClient.from('notification_prefs').upsert({
-    user_id: currentSession.user.id,
-    personne: currentUser,
-    notif_activite: actif,
-    updated_at: new Date().toISOString()
+    ...lirePreferencesNotificationCompletes(), notif_activite: actif
   }, { onConflict: 'user_id' });
   if(error){
     afficherStatutNotifActivite("Erreur lors de l'enregistrement.", true);
