@@ -733,6 +733,10 @@
   .modal-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:14px 16px;align-items:start;}
   .modal-grid .field{margin:0;min-width:0;grid-column:span 2;}
   .modal-grid .field.pleine-largeur{grid-column:1 / -1;}
+  /* Bascule seule sur sa rangée : sans règle, elle retomberait dans la colonne de gauche et
+     son libellé ne s'alignerait pas avec celui de « Se répète », qui occupe la colonne de
+     droite à côté de la date. On la force donc dans la moitié droite. */
+  .form-grid>.field.bascule-droite, .modal-grid .field.bascule-droite{grid-column:3 / -1;}
   /* Rangée déséquilibrée : le libellé long prend trois quarts, le nombre un quart.
      Posé par appliquerAffichageFinRecurrence() uniquement quand le champ nombre est
      affiché — avec « À une date précise », la date a besoin de sa demi-largeur. */
@@ -1017,7 +1021,7 @@
           <div class="field pleine-largeur bloc-recurrence apercu-recurrence" id="f-apercu-field-conjoint" style="display:none;">
             <span id="f-apercu-conjoint"></span>
           </div>
-          <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-conjoint" style="display:none;">
+          <div class="field toggle-field champ-bascule bascule-droite" id="f-est-revenu-field-conjoint" style="display:none;">
             <span class="toggle-field-label">Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
@@ -1067,7 +1071,7 @@
     <div class="subtab-panel" data-scope="conjoint" data-sub="budget">
       <div class="stats-row" id="stats-conjoint"></div>
       <div class="card" id="budget-revenus-card-conjoint" style="display:none;">
-        <h3 style="margin-bottom:12px;">💰 Revenus de <span id="budget-revenus-periode-conjoint"></span></h3>
+        <h3 style="margin-bottom:12px;">Revenus de <span id="budget-revenus-periode-conjoint"></span></h3>
         <div id="budget-revenus-list-conjoint"></div>
       </div>
       <div class="grid-2">
@@ -1191,7 +1195,7 @@
           <div class="field pleine-largeur bloc-recurrence apercu-recurrence" id="f-apercu-field-personnel" style="display:none;">
             <span id="f-apercu-personnel"></span>
           </div>
-          <div class="field toggle-field pleine-largeur" id="f-est-revenu-field-personnel">
+          <div class="field toggle-field champ-bascule bascule-droite" id="f-est-revenu-field-personnel">
             <span class="toggle-field-label">Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
@@ -1242,7 +1246,7 @@
       </div>
       <div class="stats-row" id="stats-personnel"></div>
       <div class="card" id="budget-revenus-card-personnel" style="display:none;">
-        <h3 style="margin-bottom:12px;">💰 Revenus de <span id="budget-revenus-periode-personnel"></span></h3>
+        <h3 style="margin-bottom:12px;">Revenus de <span id="budget-revenus-periode-personnel"></span></h3>
         <div id="budget-revenus-list-personnel"></div>
       </div>
       <div class="grid-2">
@@ -1517,7 +1521,7 @@
         <label>Date de fin</label>
         <input type="date" id="edit-nouv-fin-date" autocomplete="off">
       </div>
-      <div class="field toggle-field pleine-largeur" id="edit-est-revenu-field">
+      <div class="field toggle-field champ-bascule bascule-droite" id="edit-est-revenu-field">
         <span class="toggle-field-label" id="edit-est-revenu-label">Revenu</span>
         <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
       </div>
@@ -1593,7 +1597,7 @@
         <label>Date de fin</label>
         <input type="date" id="edit-rec-fin-date" autocomplete="off">
       </div>
-      <div class="field toggle-field pleine-largeur" id="edit-rec-est-revenu-field">
+      <div class="field toggle-field champ-bascule bascule-droite" id="edit-rec-est-revenu-field">
         <span class="toggle-field-label" id="edit-rec-est-revenu-label">Revenu</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
       </div>
@@ -3604,7 +3608,7 @@ function afficherRecurrencesScope(scope){
   listEl.innerHTML = listeTriee.map(r=>{
     const partPct = Math.round(partPersonnelleRecurrence(r)*100);
     const badgeType = r.estRevenu
-      ? `<span class="freq-pill badge-revenu" title="Revenu">💰</span>`
+      ? `<span class="freq-pill badge-revenu">Revenu</span>`
       : (r.estCompte
           ? `<span class="freq-pill badge-compte" title="Payé automatiquement par le compte conjoint">🏦</span>`
           : (r.estConjoint ? `<span class="freq-pill" style="background:var(--mauve)22;color:var(--mauve);" title="Récurrence conjointe">👥</span>` : ''));
@@ -3875,7 +3879,7 @@ function rendreMenuCalendrier(scope){
     <div class="cal-menu-section-title">Afficher</div>
     <label class="cal-menu-check">
       <input type="checkbox" data-filtre-revenu ${filtres.masquerRevenus?'':'checked'}>
-      💰 Revenus
+      Revenus
     </label>
     ${catsPresentes.map(c=>`
       <label class="cal-menu-check">
@@ -4013,7 +4017,7 @@ function rendreCarteDepenseHTML(e, scope){
     pourcentageAffiche = `<span class="cal-agenda-pct">${pct}%</span>`;
   }
   const dateCourte = dateLocaleDepuisISO(e.date).toLocaleDateString('fr-CA',{day:'numeric', month:'short'});
-  const categorieAffichee = e.estRevenu ? '💰 Revenu' : e.category;
+  const categorieAffichee = e.estRevenu ? 'Revenu' : e.category;
   const couleurCategorie = e.estRevenu ? 'var(--green)' : (COULEURS_CATEGORIES[e.category]||'#9aa0a6');
 
   return `
@@ -5667,7 +5671,7 @@ function afficherSectionBudget(scope){
             <div class="recurrent-info">
               <div class="recurrent-nom">${e.note ? echapperHTML(e.note) : 'Revenu'}</div>
               <div class="recurrent-meta">
-                <span class="freq-pill badge-revenu">💰</span>
+                <span class="freq-pill badge-revenu">Revenu</span>
                 <span class="freq-pill">${dateFmt}</span>
                 ${e.recurrenceId ? '<span class="recurring-icon" title="Revenu récurrent">↻</span>' : ''}
               </div>
@@ -5714,7 +5718,7 @@ function afficherSectionBudget(scope){
   const parenthese = (val) => conjointInfo ? `<div style="font-size:11px;margin-top:4px;color:var(--text-secondary);">(conjoint : ${val})</div>` : '';
 
   const carteRevenu = revenuMois > 0.005 ? `
-    <div class="stat-card"><div class="label">💰 Revenu<span class="mobile-line"> cette période</span></div><div class="value" style="color:var(--green)">+${formaterMonnaie(revenuMois)}</div></div>
+    <div class="stat-card"><div class="label">Revenu<span class="mobile-line"> cette période</span></div><div class="value" style="color:var(--green)">+${formaterMonnaie(revenuMois)}</div></div>
   ` : '';
 
   document.getElementById(`stats-${scope}`).innerHTML = `
