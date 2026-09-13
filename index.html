@@ -312,8 +312,7 @@
   .cal-dot-mini{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
   .cal-dot-mini.cal-p1{background:var(--blue);}
   .cal-dot-mini.cal-p2{background:var(--red);}
-  .cal-dot-mini.cal-compte{background:#c9a227;}
-  .cal-dot-mini.cal-revenu{background:var(--green);}
+  .cal-dot-mini.cal-compte{background:var(--green);}
   .cal-month-count{font-size:9px;color:var(--text-secondary);font-weight:700;line-height:1;margin-left:1px;}
 
   .cal-agenda-day{margin-bottom:14px;padding:0 14px;}
@@ -338,8 +337,7 @@
   /* Couleurs des pastilles/items par type, cohérentes avec le reste de l'app */
   .cal-pill.cal-p1,.cal-agenda-item.cal-p1{background:color-mix(in srgb, var(--blue-dark) 16%, transparent);}
   .cal-pill.cal-p2,.cal-agenda-item.cal-p2{background:color-mix(in srgb, var(--red) 16%, transparent);}
-  .cal-pill.cal-compte,.cal-agenda-item.cal-compte{background:color-mix(in srgb, #c9a227 20%, transparent);}
-  .cal-pill.cal-revenu,.cal-agenda-item.cal-revenu{background:color-mix(in srgb, var(--green) 18%, transparent);}
+  .cal-pill.cal-compte,.cal-agenda-item.cal-compte{background:color-mix(in srgb, var(--green) 18%, transparent);}
 
   /* Cartes / Grille */
   .grid-2{
@@ -687,6 +685,10 @@
     overflow:hidden;
     position:relative;
   }
+  /* Le détail d'un dépôt (et tout contenu injecté via un conteneur intermédiaire) ne doit
+     pas casser la mise en page flex de .edit-card sur mobile : sans ça, .modal-body perd
+     son "flex:1;overflow-y:auto" et la fenêtre ne défile plus une fois le contenu long. */
+  #depot-modal-content{display:contents;}
   /* En-tête commun à toutes les fenêtres */
   .modal-header{
     display:flex;align-items:center;gap:10px;
@@ -762,18 +764,8 @@
   }
   #table-personnel.hide-qui-column th:first-child,
   #table-personnel.hide-qui-column td:first-child{display:none;}
-  #tab-conjoint .card,
-  #tab-conjoint .stat-card{background:color-mix(in srgb, var(--mauve) 5%, var(--surface));}
-  .row-conjoint-share{background:color-mix(in srgb, var(--mauve) 8%, transparent);}
-  body.dark .row-conjoint-share{background:color-mix(in srgb, var(--mauve) 16%, transparent);}
-  .row-compte-item{background:color-mix(in srgb, var(--yellow) 16%, transparent);}
-  body.dark .row-compte-item{background:color-mix(in srgb, var(--yellow) 22%, transparent);}
-  .row-revenu-item{background:color-mix(in srgb, var(--green) 10%, transparent);}
-  body.dark .row-revenu-item{background:color-mix(in srgb, var(--green) 18%, transparent);}
-  .badge-compte{background:color-mix(in srgb, var(--yellow) 25%, transparent);color:#8a6d00;}
-  body.dark .badge-compte{background:color-mix(in srgb, var(--yellow) 30%, transparent);color:#f4d35e;}
-  .badge-revenu{background:color-mix(in srgb, var(--green) 18%, transparent);color:var(--green);}
-  body.dark .badge-revenu{color:#81c995;}
+  .row-conjoint-share,.row-compte-item,.row-revenu-item{background:#f8f9fa;}
+  body.dark .row-conjoint-share,body.dark .row-compte-item,body.dark .row-revenu-item{background:#2b3035;}
   @media (max-width:760px){
     .table-card>div[style]{overflow:visible!important;}
     .table-card table,.table-card tbody,.table-card tr,.table-card td{display:block;width:100%;}
@@ -807,11 +799,14 @@
   .depot-ligne-nom{font-size:14px;font-weight:500;}
   .depot-ligne-montants{display:flex;gap:16px;flex:0 0 auto;}
   .depot-ligne-montants .value{min-width:76px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;}
+<<<<<<< HEAD
+=======
   /* Mêmes couleurs que les cartes de stats, pour qu'une colonne se reconnaisse d'un coup d'œil. */
   .depot-ligne-montants .value.p1{color:var(--blue-dark);}
   .depot-ligne-montants .value.p2{color:var(--red);}
   .depot-entete-montants span.p1{color:var(--blue-dark);}
   .depot-entete-montants span.p2{color:var(--red);}
+>>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
   .depot-ligne .cat-pill{margin-top:6px;}
   .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.45;}
   .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;
@@ -1517,10 +1512,6 @@
       <div class="field toggle-field pleine-largeur" id="edit-rec-est-revenu-field">
         <span class="toggle-field-label" id="edit-rec-est-revenu-label">💰 Est un revenu</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
-      </div>
-      <div class="field toggle-field pleine-largeur">
-        <span class="toggle-field-label">Série active</span>
-        <label class="switch"><input type="checkbox" id="edit-rec-actif"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur">
         <button type="button" class="btn-secondary" id="edit-rec-toggle-type" style="width:100%;" disabled></button>
@@ -2769,7 +2760,11 @@ function ouvrirDetailDepot(iso){
   const sommeP2 = lignes.reduce((s,l)=>s+l.p2, 0);
   const ecart = Math.abs(sommeP1 - paie.p1) + Math.abs(sommeP2 - paie.p2);
   const controle = ecart < 0.005
+<<<<<<< HEAD
+    ? ''
+=======
     ? `<div class="depot-ligne-explication" style="margin-top:10px;">✓ La somme des lignes correspond exactement au montant affiché dans l'échéancier.</div>`
+>>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
     : `<div class="depot-ligne-explication" style="margin-top:10px;color:var(--red);">⚠ Écart de ${formaterMonnaie(ecart)} entre le détail et le montant affiché.</div>`;
 
   document.getElementById('depot-modal-content').innerHTML = `
@@ -2819,7 +2814,18 @@ function afficherEcheancierCompteConjoint(){
   }
   carte.style.display = '';
 
+<<<<<<< HEAD
+  /* Le nombre de paies à calculer doit couvrir toute la période affichée : 8 paies (~4 mois)
+     suffisent pour Jour/Semaine/Paie/Mois, mais "Année" doit pouvoir couvrir toute l'année
+     sélectionnée, sinon l'échéancier s'arrête en cours d'année au lieu de continuer. */
+  const { fin: finPeriodeAffichee } = etatCalendrierPeriode.vue === 'paie'
+    ? { fin: debutJour(new Date()) }
+    : bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+  const nbPaiesNecessaires = Math.max(8, Math.ceil(joursEntreDates(debutJour(new Date()), finPeriodeAffichee)/14) + 2);
+  const echeancierComplet = calculerEcheancierCompte(nbPaiesNecessaires);
+=======
   const echeancierComplet = calculerEcheancierCompte(8);
+>>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
   /* Conservé pour la fenêtre de détail : elle réutilise exactement le calcul affiché plutôt
      que de le refaire, sinon les deux pourraient diverger sans qu'on s'en aperçoive. */
   dernierEcheancier = echeancierComplet || [];
@@ -2831,8 +2837,8 @@ function afficherEcheancierCompteConjoint(){
   /* Le contenu de l'échéancier suit le type de période choisi (Jour/Semaine/Paie/Mois/
      Année, partagé avec Transactions et Résumé) : "Paie" ne montre que le tout prochain
      dépôt, les autres périodes montrent les paies tombant dans la période choisie —
-     "Année" affiche par défaut le mois en cours avec un "voir plus" vers les 7 prochaines
-     paies plutôt que les 365 jours de l'année. */
+     "Année" affiche par défaut le mois en cours avec un "voir plus" vers le reste des
+     paies de l'année sélectionnée. */
   let echeancier;
   let afficherVoirPlus = false;
   let afficherVoirMoins = false;
@@ -2846,7 +2852,9 @@ function afficherEcheancierCompteConjoint(){
       echeancier = echeancierComplet.filter(l => l.iso >= debutMoisStr && l.iso <= finMoisStr);
       afficherVoirPlus = echeancier.length < echeancierComplet.length;
     } else {
-      echeancier = echeancierComplet.slice(0, 7);
+      const { debut, fin } = bornePeriode('annee', etatCalendrierPeriode.dateRef);
+      const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
+      echeancier = echeancierComplet.filter(l => l.iso >= debutStr && l.iso <= finStr);
       afficherVoirMoins = true;
     }
   } else {
@@ -2878,7 +2886,7 @@ function afficherEcheancierCompteConjoint(){
       </div>
     </div>
   `).join('') + (afficherVoirPlus ? `
-    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir plus (7 prochaines paies)</div>
+    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir plus (le reste de l'année)</div>
   ` : (afficherVoirMoins ? `
     <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-moins">Voir moins</div>
   ` : ''));
@@ -2979,6 +2987,13 @@ function activerChamp(fieldId, actif, controlId){
 function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
   const select = document.getElementById(selectId);
   const val = select.value;
+<<<<<<< HEAD
+  /* On MASQUE le champ qui ne s'applique pas, partout de la même façon. La fenêtre
+     d'édition se contentait de le griser, si bien qu'en choisissant « À une date précise »
+     le champ « Nombre » restait affiché à côté, vide et sans objet. */
+  document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
+  document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
+=======
   const dansModal = nombreFieldId.startsWith('edit-rec-');
   if(dansModal){
     activerChamp(nombreFieldId, val==='nombre');
@@ -2987,6 +3002,7 @@ function appliquerAffichageFinRecurrence(selectId, nombreFieldId, dateFieldId){
     document.getElementById(nombreFieldId).style.display = val==='nombre' ? '' : 'none';
     document.getElementById(dateFieldId).style.display = val==='date' ? '' : 'none';
   }
+>>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
   /* « Après un nombre de paiements » est trop long pour une demi-largeur : on lui donne
      trois quarts de la rangée et le quart restant au nombre, qui n'a besoin que de deux ou
      trois chiffres. Avec « À une date précise », les deux champs reprennent leur moitié. */
@@ -3632,7 +3648,6 @@ function libellePeriodeCalendrier(vue, debut, fin){
   return `${formatCourtDate(debut)} – ${formatCourtDate(fin)} ${fin.getFullYear()}`;
 }
 function classeTypeDepense(e){
-  if(e.estRevenu) return 'cal-revenu';
   if(e.estCompte) return 'cal-compte';
   if(e.who==='p2') return 'cal-p2';
   return 'cal-p1';
@@ -3691,8 +3706,15 @@ function afficherCalendrierRecurrent(scope){
    bascule grille/liste (📅) centrée — visible uniquement en vue "Mois" — et le contrôle de
    tri (Date/Montant) à droite. Toujours sur la même ligne, pour rester compact et uniforme.
 
+<<<<<<< HEAD
+   Le tri n'est PAS produit quand la grille de calendrier est active : les dépenses y sont
+   placées dans les cases des jours, l'ordre de tri n'a alors aucun effet visible. On retire
+   le bloc du HTML plutôt que de le masquer, parce que `.cal-toolbar .mobile-sort` porte un
+   `display:flex!important` qui l'emporterait sur un style en ligne. */
+=======
    Le tri ne s'affiche PAS quand la grille de calendrier est active : les dépenses y sont
    placées dans les cases des jours, l'ordre de tri n'a alors aucun effet visible. */
+>>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
 function rendreBarreOutilsHTML(scope, tri){
   const vue = etatCalendrierPeriode.vue;
   const triUtile = !(vue === 'mois' && afficherGrilleMois);
@@ -3700,12 +3722,16 @@ function rendreBarreOutilsHTML(scope, tri){
     <div class="cal-toolbar">
       <button type="button" class="cal-hamburger-btn" id="cal-filtre-btn-${scope}" aria-label="Filtres d'affichage">${ICONE_FILTRE_SVG}</button>
       ${vue==='mois' ? `<button type="button" class="cal-hamburger-btn cal-toolbar-centre" id="cal-grille-toggle-${scope}" aria-label="Basculer vue calendrier">📅</button>` : ''}
+<<<<<<< HEAD
+      ${triUtile ? `<div class="mobile-sort" id="cal-toolbar-tri-${scope}">
+=======
       <div class="mobile-sort" id="cal-toolbar-tri-${scope}"${triUtile ? '' : ' style="display:none;"'}>
+>>>>>>> ccd6bb9bc0901aff1a3456384e3e14eb6d487077
         <select id="agenda-tri-${scope}" aria-label="Trier les dépenses">
           <option value="Date">Date</option><option value="Montant">Montant</option>
         </select>
         <button type="button" class="sort-direction" id="agenda-tri-dir-${scope}" aria-label="${tri.dir==='asc'?'Tri croissant':'Tri décroissant'}">${tri.dir==='asc'?'↑':'↓'}</button>
-      </div>
+      </div>` : ''}
     </div>`;
 }
 function wirerBarreOutils(scope){
@@ -4044,7 +4070,6 @@ function ouvrirEditionRecurrence(id){
   document.getElementById('edit-rec-fin-type').value = rec.finType || 'jamais';
   document.getElementById('edit-rec-fin-nombre').value = rec.finNombre || '';
   document.getElementById('edit-rec-fin-date').value = rec.finDate || '';
-  document.getElementById('edit-rec-actif').checked = rec.actif;
   appliquerAffichageFinRecurrence('edit-rec-fin-type','edit-rec-fin-nombre-field','edit-rec-fin-date-field');
 
   const quiField = document.getElementById('edit-rec-qui-field');
@@ -4113,7 +4138,9 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   const finType = document.getElementById('edit-rec-fin-type').value;
   const finNombreFormulaire = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
   const finDateFormulaire = finType==='date' ? (document.getElementById('edit-rec-fin-date').value || null) : null;
-  const actif = document.getElementById('edit-rec-actif').checked;
+  /* L'état actif/inactif se règle depuis la liste des récurrences ; la sauvegarde le
+     conserve tel quel plutôt que de le réinitialiser. */
+  const actif = recurrenceEnEdition.actif;
 
   if(finType==='nombre' && !finNombreFormulaire){ alert("Merci d'entrer un nombre de paiements valide."); return; }
   if(finType==='date' && !finDateFormulaire){ alert("Merci d'entrer une date de fin."); return; }
