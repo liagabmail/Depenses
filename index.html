@@ -1169,7 +1169,7 @@
       </div>
       <div class="card" id="plan-depot-card">
         <div class="table-head-row">
-          <h3>Montant fixe par paie</h3>
+          <h3>Moyenne par paie</h3>
         </div>
         <div id="plan-depot-contenu"></div>
       </div>
@@ -2799,211 +2799,57 @@ function calculerEcheancierCompte(nbPaies){
   nbPaies = nbPaies || NB_PAIES_ECHEANCIER;
   if(!paieAncrage) return null;
   const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
-  const aujourdhui = debutJour(new Date());
   const paies = prochainesPaies(ancrage, nbPaies);
   if(!paies.length) return null;
-  const derniere = paies[paies.length-1];
-  const totaux = {};
-  /* Trace de vérification : pour chaque paie, la liste des contributions qui composent le
-     montant affiché. Purement descriptif — aucune de ces lignes n'influence le calcul, elles
-     sont seulement enregistrées au passage pour pouvoir expliquer le résultat (voir
-     ouvrirDetailDepot). La somme des lignes d'une paie doit toujours redonner exactement le
-     montant affiché pour cette paie : c'est ce qui permet de valider les calculs. */
-  const lignes = {};
-  paies.forEach(p => {
+
+  const moyennes = { p1: montantParPaie('p1'), p2: montantParPaie('p2') };
+  if(!moyennes.p1 || !moyennes.p2) return null;
+
+  /* Le montant est le même à chaque paie : c'est tout l'intérêt de la moyenne. Seule la
+     première ligne bouge, parce qu'elle absorbe l'écart entre ce qui était dû jusqu'ici et
+     ce qui a réellement été déposé. Si le calcul demandait 200 $ et que 200 $ ont été
+     déposés, il reste 0 $ à mettre ; s'il en manquait 20, la ligne affiche 220 $. */
+  return paies.map((p, index)=>{
     const iso = formaterDateISO(p);
-    totaux[iso] = {p1:0, p2:0};
-    lignes[iso] = [];
-  });
-  const premierePaieIso = formaterDateISO(paies[0]);
-
-  function pct(pourcentageP1){ return (pourcentageP1 != null ? pourcentageP1 : 50) / 100; }
-
-  /* Applique une contribution à une paie ET l'enregistre dans la trace.
-     `signe` vaut +1 pour une dépense à provisionner, -1 pour un revenu qui réduit le dépôt. */
-  function contribuer(iso, signe, montant, p1Pct, info){
-    if(!totaux[iso]) return;
-    const partP1 = signe*montant*p1Pct;
-    const partP2 = signe*montant*(1-p1Pct);
-    totaux[iso].p1 += partP1;
-    totaux[iso].p2 += partP2;
-    lignes[iso].push({
-      libelle: info.libelle,
-      categorie: info.categorie,
-      explication: info.explication,
-      nature: info.nature,        /* 'depense' | 'revenu' | 'ajustement' */
-      rattrapage: !!info.rattrapage,
-      pourcentageP1: Math.round(p1Pct*1000)/10,
-      p1: partP1,
-      p2: partP2
+    const valeurs = {}, retards = {}, ajustements = {};
+    ['p1','p2'].forEach(personne=>{
+      const moyenne = moyennes[personne].montant;
+      /* Seule la première paie tient compte des dépôts déjà faits : les suivantes affichent
+         la part moyenne, puisqu'on ne sait pas encore ce qui aura été versé d'ici là. */
+      const brut = index === 0 ? resteADeposer(personne, moyenne, paies[0]) : moyenne;
+      retards[personne] = brut - moyenne;
+      /* On ne demande jamais un dépôt négatif : si l'avance dépasse la part de cette paie,
+         la ligne tombe à 0 $ et l'avance restante sera reprise à la paie suivante par le
+         même calcul de retard. */
+      valeurs[personne] = Math.max(0, brut);
+      ajustements[personne] = valeurs[personne] - brut;
     });
-  }
 
-  function reporterSurPremierePaie(signe, montant, p1Pct, info){
-    contribuer(premierePaieIso, signe, montant, p1Pct, Object.assign({}, info, { rattrapage:true }));
-  }
-
-  /* DÉPENSE : étalée entre `previousDate` (ou aujourd'hui si null) et `dueDate`. */
-  function ajouterDepense(dueDate, montant, pourcentageP1, previousDate, inclusifFin, info){
-    const p1Pct = pct(pourcentageP1);
-    const debut = previousDate || aujourdhui;
-    const finBorne = inclusifFin ? dueDate : ajouterJours(dueDate, -1);
-    const echeance = formaterDateISO(dueDate);
-    if(finBorne < debut){
-      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature:'depense',
-        explication:`Échéance du ${echeance} déjà dépassée : le montant complet de ${formaterMonnaie(montant)} est rattrapé sur cette paie.` }));
-      return;
-    }
-    const slots = paiesDansIntervalle(ancrage, debut, finBorne);
-    if(!slots.length){
-      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature:'depense',
-        explication:`Aucune paie ne tombe avant l'échéance du ${echeance} : les ${formaterMonnaie(montant)} sont mis en entier sur cette paie.` }));
-      return;
-    }
-    const part = montant / slots.length;
-    const base = `${formaterMonnaie(montant)} à provisionner d'ici le ${echeance}, réparti sur ${slots.length} paie${slots.length>1?'s':''} = ${formaterMonnaie(part)} par paie.`;
-    slots.forEach(s=>{
-      const sIso = formaterDateISO(s);
-      if(s < aujourdhui){
-        /* paie déjà passée : report automatique */
-        reporterSurPremierePaie(1, part, p1Pct, Object.assign({}, info, { nature:'depense',
-          explication:`${base} La part du ${sIso} est déjà passée, elle est rattrapée ici.` }));
-      } else if(totaux[sIso]){
-        contribuer(sIso, 1, part, p1Pct, Object.assign({}, info, { nature:'depense', explication: base }));
-      }
-      /* sinon : paie à venir mais au-delà de l'horizon affiché -> ignorée pour l'instant. */
-    });
-  }
-
-  /* REVENU : jamais étalé. Montant plein sur la première paie sur/après `dateArrivee`. */
-  function ajouterRevenu(dateArrivee, montant, pourcentageP1, info){
-    const p1Pct = pct(pourcentageP1);
-    const cible = premierePaieDepuis(ancrage, dateArrivee);
-    const arrivee = formaterDateISO(dateArrivee);
-    if(cible < aujourdhui){
-      /* paie visée déjà passée : report automatique */
-      reporterSurPremierePaie(-1, montant, p1Pct, Object.assign({}, info, { nature:'revenu',
-        explication:`Revenu du ${arrivee} dont la paie visée est déjà passée : il est déduit ici à la place.` }));
-      return;
-    }
-    const cIso = formaterDateISO(cible);
-    if(totaux[cIso]){
-      contribuer(cIso, -1, montant, p1Pct, Object.assign({}, info, { nature:'revenu',
-        explication:`Revenu de ${formaterMonnaie(montant)} arrivant le ${arrivee} : jamais étalé, il est déduit en entier de la première paie qui suit.` }));
-    }
-    /* sinon : paie visée au-delà de l'horizon affiché -> ignorée pour l'instant. */
-  }
-
-  /* 1) Dépenses/revenus "compte" ponctuels (sans récurrence) */
-  depenses.filter(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId).forEach(e=>{
-    const due = debutJour(dateLocaleDepuisISO(e.date));
-    const info = { libelle: e.note || e.category, categorie: e.category, source:'ponctuelle' };
-    if(e.estRevenu) ajouterRevenu(due, e.amount, e.pourcentageP1, info);
-    else ajouterDepense(due, e.amount, e.pourcentageP1, null, true, info);
-  });
-
-  /* 2) Récurrences "compte" actives */
-  recurrences.filter(r=>r.type==='conjointe' && r.estCompte && r.actif).forEach(rec=>{
-    const libelle = rec.nom || rec.categorie;
-    const categorie = rec.categorie;
-    if(rec.estRevenu){
-      /* Chaque occurrence est indépendante (pas de fenêtre à fermer) : seules celles dont
-         la première paie visée n'est pas encore passée sont encore pertinentes. Les
-         occurrences plus anciennes sont considérées déjà réglées, pour ne jamais ré-empiler
-         de l'historique sur la prochaine paie. */
-      const occs = genererOccurrences(rec, derniere);
-      occs.forEach(occDate=>{
-        const due = debutJour(occDate);
-        const cible = premierePaieDepuis(ancrage, due);
-        if(cible < aujourdhui) return; /* déjà réglé dans le passé, on n'y retouche plus */
-        ajouterRevenu(due, rec.montant, rec.pourcentageP1, { libelle, categorie, source:'recurrence' });
+    /* Trace de vérification : la somme de ces lignes doit redonner exactement le montant
+       affiché. Elles sont purement descriptives, aucune n'entre dans le calcul. */
+    const lignes = [{
+      libelle: 'Part moyenne par paie', nature: 'provision',
+      explication: `Total des dépenses du compte moins les revenus, sur ${moyennes.p1.nbPaies} paies (5 ans glissants).`,
+      p1: moyennes.p1.montant, p2: moyennes.p2.montant
+    }];
+    if(Math.abs(retards.p1) > 0.005 || Math.abs(retards.p2) > 0.005){
+      const enRetard = retards.p1 > 0 || retards.p2 > 0;
+      lignes.push({
+        libelle: enRetard ? 'Retard reporté' : 'Avance déjà déposée', nature: enRetard ? 'ajustement' : 'revenu',
+        explication: enRetard
+          ? "Écart entre ce qui était dû depuis la date de référence et ce qui a été déposé : il s'ajoute à ce versement."
+          : "Des dépôts dépassent ce qui était dû jusqu'ici : l'avance vient en déduction de ce versement.",
+        p1: retards.p1, p2: retards.p2
       });
-    } else {
-      /* Dépense récurrente : pour obtenir un montant STABLE d'une paie à l'autre (plutôt que
-         des à-coups selon qu'un mois contienne 2 ou 3 paies), on ne répartit plus occurrence
-         par occurrence. On calcule plutôt le montant total qui reste à payer sur toute la
-         durée restante de la récurrence, et le nombre réel de paies qui tombent dans cette
-         même période, puis on divise l'un par l'autre : chaque paie reçoit exactement la
-         même part jusqu'à la fin de la récurrence.
-         Ex: 5 paiements de 200$ à venir, et 12 paies tombent d'ici le dernier paiement
-         => chaque paie reçoit 200$*5/12, tout du long. */
-      if(rec.finType === 'jamais'){
-        /* Récurrence sans fin connue : pas de "durée restante" à calculer, donc on garde une
-           moyenne annuelle stable (identique à chaque paie, indéfiniment). */
-        const totalAnnuel = rec.montant * multiplicateurAnnuel(rec);
-        const partParPaie = totalAnnuel / PAIES_PAR_ANNEE;
-        const p1Pct = pct(rec.pourcentageP1);
-        const occAn = Math.round(occurrencesParAnnee(rec)*100)/100;
-        const explication = `Récurrence sans date de fin : ${formaterMonnaie(rec.montant)} × ${occAn} occurrence${occAn>1?'s':''} par an = ${formaterMonnaie(totalAnnuel)}, lissé sur les ${PAIES_PAR_ANNEE} paies de l'année = ${formaterMonnaie(partParPaie)} par paie.`;
-        paies.forEach(p=>{
-          contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
-        });
-      } else {
-        const occs = genererOccurrences(rec, horizonMaximal());
-        const occsRestantes = occs.filter(d => debutJour(d) >= aujourdhui);
-        if(!occsRestantes.length) return; /* récurrence entièrement terminée */
-        const finRecurrence = debutJour(occsRestantes[occsRestantes.length-1]);
-        const montantTotalRestant = rec.montant * occsRestantes.length;
-        const paiesRestantes = paiesDansIntervalle(ancrage, aujourdhui, finRecurrence);
-        const nPaies = paiesRestantes.length || 1;
-        const partParPaie = montantTotalRestant / nPaies;
-        const p1Pct = pct(rec.pourcentageP1);
-        const explication = `${occsRestantes.length} paiement${occsRestantes.length>1?'s':''} de ${formaterMonnaie(rec.montant)} restant${occsRestantes.length>1?'s':''} d'ici le ${formaterDateISO(finRecurrence)} = ${formaterMonnaie(montantTotalRestant)}, réparti sur les ${nPaies} paie${nPaies>1?'s':''} de cette période = ${formaterMonnaie(partParPaie)} par paie.`;
-        paies.forEach(p=>{
-          if(p >= aujourdhui && p <= finRecurrence){
-            contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
-          }
-        });
-      }
     }
-  });
-
-  /* Report du surplus : un montant "dû" négatif à une paie (revenu plus gros que ce qui
-     était attendu) ne peut pas se traduire par un dépôt négatif — on affiche 0$ et le
-     surplus réduit d'autant le montant dû à la PROCHAINE paie, en chaîne si besoin.
-     Appliqué séparément pour Gabriel et Mélissa, dans l'ordre chronologique.
-
-     On note au passage les deux mouvements (surplus reçu / surplus renvoyé plus loin) pour
-     que la somme des lignes de la fenêtre de détail redonne exactement le montant affiché,
-     même quand un report entre en jeu. */
-  const surplusRecu = {}, surplusRenvoye = {};
-  paies.forEach(p=>{ const iso = formaterDateISO(p); surplusRecu[iso] = {p1:0,p2:0}; surplusRenvoye[iso] = {p1:0,p2:0}; });
-
-  ['p1','p2'].forEach(personne=>{
-    let report = 0;
-    paies.forEach(p=>{
-      const iso = formaterDateISO(p);
-      if(report < 0) surplusRecu[iso][personne] = report;
-      const brut = totaux[iso][personne] + report;
-      if(brut < 0){
-        report = brut; /* surplus à reporter sur la paie suivante */
-        surplusRenvoye[iso][personne] = -brut;
-        totaux[iso][personne] = 0;
-      } else {
-        report = 0;
-        totaux[iso][personne] = brut;
-      }
-    });
-  });
-
-  paies.forEach(p=>{
-    const iso = formaterDateISO(p);
-    const recu = surplusRecu[iso], renvoye = surplusRenvoye[iso];
-    if(recu.p1 || recu.p2){
-      lignes[iso].push({ libelle:'Surplus de la paie précédente', nature:'ajustement',
-        explication:"Un revenu a dépassé ce qui était dû à la paie précédente : le surplus vient réduire le dépôt de cette paie-ci.",
-        p1: recu.p1, p2: recu.p2 });
+    if(Math.abs(ajustements.p1) > 0.005 || Math.abs(ajustements.p2) > 0.005){
+      lignes.push({
+        libelle: 'Ramené à zéro', nature: 'ajustement',
+        explication: "L'avance dépasse la part de cette paie : le versement est ramené à 0 $ et le reste de l'avance sera repris à la paie suivante.",
+        p1: ajustements.p1, p2: ajustements.p2
+      });
     }
-    if(renvoye.p1 || renvoye.p2){
-      lignes[iso].push({ libelle:'Surplus reporté sur la paie suivante', nature:'ajustement',
-        explication:"Le solde de cette paie serait négatif : on ne demande pas un dépôt négatif, donc le dépôt est ramené à 0 $ et le surplus est repoussé sur la paie suivante.",
-        p1: renvoye.p1, p2: renvoye.p2 });
-    }
-  });
-
-  return paies.map(p=>{
-    const iso = formaterDateISO(p);
-    return { date:p, iso, p1: totaux[iso].p1, p2: totaux[iso].p2, lignes: lignes[iso] };
+    return { date:p, iso, p1: valeurs.p1, p2: valeurs.p2, lignes };
   });
 }
 
@@ -3043,45 +2889,26 @@ function partDe(personne, e){
   return e.amount * (personne === 'p1' ? p1Pct : 1 - p1Pct);
 }
 
-/* Part de chaque personne dans les dépenses FUTURES du compte, sur l'horizon du plan.
-   C'est cette proportion qui répartit entre les deux le solde de base et le solde minimum :
-   le compte est un seul pot, mais certaines dépenses coûtent plus cher à l'un qu'à l'autre,
-   donc chacun n'a pas à en maintenir la même moitié. À défaut de dépense future, on retombe
-   sur moitié-moitié, faute de mieux. */
-function ratioChargeFuture(){
-  const f1 = mouvementsFutursCompte('p1').mouvements.reduce((s,m)=> s + (m.estRevenu?0:-m.montant), 0);
-  const f2 = mouvementsFutursCompte('p2').mouvements.reduce((s,m)=> s + (m.estRevenu?0:-m.montant), 0);
-  const total = f1 + f2;
-  if(!(total > 0.005)) return { p1:0.5, p2:0.5 };
-  return { p1:f1/total, p2:f2/total };
-}
-
-/* Solde du compte AUJOURD'HUI, et sa ventilation entre les deux personnes.
-   Le pot :  solde de base + tous les dépôts + revenus entrés − dépenses sorties.
-   Par personne : sa part du solde de base + SES dépôts − sa part des dépenses nettes.
-   La somme des deux redonne exactement le pot, donc la ligne de contrôle reste valable.
-   Seuls les mouvements datés d'aujourd'hui ou avant comptent : c'est un solde observé, pas
-   une prévision. */
+/* Solde du compte AUJOURD'HUI : solde de base + tous les dépôts + revenus entrés − dépenses
+   sorties. Seuls les mouvements datés d'aujourd'hui ou avant comptent — c'est un solde
+   observé, pas une prévision. Il appartient à parts égales aux deux. */
 function soldeCompteParPersonne(){
   const aujourdhui = formaterDateISO(debutJour(new Date()));
   const depuis = compteReglages.depuis;
   /* `depuis` borne l'historique : tout ce qui précède est déjà résumé dans le solde de base,
      le recompter le ferait entrer deux fois. */
   const dansLaFenetre = (d) => d <= aujourdhui && (!depuis || d >= depuis);
-  const ratio = ratioChargeFuture();
-  const res = {};
-  ['p1','p2'].forEach(personne=>{
-    let solde = (compteReglages.soldeBase || 0) * ratio[personne];
-    depots.forEach(d=>{ if(d.personne===personne && dansLaFenetre(d.date)) solde += d.montant; });
-    depenses.forEach(e=>{
-      if(e.type!=='conjointe' || !e.estCompte || !dansLaFenetre(e.date)) return;
-      solde += e.estRevenu ? partDe(personne, e) : -partDe(personne, e);
-    });
-    res[personne] = solde;
+  let total = compteReglages.soldeBase || 0;
+  depots.forEach(d=>{ if(dansLaFenetre(d.date)) total += d.montant; });
+  depenses.forEach(e=>{
+    if(e.type!=='conjointe' || !e.estCompte || !dansLaFenetre(e.date)) return;
+    total += e.estRevenu ? e.amount : -e.amount;
   });
-  res.total = res.p1 + res.p2;
-  res.ratio = ratio;
-  return res;
+  /* L'argent déposé dans le compte est commun : si l'un met 100 $ et l'autre 50 $, chacun en
+     a 75 $. La différence entre ce que chacun DOIT déposer vient uniquement du fait que
+     certaines dépenses ne sont pas partagées moitié-moitié — pas d'une propriété différente
+     de l'argent déjà déposé. */
+  return { p1: total/2, p2: total/2, total };
 }
 
 function montantColore(v){
@@ -3110,7 +2937,7 @@ function rendreSoldeCompte(){
       <span class="depot-ligne-nom" style="font-weight:400;color:var(--text-secondary);font-size:13px;">Marge de manœuvre</span>
       <span class="depot-ligne-montants">${montantColore(s.total - (compteReglages.soldeMinimum || 0))}</span>
     </div>
-    <p class="note-aide" style="margin-top:10px;">Le total devrait correspondre à ton relevé bancaire. La répartition entre vous deux suit vos parts des dépenses à venir : elle dit qui a pris de l'avance, pas à qui appartient l'argent.</p>`;
+    <p class="note-aide" style="margin-top:10px;">Le total devrait correspondre à ton relevé bancaire. L'argent déposé est commun : chacun en possède la moitié, peu importe qui l'a versé.</p>`;
 }
 
 function rendreListeDepots(){
@@ -3304,18 +3131,18 @@ function montantParPaie(personne){
    Si le montant est de 200 $ et que 180 $ ont été déposés, les 20 $ manquants s'ajoutent au
    prochain versement : 220 $. C'est ce report qui rend le montant fixe tenable sans tout
    recalculer. */
-function retardDepots(personne, montant){
-  if(!compteReglages.depuis || !paieAncrage) return 0;
-  const aujourdhui = debutJour(new Date());
+function resteADeposer(personne, montant, premierePaie){
+  if(!compteReglages.depuis || !paieAncrage) return montant;
   const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
   const debut = debutJour(dateLocaleDepuisISO(compteReglages.depuis));
-  const paiesEcoulees = paiesDansIntervalle(ancrage, debut, aujourdhui).length;
-  const isoDebut = compteReglages.depuis;
-  const isoAujourdhui = formaterDateISO(aujourdhui);
+  /* La paie à venir est COMPRISE dans le dû : c'est elle qu'on est en train de préparer.
+     Sans ça, déposer pile le montant demandé laisserait quand même le montant affiché, et le
+     versement n'aurait aucun effet visible. */
+  const nbDus = paiesDansIntervalle(ancrage, debut, premierePaie).length;
   const verse = depots
-    .filter(d=> d.personne===personne && d.date >= isoDebut && d.date <= isoAujourdhui)
+    .filter(d=> d.personne===personne && d.date >= compteReglages.depuis)
     .reduce((t,d)=> t + d.montant, 0);
-  return paiesEcoulees * montant - verse;
+  return nbDus * montant - verse;
 }
 
 /* Simulation du compte, paie après paie, avec les montants calculés. Renvoie le creux le plus
@@ -3355,20 +3182,12 @@ function rendrePlanDepot(){
 
   const lignes = ['p1','p2'].map(personne=>{
     const c = calcs[personne];
-    const retard = retardDepots(personne, c.montant);
-    const aDeposer = c.montant + Math.max(0, retard);
-    const note = retard > 0.005
-      ? `<div class="depot-ligne-explication" style="color:var(--red);">Dont ${formaterMonnaie(retard)} de retard reporté.</div>`
-      : (retard < -0.005
-        ? `<div class="depot-ligne-explication" style="color:var(--green);">${formaterMonnaie(-retard)} déposés en avance.</div>`
-        : '');
     return `<div class="depot-ligne">
       <div class="depot-ligne-haut">
         <span class="depot-ligne-nom">${echapperHTML(nomsPersonnes[personne])}</span>
-        <span class="depot-ligne-montants"><span class="value">${formaterMonnaie(aDeposer)}</span></span>
+        <span class="depot-ligne-montants"><span class="value">${formaterMonnaie(c.montant)}</span></span>
       </div>
-      ${note}
-      <div class="depot-ligne-explication">Part de base ${formaterMonnaie(c.montant)} — ${formaterMonnaie(c.depenses5ans)} de dépenses moins ${formaterMonnaie(c.revenus5ans)} de revenus, étalés sur ${c.nbPaies} paies.</div>
+      <div class="depot-ligne-explication">${formaterMonnaie(c.depenses5ans)} de dépenses moins ${formaterMonnaie(c.revenus5ans)} de revenus, étalés sur ${c.nbPaies} paies.</div>
     </div>`;
   }).join('');
 
@@ -3378,7 +3197,7 @@ function rendrePlanDepot(){
     : `<div class="depot-ligne-explication" style="color:var(--red);">Le plan ne balance pas. Le compte tomberait à ${formaterMonnaie(sim.creux)}${sim.creuxInfo ? ` le ${sim.creuxInfo.iso} (${echapperHTML(sim.creuxInfo.libelle)})` : ''}, soit ${formaterMonnaie(-marge)} sous le minimum. Augmente les dépôts ou baisse le solde minimum.</div>`;
 
   el.innerHTML = lignes + `<div class="depot-total final">
-      <span>Total par paie</span>
+      <span>Total moyen par paie</span>
       <span class="depot-ligne-montants"><span class="value">${formaterMonnaie(totalParPaie)}</span></span>
     </div>${verdict}`;
 }
