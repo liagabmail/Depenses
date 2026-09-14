@@ -355,8 +355,17 @@
   .cal-month-cell{min-height:46px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden;cursor:pointer;}
   .cal-month-cell:active{background:color-mix(in srgb, var(--blue) 6%, transparent);}
   .cal-month-cell.outside{opacity:.35;}
+  /* Numéro du jour et, s'il y a lieu, l'étoile de paie sur la même ligne. */
+  .cal-month-jour{display:flex;align-items:center;justify-content:center;gap:1px;}
   .cal-month-daynum{font-size:11px;color:var(--text-secondary);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
-  .cal-month-cell.today .cal-month-daynum{background:var(--blue);color:#fff;font-weight:700;}
+  /* La règle visait `.cal-month-cell.today`, alors que la classe est posée sur le numéro
+     lui-même : elle ne s'appliquait jamais et aucune date n'était marquée. Contour plutôt
+     que pastille pleine, pour ne pas entrer en concurrence avec les pastilles de couleur
+     juste en dessous. */
+  .cal-month-daynum.today{
+    border:2px solid var(--accent-menu);color:var(--accent-menu);font-weight:700;
+  }
+  .cal-month-paie{font-size:8px;line-height:1;color:var(--text);flex-shrink:0;}
   .cal-month-dots{display:flex;align-items:center;justify-content:center;gap:3px;min-height:6px;}
   .cal-dot-mini{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
   .cal-dot-mini.cal-p1{background:var(--blue);}
@@ -4082,6 +4091,14 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
   const parJour = {};
   items.forEach(e => { (parJour[e.date] = parJour[e.date] || []).push(e); });
   const aujourdhuiStr = formaterDateISO(debutJour(new Date()));
+  /* Jours de paie de la grille affichée : une étoile à côté du numéro suffit à les repérer
+     d'un coup d'œil, sans occuper la place des pastilles de dépenses. */
+  const ancragePaie = paieAncrage ? debutJour(dateLocaleDepuisISO(paieAncrage)) : null;
+  const joursPaie = new Set(
+    ancragePaie
+      ? paiesDansIntervalle(ancragePaie, premierJourGrille, dernierJourGrille).map(formaterDateISO)
+      : []
+  );
 
   let html = '<div class="cal-month-grid">';
   JOURS_SEMAINE_LUN_DIM.forEach(j => html += `<div class="cal-month-dow">${j}</div>`);
@@ -4096,7 +4113,10 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
        vue compacte). */
     const couleursPresentes = [...new Set(jourItems.map(classeTypeDepense))].slice(0,4);
     html += `<div class="cal-month-cell ${dansLeMois?'':'outside'}" onclick="allerVueJour('${scope}','${iso}')">
-      <div class="cal-month-daynum ${iso===aujourdhuiStr?'today':''}">${curseur.getDate()}</div>
+      <div class="cal-month-jour">
+        <div class="cal-month-daynum ${iso===aujourdhuiStr?'today':''}">${curseur.getDate()}</div>
+        ${joursPaie.has(iso) ? '<span class="cal-month-paie" title="Jour de paie">&#9733;</span>' : ''}
+      </div>
       ${nb>0 ? `<div class="cal-month-dots">
         ${couleursPresentes.map(c=>`<span class="cal-dot-mini ${c}"></span>`).join('')}
         ${nb>=2 ? `<span class="cal-month-count">${nb}</span>` : ''}
@@ -5669,18 +5689,9 @@ function afficherResumeUnifie(scope){
     const dueP1 = listeHorsCompte.reduce((s,e)=>s + e.amount * ((e.pourcentageP1 != null ? e.pourcentageP1 : 50) / 100), 0);
     const dueP2 = totalHorsCompte - dueP1;
     const moi = currentUser==='p2' ? t2 : t1;
-    let troisiemeCarte;
-    if(vue==='mois'){
-      const budgetTotal = budgetTotalCalcule('conjoint', periodeActive());
-      const ecartBudget = total - budgetTotal;
-      troisiemeCarte = `<div class="stat-card">
-        <div class="label">Total<span class="mobile-line"> conjoint</span></div>
-        <div class="value">${formaterMonnaie(total)}</div>
-        ${budgetTotal > 0 ? `<div style="font-size:11px;margin-top:4px;color:${ecartBudget>0?'var(--red)':'var(--green)'}">${ecartBudget>0?'+':''}${formaterMonnaie(ecartBudget)} vs budget</div>` : ''}
-      </div>`;
-    } else {
-      troisiemeCarte = `<div class="stat-card"><div class="label">Total<span class="mobile-line"> conjoint</span></div><div class="value">${formaterMonnaie(total)}</div></div>`;
-    }
+    /* La carte Total est la même quelle que soit la vue : l'écart au budget appartient à
+       l'onglet Budget, pas au Résumé. */
+    const troisiemeCarte = `<div class="stat-card"><div class="label">Total<span class="mobile-line"> conjoint</span></div><div class="value">${formaterMonnaie(total)}</div></div>`;
     el.innerHTML = `
       <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> moi</span></div><div class="value ${currentUser}">${formaterMonnaie(moi)}</div></div>
       ${troisiemeCarte}
