@@ -652,12 +652,28 @@
   .budget-input-field .suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text-secondary);pointer-events:none;}
   .settings-section{margin-bottom:20px;}
   .settings-section h3{margin:0 0 12px;font-size:15px;font-weight:500;}
+  /* Les paramètres vivent maintenant dans une fenêtre : leurs sections cessent d'être des
+     cartes posées sur la page (une carte dans une carte) et redeviennent de simples blocs
+     séparés par un filet, comme partout ailleurs dans les fenêtres. */
+  #settings-modal .settings-section{border:0;border-radius:0;background:transparent;
+    padding:0 0 18px;margin:0 0 18px;border-bottom:1px solid var(--border);}
+  #settings-modal .settings-section:last-child{border-bottom:0;padding-bottom:0;margin-bottom:0;}
+
+  /* Un revenu n'est pas une catégorie de dépense : le petit « + » vert le signale d'un coup
+     d'œil, là où les catégories ont leur pastille de couleur. */
+  .icone-revenu{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:15px;height:15px;border-radius:50%;flex-shrink:0;
+    background:var(--green);color:#fff;
+    font-size:12px;font-weight:700;line-height:1;
+  }
+  .cal-menu-check .icone-revenu{width:12px;height:12px;font-size:10px;}
   .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
   .settings-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
   .settings-row input[type="color"]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:var(--surface);}
   .theme-toggle{display:flex;align-items:center;gap:10px;}
   .toggle-field{display:flex;align-items:center;justify-content:space-between;gap:12px;}
-  .toggle-field-label{font-size:14px;}
+  .toggle-field-label{font-size:14px;display:inline-flex;align-items:center;gap:7px;}
   .switch{position:relative;display:inline-flex;width:48px;height:28px;cursor:pointer;flex-shrink:0;}
   .switch input{position:absolute;opacity:0;width:0;height:0;}
   .switch-track{position:absolute;inset:0;border-radius:18px;background:#9aa0a6;transition:background .2s;}
@@ -1044,7 +1060,7 @@
             <span id="f-apercu-conjoint"></span>
           </div>
           <div class="field toggle-field champ-bascule bascule-droite" id="f-est-revenu-field-conjoint" style="display:none;">
-            <span class="toggle-field-label">Revenu</span>
+            <span class="toggle-field-label"><span class="icone-revenu" aria-hidden="true">+</span>Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
         </div>
@@ -1236,7 +1252,7 @@
             <span id="f-apercu-personnel"></span>
           </div>
           <div class="field toggle-field champ-bascule bascule-droite" id="f-est-revenu-field-personnel">
-            <span class="toggle-field-label">Revenu</span>
+            <span class="toggle-field-label"><span class="icone-revenu" aria-hidden="true">+</span>Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
         </div>
@@ -1331,132 +1347,137 @@
     <div class="card"><h3>Total par période</h3><div class="chart-wrap"><canvas id="chart-compare"></canvas></div></div>
   </section>
 
-  <!-- ONGLET : PARAMÈTRES -->
-  <section class="tab-panel" id="tab-parametres">
-    <div class="card settings-section"><h3>Compte</h3>
-      <div class="account-row">
-        <div>
-          <div class="email" id="account-email">...</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Connecté en tant que <span id="account-nom">...</span></div>
-        </div>
-        <button class="btn-secondary" id="logout-btn">Se déconnecter</button>
-      </div>
-      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
-        <button class="btn-secondary" id="show-change-password" type="button">Changer mon mot de passe</button>
-        <form class="auth-form" id="change-password-form" style="display:none;margin-top:14px;max-width:320px;">
-          <div class="field">
-            <label>Nouveau mot de passe</label>
-            <input type="password" id="change-password-new" autocomplete="new-password" minlength="6" required>
-          </div>
-          <div class="field">
-            <label>Confirmer le nouveau mot de passe</label>
-            <input type="password" id="change-password-confirm" autocomplete="new-password" minlength="6" required>
-          </div>
-          <p class="auth-error" id="change-password-error"></p>
-          <p class="auth-success" id="change-password-success"></p>
-          <div style="display:flex;gap:10px;">
-            <button type="submit" class="auth-submit" id="change-password-submit" style="margin-top:0;">Confirmer</button>
-            <button type="button" class="btn-secondary" id="cancel-change-password">Annuler</button>
-          </div>
-        </form>
-      </div>
-    </div>
-    <div class="card settings-section">
-      <h3>Apparence</h3>
-      <div class="theme-toggle"><span>Mode sombre</span><label class="switch" for="dark-mode"><input type="checkbox" id="dark-mode"><span class="switch-track"></span></label></div>
-    </div>
-    <div class="card settings-section" id="notifications-section">
-      <h3>Notifications</h3>
-      <div class="theme-toggle">
-        <span>Dépôt à faire au compte conjoint</span>
-        <label class="switch" for="notif-toggle"><input type="checkbox" id="notif-toggle"><span class="switch-track"></span></label>
-      </div>
-      <div id="notif-reglages" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-        <div class="modal-grid">
-          <div class="field">
-            <label>Quand</label>
-            <select id="notif-quand">
-              <option value="avant">Jour(s) avant la paie</option>
-              <option value="le-jour">Le jour même</option>
-              <option value="apres">Jour(s) après la paie</option>
-            </select>
-          </div>
-          <div class="field" id="notif-jours-field">
-            <label>Nombre de jours</label>
-            <input type="number" id="notif-jours" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
-          </div>
-          <div class="field">
-            <label>À quelle heure</label>
-            <input type="time" id="notif-heure" value="08:00" autocomplete="off">
-          </div>
-        </div>
-        <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-statut"></p>
-      </div>
-      <div class="theme-toggle" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-        <span>Ajout/modification d'une dépense conjointe par l'autre</span>
-        <label class="switch" for="notif-activite-toggle"><input type="checkbox" id="notif-activite-toggle"><span class="switch-track"></span></label>
-      </div>
-      <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-activite-statut"></p>
-    </div>
-    <div class="card settings-section" id="donnees-section">
-      <h3>Données</h3>
-      <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">
-        Exportez vos dépenses d'un mois ou d'une année vers un fichier Excel, ou importez-en depuis un fichier CSV ou Excel.
-      </p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn-secondary" id="btn-export">Exporter</button>
-        <button class="btn-secondary" id="btn-import">Importer</button>
-        <input type="file" id="import-file" accept=".csv,.xlsx,.xls" style="display:none;">
-      </div>
-      <p id="import-status" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;"></p>
-
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-        <h3 style="margin:0 0 10px;">Format du fichier</h3>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 10px;">Voici à quoi doit ressembler le fichier à importer (les mêmes colonnes que celles exportées par l'application) :</p>
-        <div style="overflow-x:auto;margin-bottom:14px;">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;">
-            <thead>
-              <tr style="background:var(--bg);">
-                <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Qui</th>
-                <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Date</th>
-                <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Montant</th>
-                <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Categorie</th>
-                <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Note</th>
-                <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="padding:6px 10px;border:1px solid var(--border);">Gabriel</td>
-                <td style="padding:6px 10px;border:1px solid var(--border);">2026-09-03</td>
-                <td style="padding:6px 10px;border:1px solid var(--border);">42,50</td>
-                <td style="padding:6px 10px;border:1px solid var(--border);">Épicerie</td>
-                <td style="padding:6px 10px;border:1px solid var(--border);">IGA</td>
-                <td style="padding:6px 10px;border:1px solid var(--border);">Conjointe</td>
-              </tr>
-              <tr>
-                <td style="padding:6px 10px;border:1px solid var(--border);">Mélissa</td>
-                <td style="padding:6px 10px;border:1px solid var(--border);">2026-09-05</td>
-                <td style="padding:6px 10px;border:1px solid var(--border);">18,00</td>
-                <td style="padding:6px 10px;border:1px solid var(--border);">Restaurant</td>
-                <td style="padding:6px 10px;border:1px solid var(--border);"></td>
-                <td style="padding:6px 10px;border:1px solid var(--border);">Personnelle</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <ul style="font-size:13px;color:var(--text-secondary);margin:0;padding-left:18px;line-height:1.7;">
-          <li>Colonnes attendues : <strong>Qui</strong>, <strong>Date</strong>, <strong>Montant</strong>, <strong>Categorie</strong>, <strong>Note</strong>, <strong>Type</strong> (peu importe l'ordre).</li>
-          <li>Si aucun nom valide n'est écrit dans <strong>Qui</strong>, la dépense est attribuée à la personne actuellement connectée dans l'application (celle qui fait l'import).</li>
-          <li>Si la valeur dans <strong>Categorie</strong> ne correspond à aucune catégorie existante, la dépense est classée dans <strong>Autre</strong>.</li>
-          <li>Si la valeur dans <strong>Type</strong> n'est pas "Personnelle", la dépense est considérée comme <strong>Conjointe</strong> par défaut.</li>
-          <li>Les dates peuvent être écrites en <strong>AAAA-MM-JJ</strong> ou <strong>JJ/MM/AAAA</strong>.</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
 </div>
+
+<div class="edit-modal" id="settings-modal"><div class="edit-card">
+  <div class="modal-header">
+    <h3>Paramètres<span class="modal-sous-titre">Compte, apparence, notifications et données</span></h3>
+    <button class="modal-close-btn" id="close-settings-modal" aria-label="Fermer">&times;</button>
+  </div>
+  <div class="modal-body">
+      <div class="card settings-section"><h3>Compte</h3>
+        <div class="account-row">
+          <div>
+            <div class="email" id="account-email">...</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Connecté en tant que <span id="account-nom">...</span></div>
+          </div>
+          <button class="btn-secondary" id="logout-btn">Se déconnecter</button>
+        </div>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+          <button class="btn-secondary" id="show-change-password" type="button">Changer mon mot de passe</button>
+          <form class="auth-form" id="change-password-form" style="display:none;margin-top:14px;max-width:320px;">
+            <div class="field">
+              <label>Nouveau mot de passe</label>
+              <input type="password" id="change-password-new" autocomplete="new-password" minlength="6" required>
+            </div>
+            <div class="field">
+              <label>Confirmer le nouveau mot de passe</label>
+              <input type="password" id="change-password-confirm" autocomplete="new-password" minlength="6" required>
+            </div>
+            <p class="auth-error" id="change-password-error"></p>
+            <p class="auth-success" id="change-password-success"></p>
+            <div style="display:flex;gap:10px;">
+              <button type="submit" class="auth-submit" id="change-password-submit" style="margin-top:0;">Confirmer</button>
+              <button type="button" class="btn-secondary" id="cancel-change-password">Annuler</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="card settings-section">
+        <h3>Apparence</h3>
+        <div class="theme-toggle"><span>Mode sombre</span><label class="switch" for="dark-mode"><input type="checkbox" id="dark-mode"><span class="switch-track"></span></label></div>
+      </div>
+      <div class="card settings-section" id="notifications-section">
+        <h3>Notifications</h3>
+        <div class="theme-toggle">
+          <span>Dépôt à faire au compte conjoint</span>
+          <label class="switch" for="notif-toggle"><input type="checkbox" id="notif-toggle"><span class="switch-track"></span></label>
+        </div>
+        <div id="notif-reglages" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+          <div class="modal-grid">
+            <div class="field">
+              <label>Quand</label>
+              <select id="notif-quand">
+                <option value="avant">Jour(s) avant la paie</option>
+                <option value="le-jour">Le jour même</option>
+                <option value="apres">Jour(s) après la paie</option>
+              </select>
+            </div>
+            <div class="field" id="notif-jours-field">
+              <label>Nombre de jours</label>
+              <input type="number" id="notif-jours" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
+            </div>
+            <div class="field">
+              <label>À quelle heure</label>
+              <input type="time" id="notif-heure" value="08:00" autocomplete="off">
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-statut"></p>
+        </div>
+        <div class="theme-toggle" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+          <span>Ajout/modification d'une dépense conjointe par l'autre</span>
+          <label class="switch" for="notif-activite-toggle"><input type="checkbox" id="notif-activite-toggle"><span class="switch-track"></span></label>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-activite-statut"></p>
+      </div>
+      <div class="card settings-section" id="donnees-section">
+        <h3>Données</h3>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">
+          Exportez vos dépenses d'un mois ou d'une année vers un fichier Excel, ou importez-en depuis un fichier CSV ou Excel.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn-secondary" id="btn-export">Exporter</button>
+          <button class="btn-secondary" id="btn-import">Importer</button>
+          <input type="file" id="import-file" accept=".csv,.xlsx,.xls" style="display:none;">
+        </div>
+        <p id="import-status" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;"></p>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+          <h3 style="margin:0 0 10px;">Format du fichier</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 10px;">Voici à quoi doit ressembler le fichier à importer (les mêmes colonnes que celles exportées par l'application) :</p>
+          <div style="overflow-x:auto;margin-bottom:14px;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead>
+                <tr style="background:var(--bg);">
+                  <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Qui</th>
+                  <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Date</th>
+                  <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Montant</th>
+                  <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Categorie</th>
+                  <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Note</th>
+                  <th style="text-align:left;padding:6px 10px;border:1px solid var(--border);">Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">Gabriel</td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">2026-09-03</td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">42,50</td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">Épicerie</td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">IGA</td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">Conjointe</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">Mélissa</td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">2026-09-05</td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">18,00</td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">Restaurant</td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);"></td>
+                  <td style="padding:6px 10px;border:1px solid var(--border);">Personnelle</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ul style="font-size:13px;color:var(--text-secondary);margin:0;padding-left:18px;line-height:1.7;">
+            <li>Colonnes attendues : <strong>Qui</strong>, <strong>Date</strong>, <strong>Montant</strong>, <strong>Categorie</strong>, <strong>Note</strong>, <strong>Type</strong> (peu importe l'ordre).</li>
+            <li>Si aucun nom valide n'est écrit dans <strong>Qui</strong>, la dépense est attribuée à la personne actuellement connectée dans l'application (celle qui fait l'import).</li>
+            <li>Si la valeur dans <strong>Categorie</strong> ne correspond à aucune catégorie existante, la dépense est classée dans <strong>Autre</strong>.</li>
+            <li>Si la valeur dans <strong>Type</strong> n'est pas "Personnelle", la dépense est considérée comme <strong>Conjointe</strong> par défaut.</li>
+            <li>Les dates peuvent être écrites en <strong>AAAA-MM-JJ</strong> ou <strong>JJ/MM/AAAA</strong>.</li>
+          </ul>
+        </div>
+      </div>
+  </div>
+</div></div>
 
 <div class="edit-modal" id="export-modal"><div class="edit-card">
   <button class="modal-close-btn" id="close-export" aria-label="Fermer">&times;</button>
@@ -1562,7 +1583,7 @@
         <input type="date" id="edit-nouv-fin-date" autocomplete="off">
       </div>
       <div class="field toggle-field champ-bascule bascule-droite" id="edit-est-revenu-field">
-        <span class="toggle-field-label" id="edit-est-revenu-label">Revenu</span>
+        <span class="toggle-field-label" id="edit-est-revenu-label"><span class="icone-revenu" aria-hidden="true">+</span>Revenu</span>
         <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur" id="edit-toggle-type-field">
@@ -1638,7 +1659,7 @@
         <input type="date" id="edit-rec-fin-date" autocomplete="off">
       </div>
       <div class="field toggle-field champ-bascule bascule-droite" id="edit-rec-est-revenu-field">
-        <span class="toggle-field-label" id="edit-rec-est-revenu-label">Revenu</span>
+        <span class="toggle-field-label" id="edit-rec-est-revenu-label"><span class="icone-revenu" aria-hidden="true">+</span>Revenu</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur">
@@ -2860,41 +2881,36 @@ async function sauvegarderSoldeCompte(montant, depuis){
   soldeCompte = { montant, depuis };
 }
 
-/* Projette le solde du compte paie après paie.
+/* Projette ce qu'il RESTE dans le compte, paie après paie.
 
-   Deux flux, et deux seulement :
-     - ce qui ENTRE : le dépôt demandé à chaque paie (p1 + p2 de l'échéancier) ;
-     - ce qui SORT : les dépenses « compte » à leur vraie date d'échéance (un revenu « compte »
-       entre au lieu de sortir).
-   Rien n'est lissé ici, contrairement au calcul du dépôt : on veut le mouvement réel du
-   compte, au jour près, sinon un gros paiement isolé passerait inaperçu.
+   Un seul principe : on part du solde constaté, les dépenses « compte » le font baisser à
+   leur date d'échéance, les revenus « compte » le font monter. 1000 $ au départ, 200 $ de
+   dépenses d'ici la paie 1 : il reste 800 $.
 
-   Pour chaque paie on retient deux chiffres :
-     - `solde`    : le solde à la fin de la période (juste avant la paie suivante) ;
-     - `soldeMin` : le creux atteint pendant la période. C'est celui qui compte pour savoir si
-       le compte suffit : un solde de fin positif peut très bien cacher un découvert en
-       milieu de période, comblé ensuite par un revenu.
+   Le dépôt recommandé (les colonnes Gabriel/Mélissa) n'entre PAS dans ce calcul, et c'est
+   volontaire : c'est une recommandation, pas un mouvement constaté. L'ajouter reviendrait à
+   supposer que le dépôt a été fait, et le solde ne pourrait alors jamais manquer — la
+   projection ne dirait plus rien. Un dépôt réellement effectué se saisit comme un revenu
+   « compte » à sa date, exactement comme le reste : il apparaît alors dans la projection.
+
+   Pour chaque paie, deux chiffres :
+     - `solde`    : ce qui reste à la fin de la période (juste avant la paie suivante) ;
+     - `soldeMin` : le creux atteint pendant la période — un solde de fin positif peut cacher
+       un découvert en milieu de période, comblé ensuite par un revenu.
 
    Retourne null tant qu'aucun solde n'a été saisi (rien à projeter à partir de rien). */
 function projeterSoldeCompte(echeancier){
   if(!soldeCompte || !echeancier || !echeancier.length) return null;
   const depuisIso = soldeCompte.depuis;
 
-  /* `ordre` départage les mouvements d'une même journée : le dépôt de paie est réputé arriver
-     avant les paiements du jour, sinon une dépense datée le jour même de la paie ferait
-     apparaître un faux découvert. */
-  const mouvements = [];
-  depenses
+  const mouvements = depenses
     .filter(e => e.type === 'conjointe' && e.estCompte && e.date >= depuisIso)
-    .forEach(e => mouvements.push({ iso: e.date, ordre: 1, montant: e.estRevenu ? e.amount : -e.amount }));
-  echeancier
-    .filter(l => l.iso >= depuisIso)
-    .forEach(l => mouvements.push({ iso: l.iso, ordre: 0, montant: l.p1 + l.p2 }));
-  mouvements.sort((a,b) => a.iso === b.iso ? a.ordre - b.ordre : a.iso.localeCompare(b.iso));
+    .map(e => ({ iso: e.date, montant: e.estRevenu ? e.amount : -e.amount }))
+    .sort((a,b) => a.iso.localeCompare(b.iso));
 
-  /* La dernière période est bornée à 14 jours : au-delà, `depenses` contient encore des
-     occurrences (l'horizon va jusqu'à un an) mais l'échéancier n'a plus de dépôts à leur
-     opposer. Les compter donnerait un dernier solde faussement catastrophique. */
+  /* La dernière période est bornée à 14 jours, comme les autres : sans borne, elle avalerait
+     tout ce que `depenses` contient au-delà (l'horizon va jusqu'à un an) et afficherait un
+     dernier solde sans rapport avec la période visible. */
   const bornes = echeancier.map((l,i) => ({
     debut: l.iso,
     fin: echeancier[i+1] ? echeancier[i+1].iso : formaterDateISO(ajouterJours(dateLocaleDepuisISO(l.iso), 14))
@@ -2902,18 +2918,22 @@ function projeterSoldeCompte(echeancier){
 
   let courant = Number(soldeCompte.montant || 0);
   let k = 0;
-  /* Mouvements survenus entre la date du solde constaté et la première paie affichée. */
+  /* Mouvements survenus entre la date du solde constaté et la première paie affichée : ils
+     ont déjà eu lieu, le solde de départ affiché en tient donc compte. */
   while(k < mouvements.length && mouvements[k].iso < bornes[0].debut){ courant += mouvements[k].montant; k++; }
 
   return bornes.map(b => {
     let min = null;
+    let sorties = 0, entrees = 0;
     while(k < mouvements.length && mouvements[k].iso < b.fin){
-      courant += mouvements[k].montant;
+      const m = mouvements[k].montant;
+      if(m < 0) sorties += -m; else entrees += m;
+      courant += m;
       if(min === null || courant < min) min = courant;
       k++;
     }
     if(min === null) min = courant; /* aucune opération dans la période : le solde ne bouge pas */
-    return { solde: courant, soldeMin: min };
+    return { solde: courant, soldeMin: min, sorties, entrees };
   });
 }
 
@@ -3099,9 +3119,11 @@ function afficherEcheancierCompteConjoint(){
     /* C'est le CREUX de la période qui décide de l'alerte, pas le solde de fin : un revenu
        arrivant en fin de période peut ramener le solde dans le vert après un découvert. */
     const enManque = p.soldeMin < 0;
-    const titre = enManque
-      ? `Le compte descend à ${formaterMonnaie(p.soldeMin)} pendant cette période.`
-      : `Creux de la période : ${formaterMonnaie(p.soldeMin)}`;
+    const mouvements = [];
+    if(p.sorties) mouvements.push(`− ${formaterMonnaie(p.sorties)} de dépenses`);
+    if(p.entrees) mouvements.push(`+ ${formaterMonnaie(p.entrees)} de revenus`);
+    const titre = (mouvements.length ? mouvements.join(', ') + ' d\'ici la paie suivante. ' : "Aucun mouvement d'ici la paie suivante. ")
+      + (enManque ? `Le compte descend à ${formaterMonnaie(p.soldeMin)}.` : `Creux de la période : ${formaterMonnaie(p.soldeMin)}.`);
     return `<span class="value solde-colonne ${enManque ? 'solde-negatif' : ''}" title="${echapperHTML(titre)}">${enManque ? '⚠ ' : ''}${formaterMonnaie(p.solde)}</span>`;
   };
 
@@ -3164,12 +3186,12 @@ function afficherAlerteSoldeCompte(projection){
   const premierManque = projection.find(p => p.soldeMin < 0);
   if(premierManque){
     const dateLisible = dateLocaleDepuisISO(premierManque.iso).toLocaleDateString('fr-CA', {day:'numeric', month:'long', year:'numeric'});
-    zone.innerHTML = `<div class="solde-alerte manque">Le compte ne suffit plus à partir de la paie du ${dateLisible} : il descend à ${formaterMonnaie(premierManque.soldeMin)}. Il manque ${formaterMonnaie(-premierManque.soldeMin)} — à ajouter au compte ou à répartir sur les dépôts d'ici là.</div>`;
+    zone.innerHTML = `<div class="solde-alerte manque">Au rythme actuel, le compte tombe à sec autour du ${dateLisible} : il descend à ${formaterMonnaie(premierManque.soldeMin)}, il manque donc ${formaterMonnaie(-premierManque.soldeMin)} d'ici là.</div>`;
     return;
   }
   const creux = projection.reduce((min,p) => p.soldeMin < min.soldeMin ? p : min, projection[0]);
   const dateCreux = dateLocaleDepuisISO(creux.iso).toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
-  zone.innerHTML = `<div class="solde-alerte ok">Le compte couvre toutes les dépenses prévues sur la période calculée. Point le plus bas : ${formaterMonnaie(creux.soldeMin)} autour du ${dateCreux}.</div>`;
+  zone.innerHTML = `<div class="solde-alerte ok">Le compte couvre les dépenses prévues sur toute la période calculée. Point le plus bas : ${formaterMonnaie(creux.soldeMin)} autour du ${dateCreux}.</div>`;
 }
 
 document.getElementById('solde-compte-save').addEventListener('click', async ()=>{
@@ -4099,7 +4121,7 @@ function rendreMenuCalendrier(scope){
     <div class="cal-menu-section-title">Afficher</div>
     <label class="cal-menu-check">
       <input type="checkbox" data-filtre-revenu ${filtres.masquerRevenus?'':'checked'}>
-      Revenus
+      <span class="icone-revenu" aria-hidden="true">+</span> Revenus
     </label>
     ${catsPresentes.map(c=>`
       <label class="cal-menu-check">
@@ -4791,12 +4813,16 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     afficherNavigationPeriode();
   });
 });
+/* Les paramètres sont une fenêtre, pas un onglet : on n'y « navigue » pas, on y fait un
+   réglage et on revient là où on était. L'onglet actif et la période affichée restent donc
+   intacts pendant qu'elle est ouverte. */
+function fermerSettingsModal(){ document.getElementById('settings-modal').style.display = 'none'; }
 document.getElementById('open-settings').addEventListener('click',()=>{
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-parametres').classList.add('active');
-  activeMainTab = 'parametres';
-  afficherNavigationPeriode();
+  document.getElementById('settings-modal').style.display = 'flex';
+});
+document.getElementById('close-settings-modal').addEventListener('click', fermerSettingsModal);
+document.getElementById('settings-modal').addEventListener('click', (e)=>{
+  if(e.target.id === 'settings-modal') fermerSettingsModal();
 });
 
 /* Gestion des sous-onglets (Mois / Année / Budget) à l'intérieur de chaque section */
