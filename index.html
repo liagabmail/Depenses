@@ -316,11 +316,16 @@
      dépenses), plutôt que du texte qui alourdit la vue. */
   .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border);border-left:1px solid var(--border);}
   .cal-month-dow{font-size:10px;color:var(--text-secondary);text-align:center;padding:6px 0;text-transform:uppercase;}
-  .cal-month-cell{min-height:46px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden;cursor:pointer;}
+  .cal-month-cell{min-height:46px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden;cursor:pointer;position:relative;}
   .cal-month-cell:active{background:color-mix(in srgb, var(--blue) 6%, transparent);}
   .cal-month-cell.outside{opacity:.35;}
   .cal-month-daynum{font-size:11px;color:var(--text-secondary);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
   .cal-month-cell.today .cal-month-daynum{background:var(--blue);color:#fff;font-weight:700;}
+  /* Jour de paie : une petite enveloppe dans le coin de la case, posée en absolu pour ne
+     jamais décaler le numéro du jour ni les pastilles de dépenses en dessous. */
+  .cal-paie-marqueur{position:absolute;top:2px;right:3px;font-size:9px;line-height:1;
+    opacity:.75;pointer-events:none;}
+  .cal-month-cell.today .cal-paie-marqueur{opacity:1;}
   .cal-month-dots{display:flex;align-items:center;justify-content:center;gap:3px;min-height:6px;}
   .cal-dot-mini{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
   .cal-dot-mini.cal-p1{background:var(--blue);}
@@ -659,15 +664,10 @@
     padding:0 0 18px;margin:0 0 18px;border-bottom:1px solid var(--border);}
   #settings-modal .settings-section:last-child{border-bottom:0;padding-bottom:0;margin-bottom:0;}
 
-  /* Un revenu n'est pas une catégorie de dépense : le petit « + » vert le signale d'un coup
+  /* Un revenu n'est pas une catégorie de dépense : un simple « + » vert le signale d'un coup
      d'œil, là où les catégories ont leur pastille de couleur. */
-  .icone-revenu{
-    display:inline-flex;align-items:center;justify-content:center;
-    width:15px;height:15px;border-radius:50%;flex-shrink:0;
-    background:var(--green);color:#fff;
-    font-size:12px;font-weight:700;line-height:1;
-  }
-  .cal-menu-check .icone-revenu{width:12px;height:12px;font-size:10px;}
+  .icone-revenu{color:var(--green);font-weight:700;font-size:16px;line-height:1;flex-shrink:0;}
+  .cal-menu-check .icone-revenu{font-size:14px;}
   .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
   .settings-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
   .settings-row input[type="color"]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:var(--surface);}
@@ -836,15 +836,33 @@
   .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.45;}
   .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;
     background:var(--border);color:var(--text-secondary);vertical-align:middle;}
-  /* Bloc « Solde réel du compte » : point de départ de la projection, au-dessus du tableau
-     des dépôts. Volontairement discret — c'est un réglage qu'on touche rarement, pas une
-     donnée à consulter. */
-  .solde-compte-bloc{border:1px solid var(--border);border-radius:10px;padding:12px 14px;
-    background:var(--bg);margin-bottom:14px;}
-  .solde-compte-champs{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
-  .solde-compte-champs .field{flex:1 1 130px;min-width:0;}
-  .solde-compte-champs .btn-secondary{flex:0 0 auto;padding:9px 14px;}
-  .solde-compte-statut{font-size:12px;color:var(--text-secondary);margin:9px 0 0;line-height:1.45;}
+  /* Échéancier : UNE seule grille pour l'entête et les lignes. Avec deux conteneurs flex
+     séparés, chaque colonne avait sa largeur de son côté et la moindre différence de texte
+     ("Gabriel" vs "1 234,56 $") décalait l'entête par rapport aux montants. Ici les lignes
+     sont en display:contents : leurs cellules entrent directement dans la grille du parent,
+     donc les colonnes sont les mêmes pour tout le monde, par construction. */
+  .echeancier{display:grid;column-gap:14px;align-items:center;
+    grid-template-columns:minmax(0,1fr) repeat(2, minmax(72px, max-content));}
+  .echeancier.avec-solde{grid-template-columns:minmax(0,1fr) repeat(3, minmax(72px, max-content));}
+  .echeancier-entete, .echeancier-ligne{display:contents;}
+  .echeancier-entete > span{font-size:12px;font-weight:500;color:var(--text-secondary);
+    padding:0 0 10px;border-bottom:1px solid var(--border);}
+  .echeancier-ligne > span{font-size:14px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .echeancier-ligne:last-child > span{border-bottom:0;}
+  .echeancier-ligne{cursor:pointer;}
+  .echeancier-ligne:hover > span{background:var(--bg);}
+  .echeancier-date{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  /* Chiffres alignés à droite et à chasse fixe : les montants se comparent alors colonne par
+     colonne, sans que les virgules se décalent d'une ligne à l'autre. */
+  .echeancier .col-nombre{text-align:right;white-space:nowrap;font-weight:500;
+    font-variant-numeric:tabular-nums;}
+  .solde-negatif{color:var(--red);font-weight:600;}
+  @media (max-width:760px){
+    .echeancier{column-gap:9px;grid-template-columns:minmax(0,1fr) repeat(2, minmax(58px, max-content));}
+    .echeancier.avec-solde{grid-template-columns:minmax(0,1fr) repeat(3, minmax(58px, max-content));}
+    .echeancier-entete > span, .echeancier-ligne > span{font-size:12px;}
+  }
+
   /* Avertissement quand la projection passe sous zéro : c'est LA réponse à « est-ce que le
      compte va suffire ? », donc elle doit se voir avant le tableau. */
   .solde-alerte{font-size:13px;line-height:1.5;border-radius:10px;padding:10px 13px;margin-bottom:12px;}
@@ -852,11 +870,7 @@
     border:1px solid color-mix(in srgb, var(--red) 35%, var(--surface));color:var(--red);}
   .solde-alerte.ok{background:color-mix(in srgb, var(--green) 10%, var(--surface));
     border:1px solid color-mix(in srgb, var(--green) 30%, var(--surface));color:var(--green);}
-  .solde-colonne{min-width:80px;text-align:right;white-space:nowrap;}
-  .solde-negatif{color:var(--red);font-weight:600;}
-  @media (max-width:760px){
-    .solde-compte-champs .btn-secondary{flex:1 1 100%;}
-  }
+  .solde-alerte.neutre{background:var(--bg);border:1px solid var(--border);color:var(--text-secondary);}
 
   .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
@@ -1080,23 +1094,6 @@
       <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
         <div class="table-head-row">
           <h3>Prochains dépôts au compte conjoint</h3>
-        </div>
-        <!-- Point de départ de la projection : ce qu'il y a VRAIMENT dans le compte
-             aujourd'hui. Sans lui, la colonne « Solde » n'aurait aucune origine et ne
-             pourrait pas dire si le compte tiendra le coup. -->
-        <div class="solde-compte-bloc">
-          <div class="solde-compte-champs">
-            <div class="field">
-              <label for="solde-compte-montant">Solde réel du compte</label>
-              <input type="number" id="solde-compte-montant" step="0.01" min="0" placeholder="0,00">
-            </div>
-            <div class="field">
-              <label for="solde-compte-depuis">Constaté le</label>
-              <input type="date" id="solde-compte-depuis">
-            </div>
-            <button type="button" class="btn-secondary" id="solde-compte-save">Enregistrer</button>
-          </div>
-          <p class="solde-compte-statut" id="solde-compte-statut"></p>
         </div>
         <div id="solde-compte-alerte"></div>
         <div id="recurrent-compte-echeancier-conjoint"></div>
@@ -1386,6 +1383,30 @@
       <div class="card settings-section">
         <h3>Apparence</h3>
         <div class="theme-toggle"><span>Mode sombre</span><label class="switch" for="dark-mode"><input type="checkbox" id="dark-mode"><span class="switch-track"></span></label></div>
+      </div>
+      <!-- Point de départ de la projection du solde affichée dans « Prochains dépôts au
+           compte conjoint ». C'est un réglage qu'on touche rarement : il vit ici plutôt
+           qu'au-dessus du tableau, qu'il encombrait. -->
+      <div class="card settings-section" id="compte-conjoint-section">
+        <h3>Compte conjoint</h3>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">
+          Le solde réel du compte, à une date donnée. L'application part de là pour projeter
+          ce qu'il restera après les dépenses et les revenus à venir.
+        </p>
+        <div class="modal-grid">
+          <div class="field">
+            <label for="solde-compte-montant">Solde du compte</label>
+            <input type="number" id="solde-compte-montant" step="0.01" min="0" placeholder="0,00" inputmode="decimal" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="solde-compte-depuis">Constaté le</label>
+            <input type="date" id="solde-compte-depuis" autocomplete="off">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+          <button type="button" class="btn-secondary" id="solde-compte-save">Enregistrer</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="solde-compte-statut"></p>
       </div>
       <div class="card settings-section" id="notifications-section">
         <h3>Notifications</h3>
@@ -2625,6 +2646,15 @@ function premierePaieDepuis(ancrage, date){
   return d;
 }
 
+/* Vrai si `date` tombe sur une paie : la grille des paies est ancrée et régulière (aux 2
+   semaines), donc il suffit de compter les jours depuis l'ancrage. Le double modulo gère les
+   dates ANTÉRIEURES à l'ancrage, où le reste serait négatif. */
+function estJourDePaie(date){
+  if(!paieAncrage) return false;
+  const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
+  return ((joursEntreDates(ancrage, debutJour(date)) % 14) + 14) % 14 === 0;
+}
+
 const NB_PAIES_ECHEANCIER = 8; /* ~3-4 mois, aux 2 semaines */
 
 /* Calcule, pour les prochaines paies, le vrai montant net dû par p1 et p2. Retourne null si
@@ -3124,28 +3154,27 @@ function afficherEcheancierCompteConjoint(){
     if(p.entrees) mouvements.push(`+ ${formaterMonnaie(p.entrees)} de revenus`);
     const titre = (mouvements.length ? mouvements.join(', ') + ' d\'ici la paie suivante. ' : "Aucun mouvement d'ici la paie suivante. ")
       + (enManque ? `Le compte descend à ${formaterMonnaie(p.soldeMin)}.` : `Creux de la période : ${formaterMonnaie(p.soldeMin)}.`);
-    return `<span class="value solde-colonne ${enManque ? 'solde-negatif' : ''}" title="${echapperHTML(titre)}">${enManque ? '⚠ ' : ''}${formaterMonnaie(p.solde)}</span>`;
+    return `<span class="col-nombre value ${enManque ? 'solde-negatif' : ''}" title="${echapperHTML(titre)}">${enManque ? '⚠ ' : ''}${formaterMonnaie(p.solde)}</span>`;
   };
 
   conteneur.innerHTML = `
-    <div class="recurrent-row" style="font-size:12px;color:var(--text-secondary);font-weight:500;">
-      <div>Paie</div>
-      <div style="display:flex;gap:18px;">
-        <span style="min-width:70px;text-align:right;">${nomsPersonnes.p1}</span>
-        <span style="min-width:70px;text-align:right;">${nomsPersonnes.p2}</span>
-        ${avecSolde ? `<span class="solde-colonne">Solde</span>` : ''}
+    <div class="echeancier ${avecSolde ? 'avec-solde' : ''}">
+      <div class="echeancier-entete">
+        <span>Paie</span>
+        <span class="col-nombre">${nomsPersonnes.p1}</span>
+        <span class="col-nombre">${nomsPersonnes.p2}</span>
+        ${avecSolde ? `<span class="col-nombre">Solde</span>` : ''}
       </div>
+      ${echeancier.map(ligne => `
+        <div class="echeancier-ligne" onclick="ouvrirDetailDepot('${ligne.iso}')" title="Voir le détail du calcul">
+          <span class="echeancier-date">${formatDate(ligne.date)}</span>
+          <span class="col-nombre value p1">${formaterMonnaie(ligne.p1)}</span>
+          <span class="col-nombre value p2">${formaterMonnaie(ligne.p2)}</span>
+          ${avecSolde ? celluleSolde(ligne) : ''}
+        </div>
+      `).join('')}
     </div>
-  ` + echeancier.map(ligne => `
-    <div class="recurrent-row depot-row" onclick="ouvrirDetailDepot('${ligne.iso}')" style="cursor:pointer;" title="Voir le détail du calcul">
-      <div class="recurrent-nom">${formatDate(ligne.date)}</div>
-      <div style="display:flex;gap:18px;">
-        <span class="value p1" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p1)}</span>
-        <span class="value p2" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p2)}</span>
-        ${avecSolde ? celluleSolde(ligne) : ''}
-      </div>
-    </div>
-  `).join('') + (afficherVoirPlus ? `
+  ` + (afficherVoirPlus ? `
     <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir plus (le reste de l'année)</div>
   ` : (afficherVoirMoins ? `
     <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-moins">Voir moins</div>
@@ -3180,7 +3209,7 @@ function afficherAlerteSoldeCompte(projection){
   const zone = document.getElementById('solde-compte-alerte');
   if(!zone) return;
   if(!projection || !projection.length){
-    zone.innerHTML = soldeCompte ? '' : `<div class="solde-alerte ok" style="background:var(--bg);border-color:var(--border);color:var(--text-secondary);">Entre le solde réel du compte pour voir s'il couvrira les dépenses à venir.</div>`;
+    zone.innerHTML = soldeCompte ? '' : `<div class="solde-alerte neutre">Indique le solde du compte dans Paramètres › Compte conjoint pour voir ce qu'il restera après les dépenses à venir.</div>`;
     return;
   }
   const premierManque = projection.find(p => p.soldeMin < 0);
@@ -4215,8 +4244,12 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
        seulement s'il y a 2 dépenses ou plus (léger et lisible, façon Google Agenda en
        vue compacte). */
     const couleursPresentes = [...new Set(jourItems.map(classeTypeDepense))].slice(0,4);
-    html += `<div class="cal-month-cell ${dansLeMois?'':'outside'}" onclick="allerVueJour('${scope}','${iso}')">
-      <div class="cal-month-daynum ${iso===aujourdhuiStr?'today':''}">${curseur.getDate()}</div>
+    /* `today` va sur la CASE, pas sur le numéro : c'est la case qui porte la règle qui
+       dessine la pastille bleue (façon Google Agenda) autour du chiffre. */
+    const estAujourdhui = iso === aujourdhuiStr;
+    html += `<div class="cal-month-cell ${dansLeMois?'':'outside'} ${estAujourdhui?'today':''}" onclick="allerVueJour('${scope}','${iso}')">
+      ${estJourDePaie(curseur) ? `<span class="cal-paie-marqueur" title="Jour de paie">✉</span>` : ''}
+      <div class="cal-month-daynum ${estAujourdhui?'today':''}">${curseur.getDate()}</div>
       ${nb>0 ? `<div class="cal-month-dots">
         ${couleursPresentes.map(c=>`<span class="cal-dot-mini ${c}"></span>`).join('')}
         ${nb>=2 ? `<span class="cal-month-count">${nb}</span>` : ''}
@@ -4818,6 +4851,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
    intacts pendant qu'elle est ouverte. */
 function fermerSettingsModal(){ document.getElementById('settings-modal').style.display = 'none'; }
 document.getElementById('open-settings').addEventListener('click',()=>{
+  remplirChampsSoldeCompte();
   document.getElementById('settings-modal').style.display = 'flex';
 });
 document.getElementById('close-settings-modal').addEventListener('click', fermerSettingsModal);
