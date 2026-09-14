@@ -2,11 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<!-- `maximum-scale=1, user-scalable=no` : le zoom est bloqué volontairement. L'app mesure la
-     hauteur réellement visible (visualViewport) pour placer les fenêtres au-dessus du
-     clavier ; un pincement réduit cette même hauteur, et la mise en page se réorganisait
-     alors comme si le clavier venait de s'ouvrir. -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Dépenses</title>
 
 <!-- ===================== PWA : installation "app" sans barre de navigateur ===================== -->
@@ -48,48 +44,24 @@
     --border:#dadce0;
     --text:#202124;
     --text-secondary:#5f6368;
-    /* Échelle de rayons : quatre valeurs seulement, choisies par rôle. Avant, treize rayons
-       différents cohabitaient (3, 5, 6, 8, 10, 12, 18, 20, 24…) et deux éléments de même
-       nature n'avaient pas la même courbe. */
-    --r-xs:6px;    /* petits contrôles posés à l'intérieur d'un autre élément */
-    --r-sm:8px;    /* champs, boutons */
-    --r-md:12px;   /* cartes, fenêtres, panneaux */
-    --r-pill:999px;/* pastilles, bascules, chips : toujours un demi-cercle net */
-    --radius:var(--r-md);
-    /* Mouvement : une durée courte pour les changements d'état, une plus longue pour ce qui
-       se déplace ou se remplit. La courbe sort vite et arrive en douceur. */
-    --t:150ms;
-    --t-slow:260ms;
-    --ease:cubic-bezier(.2,0,0,1);
-    --ring:0 0 0 3px rgba(26,115,232,.18);
+    --radius:12px;
     /* Bleu d'accent pour le TEXTE des menus actifs. En thème clair c'est --blue ; en sombre
        ce bleu devient illisible sur fond foncé, d'où une variable dédiée (voir body.dark).
        --blue reste réservé aux fonds pleins avec texte blanc (boutons, bascules). */
     --accent-menu:#1a73e8;
-    /* Ombres à deux couches : un contact net et serré, puis une diffusion large et très
-       légère. Les ombres d'origine (rgba(60,64,67,.30)) étaient assez denses pour grisailler
-       le blanc des cartes posées dessus. */
-    --shadow-1: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.10);
-    --shadow-2: 0 4px 8px -2px rgba(16,24,40,.08), 0 16px 32px -8px rgba(16,24,40,.16);
+    --shadow-1: 0 1px 2px 0 rgba(60,64,67,.30), 0 1px 3px 1px rgba(60,64,67,.15);
+    --shadow-2: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    /* 'Google Sans' n'est pas distribuée publiquement et 'Roboto' n'est pas installée
-       partout : la pile retombait donc sur Arial, qui n'est la police d'aucun système
-       moderne. On intercale les polices d'interface natives avant, pour que le texte soit
-       rendu avec celle que l'appareil utilise déjà partout ailleurs. */
-    font-family:'Google Sans','Roboto',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-family:'Google Sans','Roboto',Arial,sans-serif;
     background:var(--bg);
     color:var(--text);
     /* Zones de sécurité pour l'affichage plein écran en mode app (encoches / barres système) */
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     -webkit-tap-highlight-color: transparent;
-    /* Le méta viewport couvre le pincement ; celui-ci couvre le double-touche, que Chrome
-       traite séparément. Il supprime au passage le délai de 300 ms que le navigateur garde
-       pour distinguer une touche simple d'un double-touche. */
-    touch-action: manipulation;
   }
   .app{
     max-width:1080px;
@@ -115,9 +87,9 @@
   .auth-card p.subtitle{color:var(--text-secondary);font-size:13px;margin:0 0 20px;}
   .auth-form{text-align:left;display:flex;flex-direction:column;gap:14px;}
   .auth-form .field label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:500;}
-  .auth-form .field input{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);outline:none;}
-  .auth-form .field input:focus{border-color:var(--blue);box-shadow:var(--ring);}
-  .auth-submit{background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);padding:12px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;}
+  .auth-form .field input{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
+  .auth-form .field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,115,232,.15);}
+  .auth-submit{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;}
   .auth-submit:hover{background:var(--blue-dark);}
   .auth-submit:disabled{opacity:.6;cursor:default;}
   .auth-error{color:var(--red);font-size:13px;margin:0;min-height:16px;}
@@ -148,7 +120,7 @@
     margin-bottom:24px;
   }
   .logo-mark{
-    width:40px;height:40px;border-radius:var(--r-md);
+    width:40px;height:40px;border-radius:10px;
     background:var(--blue);
     display:flex;align-items:center;justify-content:center;
     flex-shrink:0;
@@ -171,7 +143,7 @@
     display:flex;align-items:center;gap:6px;
     background:var(--surface);
     border:1px solid var(--border);
-    border-radius:var(--r-pill);
+    border-radius:20px;
     padding:6px 14px 6px 8px;
     font-size:13px;
     font-weight: 500;
@@ -181,7 +153,7 @@
   .dot.p2{background:var(--red);}
   .dot.compte{background:var(--green);}
   .change-user-btn {
-    background: none; border: 1px solid var(--border); border-radius:var(--r-sm);
+    background: none; border: 1px solid var(--border); border-radius: 8px;
     padding: 6px 10px; font-family: inherit; font-size: 12px; cursor: pointer; color: var(--text-secondary);
   }
   .change-user-btn:hover { border-color: var(--text); color: var(--text); }
@@ -203,14 +175,14 @@
   .period-type-row{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:38px;}
   .period-nav button,.icon-btn{
     border:1px solid var(--border);background:var(--surface);color:var(--text);
-    border-radius:var(--r-sm);padding:8px 12px;font-family:inherit;cursor:pointer;
+    border-radius:8px;padding:8px 12px;font-family:inherit;cursor:pointer;
   }
   .period-nav button:hover,.icon-btn:hover{border-color:var(--blue);color:var(--blue);}
-  .period-label{min-width:150px;text-align:center;font-weight:500;cursor:pointer;border-radius:var(--r-xs);padding:4px 6px;}
+  .period-label{min-width:150px;text-align:center;font-weight:500;cursor:pointer;border-radius:6px;padding:4px 6px;}
   .period-label:hover{color:var(--blue);text-decoration:underline;}
-  .period-type-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:var(--r-sm);padding:3px;flex-wrap:wrap;justify-content:center;}
+  .period-type-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-wrap:wrap;justify-content:center;}
   body.dark .period-type-switch{background:#2c3136;}
-  .period-type-switch button{border:none!important;background:transparent;color:var(--text-secondary);font-size:12px;padding:6px 10px;border-radius:var(--r-xs);cursor:pointer;white-space:nowrap;}
+  .period-type-switch button{border:none!important;background:transparent;color:var(--text-secondary);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
   .period-type-switch button.active{background:var(--surface);color:var(--blue);font-weight:600;box-shadow:var(--shadow-1);}
   .tab-btn{
     background:none;border:none;cursor:pointer;
@@ -218,7 +190,7 @@
     color:var(--text-secondary);
     padding:14px 18px;
     position:relative;
-    transition:color var(--t) var(--ease);
+    transition:color .15s ease;
   }
   .tab-btn:hover{color:var(--text);}
   .tab-btn.active{color:var(--accent-menu);}
@@ -236,7 +208,7 @@
   .section-header h2{margin:0 0 4px;font-size:19px;font-weight:500;display:flex;align-items:center;gap:8px;}
   .section-header p{margin:0;font-size:13px;color:var(--text-secondary);}
   .subtabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;}
-  .subtab-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text-secondary);padding:10px 16px;position:relative;transition:color var(--t) var(--ease);}
+  .subtab-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text-secondary);padding:10px 16px;position:relative;transition:color .15s ease;}
   .subtab-btn:hover{color:var(--text);}
   .subtab-btn.active{color:var(--accent-menu);}
   .subtab-btn.active::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent-menu);}
@@ -249,15 +221,7 @@
   .recurrent-info{display:flex;flex-direction:column;gap:5px;min-width:0;}
   .recurrent-nom{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .recurrent-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .freq-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--r-pill);background:#f1f3f4;color:var(--text-secondary);white-space:nowrap;}
-  /* Revenu : un + vert, dans la pastille qu'occupait l'icône de banque pour les dépenses
-     payées par le compte. Le symbole est plus large que le texte d'une pastille ordinaire,
-     d'où la largeur fixe — sans elle, les pastilles des lignes voisines ne s'alignent pas. */
-  .freq-pill.badge-revenu, body.dark .freq-pill.badge-revenu{
-    background:color-mix(in srgb, var(--green) 18%, transparent);
-    color:var(--green);font-weight:700;font-size:13px;line-height:1.1;
-    min-width:24px;text-align:center;padding:1px 6px;
-  }
+  .freq-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f1f3f4;color:var(--text-secondary);white-space:nowrap;}
   body.dark .freq-pill{background:#2c3136;}
   input[type="range"]{accent-color:var(--blue);width:100%;cursor:pointer;}
   .recurrent-actions{display:flex;align-items:center;gap:14px;flex-shrink:0;}
@@ -270,11 +234,11 @@
   .portee-choix{display:flex;flex-direction:column;gap:10px;}
   .portee-option{
     width:100%;text-align:left;cursor:pointer;
-    border:1px solid var(--border);border-radius:var(--r-md);
+    border:1px solid var(--border);border-radius:10px;
     background:var(--surface);color:var(--text);
     padding:14px 16px;font:inherit;
     display:flex;flex-direction:column;gap:3px;
-    transition:border-color var(--t) var(--ease), background var(--t) var(--ease);
+    transition:border-color .15s ease, background .15s ease;
   }
   .portee-option:hover{border-color:var(--blue);background:color-mix(in srgb, var(--blue) 6%, var(--surface));}
   .portee-titre{font-size:14px;font-weight:600;}
@@ -298,7 +262,7 @@
 
   /* Aperçu de la première occurrence, sous les réglages de récurrence. */
   .apercu-recurrence{font-size:12px;color:var(--text-secondary);line-height:1.45;
-    background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;}
+    background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 11px;}
   .apercu-recurrence .apercu-alerte{color:var(--red);}
   @media (max-width:760px){
     .recurrent-row{flex-wrap:wrap;}
@@ -316,21 +280,21 @@
   #calendrier-recurrent-card-conjoint .cal-head, #calendrier-recurrent-card-personnel .cal-head,
   #calendrier-recurrent-card-conjoint .cal-nav, #calendrier-recurrent-card-personnel .cal-nav{padding:0 14px;}
   .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
-  .cal-mode-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:var(--r-sm);padding:3px;flex-shrink:0;}
+  .cal-mode-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-shrink:0;}
   body.dark .cal-mode-switch{background:#2c3136;}
-  .cal-mode-switch button{border:none;background:transparent;color:var(--text-secondary);font-size:14px;padding:5px 9px;border-radius:var(--r-xs);cursor:pointer;line-height:1;}
+  .cal-mode-switch button{border:none;background:transparent;color:var(--text-secondary);font-size:14px;padding:5px 9px;border-radius:6px;cursor:pointer;line-height:1;}
   .cal-mode-switch button.active{background:var(--surface);box-shadow:var(--shadow-1);}
-  .cal-hamburger-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:var(--r-sm);font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .cal-hamburger-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
   .cal-hamburger-btn.active{border-color:var(--blue);color:var(--blue);}
   /* Barre d'outils du calendrier/liste : filtres à gauche, bascule grille/liste centrée
      (visible seulement en vue Mois), tri à droite — toujours sur une seule ligne. */
   .cal-toolbar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 14px 10px;gap:8px;}
   .cal-toolbar-centre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);}
   .cal-toolbar .mobile-sort{display:flex!important;gap:6px;align-items:center;}
-  .cal-menu-panel{margin:0 14px 12px;border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;background:var(--surface);box-shadow:var(--shadow-1);}
+  .cal-menu-panel{margin:0 14px 12px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface);box-shadow:var(--shadow-1);}
   .cal-menu-section-title{font-size:11px;text-transform:uppercase;color:var(--text-secondary);font-weight:600;margin:10px 0 4px;}
   .cal-menu-section-title:first-child{margin-top:0;}
-  .cal-menu-vue-option{display:flex;align-items:center;gap:10px;padding:7px 4px;border-radius:var(--r-xs);cursor:pointer;font-size:13px;}
+  .cal-menu-vue-option{display:flex;align-items:center;gap:10px;padding:7px 4px;border-radius:6px;cursor:pointer;font-size:13px;}
   .cal-menu-vue-option:hover{background:#f1f3f4;}
   body.dark .cal-menu-vue-option:hover{background:#2c3136;}
   .cal-menu-vue-option.active{color:var(--blue);font-weight:600;}
@@ -343,7 +307,7 @@
   .cal-menu-montant-sliders input[type="range"]::-webkit-slider-thumb{pointer-events:auto;}
   .cal-menu-montant-sliders input[type="range"]::-moz-range-thumb{pointer-events:auto;}
   .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
-  .cal-nav-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:var(--r-sm);font-size:16px;cursor:pointer;flex-shrink:0;}
+  .cal-nav-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;}
   .cal-titre{font-weight:600;font-size:14px;text-align:center;text-transform:capitalize;flex:1;}
 
   /* Grille mensuelle pleine largeur, style Google Agenda : pas de coins arrondis/bordures
@@ -355,17 +319,8 @@
   .cal-month-cell{min-height:46px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden;cursor:pointer;}
   .cal-month-cell:active{background:color-mix(in srgb, var(--blue) 6%, transparent);}
   .cal-month-cell.outside{opacity:.35;}
-  /* Numéro du jour et, s'il y a lieu, l'étoile de paie sur la même ligne. */
-  .cal-month-jour{display:flex;align-items:center;justify-content:center;gap:1px;}
   .cal-month-daynum{font-size:11px;color:var(--text-secondary);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
-  /* La règle visait `.cal-month-cell.today`, alors que la classe est posée sur le numéro
-     lui-même : elle ne s'appliquait jamais et aucune date n'était marquée. Contour plutôt
-     que pastille pleine, pour ne pas entrer en concurrence avec les pastilles de couleur
-     juste en dessous. */
-  .cal-month-daynum.today{
-    border:2px solid var(--accent-menu);color:var(--accent-menu);font-weight:700;
-  }
-  .cal-month-paie{font-size:8px;line-height:1;color:var(--text);flex-shrink:0;}
+  .cal-month-cell.today .cal-month-daynum{background:var(--blue);color:#fff;font-weight:700;}
   .cal-month-dots{display:flex;align-items:center;justify-content:center;gap:3px;min-height:6px;}
   .cal-dot-mini{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
   .cal-dot-mini.cal-p1{background:var(--blue);}
@@ -377,13 +332,13 @@
   .cal-agenda-day-header{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:capitalize;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border);}
   .cal-agenda-day-header.today{color:var(--blue);}
   .cal-agenda-empty{font-size:12px;color:var(--text-secondary);padding:4px 0 10px;}
-  .cal-agenda-item{display:block;padding:9px 10px;border-radius:var(--r-sm);margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
+  .cal-agenda-item{display:block;padding:9px 10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
   body.dark .cal-agenda-item{background:#2c3136;}
   .cal-agenda-item-ligne1{display:flex;align-items:center;gap:6px;}
   .cal-agenda-item-ligne2{display:flex;align-items:center;gap:6px;margin-top:5px;}
   /* Largeur fixe pour la date, pour que "1 sept" et "23 sept" prennent la même place et
      que tout s'aligne d'une ligne à l'autre. */
-  .cal-agenda-item-date{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--border);padding:2px 6px;border-radius:var(--r-xs);flex-shrink:0;min-width:52px;text-align:center;}
+  .cal-agenda-item-date{font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--border);padding:2px 6px;border-radius:5px;flex-shrink:0;min-width:52px;text-align:center;}
   /* % et Montant regroupés, collés ensemble, complètement à droite. */
   .cal-agenda-item-right{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;}
   .cal-agenda-pct{font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;min-width:28px;text-align:right;}
@@ -439,7 +394,9 @@
     .grid-2{grid-template-columns:minmax(0,1fr);}
     .grid-2 .card{min-width:0;}
     .chart-wrap canvas{max-width:100%!important;}
+    .form-grid{grid-template-columns:minmax(0,1fr);}
     .stats-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+    #donnees-section{display:none;}
   }
   .stat-card{
     background:var(--surface);
@@ -499,15 +456,15 @@
     font-size:14px;
     padding:10px 12px;
     border:1px solid var(--border);
-    border-radius:var(--r-sm);
+    border-radius:8px;
     background:var(--surface);
     color:var(--text);
     outline:none;
-    transition:border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+    transition:border-color .15s ease, box-shadow .15s ease;
   }
   .field select:focus, .field input:focus{
     border-color:var(--accent-menu);
-    box-shadow:var(--ring);
+    box-shadow:0 0 0 3px rgba(26,115,232,.15);
   }
   /* Les <select> gardaient le rendu natif du système : flèche, hauteur et couleurs
      différentes des <input> voisins, et fond clair en thème sombre. On neutralise le style
@@ -537,26 +494,26 @@
     background:var(--blue);
     color:#fff;
     border:none;
-    border-radius:var(--r-sm);
+    border-radius:8px;
     padding:11px 20px;
     font-family:inherit;
     font-size:14px;
     font-weight:500;
     cursor:pointer;
     white-space:nowrap;
-    transition:background var(--t) var(--ease), box-shadow var(--t) var(--ease);
+    transition:background .15s ease, box-shadow .15s ease;
   }
   .btn-add:hover{background:var(--blue-dark);box-shadow:var(--shadow-1);}
   .type-toggle{display:flex;gap:8px;}
   .type-btn{
-    flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);
+    flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
     background:var(--surface);color:var(--text-secondary);font-family:inherit;font-size:13px;font-weight:500;
-    cursor:pointer;transition:border-color var(--t) var(--ease), background var(--t) var(--ease), color var(--t) var(--ease);
+    cursor:pointer;transition:all .15s ease;
   }
   .type-btn:hover{border-color:var(--blue);color:var(--blue);}
   .type-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
   .type-pill{
-    display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--r-pill);
+    display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
     background:#f1f3f4;color:var(--text-secondary);margin-left:6px;white-space:nowrap;
   }
   body.dark .type-pill{background:#2c3136;}
@@ -574,7 +531,7 @@
     cursor:pointer;
     padding:4px;
     margin:-6px -6px 0 0;
-    border-radius:var(--r-xs);
+    border-radius:6px;
   }
   .modal-close-btn:hover{color:var(--text);background:rgba(0,0,0,.06);}
   body.dark .modal-close-btn:hover{background:rgba(255,255,255,.08);}
@@ -621,13 +578,13 @@
     justify-content:space-between;
   }
   .mobile-sort{display:none;}
-  .mobile-sort select{border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font:13px inherit;padding:7px 9px;}
+  .mobile-sort select{border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:13px inherit;padding:7px 9px;}
   .mobile-sort{display:none;gap:6px;align-items:center;}
-  .sort-direction{width:34px;height:34px;padding:0!important;font-size:16px!important;line-height:1;cursor:pointer;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:inherit;}
+  .sort-direction{width:34px;height:34px;padding:0!important;font-size:16px!important;line-height:1;cursor:pointer;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:inherit;}
   .sort-direction:hover{border-color:var(--blue);color:var(--blue);}
   .table-filters{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px;gap:10px;flex-wrap:wrap;}
   .table-filters .field{margin-bottom:0;}
-  .table-filters select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);}
+  .table-filters select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);}
   .table-card h3{margin:0;font-size:15px;color:var(--text);font-weight:500;}
   .row-count{font-size:13px;color:var(--text-secondary);}
   table{width:100%;border-collapse:collapse;font-size:14px;}
@@ -659,7 +616,7 @@
     display:inline-block;
     font-size:12px;
     padding:3px 10px;
-    border-radius:var(--r-pill);
+    border-radius:12px;
     background:#e8f0fe;
     color:var(--blue-dark);
   }
@@ -683,9 +640,9 @@
   .budget-row-amounts{font-size:12px;color:var(--text-secondary);white-space:nowrap;}
   .budget-row-amounts strong{color:var(--text);font-weight:500;}
   .budget-row-conjoint{font-size:11px;color:var(--text-secondary);text-align:right;margin:-2px 0 6px;}
-  .budget-bar{height:8px;border-radius:var(--r-pill);background:#eef0f3;overflow:hidden;}
+  .budget-bar{height:8px;border-radius:6px;background:#eef0f3;overflow:hidden;}
   body.dark .budget-bar{background:#2c3136;}
-  .budget-bar-fill{height:100%;border-radius:var(--r-pill);transition:width var(--t-slow) var(--ease);}
+  .budget-bar-fill{height:100%;border-radius:6px;transition:width .25s ease;}
   .budget-empty{font-size:13px;color:var(--text-secondary);padding:8px 0;}
   .budget-input-field{margin-bottom:0;}
   .budget-input-field label{display:flex;align-items:center;gap:6px;}
@@ -697,28 +654,22 @@
   .settings-section h3{margin:0 0 12px;font-size:15px;font-weight:500;}
   .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
   .settings-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
-  .settings-row input[type="color"]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:var(--r-xs);background:var(--surface);}
+  .settings-row input[type="color"]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:var(--surface);}
   .theme-toggle{display:flex;align-items:center;gap:10px;}
   .toggle-field{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .toggle-field-label{font-size:14px;}
   .switch{position:relative;display:inline-flex;width:48px;height:28px;cursor:pointer;flex-shrink:0;}
   .switch input{position:absolute;opacity:0;width:0;height:0;}
-  .switch-track{position:absolute;inset:0;border-radius:var(--r-pill);background:#9aa0a6;transition:background var(--t) var(--ease);}
-  .switch-track::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform var(--t) var(--ease);}
+  .switch-track{position:absolute;inset:0;border-radius:18px;background:#9aa0a6;transition:background .2s;}
+  .switch-track::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s;}
   .switch input:checked + .switch-track{background:var(--blue);}
   .switch input:checked + .switch-track::after{transform:translateX(20px);}
-  body.dark{--accent-menu:#8ab4f8;--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;
-    /* Sur fond foncé une ombre portée ne se voit presque plus : on l'assombrit et on garde
-       le même rapport entre les deux couches, et l'anneau de focus reprend le bleu clair
-       lisible du thème. */
-    --shadow-1:0 1px 2px rgba(0,0,0,.40), 0 1px 3px rgba(0,0,0,.28);
-    --shadow-2:0 4px 8px -2px rgba(0,0,0,.40), 0 16px 32px -8px rgba(0,0,0,.50);
-    --ring:0 0 0 3px rgba(138,180,248,.28);}
+  body.dark{--accent-menu:#8ab4f8;--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
   body.dark tbody tr:hover{background:#2b3035;} body.dark tbody td{border-bottom-color:#343a40;}
   body.dark .cat-pill{background:#303b4a;color:#b8d1f5;}
-  .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-pill);padding:4px;margin-bottom:20px;}
+  .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
   .toggle-perso-scope{display:flex;width:fit-content;margin-left:auto;margin-right:auto;}
-  .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:var(--r-pill);cursor:pointer;}
+  .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:20px;cursor:pointer;}
   .compare-toggle button.active{background:var(--blue);color:#fff;}
   .compare-selects{display:flex;gap:16px;align-items:center;margin-bottom:24px;flex-wrap:wrap;}
   #tab-comparer{text-align:center;}
@@ -796,7 +747,7 @@
   .field select:disabled, .field input:disabled{opacity:.5;cursor:not-allowed;}
   .edit-card h2{margin:0 0 18px;font-size:20px;font-weight:500;}
   .edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
-  .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:var(--r-sm);padding:10px 16px;font:500 14px inherit;cursor:pointer;}
+  .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
   .btn-danger{background:#d93025;color:#fff;border-color:#d93025;}
   .btn-danger:hover{background:#b0261a;border-color:#b0261a;}
   #save-edit{background:var(--blue);}
@@ -854,12 +805,8 @@
   }
   /* Détail d'un dépôt au compte conjoint (fenêtre de vérification du calcul) */
   .depot-row:hover{background:var(--bg);}
-  .depot-section-titre{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
-    font-size:12px;font-weight:600;color:var(--text-secondary);
+  .depot-section-titre{font-size:12px;font-weight:600;color:var(--text-secondary);
     text-transform:uppercase;letter-spacing:.04em;margin:18px 0 6px;}
-  /* Le sous-total accompagne le titre du groupe : il est en plus petit que les montants des
-     lignes, pour ne pas peser plus lourd que les postes qu'il résume. */
-  .depot-section-titre .depot-ligne-montants .value{font-size:12px;font-weight:600;}
   .depot-entete{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     font-size:12px;color:var(--text-secondary);font-weight:500;padding-bottom:6px;border-bottom:1px solid var(--border);}
   .depot-entete-montants{display:flex;gap:16px;}
@@ -869,81 +816,13 @@
   .depot-ligne-nom{font-size:14px;font-weight:500;}
   .depot-ligne-montants{display:flex;gap:16px;flex:0 0 auto;}
   .depot-ligne-montants .value{min-width:76px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;}
-  /* Point de couleur de la catégorie, en tête de libellé : il remplace la pastille qui
-     occupait sa propre ligne sous chaque poste. */
-  .depot-point{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;}
-  /* Explication repliée : <details> gère l'ouverture sans JavaScript. Le marqueur natif est
-     masqué au profit du chevron, qui pivote. */
-  details.depot-ligne>summary{list-style:none;cursor:pointer;}
-  details.depot-ligne>summary::-webkit-details-marker{display:none;}
-  .depot-chevron{display:inline-block;margin-left:6px;font-size:14px;color:var(--text-secondary);
-    transform:rotate(90deg);transition:transform var(--t) var(--ease);}
-  details.depot-ligne[open]>summary .depot-chevron{transform:rotate(-90deg);}
-  .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:7px;line-height:1.45;}
-  .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:var(--r-pill);margin-left:6px;
+  .depot-ligne .cat-pill{margin-top:6px;}
+  .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.45;}
+  .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;
     background:var(--border);color:var(--text-secondary);vertical-align:middle;}
   .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
   .depot-total.final .value{font-weight:600;}
-  /* ===================== Finitions communes =====================
-     Règles transversales, volontairement à la fin : elles s'appliquent à des éléments
-     définis un peu partout plus haut et doivent donc gagner à égalité de spécificité. */
-
-  /* Le focus n'était visible que sur les champs de saisie ; au clavier, les dizaines de
-     boutons de l'app ne montraient rien. :focus-visible ne se déclenche pas au doigt ni à
-     la souris, donc ça n'ajoute aucun contour parasite à l'usage normal. */
-  :focus-visible{outline:2px solid var(--accent-menu);outline-offset:2px;}
-  .field select:focus-visible, .field input:focus-visible{outline:none;}
-
-  /* Retour au toucher. Le survol n'existe pas sur mobile : sans état actif, appuyer sur un
-     bouton ne produisait aucun signe avant que l'écran ne change. */
-  .btn-add:active, .auth-submit:active, .btn-secondary:active,
-  .type-btn:active, .mobile-add-btn:active, .portee-option:active{transform:scale(.98);}
-  .btn-add, .auth-submit, .btn-secondary, .type-btn, .portee-option{
-    transition:background var(--t) var(--ease), border-color var(--t) var(--ease),
-               color var(--t) var(--ease), box-shadow var(--t) var(--ease),
-               transform var(--t) var(--ease);
-  }
-
-  /* Chiffres à chasse fixe partout où des montants se lisent en colonne : sans ça, un 1 est
-     plus étroit qu'un 8 et les virgules des lignes successives ne tombent pas l'une sous
-     l'autre. */
-  .amount-cell, .stat-card .value, .recurrent-montant, .cal-agenda-item-montant,
-  .budget-row-amounts, .depot-ligne-montants .value, .depot-total.final .value,
-  .cal-menu-montant-valeurs{font-variant-numeric:tabular-nums;}
-
-  /* Texte d'explication sous un titre de section. Remplace autant de styles en ligne, qui
-     divergeaient d'un endroit à l'autre (13px ici, 12px là, marges différentes). */
-  .note-aide{font-size:13px;color:var(--text-secondary);line-height:1.5;margin:0 0 14px;}
-  .note-aide:last-child{margin-bottom:0;}
-
-  @media (prefers-reduced-motion: reduce){
-    *, *::before, *::after{
-      animation-duration:.01ms!important;animation-iteration-count:1!important;
-      transition-duration:.01ms!important;scroll-behavior:auto!important;
-    }
-  }  /* Marqueur « revenu » posé devant un libellé, en pendant du ↻ de « Se répète ». Même rôle
-     que le point de couleur des catégories dans le menu de filtres, d'où la largeur fixe :
-     les libellés de la liste restent alignés les uns sous les autres. */
-  .icone-revenu{display:inline-block;min-width:12px;text-align:center;
-    font-size:16px;font-weight:700;line-height:1;color:var(--green);cursor:default;}
-
-  /* Heure de notification : deux menus côte à côte plutôt que le sélecteur natif. */
-  .champ-heure{display:flex;align-items:center;gap:8px;}
-  .champ-heure select{flex:1;min-width:0;}
-  .champ-heure-sep{font-size:14px;color:var(--text-secondary);flex-shrink:0;}
-
-  /* Paramètres en fenêtre : les sections étaient des cartes posées sur le fond de page.
-     Dans une fenêtre, ces cartes se retrouveraient imbriquées dans une autre carte, avec
-     deux bordures et deux fonds superposés. On les aplatit en simples blocs séparés par un
-     filet. */
-  #parametres-modal .settings-section{
-    background:none;border:0;border-radius:0;padding:0;margin:0;
-  }
-  #parametres-modal .settings-section + .settings-section{
-    margin-top:24px;padding-top:24px;border-top:1px solid var(--border);
-  }
-
 </style>
 </head>
 <body>
@@ -1060,7 +939,7 @@
 
       <div class="card form-card" id="form-card-conjoint">
         <div class="modal-header">
-          <h3>Ajouter une dépense conjointe</h3>
+          <h3>Ajouter une dépense conjointe<span class="modal-sous-titre">Partagée entre vous deux</span></h3>
           <button class="modal-close-btn mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
         </div>
         <div class="modal-body">
@@ -1143,7 +1022,7 @@
             <span id="f-apercu-conjoint"></span>
           </div>
           <div class="field toggle-field champ-bascule bascule-droite" id="f-est-revenu-field-conjoint" style="display:none;">
-            <span class="toggle-field-label"><span class="icone-revenu">+</span> Revenu</span>
+            <span class="toggle-field-label">Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
         </div>
@@ -1191,6 +1070,10 @@
     <!-- Sous-onglet : BUDGET -->
     <div class="subtab-panel" data-scope="conjoint" data-sub="budget">
       <div class="stats-row" id="stats-conjoint"></div>
+      <div class="card" id="budget-revenus-card-conjoint" style="display:none;">
+        <h3 style="margin-bottom:12px;">Revenus de <span id="budget-revenus-periode-conjoint"></span></h3>
+        <div id="budget-revenus-list-conjoint"></div>
+      </div>
       <div class="grid-2">
         <div class="card">
           <h3>Budget par catégorie</h3>
@@ -1203,9 +1086,11 @@
       </div>
       <div class="card" id="budget-edit-card-conjoint">
         <h3 style="margin-bottom:12px;">Gérer le budget conjoint de <span id="periode-label-conjoint"></span></h3>
-        
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ce budget est partagé : vous et votre partenaire pouvez tous les deux le consulter et le modifier. Il concerne seulement les dépenses <em>conjointes</em>. Le budget est propre à chaque mois — ajustable seulement en vue "Paie".</p>
+
         <div style="padding-top:14px;border-top:1px solid var(--border);">
-                    <div id="budget-form-conjoint" class="settings-grid"></div>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
+          <div id="budget-form-conjoint" class="settings-grid"></div>
         </div>
 
         <button class="btn-add" id="save-budgets-conjoint" style="margin-top:16px;">Sauvegarder le budget conjoint</button>
@@ -1236,7 +1121,7 @@
 
       <div class="card form-card" id="form-card-personnel">
         <div class="modal-header">
-          <h3>Ajouter une dépense personnelle</h3>
+          <h3>Ajouter une dépense personnelle<span class="modal-sous-titre">Visible par vous seul</span></h3>
           <button class="modal-close-btn mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
         </div>
         <div class="modal-body">
@@ -1311,7 +1196,7 @@
             <span id="f-apercu-personnel"></span>
           </div>
           <div class="field toggle-field champ-bascule bascule-droite" id="f-est-revenu-field-personnel">
-            <span class="toggle-field-label"><span class="icone-revenu">+</span> Revenu</span>
+            <span class="toggle-field-label">Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
         </div>
@@ -1360,6 +1245,10 @@
         <button data-include="oui">+ Conjoint</button>
       </div>
       <div class="stats-row" id="stats-personnel"></div>
+      <div class="card" id="budget-revenus-card-personnel" style="display:none;">
+        <h3 style="margin-bottom:12px;">Revenus de <span id="budget-revenus-periode-personnel"></span></h3>
+        <div id="budget-revenus-list-personnel"></div>
+      </div>
       <div class="grid-2">
         <div class="card">
           <h3>Budget par catégorie</h3>
@@ -1372,9 +1261,11 @@
       </div>
       <div class="card" id="budget-edit-card-personnel">
         <h3 style="margin-bottom:12px;">Gérer mon budget de <span id="periode-label-personnel"></span></h3>
-        
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ces montants ne concernent que vous et servent à suivre vos dépenses <em>personnelles</em> (pas les dépenses conjointes). Cette section n'est visible que par vous. Le budget est propre à chaque mois — ajustable seulement en vue "Paie".</p>
+
         <div style="padding-top:14px;border-top:1px solid var(--border);">
-                    <div id="budget-form-personnel" class="settings-grid"></div>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
+          <div id="budget-form-personnel" class="settings-grid"></div>
         </div>
 
         <button class="btn-add" id="save-budgets-personnel" style="margin-top:16px;">Sauvegarder mon budget</button>
@@ -1401,16 +1292,7 @@
   </section>
 
   <!-- ONGLET : PARAMÈTRES -->
-  <!-- Paramètres : une fenêtre modale comme les autres menus de l'app. C'était auparavant un
-       onglet caché, ce qui vidait la page derrière l'engrenage et faisait perdre l'endroit
-       où on se trouvait ; on revient maintenant là où on était en fermant. -->
-  <div class="edit-modal" id="parametres-modal">
-    <div class="edit-card">
-      <div class="modal-header">
-        <h3>Paramètres</h3>
-        <button class="modal-close-btn" id="parametres-fermer" aria-label="Fermer">&times;</button>
-      </div>
-      <div class="modal-body" id="tab-parametres">
+  <section class="tab-panel" id="tab-parametres">
     <div class="card settings-section"><h3>Compte</h3>
       <div class="account-row">
         <div>
@@ -1439,25 +1321,6 @@
         </form>
       </div>
     </div>
-    <div class="card settings-section" id="solde-compte-section">
-      <h3>Compte conjoint</h3>
-      <!-- Point de départ de la colonne Solde de l'échéancier. L'app ne peut pas deviner ce
-           qu'il y a à la banque : elle projette à partir de ce montant en appliquant les
-           dépôts prévus, les dépenses et les revenus du compte. -->
-      <p class="note-aide">Le solde réel du compte à une date donnée. L'échéancier projette ensuite le solde à chaque paie, ce qui permet de le comparer à ton relevé.</p>
-      <div class="form-grid">
-        <div class="field">
-          <label>Solde du compte</label>
-          <input type="number" id="solde-compte-montant" step="0.01" placeholder="0,00 $" autocomplete="off">
-        </div>
-        <div class="field">
-          <label>À la date du</label>
-          <input type="date" id="solde-compte-date" autocomplete="off">
-        </div>
-      </div>
-      <button class="btn-secondary" id="solde-compte-sauver">Sauvegarder</button>
-      <span class="save-indicator" id="solde-compte-statut"></span>
-    </div>
     <div class="card settings-section">
       <h3>Apparence</h3>
       <div class="theme-toggle"><span>Mode sombre</span><label class="switch" for="dark-mode"><input type="checkbox" id="dark-mode"><span class="switch-track"></span></label></div>
@@ -1484,28 +1347,7 @@
           </div>
           <div class="field">
             <label>À quelle heure</label>
-            <!-- Deux menus plutôt qu'un <input type="time"> : le sélecteur natif d'Android
-                 s'ouvre dans un dialogue système dont les boutons du bas débordent de
-                 l'écran quand la taille d'affichage est grande. Ce dialogue est dessiné hors
-                 de la page, donc aucune règle d'ici ne peut le corriger. Les minutes vont
-                 par tranches de 5, ce qui ne perd rien : la tâche planifiée qui envoie les
-                 rappels ne passe elle-même qu'aux 5 minutes. -->
-            <div class="champ-heure">
-              <select id="notif-heure-h" aria-label="Heure">
-                <option>00</option><option>01</option><option>02</option><option>03</option>
-                <option>04</option><option>05</option><option>06</option><option>07</option>
-                <option>08</option><option>09</option><option>10</option><option>11</option>
-                <option>12</option><option>13</option><option>14</option><option>15</option>
-                <option>16</option><option>17</option><option>18</option><option>19</option>
-                <option>20</option><option>21</option><option>22</option><option>23</option>
-              </select>
-              <span class="champ-heure-sep">h</span>
-              <select id="notif-heure-m" aria-label="Minutes">
-                <option>00</option><option>05</option><option>10</option><option>15</option>
-                <option>20</option><option>25</option><option>30</option><option>35</option>
-                <option>40</option><option>45</option><option>50</option><option>55</option>
-              </select>
-            </div>
+            <input type="time" id="notif-heure" value="08:00" autocomplete="off">
           </div>
         </div>
         <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-statut"></p>
@@ -1518,8 +1360,8 @@
     </div>
     <div class="card settings-section" id="donnees-section">
       <h3>Données</h3>
-      <p class="note-aide">
-        Exportez vos dépenses d'un mois ou d'une année vers Excel, ou importez-en depuis un fichier CSV ou Excel.
+      <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">
+        Exportez vos dépenses d'un mois ou d'une année vers un fichier Excel, ou importez-en depuis un fichier CSV ou Excel.
       </p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn-secondary" id="btn-export">Exporter</button>
@@ -1530,7 +1372,7 @@
 
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
         <h3 style="margin:0 0 10px;">Format du fichier</h3>
-        <p class="note-aide">Le fichier à importer doit avoir ces colonnes, comme celui que l'application exporte.</p>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 10px;">Voici à quoi doit ressembler le fichier à importer (les mêmes colonnes que celles exportées par l'application) :</p>
         <div style="overflow-x:auto;margin-bottom:14px;">
           <table style="width:100%;border-collapse:collapse;font-size:12px;">
             <thead>
@@ -1572,12 +1414,7 @@
         </ul>
       </div>
     </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" id="parametres-fermer-bas">Fermer</button>
-      </div>
-    </div>
-  </div>
+  </section>
 
 </div>
 
@@ -1685,7 +1522,7 @@
         <input type="date" id="edit-nouv-fin-date" autocomplete="off">
       </div>
       <div class="field toggle-field champ-bascule bascule-droite" id="edit-est-revenu-field">
-        <span class="toggle-field-label" id="edit-est-revenu-label"><span class="icone-revenu">+</span> Revenu</span>
+        <span class="toggle-field-label" id="edit-est-revenu-label">Revenu</span>
         <label class="switch"><input type="checkbox" id="edit-est-revenu"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur" id="edit-toggle-type-field">
@@ -1761,7 +1598,7 @@
         <input type="date" id="edit-rec-fin-date" autocomplete="off">
       </div>
       <div class="field toggle-field champ-bascule bascule-droite" id="edit-rec-est-revenu-field">
-        <span class="toggle-field-label" id="edit-rec-est-revenu-label"><span class="icone-revenu">+</span> Revenu</span>
+        <span class="toggle-field-label" id="edit-rec-est-revenu-label">Revenu</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur">
@@ -1794,7 +1631,7 @@
      devenait un élément de la colonne flex et se retrouvait centré, sans marges. -->
 <div class="edit-modal" id="cal-filtres-modal"><div class="edit-card">
   <div class="modal-header">
-    <h3>Filtres d'affichage</h3>
+    <h3>Filtres d'affichage<span class="modal-sous-titre">Ce qui apparaît dans le calendrier</span></h3>
     <button class="modal-close-btn" id="close-cal-filtres-modal" aria-label="Fermer">&times;</button>
   </div>
   <div class="modal-body">
@@ -1884,9 +1721,7 @@ async function gererSession(session){
   if(nomEl) nomEl.textContent = nomsPersonnes[currentUser];
   mettreAJourInterfaceUtilisateur();
   rafraichirOptionsFormulaires();
-  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(),
-                      chargerExceptionsSupabase(), chargerSoldeCompteSupabase() ]);
-
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerExceptionsSupabase() ]);
   recalculerDepenses();
   rafraichirActif();
   chargerPreferencesNotification();
@@ -2982,40 +2817,27 @@ function ouvrirDetailDepot(iso){
   const montantHTML = (v, classe) =>
     `<span class="value ${classe}">${v < 0 ? '−' : ''}${formaterMonnaie(Math.abs(v))}</span>`;
 
-  /* Point de couleur de la catégorie, au lieu de la pastille qui occupait sa propre ligne
-     sous chaque poste. Les lignes sans catégorie (revenus, reports) reçoivent un point
-     neutre, sinon leurs libellés ne s'aligneraient pas sur les autres. */
-  const pointCategorie = (cat) => {
-    const c = cat ? (COULEURS_CATEGORIES[cat] || '#9aa0a6') : 'transparent';
-    return `<span class="depot-point" style="background:${c};"></span>`;
+  /* Pastille de catégorie, aux mêmes couleurs que partout ailleurs dans l'app. */
+  const pastilleCategorie = (cat) => {
+    if(!cat) return '';
+    const c = COULEURS_CATEGORIES[cat] || '#9aa0a6';
+    return `<span class="cat-pill" style="background:${c}22;color:${c};">${echapperHTML(cat)}</span>`;
   };
 
   let corps = '';
   groupes.forEach(([nature, titre])=>{
     const duGroupe = lignes.filter(l => l.nature === nature);
     if(!duGroupe.length) return;
-    /* Sous-total par groupe, aligné dans les mêmes colonnes que les montants : l'addition
-       qui mène au total devient lisible sans avoir à lire chaque ligne. */
-    const sousP1 = duGroupe.reduce((s,l)=>s+l.p1, 0);
-    const sousP2 = duGroupe.reduce((s,l)=>s+l.p2, 0);
-    corps += `<div class="depot-section-titre">
-      <span>${titre}</span>
-      <span class="depot-ligne-montants">${montantHTML(sousP1,'p1')}${montantHTML(sousP2,'p2')}</span>
-    </div>`;
-    corps += duGroupe.map(l => {
-      const detail = `${echapperHTML(l.explication || '')}${l.pourcentageP1 != null ? ` Partagé ${l.pourcentageP1}% / ${Math.round((100-l.pourcentageP1)*10)/10}%.` : ''}`.trim();
-      const haut = `<span class="depot-ligne-nom">${pointCategorie(l.categorie)}${echapperHTML(l.libelle)}${l.rattrapage ? '<span class="depot-pill">rattrapage</span>' : ''}${detail ? '<span class="depot-chevron">&rsaquo;</span>' : ''}</span>
-          <span class="depot-ligne-montants">${montantHTML(l.p1,'p1')}${montantHTML(l.p2,'p2')}</span>`;
-      /* L'explication est repliée : elle reste consultable ligne par ligne sans transformer
-         la fenêtre en mur de texte. Une ligne sans explication n'est pas dépliable, pour ne
-         pas promettre un contenu qui n'existe pas. */
-      return detail
-        ? `<details class="depot-ligne">
-             <summary class="depot-ligne-haut">${haut}</summary>
-             <div class="depot-ligne-explication">${detail}</div>
-           </details>`
-        : `<div class="depot-ligne"><div class="depot-ligne-haut">${haut}</div></div>`;
-    }).join('');
+    corps += `<div class="depot-section-titre">${titre}</div>`;
+    corps += duGroupe.map(l => `
+      <div class="depot-ligne">
+        <div class="depot-ligne-haut">
+          <span class="depot-ligne-nom">${echapperHTML(l.libelle)}${l.rattrapage ? '<span class="depot-pill">rattrapage</span>' : ''}</span>
+          <span class="depot-ligne-montants">${montantHTML(l.p1,'p1')}${montantHTML(l.p2,'p2')}</span>
+        </div>
+        ${pastilleCategorie(l.categorie)}
+        <div class="depot-ligne-explication">${echapperHTML(l.explication || '')}${l.pourcentageP1 != null ? ` Partagé ${l.pourcentageP1}% / ${Math.round((100-l.pourcentageP1)*10)/10}%.` : ''}</div>
+      </div>`).join('');
   });
 
   if(!lignes.length){
@@ -3057,66 +2879,7 @@ function ouvrirDetailDepot(iso){
   document.getElementById('depot-modal').style.display = 'flex';
 }
 
-/* ===================== SOLDE PROJETÉ DU COMPTE CONJOINT =====================
-   L'échéancier dit combien déposer ; cette colonne dit où le compte se retrouve après coup.
-   C'est un outil de vérification : si le solde projeté à une paie ne correspond pas au
-   relevé bancaire à cette date, c'est qu'une dépense ou un dépôt manque quelque part. */
-let soldeCompteRef = { montant:0, depuis:null };
-
-async function chargerSoldeCompteSupabase(){
-  const { data, error } = await supabaseClient.from('compte_solde').select('*').eq('id',1).maybeSingle();
-  if(error){ console.error('Chargement du solde du compte :', error); return; }
-  if(data) soldeCompteRef = { montant:Number(data.montant||0), depuis:data.depuis };
-}
-
-async function sauvegarderSoldeCompte(){
-  const statut = document.getElementById('solde-compte-statut');
-  const depuis = document.getElementById('solde-compte-date').value;
-  if(!depuis){ statut.textContent = 'Choisis une date.'; return; }
-  const ligne = {
-    id: 1,
-    montant: parseFloat(document.getElementById('solde-compte-montant').value) || 0,
-    depuis, updated_at: new Date().toISOString()
-  };
-  const { error } = await supabaseClient.from('compte_solde').upsert([ligne], { onConflict:'id' });
-  if(error){ statut.textContent = 'Échec.'; console.error(error); return; }
-  soldeCompteRef = { montant:ligne.montant, depuis:ligne.depuis };
-  statut.textContent = 'Sauvegardé ✓';
-  setTimeout(()=>{ statut.textContent = ''; }, 2500);
-  afficherEcheancierCompteConjoint();
-}
-
-function remplirChampsSoldeCompte(){
-  document.getElementById('solde-compte-montant').value = soldeCompteRef.montant || '';
-  document.getElementById('solde-compte-date').value = soldeCompteRef.depuis || '';
-}
-
-/* Solde projeté après chaque paie de l'échéancier.
-   Point de départ : le solde saisi. Puis, dans l'ordre, les dépenses et revenus du compte qui
-   tombent d'ici là, et le dépôt de la paie elle-même. Le dépôt est appliqué EN DERNIER sur sa
-   date : une dépense du même jour est donc payée avec l'argent déjà présent, ce qui donne le
-   pire cas plutôt qu'un solde flatteur. */
-function projeterSoldeEcheancier(echeancier){
-  if(!soldeCompteRef.depuis || !echeancier || !echeancier.length) return null;
-  const depuis = soldeCompteRef.depuis;
-  const fin = echeancier[echeancier.length-1].iso;
-  const mouvements = depenses
-    .filter(e => e.type==='conjointe' && e.estCompte && e.date > depuis && e.date <= fin)
-    .map(e => ({ iso:e.date, montant: e.estRevenu ? e.amount : -e.amount }))
-    .sort((a,b)=> a.iso < b.iso ? -1 : (a.iso > b.iso ? 1 : 0));
-
-  const soldes = {};
-  let solde = soldeCompteRef.montant;
-  let i = 0;
-  echeancier.forEach(ligne => {
-    while(i < mouvements.length && mouvements[i].iso <= ligne.iso){ solde += mouvements[i].montant; i++; }
-    solde += ligne.p1 + ligne.p2;
-    soldes[ligne.iso] = solde;
-  });
-  return soldes;
-}
-
-
+/* Affiche l'échéancier calculé dans la carte "🏦 Prochains dépôts au compte conjoint". */
 /* En mode "Année", l'échéancier montre par défaut les paies du mois civil en cours ; ce
    drapeau bascule vers "voir plus" (jusqu'à 7 paies à venir, peu importe le mois). */
 let echeancierAnneeEtendu = false;
@@ -3189,19 +2952,12 @@ function afficherEcheancierCompteConjoint(){
   }
 
   const formatDate = d => d.toLocaleDateString('fr-CA', {weekday:'short', day:'numeric', month:'short'});
-  /* La colonne Solde n'apparaît que si un solde de référence a été saisi dans les
-     paramètres : sans point de départ, une projection ne voudrait rien dire. */
-  const soldes = projeterSoldeEcheancier(echeancierComplet);
-  const colonneSolde = (contenu, style) => soldes
-    ? `<span class="value" style="min-width:76px;text-align:right;${style||''}">${contenu}</span>` : '';
-
   conteneur.innerHTML = `
     <div class="recurrent-row" style="font-size:12px;color:var(--text-secondary);font-weight:500;">
       <div>Paie</div>
       <div style="display:flex;gap:18px;">
         <span style="min-width:70px;text-align:right;">${nomsPersonnes.p1}</span>
         <span style="min-width:70px;text-align:right;">${nomsPersonnes.p2}</span>
-        ${colonneSolde('Solde')}
       </div>
     </div>
   ` + echeancier.map(ligne => `
@@ -3210,8 +2966,6 @@ function afficherEcheancierCompteConjoint(){
       <div style="display:flex;gap:18px;">
         <span class="value p1" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p1)}</span>
         <span class="value p2" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p2)}</span>
-        ${colonneSolde(formaterMonnaie(soldes ? soldes[ligne.iso] : 0),
-          soldes && soldes[ligne.iso] < 0 ? 'color:var(--red);' : 'color:var(--text-secondary);')}
       </div>
     </div>
   `).join('') + (afficherVoirPlus ? `
@@ -3737,7 +3491,7 @@ function rendreVueDetailOccurrence(){
   const qui = d.estCompte ? 'Compte conjoint' : (nomsPersonnes[d.who] || d.who);
   const repartition = d.estCompte ? ` (${d.pourcentageP1!=null?d.pourcentageP1:50}% ${nomsPersonnes.p1})` : '';
   const rec = d.recurrenceId ? recurrences.find(r=>r.id===d.recurrenceId) : null;
-  const sousTitre = rec ? `Série récurrente · ${libelleRecurrence(rec)}` : '';
+  const sousTitre = rec ? `Série récurrente · ${libelleRecurrence(rec)}` : 'Dépense ponctuelle';
   const dateLisible = dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
   contenu.innerHTML = `
     <div class="modal-header">
@@ -3854,7 +3608,7 @@ function afficherRecurrencesScope(scope){
   listEl.innerHTML = listeTriee.map(r=>{
     const partPct = Math.round(partPersonnelleRecurrence(r)*100);
     const badgeType = r.estRevenu
-      ? `<span class="freq-pill badge-revenu" title="Revenu">+</span>`
+      ? `<span class="freq-pill badge-revenu">Revenu</span>`
       : (r.estCompte
           ? `<span class="freq-pill badge-compte" title="Payé automatiquement par le compte conjoint">🏦</span>`
           : (r.estConjoint ? `<span class="freq-pill" style="background:var(--mauve)22;color:var(--mauve);" title="Récurrence conjointe">👥</span>` : ''));
@@ -3917,7 +3671,7 @@ function sauvegarderFiltresCalendrier(scope){
   localStorage.setItem(`depenses_calendrier_filtres_${scope}`, JSON.stringify(filtresCalendrier[scope]));
 }
 
-const JOURS_SEMAINE_DIM_SAM = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const JOURS_SEMAINE_LUN_DIM = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MOIS_NOMS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 /* Icône "filtres" façon Material Design (3 barres, chacune avec un curseur à une hauteur
    différente) plutôt qu'un simple ☰, pour bien la distinguer d'un menu de navigation. */
@@ -3926,12 +3680,12 @@ const ICONE_FILTRE_SVG = `<svg viewBox="0 0 20 20" width="16" height="16" style=
 const VUES_CALENDRIER = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['annee','Année'] ];
 const VUES_RESUME = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['annee','Année'] ];
 
-/* Dimanche de la semaine contenant `date`. La semaine commence le dimanche, comme dans le
-   sélecteur de jours des récurrences (NOMS_JOURS_LETTRE) et comme getDay(), qui numérote
-   déjà le dimanche 0. */
-function dimancheDeSemaine(date){
+/* Lundi de la semaine contenant `date` (la semaine commence le lundi, convention FR-CA usuelle). */
+function lundiDeSemaine(date){
   const d = debutJour(date);
-  return ajouterJours(d, -d.getDay()); /* getDay() : 0=dimanche..6=samedi */
+  const jour = d.getDay(); /* 0=dimanche..6=samedi */
+  const decalage = jour===0 ? -6 : 1-jour;
+  return ajouterJours(d, decalage);
 }
 function borneMois(dateRef){
   return { debut: new Date(dateRef.getFullYear(), dateRef.getMonth(), 1), fin: new Date(dateRef.getFullYear(), dateRef.getMonth()+1, 0) };
@@ -3946,7 +3700,7 @@ function bornePeriodePaie(dateRef){
 }
 function bornePeriode(vue, dateRef){
   if(vue==='jour') return { debut: debutJour(dateRef), fin: debutJour(dateRef) };
-  if(vue==='semaine'){ const debut = dimancheDeSemaine(dateRef); return { debut, fin: ajouterJours(debut,6) }; }
+  if(vue==='semaine'){ const debut = lundiDeSemaine(dateRef); return { debut, fin: ajouterJours(debut,6) }; }
   if(vue==='paie') return bornePeriodePaie(dateRef);
   if(vue==='annee') return borneAnnee(dateRef);
   return borneMois(dateRef);
@@ -4125,7 +3879,7 @@ function rendreMenuCalendrier(scope){
     <div class="cal-menu-section-title">Afficher</div>
     <label class="cal-menu-check">
       <input type="checkbox" data-filtre-revenu ${filtres.masquerRevenus?'':'checked'}>
-      <span class="icone-revenu">+</span> Revenus
+      Revenus
     </label>
     ${catsPresentes.map(c=>`
       <label class="cal-menu-check">
@@ -4200,23 +3954,15 @@ function rendreMenuCalendrier(scope){
 
 function rendreGrilleMoisCalendrier(scope, dateRef){
   const { debut, fin } = borneMois(dateRef);
-  const premierJourGrille = dimancheDeSemaine(debut);
-  const dernierJourGrille = ajouterJours(dimancheDeSemaine(fin), 6);
+  const premierJourGrille = lundiDeSemaine(debut);
+  const dernierJourGrille = ajouterJours(lundiDeSemaine(fin), 6);
   const items = depensesPourCalendrier(scope, premierJourGrille, dernierJourGrille);
   const parJour = {};
   items.forEach(e => { (parJour[e.date] = parJour[e.date] || []).push(e); });
   const aujourdhuiStr = formaterDateISO(debutJour(new Date()));
-  /* Jours de paie de la grille affichée : une étoile à côté du numéro suffit à les repérer
-     d'un coup d'œil, sans occuper la place des pastilles de dépenses. */
-  const ancragePaie = paieAncrage ? debutJour(dateLocaleDepuisISO(paieAncrage)) : null;
-  const joursPaie = new Set(
-    ancragePaie
-      ? paiesDansIntervalle(ancragePaie, premierJourGrille, dernierJourGrille).map(formaterDateISO)
-      : []
-  );
 
   let html = '<div class="cal-month-grid">';
-  JOURS_SEMAINE_DIM_SAM.forEach(j => html += `<div class="cal-month-dow">${j}</div>`);
+  JOURS_SEMAINE_LUN_DIM.forEach(j => html += `<div class="cal-month-dow">${j}</div>`);
   let curseur = new Date(premierJourGrille);
   while(curseur <= dernierJourGrille){
     const iso = formaterDateISO(curseur);
@@ -4228,10 +3974,7 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
        vue compacte). */
     const couleursPresentes = [...new Set(jourItems.map(classeTypeDepense))].slice(0,4);
     html += `<div class="cal-month-cell ${dansLeMois?'':'outside'}" onclick="allerVueJour('${scope}','${iso}')">
-      <div class="cal-month-jour">
-        <div class="cal-month-daynum ${iso===aujourdhuiStr?'today':''}">${curseur.getDate()}</div>
-        ${joursPaie.has(iso) ? '<span class="cal-month-paie" title="Jour de paie">&#9733;</span>' : ''}
-      </div>
+      <div class="cal-month-daynum ${iso===aujourdhuiStr?'today':''}">${curseur.getDate()}</div>
       ${nb>0 ? `<div class="cal-month-dots">
         ${couleursPresentes.map(c=>`<span class="cal-dot-mini ${c}"></span>`).join('')}
         ${nb>=2 ? `<span class="cal-month-count">${nb}</span>` : ''}
@@ -4828,17 +4571,12 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     afficherNavigationPeriode();
   });
 });
-function fermerParametres(){ document.getElementById('parametres-modal').style.display='none'; }
-document.getElementById('open-settings').addEventListener('click', ()=>{
-  remplirChampsSoldeCompte();
-  document.getElementById('parametres-modal').style.display='flex';
-});
-document.getElementById('solde-compte-sauver').addEventListener('click', sauvegarderSoldeCompte);
-document.getElementById('parametres-fermer').addEventListener('click', fermerParametres);
-document.getElementById('parametres-fermer-bas').addEventListener('click', fermerParametres);
-/* Clic sur le fond sombre, à côté de la carte : même effet que Fermer. */
-document.getElementById('parametres-modal').addEventListener('click', (e)=>{
-  if(e.target.id==='parametres-modal') fermerParametres();
+document.getElementById('open-settings').addEventListener('click',()=>{
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-parametres').classList.add('active');
+  activeMainTab = 'parametres';
+  afficherNavigationPeriode();
 });
 
 /* Gestion des sous-onglets (Mois / Année / Budget) à l'intérieur de chaque section */
@@ -5423,7 +5161,7 @@ function ouvrirEdition(id, mode){
     : (rec ? 'Modifier une occurrence' : 'Modifier une dépense');
   document.getElementById('edit-modal-sous-titre').textContent = rec
     ? `Série récurrente · ${libelleRecurrence(rec)}`
-    : '';
+    : 'Dépense ponctuelle';
   document.getElementById('edit-modal').style.display='flex';
 }
 document.getElementById('close-edit').addEventListener('click',()=>{document.getElementById('edit-modal').style.display='none'; modeEditionDepense='normal'; document.getElementById('edit-date').disabled=false;});
@@ -5585,7 +5323,7 @@ async function chargerPreferencesNotification(){
   if(error){ console.warn("Impossible de charger les préférences de notification.", error); return; }
   document.getElementById('notif-toggle').checked = !!(data && data.enabled);
   ecrireJoursOffsetFormulaireNotif(data ? data.jours_offset : 0);
-  ecrireHeureNotif(data ? data.heure : '08:00');
+  document.getElementById('notif-heure').value = data ? data.heure : '08:00';
   document.getElementById('notif-reglages').style.display = (data && data.enabled) ? '' : 'none';
   document.getElementById('notif-activite-toggle').checked = !!(data && data.notif_activite);
 }
@@ -5658,7 +5396,7 @@ function lirePreferencesNotificationCompletes(){
     personne: currentUser,
     enabled: document.getElementById('notif-toggle').checked,
     jours_offset: lireJoursOffsetFormulaireNotif(),
-    heure: lireHeureNotif(),
+    heure: document.getElementById('notif-heure').value || '08:00',
     notif_activite: document.getElementById('notif-activite-toggle').checked,
     updated_at: new Date().toISOString()
   };
@@ -5693,26 +5431,8 @@ document.getElementById('notif-quand').addEventListener('change', function(){
 document.getElementById('notif-jours').addEventListener('change', ()=>{
   if(document.getElementById('notif-toggle').checked) sauvegarderPreferencesNotification(true);
 });
-/* L'heure est saisie en deux menus (voir le commentaire dans le HTML) : ces deux fonctions
-   sont le seul endroit qui sait comment passer de ces menus à la chaîne "HH:MM" rangée en
-   base, et inversement. */
-function lireHeureNotif(){
-  return `${document.getElementById('notif-heure-h').value}:${document.getElementById('notif-heure-m').value}`;
-}
-function ecrireHeureNotif(valeur){
-  const [h, m] = String(valeur || '08:00').split(':');
-  const heures = Math.min(23, Math.max(0, parseInt(h, 10) || 0));
-  /* Les minutes ne sont proposées que par tranches de 5 : une valeur enregistrée autrement
-     (08:07) est ramenée sur la tranche la plus proche, sinon le menu retomberait sur sa
-     première option, sans rapport avec le réglage réellement actif. */
-  const minutes = Math.min(55, Math.round((parseInt(m, 10) || 0) / 5) * 5);
-  document.getElementById('notif-heure-h').value = String(heures).padStart(2, '0');
-  document.getElementById('notif-heure-m').value = String(minutes).padStart(2, '0');
-}
-['notif-heure-h','notif-heure-m'].forEach(id=>{
-  document.getElementById(id).addEventListener('change', ()=>{
-    if(document.getElementById('notif-toggle').checked) sauvegarderPreferencesNotification(true);
-  });
+document.getElementById('notif-heure').addEventListener('change', ()=>{
+  if(document.getElementById('notif-toggle').checked) sauvegarderPreferencesNotification(true);
 });
 
 function afficherStatutNotifActivite(message, estErreur){
@@ -5806,9 +5526,18 @@ function afficherResumeUnifie(scope){
     const dueP1 = listeHorsCompte.reduce((s,e)=>s + e.amount * ((e.pourcentageP1 != null ? e.pourcentageP1 : 50) / 100), 0);
     const dueP2 = totalHorsCompte - dueP1;
     const moi = currentUser==='p2' ? t2 : t1;
-    /* La carte Total est la même quelle que soit la vue : l'écart au budget appartient à
-       l'onglet Budget, pas au Résumé. */
-    const troisiemeCarte = `<div class="stat-card"><div class="label">Total<span class="mobile-line"> conjoint</span></div><div class="value">${formaterMonnaie(total)}</div></div>`;
+    let troisiemeCarte;
+    if(vue==='mois'){
+      const budgetTotal = budgetTotalCalcule('conjoint', periodeActive());
+      const ecartBudget = total - budgetTotal;
+      troisiemeCarte = `<div class="stat-card">
+        <div class="label">Total<span class="mobile-line"> conjoint</span></div>
+        <div class="value">${formaterMonnaie(total)}</div>
+        ${budgetTotal > 0 ? `<div style="font-size:11px;margin-top:4px;color:${ecartBudget>0?'var(--red)':'var(--green)'}">${ecartBudget>0?'+':''}${formaterMonnaie(ecartBudget)} vs budget</div>` : ''}
+      </div>`;
+    } else {
+      troisiemeCarte = `<div class="stat-card"><div class="label">Total<span class="mobile-line"> conjoint</span></div><div class="value">${formaterMonnaie(total)}</div></div>`;
+    }
     el.innerHTML = `
       <div class="stat-card"><div class="label">Payé par<span class="mobile-line"> moi</span></div><div class="value ${currentUser}">${formaterMonnaie(moi)}</div></div>
       ${troisiemeCarte}
@@ -5924,6 +5653,41 @@ function afficherSectionBudget(scope){
   const total = liste.reduce((s,e)=>s+e.amount,0);
   const revenuMois = listeComplete.filter(e=>e.estRevenu).reduce((s,e)=>s+e.amount,0);
 
+  /* Liste des revenus de la période, bien visible, pour qu'on voie clairement ce qui a été
+     comptabilisé (et pas juste un chiffre agrégé dans les statistiques). */
+  const revenusCardEl = document.getElementById(`budget-revenus-card-${scope}`);
+  const revenusListEl = document.getElementById(`budget-revenus-list-${scope}`);
+  const revenusPeriodeEl = document.getElementById(`budget-revenus-periode-${scope}`);
+  if(revenusCardEl && revenusListEl){
+    const revenusListe = listeComplete.filter(e=>e.estRevenu);
+    if(revenusListe.length){
+      revenusCardEl.style.display = '';
+      if(revenusPeriodeEl) revenusPeriodeEl.textContent = libellePeriodeCourte;
+      const revenusTries = revenusListe.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+      revenusListEl.innerHTML = revenusTries.map(e=>{
+        const dateFmt = new Date(e.date+"T00:00:00").toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
+        return `
+          <div class="recurrent-row row-revenu-item" onclick="ouvrirDetailOccurrence('${e.id}')" style="cursor:pointer;">
+            <div class="recurrent-info">
+              <div class="recurrent-nom">${e.note ? echapperHTML(e.note) : 'Revenu'}</div>
+              <div class="recurrent-meta">
+                <span class="freq-pill badge-revenu">Revenu</span>
+                <span class="freq-pill">${dateFmt}</span>
+                ${e.recurrenceId ? '<span class="recurring-icon" title="Revenu récurrent">↻</span>' : ''}
+              </div>
+            </div>
+            <div class="recurrent-actions">
+              <div class="recurrent-montant" style="color:var(--green);">+${formaterMonnaie(e.amount)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      revenusCardEl.style.display = 'none';
+      revenusListEl.innerHTML = '';
+    }
+  }
+
   /* budgetActuel = les montants-cibles bruts (toujours mensuels, utilisés pour le
      formulaire d'édition) ; budgetAffiche = ces montants ramenés au prorata de la période
      actuellement consultée, pour comparer "pommes avec pommes". */
@@ -5953,10 +5717,15 @@ function afficherSectionBudget(scope){
   }
   const parenthese = (val) => conjointInfo ? `<div style="font-size:11px;margin-top:4px;color:var(--text-secondary);">(conjoint : ${val})</div>` : '';
 
+  const carteRevenu = revenuMois > 0.005 ? `
+    <div class="stat-card"><div class="label">Revenu<span class="mobile-line"> cette période</span></div><div class="value" style="color:var(--green)">+${formaterMonnaie(revenuMois)}</div></div>
+  ` : '';
+
   document.getElementById(`stats-${scope}`).innerHTML = `
     <div class="stat-card"><div class="label">Dépensé<span class="mobile-line"> ${libelleDepense}</span></div><div class="value ${cfg.valueClass}">${formaterMonnaie(total)}</div>${parenthese(conjointInfo && formaterMonnaie(conjointInfo.total))}</div>
     <div class="stat-card"><div class="label">Budget<span class="mobile-line"> pour cette période</span></div><div class="value">${formaterMonnaie(budgetAffiche)}</div>${parenthese(conjointInfo && formaterMonnaie(conjointInfo.budget))}</div>
     <div class="stat-card"><div class="label">Restant<span class="mobile-line"> à dépenser</span></div><div class="value ${restant>=0?'p1':'p2'}">${restant>=0?'':'-'}${formaterMonnaie(Math.abs(restant))}</div>${parenthese(conjointInfo && (conjointInfo.restant>=0?'':'-')+formaterMonnaie(Math.abs(conjointInfo.restant)))}</div>
+    ${carteRevenu}
   `;
 
   /* Liste des barres de progression par catégorie (budget de la catégorie ramené au
@@ -6347,10 +6116,6 @@ function suivreClavierVirtuel(){
   let hauteurMax = vv.height;
 
   const majuster = () => {
-    /* Ceinture et bretelles : le zoom est déjà bloqué par le méta viewport, mais Chrome le
-       réautorise si « Forcer l'activation du zoom » est coché dans l'accessibilité. Une page
-       zoomée rétrécit vv.height exactement comme le ferait un clavier, d'où la sortie. */
-    if(vv.scale > 1.01) return;
     hauteurMax = Math.max(hauteurMax, vv.height);
     document.documentElement.style.setProperty('--hauteur-visible', `${Math.round(vv.height)}px`);
     const clavierOuvert = (hauteurMax - vv.height) > SEUIL_CLAVIER;
