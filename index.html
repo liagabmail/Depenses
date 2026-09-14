@@ -1160,6 +1160,19 @@
     <div class="subtab-panel" data-scope="conjoint" data-sub="resume">
       <div class="stats-row" id="mois-stats-conjoint"></div>
       <div class="stats-row" id="annee-stats-conjoint" style="display:none;"></div>
+      <div class="card" id="solde-compte-card">
+        <div class="table-head-row">
+          <h3>Solde du compte conjoint</h3>
+          <button class="btn-secondary" id="ouvrir-depots">Dépôts</button>
+        </div>
+        <div id="solde-compte-contenu"></div>
+      </div>
+      <div class="card" id="plan-depot-card">
+        <div class="table-head-row">
+          <h3>Montant fixe par paie</h3>
+        </div>
+        <div id="plan-depot-contenu"></div>
+      </div>
       <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
         <div class="table-head-row">
           <h3>Prochains dépôts au compte conjoint</h3>
@@ -1767,6 +1780,90 @@
 
 <!-- Détail d'un dépôt au compte conjoint : montre ligne par ligne d'où vient le montant
      demandé à chaque paie, pour pouvoir vérifier le calcul à la main. -->
+<div class="edit-modal" id="depots-modal"><div class="edit-card">
+  <div class="modal-header">
+    <h3>Dépôts au compte conjoint</h3>
+    <button class="modal-close-btn" id="depots-fermer" aria-label="Fermer">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div class="modal-grid">
+      <div class="field">
+        <label>Qui dépose</label>
+        <select id="depot-qui"></select>
+      </div>
+      <div class="field">
+        <label>Montant</label>
+        <input type="number" id="depot-montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="depot-date" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Note</label>
+        <input type="text" id="depot-note" placeholder="Optionnel" autocomplete="off">
+      </div>
+    </div>
+    <button class="btn-add" id="depot-ajouter" style="margin-top:4px;">Enregistrer le dépôt</button>
+    <p class="auth-error" id="depot-erreur"></p>
+
+    <div class="depot-section-titre"><span>Dépôts enregistrés</span></div>
+    <div id="depots-liste"></div>
+
+    <div class="depot-section-titre"><span>Solde de départ</span></div>
+    <!-- Sans ce point de départ, il faudrait ressaisir tout l'historique des dépôts depuis
+         l'ouverture du compte. Seuls les mouvements à partir de cette date sont comptés. -->
+    <p class="note-aide">Le montant attribué à chacun à une date choisie. Les dépenses, revenus et dépôts antérieurs à cette date sont ignorés.</p>
+    <div class="modal-grid">
+      <div class="field">
+        <label id="solde-initial-label-p1">Solde de départ</label>
+        <input type="number" id="solde-initial-p1" step="0.01" placeholder="0,00 $" autocomplete="off">
+      </div>
+      <div class="field">
+        <label id="solde-initial-label-p2">Solde de départ</label>
+        <input type="number" id="solde-initial-p2" step="0.01" placeholder="0,00 $" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Depuis le</label>
+        <input type="date" id="solde-initial-depuis" autocomplete="off">
+      </div>
+    </div>
+    <button class="btn-secondary" id="solde-initial-sauver">Sauvegarder le solde de départ</button>
+    <span class="save-indicator" id="solde-initial-statut"></span>
+    <div class="depot-section-titre"><span>Montant fixe par paie</span></div>
+    <!-- Le montant est figé volontairement : l'app calcule une recommandation en continu mais
+         ne remplace jamais le montant choisi, elle se contente de prévenir quand il ne suffit
+         plus. Un montant qui se recalcule tout seul n'est plus un montant fixe. -->
+    <p class="note-aide">Le coussin est le plancher que ton compteur ne doit jamais franchir. À 0, le calcul vise le strict minimum.</p>
+    <div class="modal-grid">
+      <div class="field">
+        <label id="plan-label-p1">Montant par paie</label>
+        <input type="number" id="plan-montant-p1" step="0.01" min="0" placeholder="0,00 $" autocomplete="off">
+      </div>
+      <div class="field">
+        <label id="plan-label-p2">Montant par paie</label>
+        <input type="number" id="plan-montant-p2" step="0.01" min="0" placeholder="0,00 $" autocomplete="off">
+      </div>
+      <div class="field">
+        <label id="plan-coussin-label-p1">Coussin</label>
+        <input type="number" id="plan-coussin-p1" step="0.01" min="0" placeholder="0,00 $" autocomplete="off">
+      </div>
+      <div class="field">
+        <label id="plan-coussin-label-p2">Coussin</label>
+        <input type="number" id="plan-coussin-p2" step="0.01" min="0" placeholder="0,00 $" autocomplete="off">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-secondary" id="plan-depot-recommande">Reprendre la recommandation</button>
+      <button class="btn-secondary" id="plan-depot-sauver">Sauvegarder le montant</button>
+    </div>
+    <span class="save-indicator" id="plan-depot-statut"></span>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-secondary" id="depots-fermer-bas">Fermer</button>
+  </div>
+</div></div>
+
 <div class="edit-modal" id="depot-modal"><div class="edit-card">
   <div id="depot-modal-content"></div>
 </div></div>
@@ -1865,7 +1962,9 @@ async function gererSession(session){
   if(nomEl) nomEl.textContent = nomsPersonnes[currentUser];
   mettreAJourInterfaceUtilisateur();
   rafraichirOptionsFormulaires();
-  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerExceptionsSupabase() ]);
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(),
+                      chargerExceptionsSupabase(), chargerDepotsSupabase(), chargerSoldesInitiauxSupabase(),
+                      chargerPlanDepotSupabase() ]);
   recalculerDepenses();
   rafraichirActif();
   chargerPreferencesNotification();
@@ -2934,6 +3033,385 @@ function calculerEcheancierCompte(nbPaies){
     return { date:p, iso, p1: totaux[iso].p1, p2: totaux[iso].p2, lignes: lignes[iso] };
   });
 }
+
+/* ===================== SOLDE RÉEL DU COMPTE CONJOINT =====================
+   Jusqu'ici l'app ne connaissait que les dépenses et en déduisait ce qu'il FAUDRAIT déposer.
+   Elle n'avait aucune trace de ce qui a été réellement déposé, donc aucun moyen de voir
+   l'écart entre le prévu et le réel. C'est cette pièce qui manque pour tenir un montant fixe
+   par paie : sans elle, une paie où l'on dépose plus que nécessaire ne peut pas alléger la
+   suivante.
+
+   Le compte a un solde unique à la banque, mais on en tient DEUX compteurs, un par personne,
+   parce que les parts et les montants diffèrent. La somme des deux doit redonner le solde
+   réel du compte — c'est le contrôle de cohérence affiché sous le tableau. */
+let depots = [];
+let soldesInitiaux = { p1:{montant:0, depuis:null}, p2:{montant:0, depuis:null} };
+
+async function chargerDepotsSupabase(){
+  const { data, error } = await supabaseClient.from('depots').select('*');
+  if(error){ console.error('Chargement des dépôts :', error); return; }
+  depots = (data||[])
+    .map(d=>({ id:d.id, personne:d.personne, montant:Number(d.montant||0), date:d.date, note:d.note||'' }))
+    .sort((a,b)=> a.date === b.date ? 0 : (a.date < b.date ? 1 : -1));
+}
+
+async function chargerSoldesInitiauxSupabase(){
+  const { data, error } = await supabaseClient.from('soldes_initiaux').select('*');
+  if(error){ console.error('Chargement des soldes de départ :', error); return; }
+  (data||[]).forEach(s=>{
+    if(soldesInitiaux[s.personne]) soldesInitiaux[s.personne] = { montant:Number(s.montant||0), depuis:s.depuis };
+  });
+}
+
+/* Part d'une personne dans un mouvement du compte, selon le pourcentage de la dépense. */
+function partDe(personne, e){
+  const p1Pct = (e.pourcentageP1 != null ? e.pourcentageP1 : 50) / 100;
+  return e.amount * (personne === 'p1' ? p1Pct : 1 - p1Pct);
+}
+
+/* Solde attribué à chaque personne AUJOURD'HUI :
+     solde de départ
+   + ses dépôts
+   + sa part des revenus déjà entrés dans le compte
+   − sa part des dépenses déjà sorties du compte
+   Seuls les mouvements datés d'aujourd'hui ou avant comptent : c'est un solde observé, pas
+   une prévision. Un solde négatif = il manque cette somme ; positif = avance déjà déposée. */
+function soldeCompteParPersonne(){
+  const aujourdhui = formaterDateISO(debutJour(new Date()));
+  const res = {};
+  ['p1','p2'].forEach(personne=>{
+    const depart = soldesInitiaux[personne] || { montant:0, depuis:null };
+    const depuis = depart.depuis;
+    /* `depuis` borne l'historique : tout ce qui précède est déjà résumé dans le solde de
+       départ, le recompter le ferait entrer deux fois. */
+    const dansLaFenetre = (d) => d <= aujourdhui && (!depuis || d >= depuis);
+    let solde = depart.montant || 0;
+    depots.forEach(d=>{ if(d.personne===personne && dansLaFenetre(d.date)) solde += d.montant; });
+    depenses.forEach(e=>{
+      if(e.type!=='conjointe' || !e.estCompte || !dansLaFenetre(e.date)) return;
+      solde += e.estRevenu ? partDe(personne, e) : -partDe(personne, e);
+    });
+    res[personne] = solde;
+  });
+  res.total = res.p1 + res.p2;
+  return res;
+}
+
+function montantColore(v){
+  const couleur = v < -0.005 ? 'var(--red)' : (v > 0.005 ? 'var(--green)' : 'var(--text)');
+  return `<span class="value" style="color:${couleur};">${v < 0 ? '−' : ''}${formaterMonnaie(Math.abs(v))}</span>`;
+}
+
+function rendreSoldeCompte(){
+  const el = document.getElementById('solde-compte-contenu');
+  if(!el) return;
+  const s = soldeCompteParPersonne();
+  const ligne = (nom, v) => `<div class="depot-ligne"><div class="depot-ligne-haut">
+      <span class="depot-ligne-nom">${echapperHTML(nom)}</span>
+      <span class="depot-ligne-montants">${montantColore(v)}</span>
+    </div></div>`;
+  el.innerHTML = ligne(nomsPersonnes.p1, s.p1) + ligne(nomsPersonnes.p2, s.p2) + `
+    <div class="depot-total final">
+      <span>Total dans le compte</span>
+      <span class="depot-ligne-montants">${montantColore(s.total)}</span>
+    </div>
+    <p class="note-aide" style="margin-top:10px;">Négatif : il manque cette somme. Positif : avance déjà déposée. Le total devrait correspondre à ton relevé bancaire.</p>`;
+}
+
+function rendreListeDepots(){
+  const el = document.getElementById('depots-liste');
+  if(!el) return;
+  if(!depots.length){
+    el.innerHTML = `<div class="budget-empty">Aucun dépôt enregistré.</div>`;
+    return;
+  }
+  el.innerHTML = depots.slice(0, 30).map(d=>`
+    <div class="depot-ligne"><div class="depot-ligne-haut">
+      <span class="depot-ligne-nom">${echapperHTML(nomsPersonnes[d.personne] || d.personne)}
+        <span class="depot-pill">${d.date}</span>${d.note ? ' ' + echapperHTML(d.note) : ''}</span>
+      <span class="depot-ligne-montants">
+        <span class="value">${formaterMonnaie(d.montant)}</span>
+        <button class="modal-close-btn" data-supprimer-depot="${d.id}" aria-label="Supprimer">&times;</button>
+      </span>
+    </div></div>`).join('');
+  el.querySelectorAll('[data-supprimer-depot]').forEach(b=>{
+    b.addEventListener('click', ()=> supprimerDepot(b.getAttribute('data-supprimer-depot')));
+  });
+}
+
+async function ajouterDepot(){
+  const erreurEl = document.getElementById('depot-erreur');
+  erreurEl.textContent = '';
+  const personne = document.getElementById('depot-qui').value;
+  const montant = parseFloat(document.getElementById('depot-montant').value);
+  const date = document.getElementById('depot-date').value;
+  if(!(montant > 0)){ erreurEl.textContent = 'Entre un montant supérieur à zéro.'; return; }
+  if(!date){ erreurEl.textContent = 'Choisis une date.'; return; }
+  const nouveau = {
+    id: uid(), personne, montant, date,
+    note: document.getElementById('depot-note').value.trim() || null,
+    user_id: currentSession?.user?.id || null
+  };
+  const { error } = await supabaseClient.from('depots').insert([nouveau]);
+  if(error){ erreurEl.textContent = "Échec de l'enregistrement."; console.error(error); return; }
+  await chargerDepotsSupabase();
+  document.getElementById('depot-montant').value = '';
+  document.getElementById('depot-note').value = '';
+  rendreListeDepots();
+  rendreSoldeCompte();
+  rendrePlanDepot();
+  notifierActivitePartenaire('ajout', `Dépôt de ${formaterMonnaie(montant)} au compte conjoint`);
+}
+
+async function supprimerDepot(id){
+  if(!confirm('Supprimer ce dépôt ?')) return;
+  const { error } = await supabaseClient.from('depots').delete().eq('id', id);
+  if(error){ console.error(error); return; }
+  await chargerDepotsSupabase();
+  rendreListeDepots();
+  rendreSoldeCompte();
+  rendrePlanDepot();
+}
+
+async function sauvegarderSoldesInitiaux(){
+  const statut = document.getElementById('solde-initial-statut');
+  const depuis = document.getElementById('solde-initial-depuis').value;
+  if(!depuis){ statut.textContent = 'Choisis une date.'; return; }
+  const lignes = ['p1','p2'].map(p=>({
+    personne: p,
+    montant: parseFloat(document.getElementById(`solde-initial-${p}`).value) || 0,
+    depuis,
+    updated_at: new Date().toISOString()
+  }));
+  const { error } = await supabaseClient.from('soldes_initiaux').upsert(lignes, { onConflict:'personne' });
+  if(error){ statut.textContent = 'Échec.'; console.error(error); return; }
+  lignes.forEach(l=>{ soldesInitiaux[l.personne] = { montant:l.montant, depuis:l.depuis }; });
+  statut.textContent = 'Sauvegardé ✓';
+  setTimeout(()=>{ statut.textContent = ''; }, 2500);
+  rendreSoldeCompte();
+  rendrePlanDepot();
+}
+
+function ouvrirDepotsModal(){
+  const select = document.getElementById('depot-qui');
+  select.innerHTML = ['p1','p2'].map(p=>`<option value="${p}">${echapperHTML(nomsPersonnes[p])}</option>`).join('');
+  select.value = currentUser === 'p2' ? 'p2' : 'p1';
+  document.getElementById('depot-date').value = formaterDateISO(debutJour(new Date()));
+  document.getElementById('depot-erreur').textContent = '';
+  ['p1','p2'].forEach(p=>{
+    document.getElementById(`solde-initial-label-${p}`).textContent = `Solde de départ — ${nomsPersonnes[p]}`;
+    document.getElementById(`solde-initial-${p}`).value = soldesInitiaux[p].montant || '';
+  });
+  document.getElementById('solde-initial-depuis').value = soldesInitiaux.p1.depuis || soldesInitiaux.p2.depuis || '';
+  rendreListeDepots();
+  remplirChampsPlan();
+  document.getElementById('depots-modal').style.display = 'flex';
+}
+
+function fermerDepotsModal(){ document.getElementById('depots-modal').style.display = 'none'; }
+
+document.getElementById('ouvrir-depots').addEventListener('click', ouvrirDepotsModal);
+document.getElementById('depots-fermer').addEventListener('click', fermerDepotsModal);
+document.getElementById('depots-fermer-bas').addEventListener('click', fermerDepotsModal);
+document.getElementById('depots-modal').addEventListener('click', (e)=>{
+  if(e.target.id==='depots-modal') fermerDepotsModal();
+});
+document.getElementById('depot-ajouter').addEventListener('click', ajouterDepot);
+document.getElementById('solde-initial-sauver').addEventListener('click', sauvegarderSoldesInitiaux);
+
+/* ===================== MONTANT FIXE PAR PAIE =====================
+   Objectif : un seul montant, identique à chaque paie, qui suffise toujours.
+
+   Le principe tient en une ligne. Pour chaque échéance future t, l'argent déposé d'ici là
+   doit couvrir tout ce qui est sorti d'ici là :
+
+     D × (nombre de paies jusqu'à t)  ≥  coussin − solde actuel − mouvements nets jusqu'à t
+
+   Le montant cherché est le plus grand de ces rapports sur toutes les échéances : c'est le
+   moment le plus tendu du calendrier qui dicte le montant, et toutes les autres échéances
+   passent alors automatiquement. Les paies suivantes continuent d'accumuler du surplus, qui
+   sert justement à absorber les grosses charges plus loin.
+
+   L'horizon est long (5 ans) exprès. Une récurrence perpétuelle ajoute autant au besoin
+   qu'au nombre de paies, donc le rapport converge : au-delà de deux ans le montant ne bouge
+   pratiquement plus. C'est l'horizon COURT qui fait sauter les montants d'un recalcul à
+   l'autre — le défaut de l'échéancier sur 8 paies. */
+const HORIZON_PLAN_ANNEES = 5;
+let planDepot = { p1:{montantFixe:0, coussin:0}, p2:{montantFixe:0, coussin:0} };
+
+async function chargerPlanDepotSupabase(){
+  const { data, error } = await supabaseClient.from('plan_depot').select('*');
+  if(error){ console.error('Chargement du plan de dépôt :', error); return; }
+  (data||[]).forEach(r=>{
+    if(planDepot[r.personne]) planDepot[r.personne] = { montantFixe:Number(r.montant_fixe||0), coussin:Number(r.coussin||0) };
+  });
+}
+
+/* Tous les mouvements du compte conjoint à venir, sur l'horizon du plan, pour une personne.
+   On ne peut pas réutiliser `depenses` : cette liste s'arrête à l'horizon d'AFFICHAGE, bien
+   plus court. On régénère donc les occurrences sur 5 ans. */
+function mouvementsFutursCompte(personne){
+  const aujourdhui = debutJour(new Date());
+  const limite = new Date(aujourdhui);
+  limite.setFullYear(limite.getFullYear() + HORIZON_PLAN_ANNEES);
+  const mouvements = [];
+
+  depensesReelles.filter(e=> e.type==='conjointe' && e.estCompte && !e.recurrenceId).forEach(e=>{
+    const d = debutJour(dateLocaleDepuisISO(e.date));
+    if(d < aujourdhui || d > limite) return;
+    mouvements.push({ date:d, iso:e.date, montant:(e.estRevenu?1:-1)*partDe(personne, e),
+                      libelle:e.note || e.category, estRevenu:e.estRevenu });
+  });
+
+  recurrences.filter(r=> r.actif && r.type==='conjointe' && r.estCompte).forEach(rec=>{
+    const parDate = exceptionsDeRecurrence(rec.id);
+    const heritees = new Set(rec.datesExclues || []);
+    genererOccurrences(rec, limite).forEach(dateObj=>{
+      const origine = formaterDateISO(dateObj);
+      if(heritees.has(origine)) return;
+      const ex = parDate.get(origine);
+      if(ex && ex.supprimee) return;
+      const occ = construireOccurrence(rec, origine, ex);
+      const d = debutJour(dateLocaleDepuisISO(occ.date));
+      if(d < aujourdhui || d > limite) return;
+      mouvements.push({ date:d, iso:occ.date, montant:(occ.estRevenu?1:-1)*partDe(personne, occ),
+                        libelle:occ.note || occ.category, estRevenu:occ.estRevenu });
+    });
+  });
+
+  mouvements.sort((a,b)=> a.date - b.date);
+  return { mouvements, limite, aujourdhui };
+}
+
+/* Calcule le montant fixe minimal pour une personne, et renvoie de quoi l'expliquer. */
+function calculerMontantFixe(personne){
+  if(!paieAncrage) return null;
+  const soldeActuel = soldeCompteParPersonne()[personne];
+  const coussin = planDepot[personne].coussin || 0;
+  const { mouvements, limite, aujourdhui } = mouvementsFutursCompte(personne);
+  const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
+  const paies = paiesDansIntervalle(ancrage, aujourdhui, limite);
+
+  let cumul = 0;          /* mouvements nets depuis aujourd'hui */
+  let requis = 0;         /* le plus grand rapport rencontré */
+  let momentTendu = null; /* l'échéance qui impose ce montant */
+  let miseDeFonds = 0;    /* ce qu'aucune paie ne peut couvrir (échéance avant la 1re paie) */
+  /* Les deux listes sont triées : un simple curseur suffit à compter les paies écoulées.
+     Refiltrer `paies` à chaque mouvement coûterait 5 ans × 5 ans de comparaisons. */
+  let curseurPaies = 0;
+
+  mouvements.forEach(m=>{
+    cumul += m.montant;
+    /* Un dépôt fait le jour d'une paie est disponible pour une dépense du même jour. */
+    while(curseurPaies < paies.length && paies[curseurPaies] <= m.date) curseurPaies++;
+    const manque = coussin - soldeActuel - cumul;
+    if(manque <= 0) return;
+    if(curseurPaies === 0){ miseDeFonds = Math.max(miseDeFonds, manque); return; }
+    const rapport = manque / curseurPaies;
+    if(rapport > requis){ requis = rapport; momentTendu = { iso:m.iso, libelle:m.libelle, manque, nbPaies:curseurPaies }; }
+  });
+
+  return { montant:requis, miseDeFonds, momentTendu, nbMouvements:mouvements.length, soldeActuel, coussin };
+}
+
+/* Avec le montant FIGÉ, à quelle date le compteur passerait-il sous le coussin ?
+   C'est la surveillance : on ne remplace pas le montant choisi, on prévient. */
+function premiereRuptureAvecMontantFixe(personne){
+  const fixe = planDepot[personne].montantFixe || 0;
+  if(fixe <= 0) return null;
+  const soldeActuel = soldeCompteParPersonne()[personne];
+  const coussin = planDepot[personne].coussin || 0;
+  const { mouvements, limite, aujourdhui } = mouvementsFutursCompte(personne);
+  const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
+  const paies = paiesDansIntervalle(ancrage, aujourdhui, limite);
+
+  let cumul = 0;
+  let curseurPaies = 0;
+  for(const m of mouvements){
+    cumul += m.montant;
+    while(curseurPaies < paies.length && paies[curseurPaies] <= m.date) curseurPaies++;
+    if(soldeActuel + fixe*curseurPaies + cumul < coussin - 0.005){
+      return { iso:m.iso, libelle:m.libelle };
+    }
+  }
+  return null;
+}
+
+function rendrePlanDepot(){
+  const el = document.getElementById('plan-depot-contenu');
+  if(!el) return;
+  if(!paieAncrage){ el.innerHTML = `<div class="budget-empty">Calendrier de paie non configuré.</div>`; return; }
+
+  el.innerHTML = ['p1','p2'].map(personne=>{
+    const calc = calculerMontantFixe(personne);
+    const fixe = planDepot[personne].montantFixe || 0;
+    const rupture = premiereRuptureAvecMontantFixe(personne);
+    const recommande = Math.ceil(calc.montant * 100) / 100;
+
+    let etat;
+    if(fixe <= 0){
+      etat = `<div class="depot-ligne-explication">Aucun montant figé. Recommandé : ${formaterMonnaie(recommande)} par paie.</div>`;
+    } else if(rupture){
+      etat = `<div class="depot-ligne-explication" style="color:var(--red);">Ce montant ne suffit plus au ${rupture.iso} (${echapperHTML(rupture.libelle)}). Recommandé : ${formaterMonnaie(recommande)} par paie.</div>`;
+    } else {
+      etat = `<div class="depot-ligne-explication" style="color:var(--green);">Ce montant tient sur les ${HORIZON_PLAN_ANNEES} prochaines années.</div>`;
+    }
+
+    const tendu = calc.momentTendu
+      ? `<div class="depot-ligne-explication">Moment le plus tendu : ${calc.momentTendu.iso} (${echapperHTML(calc.momentTendu.libelle)}) — il faut ${formaterMonnaie(calc.momentTendu.manque)} d'ici là, sur ${calc.momentTendu.nbPaies} paie${calc.momentTendu.nbPaies>1?'s':''}.</div>`
+      : `<div class="depot-ligne-explication">Aucune échéance ne met le compte en manque : le solde actuel suffit.</div>`;
+
+    const mise = calc.miseDeFonds > 0.005
+      ? `<div class="depot-ligne-explication" style="color:var(--red);">Mise de fonds immédiate de ${formaterMonnaie(calc.miseDeFonds)} : une échéance tombe avant la prochaine paie, aucun dépôt ne peut la couvrir à temps.</div>`
+      : '';
+
+    return `<div class="depot-ligne">
+      <div class="depot-ligne-haut">
+        <span class="depot-ligne-nom">${echapperHTML(nomsPersonnes[personne])}</span>
+        <span class="depot-ligne-montants"><span class="value">${fixe > 0 ? formaterMonnaie(fixe) : '—'}</span></span>
+      </div>
+      ${etat}${tendu}${mise}
+    </div>`;
+  }).join('');
+}
+
+async function sauvegarderPlanDepot(){
+  const statut = document.getElementById('plan-depot-statut');
+  const lignes = ['p1','p2'].map(p=>({
+    personne: p,
+    montant_fixe: parseFloat(document.getElementById(`plan-montant-${p}`).value) || 0,
+    coussin: parseFloat(document.getElementById(`plan-coussin-${p}`).value) || 0,
+    updated_at: new Date().toISOString()
+  }));
+  const { error } = await supabaseClient.from('plan_depot').upsert(lignes, { onConflict:'personne' });
+  if(error){ statut.textContent = 'Échec.'; console.error(error); return; }
+  lignes.forEach(l=>{ planDepot[l.personne] = { montantFixe:l.montant_fixe, coussin:l.coussin }; });
+  statut.textContent = 'Sauvegardé ✓';
+  setTimeout(()=>{ statut.textContent = ''; }, 2500);
+  remplirChampsPlan();
+  rendrePlanDepot();
+}
+
+/* Bouton « reprendre la recommandation » : c'est le seul moment où le montant figé change
+   tout seul, et il faut l'avoir demandé. */
+function appliquerRecommandationPlan(){
+  ['p1','p2'].forEach(p=>{
+    const calc = calculerMontantFixe(p);
+    if(calc) document.getElementById(`plan-montant-${p}`).value = (Math.ceil(calc.montant*100)/100).toFixed(2);
+  });
+}
+
+function remplirChampsPlan(){
+  ['p1','p2'].forEach(p=>{
+    document.getElementById(`plan-label-${p}`).textContent = `Montant par paie — ${nomsPersonnes[p]}`;
+    document.getElementById(`plan-coussin-label-${p}`).textContent = `Coussin — ${nomsPersonnes[p]}`;
+    document.getElementById(`plan-montant-${p}`).value = planDepot[p].montantFixe || '';
+    document.getElementById(`plan-coussin-${p}`).value = planDepot[p].coussin || '';
+  });
+}
+
+document.getElementById('plan-depot-sauver').addEventListener('click', sauvegarderPlanDepot);
+document.getElementById('plan-depot-recommande').addEventListener('click', appliquerRecommandationPlan);
 
 /* ===================== DÉTAIL D'UN DÉPÔT (vérification du calcul) =====================
    Cliquer une paie dans "Prochains dépôts au compte conjoint" ouvre le détail ligne par
@@ -4643,6 +5121,8 @@ function rafraichirSousOnglet(scope, sub){
 function rafraichirActif(){
   appliquerTheme();
   rafraichirOptionsFormulaires();
+  rendreSoldeCompte();
+  rendrePlanDepot();
   if(activeMainTab==='conjoint' || activeMainTab==='personnel'){
     rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   } else if(activeMainTab==='comparer'){
