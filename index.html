@@ -2892,7 +2892,7 @@ function partDe(personne, e){
 /* Solde du compte AUJOURD'HUI : solde de base + tous les dépôts + revenus entrés − dépenses
    sorties. Seuls les mouvements datés d'aujourd'hui ou avant comptent — c'est un solde
    observé, pas une prévision. Il appartient à parts égales aux deux. */
-function soldeCompteParPersonne(){
+function soldeCompte(){
   const aujourdhui = formaterDateISO(debutJour(new Date()));
   const depuis = compteReglages.depuis;
   /* `depuis` borne l'historique : tout ce qui précède est déjà résumé dans le solde de base,
@@ -2904,11 +2904,9 @@ function soldeCompteParPersonne(){
     if(e.type!=='conjointe' || !e.estCompte || !dansLaFenetre(e.date)) return;
     total += e.estRevenu ? e.amount : -e.amount;
   });
-  /* L'argent déposé dans le compte est commun : si l'un met 100 $ et l'autre 50 $, chacun en
-     a 75 $. La différence entre ce que chacun DOIT déposer vient uniquement du fait que
-     certaines dépenses ne sont pas partagées moitié-moitié — pas d'une propriété différente
-     de l'argent déjà déposé. */
-  return { p1: total/2, p2: total/2, total };
+  /* Un seul nombre : l'argent du compte est commun. La différence entre ce que chacun DOIT
+     déposer vient du partage des dépenses, pas d'une propriété différente de l'argent. */
+  return total;
 }
 
 function montantColore(v){
@@ -2919,25 +2917,25 @@ function montantColore(v){
 function rendreSoldeCompte(){
   const el = document.getElementById('solde-compte-contenu');
   if(!el) return;
-  const s = soldeCompteParPersonne();
-  const ligne = (nom, v) => `<div class="depot-ligne"><div class="depot-ligne-haut">
-      <span class="depot-ligne-nom">${echapperHTML(nom)}</span>
-      <span class="depot-ligne-montants">${montantColore(v)}</span>
-    </div></div>`;
-  el.innerHTML = ligne(nomsPersonnes.p1, s.p1) + ligne(nomsPersonnes.p2, s.p2) + `
+  /* Aucune répartition entre les deux personnes ici : une fois l'argent dans le compte, il
+     est commun. Qui a déposé quoi se suit dans le tableau des paies, pas sur le solde. */
+  const total = soldeCompte();
+  const minimum = compteReglages.soldeMinimum || 0;
+  const ligneGrise = (libelle, valeur) => `<div class="depot-ligne-haut">
+      <span class="depot-ligne-nom" style="font-weight:400;color:var(--text-secondary);font-size:13px;">${libelle}</span>
+      <span class="depot-ligne-montants"><span class="value" style="font-size:13px;color:var(--text-secondary);">${formaterMonnaie(valeur)}</span></span>
+    </div>`;
+  el.innerHTML = `
     <div class="depot-total final">
-      <span>Total dans le compte</span>
-      <span class="depot-ligne-montants">${montantColore(s.total)}</span>
+      <span>Dans le compte</span>
+      <span class="depot-ligne-montants">${montantColore(total)}</span>
     </div>
-    <div class="depot-ligne-haut" style="margin-top:8px;">
-      <span class="depot-ligne-nom" style="font-weight:400;color:var(--text-secondary);font-size:13px;">Solde minimum</span>
-      <span class="depot-ligne-montants"><span class="value" style="font-size:13px;color:var(--text-secondary);">${formaterMonnaie(compteReglages.soldeMinimum || 0)}</span></span>
-    </div>
+    ${ligneGrise('Solde minimum', minimum)}
     <div class="depot-ligne-haut">
-      <span class="depot-ligne-nom" style="font-weight:400;color:var(--text-secondary);font-size:13px;">Marge de manœuvre</span>
-      <span class="depot-ligne-montants">${montantColore(s.total - (compteReglages.soldeMinimum || 0))}</span>
+      <span class="depot-ligne-nom" style="font-weight:400;color:var(--text-secondary);font-size:13px;">Coussin disponible</span>
+      <span class="depot-ligne-montants">${montantColore(total - minimum)}</span>
     </div>
-    <p class="note-aide" style="margin-top:10px;">Le total devrait correspondre à ton relevé bancaire. L'argent déposé est commun : chacun en possède la moitié, peu importe qui l'a versé.</p>`;
+    <p class="note-aide" style="margin-top:10px;">Le montant devrait correspondre à ton relevé bancaire. C'est le coussin qui absorbe les périodes chargées, puis se remplit quand les dépenses sont plus légères.</p>`;
 }
 
 function rendreListeDepots(){
@@ -3148,7 +3146,6 @@ function resteADeposer(personne, montant, premierePaie){
 /* Simulation du compte, paie après paie, avec les montants calculés. Renvoie le creux le plus
    bas atteint et la date correspondante : c'est ce qui dit si le plan « balance » ou non. */
 function simulerCompte(montantTotalParPaie){
-  const soldes = soldeCompteParPersonne();
   const { mouvements, limite, aujourdhui } = mouvementsFutursCompte('total');
   const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
   const paies = paiesDansIntervalle(ancrage, aujourdhui, limite);
@@ -3160,7 +3157,7 @@ function simulerCompte(montantTotalParPaie){
     ...mouvements.map(m=>({ date:m.date, montant:m.montant, ordre:1, libelle:m.libelle, iso:m.iso }))
   ].sort((a,b)=> (a.date - b.date) || (a.ordre - b.ordre));
 
-  let solde = soldes.total;
+  let solde = soldeCompte();
   let creux = solde, creuxInfo = null;
   evenements.forEach(e=>{
     solde += e.montant;
