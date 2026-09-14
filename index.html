@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Dépenses</title>
 
 <!-- ===================== PWA : installation "app" sans barre de navigateur ===================== -->
@@ -62,6 +62,9 @@
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     -webkit-tap-highlight-color: transparent;
+    /* Complément au `user-scalable=no` du viewport : coupe le zoom par double-tap, que la
+       balise meta ne couvre pas. `manipulation` laisse passer les tapes et le défilement. */
+    touch-action: manipulation;
   }
   .app{
     max-width:1080px;
@@ -991,7 +994,7 @@
 
       <div class="card form-card" id="form-card-conjoint">
         <div class="modal-header">
-          <h3>Ajouter une dépense conjointe<span class="modal-sous-titre">Partagée entre vous deux</span></h3>
+          <h3>Ajouter une dépense conjointe</h3>
           <button class="modal-close-btn mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
         </div>
         <div class="modal-body">
@@ -1170,7 +1173,7 @@
 
       <div class="card form-card" id="form-card-personnel">
         <div class="modal-header">
-          <h3>Ajouter une dépense personnelle<span class="modal-sous-titre">Visible par vous seul</span></h3>
+          <h3>Ajouter une dépense personnelle</h3>
           <button class="modal-close-btn mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
         </div>
         <div class="modal-body">
@@ -1379,30 +1382,6 @@
       <div class="card settings-section">
         <h3>Apparence</h3>
         <div class="theme-toggle"><span>Mode sombre</span><label class="switch" for="dark-mode"><input type="checkbox" id="dark-mode"><span class="switch-track"></span></label></div>
-      </div>
-      <!-- Point de départ de la projection du solde affichée dans « Prochains dépôts au
-           compte conjoint ». C'est un réglage qu'on touche rarement : il vit ici plutôt
-           qu'au-dessus du tableau, qu'il encombrait. -->
-      <div class="card settings-section" id="compte-conjoint-section">
-        <h3>Compte conjoint</h3>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">
-          Le solde réel du compte, à une date donnée. L'application part de là pour projeter
-          ce qu'il restera après les dépenses et les revenus à venir.
-        </p>
-        <div class="modal-grid">
-          <div class="field">
-            <label for="solde-compte-montant">Solde du compte</label>
-            <input type="number" id="solde-compte-montant" step="0.01" min="0" placeholder="0,00" inputmode="decimal" autocomplete="off">
-          </div>
-          <div class="field">
-            <label for="solde-compte-depuis">Constaté le</label>
-            <input type="date" id="solde-compte-depuis" autocomplete="off">
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-          <button type="button" class="btn-secondary" id="solde-compte-save">Enregistrer</button>
-        </div>
-        <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="solde-compte-statut"></p>
       </div>
       <div class="card settings-section" id="notifications-section">
         <h3>Notifications</h3>
@@ -2879,15 +2858,16 @@ function calculerEcheancierCompte(nbPaies){
 }
 
 /* ===================== SOLDE RÉEL DU COMPTE CONJOINT =====================
-   L'échéancier dit combien DÉPOSER; il ne dit pas si le compte va tenir le coup. Pour ça il
+   L'échéancier dit combien DÉPOSER; il ne dit pas ce qu'il restera dans le compte. Pour ça il
    faut un point de départ: ce qu'il y a vraiment dans le compte, à une date donnée. Le reste
-   se déduit — dépôts de paie qui entrent, dépenses « compte » qui sortent — et donne le solde
-   projeté à chaque paie.
+   se déduit — les dépenses « compte » qui sortent, les revenus « compte » qui entrent — et
+   donne le solde projeté à chaque paie (voir projeterSoldeCompte).
 
    Une seule ligne en base (table `compte_solde`, id=1): le compte est unique et son solde
-   n'appartient à personne en particulier. Les deux personnes voient et modifient la même
-   valeur, exactement comme l'échéancier. */
-let soldeCompte = null; /* { montant, depuis } ou null si jamais saisi */
+   n'appartient à personne en particulier. L'application le LIT seulement — il n'y a plus
+   d'écran de saisie, la valeur se modifie directement dans la table. Sans ligne enregistrée,
+   `soldeCompte` reste null et la colonne Solde disparaît simplement de l'échéancier. */
+let soldeCompte = null; /* { montant, depuis } ou null si aucune ligne en base */
 
 async function chargerSoldeCompte(){
   try{
@@ -2900,12 +2880,6 @@ async function chargerSoldeCompte(){
   }
 }
 
-async function sauvegarderSoldeCompte(montant, depuis){
-  const { error } = await supabaseClient.from('compte_solde')
-    .upsert({ id: 1, montant, depuis, updated_at: new Date().toISOString() }, { onConflict: 'id' });
-  if(error) throw error;
-  soldeCompte = { montant, depuis };
-}
 
 /* Projette ce qu'il RESTE dans le compte, paie après paie.
 
@@ -3073,7 +3047,6 @@ function afficherEcheancierCompteConjoint(){
     return;
   }
   carte.style.display = '';
-  remplirChampsSoldeCompte();
 
   /* Le nombre de paies à calculer doit couvrir toute la période affichée : 8 paies (~4 mois)
      suffisent d'ordinaire, mais "Année" — ou une navigation loin en avant en vue "Paie" —
@@ -3190,21 +3163,6 @@ function afficherEcheancierCompteConjoint(){
   if(boutonMoins) boutonMoins.addEventListener('click', ()=>{ echeancierAnneeEtendu = false; afficherEcheancierCompteConjoint(); });
 }
 
-/* Remet dans les champs la valeur enregistrée, sans jamais écraser une saisie en cours :
-   l'échéancier se re-rend à chaque changement de période, et repeupler les champs à ce
-   moment-là effacerait ce que la personne est en train de taper. */
-function remplirChampsSoldeCompte(){
-  const champMontant = document.getElementById('solde-compte-montant');
-  const champDate = document.getElementById('solde-compte-depuis');
-  if(!champMontant || !champDate) return;
-  if(document.activeElement === champMontant || document.activeElement === champDate) return;
-  if(soldeCompte){
-    champMontant.value = soldeCompte.montant;
-    champDate.value = soldeCompte.depuis;
-  } else if(!champDate.value){
-    champDate.value = formaterDateISO(new Date());
-  }
-}
 
 /* Verdict au-dessus du tableau. Il ne se déclenche que si c'est la TOUTE PROCHAINE paie qui
    manque déjà d'argent — donc quelque chose à régler maintenant. Sans cette restriction le
@@ -3216,7 +3174,7 @@ function afficherAlerteSoldeCompte(projection){
   const zone = document.getElementById('solde-compte-alerte');
   if(!zone) return;
   if(!projection || !projection.length){
-    zone.innerHTML = soldeCompte ? '' : `<div class="solde-alerte neutre">Indique le solde du compte dans Paramètres › Compte conjoint pour voir ce qu'il restera après les dépenses à venir.</div>`;
+    zone.innerHTML = '';
     return;
   }
   const prochaine = projection[0];
@@ -3232,34 +3190,6 @@ function afficherAlerteSoldeCompte(projection){
   const dateCreux = dateLocaleDepuisISO(creux.iso).toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
   zone.innerHTML = `<div class="solde-alerte ok">Le compte couvre les dépenses prévues sur toute la période calculée. Point le plus bas : ${formaterMonnaie(creux.soldeMin)} autour du ${dateCreux}.</div>`;
 }
-
-document.getElementById('solde-compte-save').addEventListener('click', async ()=>{
-  const champMontant = document.getElementById('solde-compte-montant');
-  const champDate = document.getElementById('solde-compte-depuis');
-  const statut = document.getElementById('solde-compte-statut');
-  const bouton = document.getElementById('solde-compte-save');
-  const montant = parseFloat(champMontant.value);
-  const depuis = champDate.value;
-
-  if(isNaN(montant) || !depuis){
-    statut.textContent = "Entre un montant et une date pour enregistrer le solde.";
-    return;
-  }
-
-  bouton.disabled = true;
-  statut.textContent = 'Enregistrement...';
-  try{
-    await sauvegarderSoldeCompte(Math.round(montant*100)/100, depuis);
-    statut.textContent = "Solde enregistré ✓";
-    champMontant.blur(); champDate.blur();
-    afficherEcheancierCompteConjoint();
-  } catch(err){
-    console.error("Échec de l'enregistrement du solde du compte :", err);
-    statut.textContent = "Impossible d'enregistrer le solde (voir la console pour l'erreur exacte).";
-  } finally {
-    bouton.disabled = false;
-  }
-});
 
 /* ===================== CALCUL DES OCCURRENCES À L'AFFICHAGE =====================
    Reconstruit le tableau dérivé `depenses` = dépenses réelles + occurrences des récurrences.
@@ -4862,7 +4792,6 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
    intacts pendant qu'elle est ouverte. */
 function fermerSettingsModal(){ document.getElementById('settings-modal').style.display = 'none'; }
 document.getElementById('open-settings').addEventListener('click',()=>{
-  remplirChampsSoldeCompte();
   document.getElementById('settings-modal').style.display = 'flex';
 });
 document.getElementById('close-settings-modal').addEventListener('click', fermerSettingsModal);
