@@ -1123,10 +1123,6 @@
     <!-- Sous-onglet : BUDGET -->
     <div class="subtab-panel" data-scope="conjoint" data-sub="budget">
       <div class="stats-row" id="stats-conjoint"></div>
-      <div class="card" id="budget-revenus-card-conjoint" style="display:none;">
-        <h3 style="margin-bottom:12px;">Revenus de <span id="budget-revenus-periode-conjoint"></span></h3>
-        <div id="budget-revenus-list-conjoint"></div>
-      </div>
       <div class="grid-2">
         <div class="card">
           <h3>Budget par catégorie</h3>
@@ -3080,12 +3076,13 @@ function afficherEcheancierCompteConjoint(){
   remplirChampsSoldeCompte();
 
   /* Le nombre de paies à calculer doit couvrir toute la période affichée : 8 paies (~4 mois)
-     suffisent pour Jour/Semaine/Paie/Mois, mais "Année" doit pouvoir couvrir toute l'année
-     sélectionnée, sinon l'échéancier s'arrête en cours d'année au lieu de continuer. */
-  const { fin: finPeriodeAffichee } = etatCalendrierPeriode.vue === 'paie'
-    ? { fin: debutJour(new Date()) }
-    : bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
-  const nbPaiesNecessaires = Math.max(8, Math.ceil(joursEntreDates(debutJour(new Date()), finPeriodeAffichee)/14) + 2);
+     suffisent d'ordinaire, mais "Année" — ou une navigation loin en avant en vue "Paie" —
+     doit pouvoir aller plus loin, sinon l'échéancier s'arrête avant la période consultée. */
+  const { fin: finPeriodeAffichee } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+  /* +1 jour en vue "Paie" : le dépôt visé est celui qui suit la fin de la période affichée
+     (voir le filtrage plus bas), il doit donc entrer dans le nombre de paies calculées. */
+  const finACouvrir = etatCalendrierPeriode.vue === 'paie' ? ajouterJours(finPeriodeAffichee, 1) : finPeriodeAffichee;
+  const nbPaiesNecessaires = Math.max(8, Math.ceil(joursEntreDates(debutJour(new Date()), finACouvrir)/14) + 2);
   const echeancierComplet = calculerEcheancierCompte(nbPaiesNecessaires);
   /* Conservé pour la fenêtre de détail : elle réutilise exactement le calcul affiché plutôt
      que de le refaire, sinon les deux pourraient diverger sans qu'on s'en aperçoive. */
@@ -3106,16 +3103,23 @@ function afficherEcheancierCompteConjoint(){
   afficherAlerteSoldeCompte(projection ? echeancierComplet.map((l,i)=>({ iso:l.iso, date:l.date, ...projection[i] })) : null);
 
   /* Le contenu de l'échéancier suit le type de période choisi (Jour/Semaine/Paie/Mois/
-     Année, partagé avec Transactions et Résumé) : "Paie" ne montre que le tout prochain
-     dépôt, les autres périodes montrent les paies tombant dans la période choisie —
-     "Année" affiche par défaut le mois en cours avec un "voir plus" vers le reste des
-     paies de l'année sélectionnée. */
+     Année, partagé avec Transactions et Résumé) : on montre les paies qui tombent dans la
+     période affichée, et rien d'autre. "Paie" en montre donc exactement une, celle qu'on est
+     en train de consulter — auparavant elle affichait toujours le tout prochain dépôt, si
+     bien que naviguer avec ‹ › ne changeait rien à l'écran. "Année" affiche par défaut le
+     mois en cours, avec un "voir plus" vers le reste des paies de l'année sélectionnée. */
   let echeancier;
   let afficherVoirPlus = false;
   let afficherVoirMoins = false;
 
   if(etatCalendrierPeriode.vue === 'paie'){
-    echeancier = echeancierComplet.slice(0, 1);
+    /* Une période de paie va d'un jour de paie au lendemain de la suivante : le dépôt qu'on
+       prépare PENDANT cette période est donc celui du jour de paie qui la CLÔT, pas celui de
+       son premier jour (déjà versé, c'est ce qui l'a ouverte). Filtrer bêtement sur la
+       fenêtre affichée laissait donc l'écran vide sur la période en cours. */
+    const { fin } = bornePeriode('paie', etatCalendrierPeriode.dateRef);
+    const paieVisee = formaterDateISO(ajouterJours(fin, 1));
+    echeancier = echeancierComplet.filter(l => l.iso === paieVisee);
   } else if(etatCalendrierPeriode.vue === 'annee'){
     if(!echeancierAnneeEtendu){
       const debutMoisStr = formaterDateISO(new Date(moisActif.year, moisActif.month, 1));
@@ -5938,7 +5942,12 @@ function afficherSectionBudget(scope){
   const listeComplete = depenses.filter(cfg.filtre);
   const liste = listeComplete.filter(e=>!e.estRevenu);
   const total = liste.reduce((s,e)=>s+e.amount,0);
-  const revenuMois = listeComplete.filter(e=>e.estRevenu).reduce((s,e)=>s+e.amount,0);
+  /* Côté conjoint, le budget ne parle que de dépenses : les revenus (dépôts au compte,
+     remboursements) sont suivis dans « Prochains dépôts au compte conjoint », pas ici. Les
+     compter en douce dans le restant donnerait un chiffre qu'aucune ligne de l'écran ne
+     permettrait d'expliquer. Le budget personnel, lui, les garde. */
+  const compterRevenus = scope !== 'conjoint';
+  const revenuMois = compterRevenus ? listeComplete.filter(e=>e.estRevenu).reduce((s,e)=>s+e.amount,0) : 0;
 
   /* Liste des revenus de la période, bien visible, pour qu'on voie clairement ce qui a été
      comptabilisé (et pas juste un chiffre agrégé dans les statistiques). */
@@ -5993,7 +6002,8 @@ function afficherSectionBudget(scope){
     const listeCompleteC = depenses.filter(cfgC.filtre);
     const listeC = listeCompleteC.filter(e=>!e.estRevenu);
     const totalC = listeC.reduce((s,e)=>s+e.amount,0);
-    const revenuMoisC = listeCompleteC.filter(e=>e.estRevenu).reduce((s,e)=>s+e.amount,0);
+    /* Même règle que pour l'onglet Conjoint lui-même : pas de revenus dans le budget conjoint. */
+    const revenuMoisC = 0;
     const budgetActuelC = (budgets.conjoint && budgets.conjoint[periode]) || {};
     const sommeCategoriesC = categories.reduce((s,c)=>s+(budgetActuelC[c]||0),0);
     const budgetAfficheC = budgetProratePourPeriode(sommeCategoriesC, vue, debut, fin);
