@@ -820,6 +820,28 @@
   .depot-ligne-explication{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.45;}
   .depot-pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;
     background:var(--border);color:var(--text-secondary);vertical-align:middle;}
+  /* Bloc « Solde réel du compte » : point de départ de la projection, au-dessus du tableau
+     des dépôts. Volontairement discret — c'est un réglage qu'on touche rarement, pas une
+     donnée à consulter. */
+  .solde-compte-bloc{border:1px solid var(--border);border-radius:10px;padding:12px 14px;
+    background:var(--bg);margin-bottom:14px;}
+  .solde-compte-champs{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
+  .solde-compte-champs .field{flex:1 1 130px;min-width:0;}
+  .solde-compte-champs .btn-secondary{flex:0 0 auto;padding:9px 14px;}
+  .solde-compte-statut{font-size:12px;color:var(--text-secondary);margin:9px 0 0;line-height:1.45;}
+  /* Avertissement quand la projection passe sous zéro : c'est LA réponse à « est-ce que le
+     compte va suffire ? », donc elle doit se voir avant le tableau. */
+  .solde-alerte{font-size:13px;line-height:1.5;border-radius:10px;padding:10px 13px;margin-bottom:12px;}
+  .solde-alerte.manque{background:color-mix(in srgb, var(--red) 10%, var(--surface));
+    border:1px solid color-mix(in srgb, var(--red) 35%, var(--surface));color:var(--red);}
+  .solde-alerte.ok{background:color-mix(in srgb, var(--green) 10%, var(--surface));
+    border:1px solid color-mix(in srgb, var(--green) 30%, var(--surface));color:var(--green);}
+  .solde-colonne{min-width:80px;text-align:right;white-space:nowrap;}
+  .solde-negatif{color:var(--red);font-weight:600;}
+  @media (max-width:760px){
+    .solde-compte-champs .btn-secondary{flex:1 1 100%;}
+  }
+
   .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
   .depot-total.final .value{font-weight:600;}
@@ -1043,6 +1065,24 @@
         <div class="table-head-row">
           <h3>Prochains dépôts au compte conjoint</h3>
         </div>
+        <!-- Point de départ de la projection : ce qu'il y a VRAIMENT dans le compte
+             aujourd'hui. Sans lui, la colonne « Solde » n'aurait aucune origine et ne
+             pourrait pas dire si le compte tiendra le coup. -->
+        <div class="solde-compte-bloc">
+          <div class="solde-compte-champs">
+            <div class="field">
+              <label for="solde-compte-montant">Solde réel du compte</label>
+              <input type="number" id="solde-compte-montant" step="0.01" min="0" placeholder="0,00">
+            </div>
+            <div class="field">
+              <label for="solde-compte-depuis">Constaté le</label>
+              <input type="date" id="solde-compte-depuis">
+            </div>
+            <button type="button" class="btn-secondary" id="solde-compte-save">Enregistrer</button>
+          </div>
+          <p class="solde-compte-statut" id="solde-compte-statut"></p>
+        </div>
+        <div id="solde-compte-alerte"></div>
         <div id="recurrent-compte-echeancier-conjoint"></div>
       </div>
       <div class="grid-2" id="resume-mois-conjoint">
@@ -1721,7 +1761,7 @@ async function gererSession(session){
   if(nomEl) nomEl.textContent = nomsPersonnes[currentUser];
   mettreAJourInterfaceUtilisateur();
   rafraichirOptionsFormulaires();
-  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerExceptionsSupabase() ]);
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerExceptionsSupabase(), chargerSoldeCompte() ]);
   recalculerDepenses();
   rafraichirActif();
   chargerPreferencesNotification();
@@ -2791,6 +2831,92 @@ function calculerEcheancierCompte(nbPaies){
   });
 }
 
+/* ===================== SOLDE RÉEL DU COMPTE CONJOINT =====================
+   L'échéancier dit combien DÉPOSER; il ne dit pas si le compte va tenir le coup. Pour ça il
+   faut un point de départ: ce qu'il y a vraiment dans le compte, à une date donnée. Le reste
+   se déduit — dépôts de paie qui entrent, dépenses « compte » qui sortent — et donne le solde
+   projeté à chaque paie.
+
+   Une seule ligne en base (table `compte_solde`, id=1): le compte est unique et son solde
+   n'appartient à personne en particulier. Les deux personnes voient et modifient la même
+   valeur, exactement comme l'échéancier. */
+let soldeCompte = null; /* { montant, depuis } ou null si jamais saisi */
+
+async function chargerSoldeCompte(){
+  try{
+    const { data, error } = await supabaseClient.from('compte_solde').select('*').eq('id', 1).maybeSingle();
+    if(error) throw error;
+    soldeCompte = data ? { montant: Number(data.montant || 0), depuis: data.depuis } : null;
+  } catch(err){
+    soldeCompte = null;
+    console.warn("Impossible de charger le solde du compte conjoint.", err);
+  }
+}
+
+async function sauvegarderSoldeCompte(montant, depuis){
+  const { error } = await supabaseClient.from('compte_solde')
+    .upsert({ id: 1, montant, depuis, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  if(error) throw error;
+  soldeCompte = { montant, depuis };
+}
+
+/* Projette le solde du compte paie après paie.
+
+   Deux flux, et deux seulement :
+     - ce qui ENTRE : le dépôt demandé à chaque paie (p1 + p2 de l'échéancier) ;
+     - ce qui SORT : les dépenses « compte » à leur vraie date d'échéance (un revenu « compte »
+       entre au lieu de sortir).
+   Rien n'est lissé ici, contrairement au calcul du dépôt : on veut le mouvement réel du
+   compte, au jour près, sinon un gros paiement isolé passerait inaperçu.
+
+   Pour chaque paie on retient deux chiffres :
+     - `solde`    : le solde à la fin de la période (juste avant la paie suivante) ;
+     - `soldeMin` : le creux atteint pendant la période. C'est celui qui compte pour savoir si
+       le compte suffit : un solde de fin positif peut très bien cacher un découvert en
+       milieu de période, comblé ensuite par un revenu.
+
+   Retourne null tant qu'aucun solde n'a été saisi (rien à projeter à partir de rien). */
+function projeterSoldeCompte(echeancier){
+  if(!soldeCompte || !echeancier || !echeancier.length) return null;
+  const depuisIso = soldeCompte.depuis;
+
+  /* `ordre` départage les mouvements d'une même journée : le dépôt de paie est réputé arriver
+     avant les paiements du jour, sinon une dépense datée le jour même de la paie ferait
+     apparaître un faux découvert. */
+  const mouvements = [];
+  depenses
+    .filter(e => e.type === 'conjointe' && e.estCompte && e.date >= depuisIso)
+    .forEach(e => mouvements.push({ iso: e.date, ordre: 1, montant: e.estRevenu ? e.amount : -e.amount }));
+  echeancier
+    .filter(l => l.iso >= depuisIso)
+    .forEach(l => mouvements.push({ iso: l.iso, ordre: 0, montant: l.p1 + l.p2 }));
+  mouvements.sort((a,b) => a.iso === b.iso ? a.ordre - b.ordre : a.iso.localeCompare(b.iso));
+
+  /* La dernière période est bornée à 14 jours : au-delà, `depenses` contient encore des
+     occurrences (l'horizon va jusqu'à un an) mais l'échéancier n'a plus de dépôts à leur
+     opposer. Les compter donnerait un dernier solde faussement catastrophique. */
+  const bornes = echeancier.map((l,i) => ({
+    debut: l.iso,
+    fin: echeancier[i+1] ? echeancier[i+1].iso : formaterDateISO(ajouterJours(dateLocaleDepuisISO(l.iso), 14))
+  }));
+
+  let courant = Number(soldeCompte.montant || 0);
+  let k = 0;
+  /* Mouvements survenus entre la date du solde constaté et la première paie affichée. */
+  while(k < mouvements.length && mouvements[k].iso < bornes[0].debut){ courant += mouvements[k].montant; k++; }
+
+  return bornes.map(b => {
+    let min = null;
+    while(k < mouvements.length && mouvements[k].iso < b.fin){
+      courant += mouvements[k].montant;
+      if(min === null || courant < min) min = courant;
+      k++;
+    }
+    if(min === null) min = courant; /* aucune opération dans la période : le solde ne bouge pas */
+    return { solde: courant, soldeMin: min };
+  });
+}
+
 /* ===================== DÉTAIL D'UN DÉPÔT (vérification du calcul) =====================
    Cliquer une paie dans "Prochains dépôts au compte conjoint" ouvre le détail ligne par
    ligne du montant demandé : d'où vient chaque part, comment elle a été répartie, et le
@@ -2893,12 +3019,15 @@ function afficherEcheancierCompteConjoint(){
     recurrences.some(r=>r.type==='conjointe' && r.estCompte && r.actif) ||
     depenses.some(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId);
 
-  if(!compteActifsExistent){
+  /* Un solde saisi suffit à garder la carte visible : sans ça, vider ses dépenses « compte »
+     cacherait aussi le seul endroit où se règle le solde, sans moyen d'y revenir. */
+  if(!compteActifsExistent && !soldeCompte){
     carte.style.display = 'none';
     conteneur.innerHTML = '';
     return;
   }
   carte.style.display = '';
+  remplirChampsSoldeCompte();
 
   /* Le nombre de paies à calculer doit couvrir toute la période affichée : 8 paies (~4 mois)
      suffisent pour Jour/Semaine/Paie/Mois, mais "Année" doit pouvoir couvrir toute l'année
@@ -2914,8 +3043,17 @@ function afficherEcheancierCompteConjoint(){
   synchroniserEcheancierNotifications(echeancierComplet);
   if(!echeancierComplet || !echeancierComplet.length){
     conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
+    afficherAlerteSoldeCompte(null);
     return;
   }
+
+  /* La projection se calcule TOUJOURS sur l'échéancier complet, jamais sur la portion
+     affichée : le solde est un cumul, il perdrait son sens si on repartait du solde constaté
+     au milieu de la liste. Les lignes affichées y piochent ensuite par date. */
+  const projection = projeterSoldeCompte(echeancierComplet);
+  const projParIso = {};
+  if(projection) echeancierComplet.forEach((l,i)=>{ projParIso[l.iso] = projection[i]; });
+  afficherAlerteSoldeCompte(projection ? echeancierComplet.map((l,i)=>({ iso:l.iso, date:l.date, ...projection[i] })) : null);
 
   /* Le contenu de l'échéancier suit le type de période choisi (Jour/Semaine/Paie/Mois/
      Année, partagé avec Transactions et Résumé) : "Paie" ne montre que le tout prochain
@@ -2952,12 +3090,28 @@ function afficherEcheancierCompteConjoint(){
   }
 
   const formatDate = d => d.toLocaleDateString('fr-CA', {weekday:'short', day:'numeric', month:'short'});
+  /* La colonne Solde n'apparaît que si un solde a été saisi : sans point de départ, afficher
+     une colonne vide laisserait croire à un bug plutôt qu'à un réglage manquant. */
+  const avecSolde = !!projection;
+  const celluleSolde = ligne => {
+    const p = projParIso[ligne.iso];
+    if(!p) return '';
+    /* C'est le CREUX de la période qui décide de l'alerte, pas le solde de fin : un revenu
+       arrivant en fin de période peut ramener le solde dans le vert après un découvert. */
+    const enManque = p.soldeMin < 0;
+    const titre = enManque
+      ? `Le compte descend à ${formaterMonnaie(p.soldeMin)} pendant cette période.`
+      : `Creux de la période : ${formaterMonnaie(p.soldeMin)}`;
+    return `<span class="value solde-colonne ${enManque ? 'solde-negatif' : ''}" title="${echapperHTML(titre)}">${enManque ? '⚠ ' : ''}${formaterMonnaie(p.solde)}</span>`;
+  };
+
   conteneur.innerHTML = `
     <div class="recurrent-row" style="font-size:12px;color:var(--text-secondary);font-weight:500;">
       <div>Paie</div>
       <div style="display:flex;gap:18px;">
         <span style="min-width:70px;text-align:right;">${nomsPersonnes.p1}</span>
         <span style="min-width:70px;text-align:right;">${nomsPersonnes.p2}</span>
+        ${avecSolde ? `<span class="solde-colonne">Solde</span>` : ''}
       </div>
     </div>
   ` + echeancier.map(ligne => `
@@ -2966,6 +3120,7 @@ function afficherEcheancierCompteConjoint(){
       <div style="display:flex;gap:18px;">
         <span class="value p1" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p1)}</span>
         <span class="value p2" style="min-width:70px;text-align:right;font-weight:500;">${formaterMonnaie(ligne.p2)}</span>
+        ${avecSolde ? celluleSolde(ligne) : ''}
       </div>
     </div>
   `).join('') + (afficherVoirPlus ? `
@@ -2979,6 +3134,71 @@ function afficherEcheancierCompteConjoint(){
   const boutonMoins = document.getElementById('echeancier-voir-moins');
   if(boutonMoins) boutonMoins.addEventListener('click', ()=>{ echeancierAnneeEtendu = false; afficherEcheancierCompteConjoint(); });
 }
+
+/* Remet dans les champs la valeur enregistrée, sans jamais écraser une saisie en cours :
+   l'échéancier se re-rend à chaque changement de période, et repeupler les champs à ce
+   moment-là effacerait ce que la personne est en train de taper. */
+function remplirChampsSoldeCompte(){
+  const champMontant = document.getElementById('solde-compte-montant');
+  const champDate = document.getElementById('solde-compte-depuis');
+  if(!champMontant || !champDate) return;
+  if(document.activeElement === champMontant || document.activeElement === champDate) return;
+  if(soldeCompte){
+    champMontant.value = soldeCompte.montant;
+    champDate.value = soldeCompte.depuis;
+  } else if(!champDate.value){
+    champDate.value = formaterDateISO(new Date());
+  }
+}
+
+/* Verdict global, au-dessus du tableau : soit le compte tient sur tout l'horizon calculé,
+   soit on annonce la première paie où il ne suffit plus — la question à laquelle sert toute
+   cette projection se répond en une phrase, sans avoir à lire la colonne ligne par ligne. */
+function afficherAlerteSoldeCompte(projection){
+  const zone = document.getElementById('solde-compte-alerte');
+  if(!zone) return;
+  if(!projection || !projection.length){
+    zone.innerHTML = soldeCompte ? '' : `<div class="solde-alerte ok" style="background:var(--bg);border-color:var(--border);color:var(--text-secondary);">Entre le solde réel du compte pour voir s'il couvrira les dépenses à venir.</div>`;
+    return;
+  }
+  const premierManque = projection.find(p => p.soldeMin < 0);
+  if(premierManque){
+    const dateLisible = dateLocaleDepuisISO(premierManque.iso).toLocaleDateString('fr-CA', {day:'numeric', month:'long', year:'numeric'});
+    zone.innerHTML = `<div class="solde-alerte manque">Le compte ne suffit plus à partir de la paie du ${dateLisible} : il descend à ${formaterMonnaie(premierManque.soldeMin)}. Il manque ${formaterMonnaie(-premierManque.soldeMin)} — à ajouter au compte ou à répartir sur les dépôts d'ici là.</div>`;
+    return;
+  }
+  const creux = projection.reduce((min,p) => p.soldeMin < min.soldeMin ? p : min, projection[0]);
+  const dateCreux = dateLocaleDepuisISO(creux.iso).toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
+  zone.innerHTML = `<div class="solde-alerte ok">Le compte couvre toutes les dépenses prévues sur la période calculée. Point le plus bas : ${formaterMonnaie(creux.soldeMin)} autour du ${dateCreux}.</div>`;
+}
+
+document.getElementById('solde-compte-save').addEventListener('click', async ()=>{
+  const champMontant = document.getElementById('solde-compte-montant');
+  const champDate = document.getElementById('solde-compte-depuis');
+  const statut = document.getElementById('solde-compte-statut');
+  const bouton = document.getElementById('solde-compte-save');
+  const montant = parseFloat(champMontant.value);
+  const depuis = champDate.value;
+
+  if(isNaN(montant) || !depuis){
+    statut.textContent = "Entre un montant et une date pour enregistrer le solde.";
+    return;
+  }
+
+  bouton.disabled = true;
+  statut.textContent = 'Enregistrement...';
+  try{
+    await sauvegarderSoldeCompte(Math.round(montant*100)/100, depuis);
+    statut.textContent = "Solde enregistré ✓";
+    champMontant.blur(); champDate.blur();
+    afficherEcheancierCompteConjoint();
+  } catch(err){
+    console.error("Échec de l'enregistrement du solde du compte :", err);
+    statut.textContent = "Impossible d'enregistrer le solde (voir la console pour l'erreur exacte).";
+  } finally {
+    bouton.disabled = false;
+  }
+});
 
 /* ===================== CALCUL DES OCCURRENCES À L'AFFICHAGE =====================
    Reconstruit le tableau dérivé `depenses` = dépenses réelles + occurrences des récurrences.
