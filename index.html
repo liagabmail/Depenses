@@ -25,9 +25,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- Client Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- SheetJS : lecture/écriture des fichiers Excel (.xlsx) -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<!-- SheetJS : lecture/écriture des fichiers Excel (.xlsx). La version 0.18.5 de npm n'est plus
+     maintenue (failles CVE-2023-30533 et CVE-2024-22363) : le CDN officiel de SheetJS est la source à jour. -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
   :root{
     --blue:#1a73e8;
@@ -1750,10 +1751,30 @@ async function initAuth(){
   const { data:{ session } } = await supabaseClient.auth.getSession();
   await gererSession(session);
 
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
-    gererSession(session);
+  /* On ne recharge tout que si l'utilisateur change vraiment (connexion, déconnexion) ou
+     pour un lien de réinitialisation. Avant, chaque rafraîchissement de jeton (toutes les
+     heures) et chaque retour sur l'onglet relançait un chargement complet, et le chargement
+     initial se faisait deux fois (getSession + INITIAL_SESSION).
+     Le setTimeout suit la recommandation de Supabase : ne pas appeler le client directement
+     dans ce callback, qui s'exécute pendant que la bibliothèque tient un verrou interne. */
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if(event === 'INITIAL_SESSION') return;
+    setTimeout(() => {
+      if(event === 'PASSWORD_RECOVERY'){
+        enChoixMotDePasse = true;
+        gererSession(session);
+        return;
+      }
+      const memeUtilisateur = session && currentSession && session.user.id === currentSession.user.id;
+      if(memeUtilisateur){ currentSession = session; return; }
+      gererSession(session);
+    }, 0);
   });
 }
+
+/* Message à afficher sur l'écran de connexion au prochain affichage (afficherVueLogin
+   efface les erreurs, ce message-ci survit à cet effacement). */
+let messageConnexionEnAttente = '';
 
 async function gererSession(session){
   currentSession = session;
@@ -1777,16 +1798,26 @@ async function gererSession(session){
   document.getElementById('setpw-modal').style.display = 'none';
   const personneTrouvee = personneDepuisEmail(session.user.email);
   if(!personneTrouvee){
-    console.warn(`Courriel non reconnu dans EMAIL_PERSONNES : "${session.user.email}". Vérifiez cette constante dans le code. Par défaut, ce compte est traité comme Gabriel.`);
+    /* Un compte qui n'est ni Gabriel ni Mélissa n'a rien à faire ici : on le déconnecte au
+       lieu de le traiter comme Gabriel (ce qui lui aurait donné accès à ses données). */
+    console.warn(`Courriel non reconnu dans EMAIL_PERSONNES : "${session.user.email}". Accès refusé.`);
+    messageConnexionEnAttente = "Ce compte n'a pas accès à l'application. Connectez-vous avec le courriel de Gabriel ou de Mélissa.";
+    currentUser = null;
+    await supabaseClient.auth.signOut();
+    await gererSession(null);
+    return;
   }
-  currentUser = personneTrouvee || 'p1';
+  currentUser = personneTrouvee;
   const emailEl = document.getElementById('account-email');
   const nomEl = document.getElementById('account-nom');
   if(emailEl) emailEl.textContent = session.user.email;
   if(nomEl) nomEl.textContent = nomsPersonnes[currentUser];
   mettreAJourInterfaceUtilisateur();
   rafraichirOptionsFormulaires();
-  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerRecurrencesSupabase(), chargerExceptionsSupabase(), chargerSoldeCompte() ]);
+  /* Récurrences d'abord : chargerExceptionsSupabase s'appuie sur le mode (Supabase ou local)
+     déterminé par ce chargement. */
+  await chargerRecurrencesSupabase();
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerExceptionsSupabase(), chargerSoldeCompte() ]);
   recalculerDepenses();
   rafraichirActif();
   chargerPreferencesNotification();
@@ -1853,6 +1884,10 @@ function afficherVueLogin(){
   document.getElementById('forgot-error').textContent = '';
   document.getElementById('forgot-success').textContent = '';
   document.getElementById('forgot-password-form').reset();
+  if(messageConnexionEnAttente){
+    document.getElementById('login-error').textContent = messageConnexionEnAttente;
+    messageConnexionEnAttente = '';
+  }
 }
 document.getElementById('show-forgot-password').addEventListener('click', ()=>{
   document.getElementById('login-view').style.display = 'none';
@@ -1969,6 +2004,60 @@ function echapperHTML(valeur){
 
 let categories = Object.keys(COULEURS_CATEGORIES);
 
+/* ===================== LECTURE PAGINÉE =====================
+   L'API de Supabase ne renvoie jamais plus de lignes que le réglage « Max rows » (1000 par
+   défaut) par requête. Sans pagination, les lignes au-delà disparaissaient sans message. On
+   lit donc par pages, triées par id pour qu'aucune ligne ne soit sautée ni lue deux fois, et
+   on s'arrête sur une page vide : ça fonctionne peu importe la valeur de « Max rows ». */
+const TAILLE_PAGE = 1000;
+async function chargerToutesLesLignes(table){
+  const toutes = [];
+  let debut = 0;
+  for(;;){
+    const { data, error } = await supabaseClient.from(table).select('*')
+      .order('id', { ascending: true })
+      .range(debut, debut + TAILLE_PAGE - 1);
+    if(error) return { data: null, error };
+    if(!data || !data.length) break;
+    toutes.push(...data);
+    debut += data.length;
+  }
+  return { data: toutes, error: null };
+}
+
+/* ===================== ÉCRITURES VÉRIFIÉES =====================
+   Une mise à jour ou une suppression bloquée par les règles RLS ne renvoie PAS d'erreur :
+   elle touche simplement zéro ligne. On demande donc les lignes touchées et on considère
+   « zéro ligne » comme un échec. `requete` est un update/delete déjà filtré. */
+async function ecritureVerifiee(requete, nbAttendu){
+  const { data, error } = await requete.select('id');
+  if(error) return { ok:false, error };
+  const attendu = nbAttendu == null ? 1 : nbAttendu;
+  if(!data || data.length < attendu){
+    return { ok:false, error: new Error(`Écriture refusée : ${data ? data.length : 0} ligne(s) modifiée(s) sur ${attendu} (règles RLS ?)`) };
+  }
+  return { ok:true, error:null };
+}
+
+/* Prévient l'utilisateur qu'une écriture n'a pas abouti. Avant, ces échecs n'allaient que
+   dans la console : l'écran montrait la modification, puis tout « revenait » au
+   rechargement. */
+function signalerEchecEnregistrement(quoi, err){
+  console.error(`Échec : ${quoi}`, err);
+  afficherAlerte(`${quoi} n'a pas pu être enregistré dans Supabase. Rien n'a été modifié. Vérifiez votre connexion, puis réessayez.`);
+}
+
+/* Empêche un double tap de lancer deux fois la même action (et de créer des doublons) :
+   le bouton reste désactivé jusqu'à la fin de l'enregistrement. */
+function actionVerrouillee(bouton, action){
+  return async (...args) => {
+    if(bouton.disabled) return;
+    bouton.disabled = true;
+    try{ await action(...args); }
+    finally{ bouton.disabled = false; }
+  };
+}
+
 /* ===================== MODÈLE DE DONNÉES DES DÉPENSES =====================
    Deux niveaux, façon calendrier (Google Agenda / Outlook) :
 
@@ -2070,7 +2159,7 @@ document.getElementById('f-date-personnel').value = formaterDateISO(debutJour(ne
 
 /* Chargement initial depuis Supabase (avec les noms exacts des colonnes) */
 async function chargerDepensesSupabase() {
-  const { data, error } = await supabaseClient.from('Depenses').select('*');
+  const { data, error } = await chargerToutesLesLignes('Depenses');
   if (error) {
     console.error("Erreur de chargement Supabase :", error);
     return;
@@ -2108,8 +2197,11 @@ async function chargerDepensesSupabase() {
    ("cette dépense seulement"). */
 let exceptionsSupabaseDisponible = true;
 async function chargerExceptionsSupabase(){
+  /* En mode local (table Recurrences absente), les exceptions ne peuvent pas être conservées
+     en base non plus : on ne tente même pas. */
+  if(!recurrencesSupabaseDisponible){ exceptionsSupabaseDisponible = false; exceptions = []; return; }
   try{
-    const { data, error } = await supabaseClient.from('RecurrenceExceptions').select('*');
+    const { data, error } = await chargerToutesLesLignes('RecurrenceExceptions');
     if(error) throw error;
     exceptions = (data || []).map(x => ({
       id: x.id,
@@ -2148,7 +2240,7 @@ function periodeActive(){
 
 async function chargerBudgetsSupabase(){
   try{
-    const { data, error } = await supabaseClient.from('Budgets').select('*');
+    const { data, error } = await chargerToutesLesLignes('Budgets');
     if(error) throw error;
     budgets = { p1:{}, p2:{}, conjoint:{} };
     (data || []).forEach(b=>{
@@ -2269,10 +2361,8 @@ const paieAncrage = '2026-09-17';
    Si la table n'existe pas encore chez l'utilisateur (ou si les colonnes Unite/Intervalle/
    JoursSemaine/TypeMensuel n'ont pas encore été ajoutées), on retombe sur le stockage local
    de l'appareil, comme pour les budgets — voir les instructions pour ajouter ces colonnes.
-   Chaque récurrence active génère automatiquement de vraies dépenses (dans Personnel ou
-   Conjoint selon son type) pour chaque échéance passée ET future (jusqu'à un horizon
-   d'environ 2 ans, régénéré à chaque connexion), en les reliant via RecurrenceId sur la
-   table Depenses afin de ne jamais les dupliquer.
+   Les occurrences ne sont jamais écrites en base : elles sont calculées à l'affichage
+   (voir recalculerDepenses et occurrencesEffectives).
 
    Modèle de répétition (façon Google Agenda) :
      - unite: 'jour' | 'semaine' | 'mois' | 'annee'
@@ -2300,7 +2390,7 @@ function migrerAncienneFrequence(frequenceAncienne, dateDebut){
 
 async function chargerRecurrencesSupabase(){
   try{
-    const { data, error } = await supabaseClient.from('Recurrences').select('*');
+    const { data, error } = await chargerToutesLesLignes('Recurrences');
     if(error) throw error;
     recurrences = (data || []).map(r => {
       const aLeNouveauModele = r.Unite != null;
@@ -2451,20 +2541,6 @@ function normaliserConfigRepetition(cfg, dateISO){
   }
 
   return normalisee;
-}
-
-/* Compare deux configs de répétition (unite/intervalle/joursSemaine/typeMensuel) pour savoir
-   si une config donnée correspond exactement à un des préréglages proposés dans le select. */
-function configsEquivalentes(a, b){
-  if(!a || !b) return false;
-  if(a.unite !== b.unite || (a.intervalle||1) !== (b.intervalle||1)) return false;
-  if(a.unite === 'semaine'){
-    const ja = (a.joursSemaine||[]).slice().sort().join(',');
-    const jb = (b.joursSemaine||[]).slice().sort().join(',');
-    return ja === jb;
-  }
-  if(a.unite === 'mois') return (a.typeMensuel||'jour_mois') === (b.typeMensuel||'jour_mois');
-  return true;
 }
 
 /* Renvoie le dernier jour du mois contenant `premierDuMoisOuDate` (peu importe le jour du
@@ -2708,26 +2784,29 @@ function calculerEcheancierCompte(nbPaies){
     const finBorne = inclusifFin ? dueDate : ajouterJours(dueDate, -1);
     const echeance = formaterDateISO(dueDate);
     if(finBorne < debut){
-      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature:'depense',
+      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature: montant < 0 ? 'ajustement' : 'depense',
         explication:`Échéance du ${echeance} déjà dépassée : le montant complet de ${formaterMonnaie(montant)} est rattrapé sur cette paie.` }));
       return;
     }
     const slots = paiesDansIntervalle(ancrage, debut, finBorne);
     if(!slots.length){
-      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature:'depense',
+      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature: montant < 0 ? 'ajustement' : 'depense',
         explication:`Aucune paie ne tombe avant l'échéance du ${echeance} : les ${formaterMonnaie(montant)} sont mis en entier sur cette paie.` }));
       return;
     }
     const part = montant / slots.length;
-    const base = `${formaterMonnaie(montant)} à provisionner d'ici le ${echeance}, réparti sur ${slots.length} paie${slots.length>1?'s':''} = ${formaterMonnaie(part)} par paie.`;
+    const nature = montant < 0 ? 'ajustement' : 'depense';
+    const base = montant < 0
+      ? `${formaterMonnaie(-montant)} qui n'est plus à provisionner d'ici le ${echeance}, retiré sur ${slots.length} paie${slots.length>1?'s':''} = ${formaterMonnaie(-part)} de moins par paie.`
+      : `${formaterMonnaie(montant)} à provisionner d'ici le ${echeance}, réparti sur ${slots.length} paie${slots.length>1?'s':''} = ${formaterMonnaie(part)} par paie.`;
     slots.forEach(s=>{
       const sIso = formaterDateISO(s);
       if(s < aujourdhui){
         /* paie déjà passée : report automatique */
-        reporterSurPremierePaie(1, part, p1Pct, Object.assign({}, info, { nature:'depense',
+        reporterSurPremierePaie(1, part, p1Pct, Object.assign({}, info, { nature,
           explication:`${base} La part du ${sIso} est déjà passée, elle est rattrapée ici.` }));
       } else if(totaux[sIso]){
-        contribuer(sIso, 1, part, p1Pct, Object.assign({}, info, { nature:'depense', explication: base }));
+        contribuer(sIso, 1, part, p1Pct, Object.assign({}, info, { nature, explication: base }));
       }
       /* sinon : paie à venir mais au-delà de l'horizon affiché -> ignorée pour l'instant. */
     });
@@ -2761,6 +2840,18 @@ function calculerEcheancierCompte(nbPaies){
   });
 
   /* 2) Récurrences "compte" actives */
+  const aujourdhuiIso = formaterDateISO(aujourdhui);
+  /* Une occurrence modifiée individuellement peut avoir changé de nature (dépense/revenu)
+     ou ne plus passer par le compte : on la traite alors comme un item ponctuel, et
+     seulement si sa paie visée n'est pas encore passée (comme les revenus récurrents). */
+  function ajouterOccurrenceIsolee(o, info){
+    if(!o.estCompte) return;
+    const due = debutJour(dateLocaleDepuisISO(o.date));
+    if(premierePaieDepuis(ancrage, due) < aujourdhui) return; /* déjà réglé */
+    if(o.estRevenu) ajouterRevenu(due, o.amount, o.pourcentageP1, info);
+    else ajouterDepense(due, o.amount, o.pourcentageP1, null, true, info);
+  }
+
   recurrences.filter(r=>r.type==='conjointe' && r.estCompte && r.actif).forEach(rec=>{
     const libelle = rec.nom || rec.categorie;
     const categorie = rec.categorie;
@@ -2769,12 +2860,8 @@ function calculerEcheancierCompte(nbPaies){
          la première paie visée n'est pas encore passée sont encore pertinentes. Les
          occurrences plus anciennes sont considérées déjà réglées, pour ne jamais ré-empiler
          de l'historique sur la prochaine paie. */
-      const occs = genererOccurrences(rec, derniere);
-      occs.forEach(occDate=>{
-        const due = debutJour(occDate);
-        const cible = premierePaieDepuis(ancrage, due);
-        if(cible < aujourdhui) return; /* déjà réglé dans le passé, on n'y retouche plus */
-        ajouterRevenu(due, rec.montant, rec.pourcentageP1, { libelle, categorie, source:'recurrence' });
+      occurrencesEffectives(rec, derniere).forEach(o=>{
+        ajouterOccurrenceIsolee(o, { libelle: o.note || libelle, categorie: o.category, source:'recurrence' });
       });
     } else {
       /* Dépense récurrente : pour obtenir un montant STABLE d'une paie à l'autre (plutôt que
@@ -2796,21 +2883,60 @@ function calculerEcheancierCompte(nbPaies){
         paies.forEach(p=>{
           contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
         });
+
+        /* La moyenne ci-dessus suppose que chaque occurrence a lieu telle quelle. Pour chaque
+           occurrence à venir supprimée ou modifiée individuellement, on retire la part
+           prévue et on ajoute la version modifiée (s'il en reste une). */
+        const exclusions = new Set(rec.datesExclues || []);
+        const ecarts = exceptions
+          .filter(x => x.recurrenceId === rec.id && x.dateOrigine >= aujourdhuiIso)
+          .map(x => ({ dateOrigine: x.dateOrigine, ex: x }))
+          .concat([...exclusions].filter(d => d >= aujourdhuiIso).map(d => ({ dateOrigine: d, ex: { supprimee: true } })));
+        if(ecarts.length){
+          const plusTardive = ecarts.reduce((m, e) => e.dateOrigine > m ? e.dateOrigine : m, ecarts[0].dateOrigine);
+          const datesValides = new Set(genererOccurrences(rec, dateLocaleDepuisISO(plusTardive)).map(formaterDateISO));
+          const dejaTraitees = new Set();
+          ecarts.forEach(({ dateOrigine, ex })=>{
+            if(!datesValides.has(dateOrigine) || dejaTraitees.has(dateOrigine)) return;
+            dejaTraitees.add(dateOrigine);
+            ajouterDepense(debutJour(dateLocaleDepuisISO(dateOrigine)), -rec.montant, rec.pourcentageP1, null, true,
+              { libelle: `${libelle} (occurrence du ${dateOrigine} ${ex.supprimee ? 'supprimée' : 'modifiée'})`, categorie });
+            if(!ex.supprimee && !exclusions.has(dateOrigine)){
+              const o = construireOccurrence(rec, dateOrigine, ex);
+              ajouterOccurrenceIsolee(o, { libelle: `${o.note || libelle} (modifiée)`, categorie: o.category, source:'recurrence' });
+            }
+          });
+        }
       } else {
-        const occs = genererOccurrences(rec, horizonMaximal());
-        const occsRestantes = occs.filter(d => debutJour(d) >= aujourdhui);
-        if(!occsRestantes.length) return; /* récurrence entièrement terminée */
-        const finRecurrence = debutJour(occsRestantes[occsRestantes.length-1]);
-        const montantTotalRestant = rec.montant * occsRestantes.length;
+        const occsRestantes = occurrencesEffectives(rec, horizonMaximal()).filter(o => o.date >= aujourdhuiIso);
+        /* Les occurrences retouchées pour ne plus être des dépenses du compte sortent du
+           lissage et sont traitées individuellement. */
+        const aLisser = occsRestantes.filter(o => o.estCompte && !o.estRevenu);
+        occsRestantes.filter(o => !(o.estCompte && !o.estRevenu)).forEach(o=>{
+          ajouterOccurrenceIsolee(o, { libelle: o.note || libelle, categorie: o.category, source:'recurrence' });
+        });
+        if(!aLisser.length) return; /* récurrence entièrement terminée */
+        const finRecurrence = aLisser.reduce((m, o) => {
+          const d = debutJour(dateLocaleDepuisISO(o.date));
+          return d > m ? d : m;
+        }, debutJour(dateLocaleDepuisISO(aLisser[0].date)));
         const paiesRestantes = paiesDansIntervalle(ancrage, aujourdhui, finRecurrence);
         const nPaies = paiesRestantes.length || 1;
-        const partParPaie = montantTotalRestant / nPaies;
-        const p1Pct = pct(rec.pourcentageP1);
-        const explication = `${occsRestantes.length} paiement${occsRestantes.length>1?'s':''} de ${formaterMonnaie(rec.montant)} restant${occsRestantes.length>1?'s':''} d'ici le ${formaterDateISO(finRecurrence)} = ${formaterMonnaie(montantTotalRestant)}, réparti sur les ${nPaies} paie${nPaies>1?'s':''} de cette période = ${formaterMonnaie(partParPaie)} par paie.`;
-        paies.forEach(p=>{
-          if(p >= aujourdhui && p <= finRecurrence){
-            contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
-          }
+        /* Regroupé par répartition : une occurrence retouchée peut avoir un autre %. */
+        const parPct = new Map();
+        aLisser.forEach(o => {
+          const cle = o.pourcentageP1 != null ? o.pourcentageP1 : 50;
+          parPct.set(cle, (parPct.get(cle) || 0) + o.amount);
+        });
+        parPct.forEach((montantTotalRestant, pourcentage) => {
+          const partParPaie = montantTotalRestant / nPaies;
+          const p1Pct = pct(pourcentage);
+          const explication = `${aLisser.length} paiement${aLisser.length>1?'s':''} restant${aLisser.length>1?'s':''} d'ici le ${formaterDateISO(finRecurrence)} = ${formaterMonnaie(montantTotalRestant)}${parPct.size>1 ? ` (part à ${pourcentage} %)` : ''}, réparti sur les ${nPaies} paie${nPaies>1?'s':''} de cette période = ${formaterMonnaie(partParPaie)} par paie.`;
+          paies.forEach(p=>{
+            if(p >= aujourdhui && p <= finRecurrence){
+              contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
+            }
+          });
         });
       }
     }
@@ -2965,7 +3091,7 @@ function ouvrirDetailDepot(iso){
   const groupes = [
     ['depense',    'À provisionner'],
     ['revenu',     'Revenus déduits'],
-    ['ajustement', 'Reports']
+    ['ajustement', 'Reports et ajustements']
   ];
 
   const montantHTML = (v, classe) =>
@@ -3068,7 +3194,6 @@ function afficherEcheancierCompteConjoint(){
   /* Conservé pour la fenêtre de détail : elle réutilise exactement le calcul affiché plutôt
      que de le refaire, sinon les deux pourraient diverger sans qu'on s'en aperçoive. */
   dernierEcheancier = echeancierComplet || [];
-  synchroniserEcheancierNotifications(echeancierComplet);
   if(!echeancierComplet || !echeancierComplet.length){
     conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
     afficherAlerteSoldeCompte(null);
@@ -3246,21 +3371,31 @@ function exceptionsDeRecurrence(recurrenceId){
   return parDate;
 }
 
+/* Occurrences d'une récurrence jusqu'à `limiteDate`, exceptions appliquées : les
+   suppressions individuelles sont retirées, les modifications individuelles appliquées.
+   Point de passage unique pour l'affichage ET pour l'échéancier des dépôts, qui ne
+   tenait pas compte des exceptions. */
+function occurrencesEffectives(rec, limiteDate){
+  const parDate = exceptionsDeRecurrence(rec.id);
+  /* DatesExclues est l'ancien mécanisme de suppression individuelle (avant la table
+     RecurrenceExceptions) : on continue de le respecter pour ne pas faire réapparaître
+     des occurrences supprimées avec une version précédente de l'application. */
+  const exclusionsHeritees = new Set(rec.datesExclues || []);
+  const res = [];
+  genererOccurrences(rec, limiteDate).forEach(dateObj => {
+    const dateOrigine = formaterDateISO(dateObj);
+    if(exclusionsHeritees.has(dateOrigine)) return;
+    const ex = parDate.get(dateOrigine);
+    if(ex && ex.supprimee) return; /* occurrence supprimée individuellement : jamais recréée */
+    res.push(construireOccurrence(rec, dateOrigine, ex));
+  });
+  return res;
+}
+
 function recalculerDepenses(){
   const liste = depensesReelles.slice();
   recurrences.filter(r => r.actif).forEach(rec => {
-    const parDate = exceptionsDeRecurrence(rec.id);
-    /* DatesExclues est l'ancien mécanisme de suppression individuelle (avant la table
-       RecurrenceExceptions) : on continue de le respecter pour ne pas faire réapparaître
-       des occurrences supprimées avec une version précédente de l'application. */
-    const exclusionsHeritees = new Set(rec.datesExclues || []);
-    genererOccurrences(rec, horizonAffichage).forEach(dateObj => {
-      const dateOrigine = formaterDateISO(dateObj);
-      if(exclusionsHeritees.has(dateOrigine)) return;
-      const ex = parDate.get(dateOrigine);
-      if(ex && ex.supprimee) return; /* occurrence supprimée individuellement : jamais recréée */
-      liste.push(construireOccurrence(rec, dateOrigine, ex));
-    });
+    liste.push(...occurrencesEffectives(rec, horizonAffichage));
   });
   depenses = liste;
 }
@@ -3312,14 +3447,18 @@ document.getElementById('edit-rec-fin-type').addEventListener('change', ()=>
 
 async function basculerActifRecurrence(id){
   const rec = recurrences.find(r=>r.id===id); if(!rec) return;
-  rec.actif = !rec.actif;
-  try{
-    const { error } = await supabaseClient.from('Recurrences').update({Actif:rec.actif}).eq('id', id);
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible de mettre à jour la récurrence dans Supabase, sauvegarde locale seulement.", err);
-    sauvegarderRecurrencesLocal();
+  const scope = rec.type==='personnelle' ? 'personnel' : 'conjoint';
+  const nouvelEtat = !rec.actif;
+  if(recurrencesSupabaseDisponible){
+    const res = await ecritureVerifiee(supabaseClient.from('Recurrences').update({Actif:nouvelEtat}).eq('id', id));
+    if(!res.ok){
+      signalerEchecEnregistrement("Le changement actif/inactif", res.error);
+      afficherRecurrencesScope(scope); /* remet la bascule dans son état réel */
+      return;
+    }
   }
+  rec.actif = nouvelEtat;
+  sauvegarderRecurrencesLocal();
   /* Une récurrence en pause n'apparaît simplement plus dans le calcul des occurrences :
      il n'y a aucune ligne à supprimer en base. */
   recalculerDepenses();
@@ -3334,16 +3473,15 @@ async function supprimerExceptions(recurrenceId, options){
   let cibles = exceptions.filter(x => x.recurrenceId === recurrenceId);
   if(opts.depuis) cibles = cibles.filter(x => x.dateOrigine >= opts.depuis);
   if(opts.garderSuppressions) cibles = cibles.filter(x => !x.supprimee);
-  if(!cibles.length) return;
+  if(!cibles.length) return true;
   const ids = cibles.map(x => x.id);
-  try{
-    const { error } = await supabaseClient.from('RecurrenceExceptions').delete().in('id', ids);
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible de supprimer les exceptions dans Supabase.", err);
+  if(exceptionsSupabaseDisponible){
+    const res = await ecritureVerifiee(supabaseClient.from('RecurrenceExceptions').delete().in('id', ids), ids.length);
+    if(!res.ok){ signalerEchecEnregistrement("La suppression des occurrences modifiées", res.error); return false; }
   }
   const aSupprimer = new Set(ids);
   exceptions = exceptions.filter(x => !aSupprimer.has(x.id));
+  return true;
 }
 
 /* Réaffecte les exceptions d'une récurrence à une autre (utilisé quand une série est
@@ -3355,43 +3493,44 @@ async function supprimerExceptions(recurrenceId, options){
 async function transfererSuppressions(deRecurrenceId, versRecurrenceId, depuis){
   let cibles = exceptions.filter(x => x.recurrenceId === deRecurrenceId && x.supprimee);
   if(depuis) cibles = cibles.filter(x => x.dateOrigine >= depuis);
-  if(!cibles.length) return;
-  try{
-    const { error } = await supabaseClient.from('RecurrenceExceptions')
-      .update({ RecurrenceId: versRecurrenceId }).in('id', cibles.map(x => x.id));
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible de transférer les suppressions d'occurrences dans Supabase.", err);
+  if(!cibles.length) return true;
+  if(exceptionsSupabaseDisponible){
+    const res = await ecritureVerifiee(supabaseClient.from('RecurrenceExceptions')
+      .update({ RecurrenceId: versRecurrenceId }).in('id', cibles.map(x => x.id)), cibles.length);
+    if(!res.ok){ signalerEchecEnregistrement("Le transfert des occurrences supprimées", res.error); return false; }
   }
   cibles.forEach(x => { x.recurrenceId = versRecurrenceId; });
+  return true;
 }
 
 async function supprimerRecurrence(id, sansConfirmation){
   if(!sansConfirmation && !confirm("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")) return;
   const rec = recurrences.find(r=>r.id===id);
 
-  await supprimerExceptions(id);
+  if(!(await supprimerExceptions(id))) return false;
 
-  /* Par sécurité, on supprime aussi d'éventuelles lignes matérialisées en base par une
-     ancienne version de l'application (avant le passage au calcul à la volée). */
-  try{
-    await supabaseClient.from('Depenses').delete().eq('RecurrenceId', id);
-  } catch(err){
-    console.warn("Nettoyage des anciennes dépenses matérialisées impossible.", err);
-  }
-  depensesReelles = depensesReelles.filter(e => e.recurrenceId !== id);
+  if(recurrencesSupabaseDisponible){
+    /* Par sécurité, on supprime aussi d'éventuelles lignes matérialisées en base par une
+       ancienne version de l'application (avant le passage au calcul à la volée). Il peut
+       légitimement n'y en avoir aucune : pas de vérification du nombre de lignes ici. */
+    const nettoyage = await supabaseClient.from('Depenses').delete().eq('RecurrenceId', id);
+    if(nettoyage.error) console.warn("Nettoyage des anciennes dépenses matérialisées impossible.", nettoyage.error);
+    else depensesReelles = depensesReelles.filter(e => e.recurrenceId !== id);
 
-  try{
-    const { error } = await supabaseClient.from('Recurrences').delete().eq('id', id);
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible de supprimer la récurrence dans Supabase.", err);
+    const res = await ecritureVerifiee(supabaseClient.from('Recurrences').delete().eq('id', id));
+    if(!res.ok){
+      signalerEchecEnregistrement("La suppression du paiement récurrent", res.error);
+      recalculerDepenses();
+      rafraichirActif();
+      return false;
+    }
   }
   recurrences = recurrences.filter(r=>r.id!==id);
   sauvegarderRecurrencesLocal();
   recalculerDepenses();
   if(rec) afficherRecurrencesScope(rec.type==='personnelle' ? 'personnel' : 'conjoint');
   rafraichirActif();
+  return true;
 }
 
 /* ===================== PORTÉE D'ÉDITION/SUPPRESSION D'UNE OCCURRENCE (façon Outlook) =====================
@@ -3415,13 +3554,14 @@ async function supprimerSerieComplete(recurrenceId, sansConfirmation){
   if(!rec) return;
   if(!sansConfirmation && !confirm("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")) return;
   for(const segment of familleDeRecurrence(rec)){
-    await supprimerRecurrence(segment.id, true);
+    if(!(await supprimerRecurrence(segment.id, true))) break;
   }
   recalculerDepenses();
   rafraichirActif();
 }
 
 function veilleISO(dateStr){ return formaterDateISO(ajouterJours(dateLocaleDepuisISO(dateStr), -1)); }
+function lendemainISO(dateStr){ return formaterDateISO(ajouterJours(dateLocaleDepuisISO(dateStr), 1)); }
 
 /* Tous les segments issus d'une même série d'origine (fractionnements successifs). */
 function familleDeRecurrence(rec){
@@ -3432,16 +3572,15 @@ function familleDeRecurrence(rec){
 /* Fait se terminer une récurrence la veille de `dateStr` (pour "fractionner" une série en
    deux au moment d'un "cette dépense et les suivantes"). */
 async function tronquerRecurrenceAvant(id, dateStr){
-  const rec = recurrences.find(r=>r.id===id); if(!rec) return;
+  const rec = recurrences.find(r=>r.id===id); if(!rec) return false;
   const finDate = veilleISO(dateStr);
-  rec.finType = 'date'; rec.finDate = finDate; rec.finNombre = null;
-  try{
-    const { error } = await supabaseClient.from('Recurrences').update({ FinType:'date', FinDate: finDate, FinNombre:null }).eq('id', id);
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible de tronquer la récurrence dans Supabase, sauvegarde locale seulement.", err);
-    sauvegarderRecurrencesLocal();
+  if(recurrencesSupabaseDisponible){
+    const res = await ecritureVerifiee(supabaseClient.from('Recurrences').update({ FinType:'date', FinDate: finDate, FinNombre:null }).eq('id', id));
+    if(!res.ok){ signalerEchecEnregistrement("La fin de l'ancienne série", res.error); return false; }
   }
+  rec.finType = 'date'; rec.finDate = finDate; rec.finNombre = null;
+  sauvegarderRecurrencesLocal();
+  return true;
 }
 
 /* Enregistre (ou met à jour) une exception pour une occurrence donnée : soit sa suppression
@@ -3465,11 +3604,9 @@ async function enregistrerException(rec, dateOrigine, champs){
   };
 
   if(existante){
-    try{
-      const { error } = await supabaseClient.from('RecurrenceExceptions').update(ligne).eq('id', existante.id);
-      if(error) throw error;
-    } catch(err){
-      console.warn("Impossible de mettre à jour l'exception dans Supabase.", err);
+    if(exceptionsSupabaseDisponible){
+      const res = await ecritureVerifiee(supabaseClient.from('RecurrenceExceptions').update(ligne).eq('id', existante.id));
+      if(!res.ok){ signalerEchecEnregistrement("La modification de cette occurrence", res.error); return null; }
     }
     Object.assign(existante, {
       supprimee: !!champs.supprimee,
@@ -3486,11 +3623,11 @@ async function enregistrerException(rec, dateOrigine, champs){
   }
 
   const id = uid();
-  try{
+  if(exceptionsSupabaseDisponible){
     const { error } = await supabaseClient.from('RecurrenceExceptions').insert([{ id, ...ligne }]);
-    if(error) throw error;
-  } catch(err){
-    console.warn("Impossible d'enregistrer l'exception dans Supabase (la table RecurrenceExceptions existe-t-elle ?).", err);
+    if(error){ signalerEchecEnregistrement("La modification de cette occurrence", error); return null; }
+  } else {
+    console.warn("Table RecurrenceExceptions indisponible : cette retouche ne sera pas conservée après rechargement.");
   }
   const locale = {
     id, recurrenceId: rec.id, dateOrigine,
@@ -3539,19 +3676,22 @@ async function creerRecurrenceDepuisValeurs(champs){
     EstCompte: champs.estCompte, EstRevenu: champs.estRevenu, PourcentageP1: champs.pourcentageP1,
     user_id: champs.type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
-  try{
-    let { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
+  /* Renvoie null si l'enregistrement échoue : l'appelant doit alors s'arrêter (avant, la
+     série n'existait qu'à l'écran, et la conversion d'une dépense supprimait quand même
+     l'originale). En mode local (table absente au chargement), on garde l'ancien
+     comportement : la série vit dans le stockage de l'appareil. */
+  if(recurrencesSupabaseDisponible){
+    const { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
     if(error){
       /* Les colonnes Unite/Intervalle/JoursSemaine/TypeMensuel/RacineId (ou EstCompte/
          EstRevenu/PourcentageP1 pour une base plus ancienne) n'existent peut-être pas
          encore : on réessaie sans elles pour que la récurrence soit tout de même créée
          (voir les instructions pour ajouter ces colonnes à Supabase). */
+      console.warn("Insertion complète de la récurrence impossible, nouvel essai sans les colonnes récentes.", error);
       const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
       const retry = await supabaseClient.from('Recurrences').insert([sansColonnesRecentes]);
-      if(retry.error) throw retry.error;
+      if(retry.error){ signalerEchecEnregistrement("Le paiement récurrent", retry.error); return null; }
     }
-  } catch(err){
-    console.warn("Impossible d'enregistrer la nouvelle récurrence (fractionnement de série) dans Supabase, sauvegarde locale seulement.", err);
   }
   recurrences.push({
     id, nom:champs.nom, montant:champs.montant, categorie:champs.categorie,
@@ -3572,7 +3712,7 @@ async function supprimerOccurrenceSeule(depense){
   if(!depense.virtuelle){ await supprimerDepense(depense.id); return; }
   const rec = recurrences.find(r => r.id === depense.recurrenceId);
   if(!rec) return;
-  await enregistrerException(rec, depense.dateOrigine, { supprimee: true });
+  if(!(await enregistrerException(rec, depense.dateOrigine, { supprimee: true }))) return;
   recalculerDepenses();
   rafraichirActif();
 }
@@ -3580,10 +3720,9 @@ async function supprimerOccurrenceSeule(depense){
 /* "Cette dépense seulement" (modification) : enregistre une exception portant les nouvelles
    valeurs. Cette retouche est volontairement écrasée si on modifie ensuite "les suivantes"
    ou "toute la série" — comme dans un calendrier. */
-async function modifierOccurrenceSeule(depense, nv){
-  const rec = recurrences.find(r => r.id === depense.recurrenceId);
-  if(!rec) return;
-  await enregistrerException(rec, depense.dateOrigine, {
+/* Champs d'exception correspondant aux valeurs saisies dans le formulaire d'une occurrence. */
+function champsExceptionDepuisFormulaire(depense, nv){
+  return {
     supprimee: false,
     nouvelleDate: nv.date && nv.date !== depense.dateOrigine ? nv.date : null,
     montant: nv.amount,
@@ -3593,9 +3732,16 @@ async function modifierOccurrenceSeule(depense, nv){
     estCompte: !!nv.estCompte,
     estRevenu: !!nv.estRevenu,
     pourcentageP1: nv.pourcentageP1
-  });
+  };
+}
+
+async function modifierOccurrenceSeule(depense, nv){
+  const rec = recurrences.find(r => r.id === depense.recurrenceId);
+  if(!rec) return false;
+  const ok = await enregistrerException(rec, depense.dateOrigine, champsExceptionDepuisFormulaire(depense, nv));
   recalculerDepenses();
   rafraichirActif();
+  return !!ok;
 }
 
 /* "Cette dépense et les suivantes" (suppression) : la série s'arrête la veille, et tout
@@ -3606,13 +3752,15 @@ async function supprimerDepuisOccurrence(depense){
   const charniere = depense.dateOrigine;
 
   for(const segment of familleDeRecurrence(rec).filter(r => r.id !== rec.id && r.dateDebut >= charniere)){
-    await supprimerRecurrence(segment.id, true);
+    if(!(await supprimerRecurrence(segment.id, true))){ recalculerDepenses(); rafraichirActif(); return; }
   }
   if(rec.dateDebut === charniere){
     await supprimerRecurrence(rec.id, true); /* il ne reste rien avant : la règle n'a plus lieu d'être */
   } else {
-    await supprimerExceptions(rec.id, { depuis: charniere });
-    await tronquerRecurrenceAvant(rec.id, charniere);
+    /* On tronque d'abord : si ça échoue, les retouches des occurrences suivantes sont intactes. */
+    if(await tronquerRecurrenceAvant(rec.id, charniere)){
+      await supprimerExceptions(rec.id, { depuis: charniere });
+    }
   }
   recalculerDepenses();
   rafraichirActif();
@@ -3626,6 +3774,7 @@ async function diviserRecurrenceAPartirDe(depense, nv){
   const dateCharniere = depense.dateOrigine;
   const recOriginale = recurrences.find(r=>r.id===depense.recurrenceId);
   if(!recOriginale) return;
+  const terminer = () => { recalculerDepenses(); rafraichirActif(); };
 
   const racine = recOriginale.racineId || recOriginale.id;
   const segmentsRemplaces = familleDeRecurrence(recOriginale)
@@ -3638,12 +3787,30 @@ async function diviserRecurrenceAPartirDe(depense, nv){
   const queue = [recOriginale, ...segmentsRemplaces]
     .reduce((a,b) => b.dateDebut > a.dateDebut ? b : a);
 
+  /* Jour du mois plafonné : une série du 31 tombe le 28 en février. Démarrer la nouvelle
+     série à cette date lui ferait prendre le 28 comme jour de référence pour toujours. Dans
+     ce cas, la nouvelle série démarre à la première occurrence qui tombe sur le vrai jour, et
+     les occurrences plafonnées d'ici là restent dans l'ancienne série, retouchées une à une
+     avec les nouvelles valeurs. */
+  const jourVoulu = recOriginale.dateDebut ? dateLocaleDepuisISO(recOriginale.dateDebut).getDate() : null;
+  let jourPlafonne = (recOriginale.unite === 'mois' || recOriginale.unite === 'annee')
+    && recOriginale.typeMensuel !== 'dernier_jour'
+    && jourVoulu != null
+    && dateLocaleDepuisISO(dateCharniere).getDate() !== jourVoulu;
+  let debutNouvelle = dateCharniere;
+  if(jourPlafonne){
+    const suivante = genererOccurrences({ ...recOriginale, finType:'jamais' }, horizonMaximal())
+      .find(d => formaterDateISO(d) > dateCharniere && d.getDate() === jourVoulu);
+    if(suivante) debutNouvelle = formaterDateISO(suivante);
+    else jourPlafonne = false; /* aucune occurrence future sur le vrai jour : ancien comportement */
+  }
+
   let finType = queue.finType, finNombre = queue.finNombre, finDate = queue.finDate;
   if(finType === 'nombre' && finNombre != null){
     if(queue.id === recOriginale.id){
       const dejaEcoulees = genererOccurrences(recOriginale, horizonMaximal())
-        .filter(d => formaterDateISO(d) < dateCharniere).length;
-      finNombre = Math.max(1, finNombre - dejaEcoulees);
+        .filter(d => formaterDateISO(d) < debutNouvelle).length;
+      finNombre = jourPlafonne ? finNombre - dejaEcoulees : Math.max(1, finNombre - dejaEcoulees);
     } else {
       /* On convertit en date de fin équivalente : recompter des occurrences à travers
          plusieurs segments aux motifs possiblement différents n'aurait pas de sens. */
@@ -3652,36 +3819,67 @@ async function diviserRecurrenceAPartirDe(depense, nv){
       else { finType = 'jamais'; finDate = null; finNombre = null; }
     }
   }
+  const creerNouvelle = !(finType === 'date' && finDate && finDate < debutNouvelle)
+    && !(finType === 'nombre' && finNombre != null && finNombre <= 0);
 
-  /* Les suppressions individuelles à partir de la charnière doivent survivre au
-     fractionnement : on les rattache à la nouvelle règle. Les modifications individuelles,
-     elles, sont écrasées. */
-  const nouvelId = await creerRecurrenceDepuisValeurs({
-    type: recOriginale.type, nom: nv.note != null ? nv.note : recOriginale.nom, montant: nv.amount, categorie: nv.category,
-    unite: recOriginale.unite, intervalle: recOriginale.intervalle,
-    joursSemaine: recOriginale.joursSemaine, typeMensuel: recOriginale.typeMensuel,
-    dateDebut: dateCharniere, finType, finNombre, finDate,
-    who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1,
-    racineId: racine
-  });
+  /* 1) La nouvelle règle est créée EN PREMIER : si ça échoue, rien d'autre n'a bougé. */
+  let nouvelId = null;
+  if(creerNouvelle){
+    nouvelId = await creerRecurrenceDepuisValeurs({
+      type: recOriginale.type, nom: nv.note != null ? nv.note : recOriginale.nom, montant: nv.amount, categorie: nv.category,
+      unite: recOriginale.unite, intervalle: recOriginale.intervalle,
+      joursSemaine: recOriginale.joursSemaine, typeMensuel: recOriginale.typeMensuel,
+      dateDebut: debutNouvelle, finType, finNombre, finDate,
+      who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1,
+      racineId: racine
+    });
+    if(!nouvelId){ terminer(); return; }
+  }
 
-  await transfererSuppressions(recOriginale.id, nouvelId, dateCharniere);
+  /* 2) Les suppressions individuelles survivent au fractionnement : celles qui tombent dans
+     la nouvelle règle y sont rattachées ; celles d'avant (cas plafonné) restent sur
+     l'ancienne. Les modifications individuelles, elles, sont écrasées. */
+  const segmentsATransferer = [recOriginale, ...segmentsRemplaces];
+  for(const segment of segmentsATransferer){
+    if(nouvelId && !(await transfererSuppressions(segment.id, nouvelId, debutNouvelle))){ terminer(); return; }
+    if(jourPlafonne && segment.id !== recOriginale.id
+       && !(await transfererSuppressions(segment.id, recOriginale.id, dateCharniere))){ terminer(); return; }
+  }
   for(const segment of segmentsRemplaces){
-    await transfererSuppressions(segment.id, nouvelId, dateCharniere);
-  }
-  await supprimerExceptions(recOriginale.id, { depuis: dateCharniere });
-  for(const segment of segmentsRemplaces){
-    await supprimerRecurrence(segment.id, true);
+    if(!(await supprimerRecurrence(segment.id, true))){ terminer(); return; }
   }
 
-  if(recOriginale.dateDebut === dateCharniere){
-    await supprimerRecurrence(recOriginale.id, true);
-  } else {
-    await tronquerRecurrenceAvant(recOriginale.id, dateCharniere);
+  if(!jourPlafonne){
+    if(recOriginale.dateDebut === dateCharniere){
+      await supprimerRecurrence(recOriginale.id, true);
+    } else if(await tronquerRecurrenceAvant(recOriginale.id, dateCharniere)){
+      await supprimerExceptions(recOriginale.id, { depuis: dateCharniere });
+    }
+    terminer();
+    return;
   }
 
-  recalculerDepenses();
-  rafraichirActif();
+  /* 3) Cas plafonné : l'ancienne série couvre encore la charnière (et les éventuelles
+     occurrences plafonnées suivantes), jusqu'à la veille de la nouvelle règle — ou jusqu'à
+     la vraie fin de la famille si aucune nouvelle règle n'a été créée. */
+  let finOriginale;
+  if(creerNouvelle) finOriginale = veilleISO(debutNouvelle);
+  else if(queue.id !== recOriginale.id) finOriginale = finDateEquivalente(queue);
+  if(finOriginale && !(await tronquerRecurrenceAvant(recOriginale.id, lendemainISO(finOriginale)))){ terminer(); return; }
+  if(!(await supprimerExceptions(recOriginale.id, { depuis: dateCharniere, garderSuppressions: true }))){ terminer(); return; }
+
+  const suppressions = new Set(exceptions
+    .filter(x => x.recurrenceId === recOriginale.id && x.supprimee)
+    .map(x => x.dateOrigine));
+  const champs = champsExceptionDepuisFormulaire(depense, nv);
+  const aRetoucher = genererOccurrences(recOriginale, horizonMaximal())
+    .map(formaterDateISO)
+    .filter(d => d >= dateCharniere && !suppressions.has(d));
+  for(const d of aRetoucher){
+    const champsOcc = d === dateCharniere ? champs : { ...champs, nouvelleDate: null };
+    if(!(await enregistrerException(recOriginale, d, champsOcc))) break;
+  }
+  terminer();
 }
 
 /* ===================== MODAL DE DÉTAIL D'UNE OCCURRENCE (clic sur une dépense) =====================
@@ -3897,7 +4095,6 @@ const MOIS_NOMS = ['janvier','février','mars','avril','mai','juin','juillet','a
 const ICONE_FILTRE_SVG = `<svg viewBox="0 0 20 20" width="16" height="16" style="display:block;"><line x1="2" y1="5" x2="18" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="13" cy="5" r="2.1" fill="currentColor"/><line x1="2" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="7" cy="10" r="2.1" fill="currentColor"/><line x1="2" y1="15" x2="18" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="15" r="2.1" fill="currentColor"/></svg>`;
 
 const VUES_CALENDRIER = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['annee','Année'] ];
-const VUES_RESUME = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['annee','Année'] ];
 
 /* Dimanche de la semaine contenant `date`. La semaine commence le dimanche, comme dans le
    sélecteur de jours des récurrences (D L M M J V S) et dans les calendriers nord-américains :
@@ -4306,43 +4503,10 @@ function rendreAgendaCorpsHTML(scope, debut, fin, tri){
   return corps;
 }
 
-/* ===================== MODAL "JOUR" (façon Google Agenda) =====================
-   Cliquer une date dans le calendrier ouvre la liste des dépenses de ce jour-là, avec un
-   bouton pour en ajouter une nouvelle (le formulaire unifié gère "Se répète" lui-même). */
+/* Fenêtre « jour » : plus ouverte depuis que cliquer une date bascule en vue Jour (voir
+   allerVueJour). Seule la fermeture reste branchée, par sécurité. */
 function fermerJourModal(){ document.getElementById('jour-modal').style.display = 'none'; }
 document.getElementById('close-jour-modal').addEventListener('click', fermerJourModal);
-
-function ouvrirJourModal(scope, iso){
-  const items = depensesPourCalendrier(scope, dateLocaleDepuisISO(iso), dateLocaleDepuisISO(iso)).sort((a,b)=> b.amount-a.amount);
-  const dateLisible = dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-  const contenu = document.getElementById('jour-modal-content');
-  contenu.innerHTML = `
-    <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;text-transform:capitalize;">${dateLisible}</h3>
-    <div id="jour-modal-liste">
-      ${items.length ? items.map(e=>rendreCarteDepenseHTML(e, scope)).join('') : '<div class="cal-agenda-empty">Aucune dépense ce jour-là</div>'}
-    </div>
-    <div class="edit-actions" style="margin-top:14px;">
-      <button class="btn-add" style="width:100%;" id="jour-btn-ajouter-depense">+ Ajouter</button>
-    </div>
-  `;
-  document.getElementById('jour-btn-ajouter-depense').addEventListener('click', ()=>{ fermerJourModal(); ouvrirAjoutDepensePourDate(scope, iso); });
-  document.getElementById('jour-modal').style.display = 'flex';
-}
-
-/* Bascule vers le sous-onglet "Mois" (où vit le formulaire d'ajout unifié — dépense simple ou
-   récurrente selon le champ "Se répète"), pré-remplit la date avec celle cliquée dans le
-   calendrier, puis ouvre le formulaire. */
-function ouvrirAjoutDepensePourDate(scope, iso){
-  const btn = document.querySelector(`.subtab-btn[data-scope="${scope}"][data-sub="mois"]`);
-  if(btn) btn.click();
-  const champDate = document.getElementById(`f-date-${scope}`);
-  if(champDate) champDate.value = iso;
-  const formCard = document.getElementById(`form-card-${scope}`);
-  if(formCard){
-    formCard.classList.add('mobile-add-open');
-    formCard.scrollIntoView({behavior:'smooth', block:'center'});
-  }
-}
 
 /* Modal d'édition d'un paiement récurrent */
 function ouvrirEditionRecurrence(id){
@@ -4352,8 +4516,14 @@ function ouvrirEditionRecurrence(id){
   document.getElementById('edit-rec-montant').value = rec.montant;
   document.getElementById('edit-rec-categorie').innerHTML = categories.map(c=>`<option>${echapperHTML(c)}</option>`).join('');
   document.getElementById('edit-rec-categorie').value = rec.categorie;
+  /* La date doit être en place AVANT de remplir les contrôles : ils en déduisent le jour du
+     mois et la présence de l'option « dernier jour ». Avant, ils lisaient la date de la série
+     ouverte précédemment (ou aujourd'hui), et une série « dernier jour du mois » était
+     convertie en « le N de chaque mois » à la sauvegarde.
+     On affiche le début de toute la famille : c'est la date que « Toute la série » modifie. */
+  const debutsFamille = familleDeRecurrence(rec).map(r => r.dateDebut).filter(Boolean).sort();
+  document.getElementById('edit-rec-date-debut').value = debutsFamille[0] || rec.dateDebut || '';
   remplirControlesRecurrence(CONTROLES_RECURRENCE_EDITION, { unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel });
-  document.getElementById('edit-rec-date-debut').value = rec.dateDebut || '';
   document.getElementById('edit-rec-fin-type').value = rec.finType || 'jamais';
   document.getElementById('edit-rec-fin-nombre').value = rec.finNombre || '';
   document.getElementById('edit-rec-fin-date').value = rec.finDate || '';
@@ -4364,6 +4534,7 @@ function ouvrirEditionRecurrence(id){
   const repartitionInput = document.getElementById('edit-rec-compte-repartition');
   const estRevenuField = document.getElementById('edit-rec-est-revenu-field');
   const estRevenuCheckbox = document.getElementById('edit-rec-est-revenu');
+  estRevenuField.style.display = ''; /* nettoie l'ancien masquage, l'état passe par activerChamp */
   document.getElementById('edit-rec-compte-nom-p1').textContent = nomsPersonnes.p1;
   document.getElementById('edit-rec-compte-repartition').value = rec.pourcentageP1 != null ? rec.pourcentageP1 : 50;
   estRevenuCheckbox.checked = !!rec.estRevenu;
@@ -4389,21 +4560,23 @@ function ouvrirEditionRecurrence(id){
   document.getElementById('edit-recurrent-modal').style.display = 'flex';
 }
 document.getElementById('edit-rec-qui').addEventListener('change', ()=>{
+  /* Même mécanique qu'à l'ouverture (activerChamp) : avant, ce gestionnaire masquait le
+     champ avec style.display, ce qui laissait la case désactivée en revenant à « Compte
+     conjoint », ou le champ caché pour les séries ouvertes ensuite. */
   const estCompte = document.getElementById('edit-rec-qui').value === 'Compte conjoint';
-  const estRevenuField = document.getElementById('edit-rec-est-revenu-field');
-  estRevenuField.style.display = estCompte ? '' : 'none';
+  activerChamp('edit-rec-est-revenu-field', estCompte);
   if(!estCompte) document.getElementById('edit-rec-est-revenu').checked = false;
   appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
 });
 document.getElementById('close-edit-recurrent').addEventListener('click', ()=>document.getElementById('edit-recurrent-modal').style.display='none');
-document.getElementById('delete-edit-recurrent').addEventListener('click', async ()=>{
+document.getElementById('delete-edit-recurrent').addEventListener('click', actionVerrouillee(document.getElementById('delete-edit-recurrent'), async ()=>{
   if(recurrenceEnEdition && confirm("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")){
     document.getElementById('edit-recurrent-modal').style.display='none';
     /* Supprime toute la famille : une série fractionnée par des "et les suivantes" est
        composée de plusieurs segments, qui doivent tous disparaître ensemble. */
     await supprimerSerieComplete(recurrenceEnEdition.id, true);
   }
-});
+}));
 /* Convertit n'importe quelle condition de fin en date de fin équivalente (ou null pour
    "jamais"). Permet de fusionner une famille de récurrences sans avoir à recompter un
    nombre d'occurrences à travers des segments aux motifs différents. */
@@ -4414,13 +4587,13 @@ function finDateEquivalente(rec){
   return occ.length ? formaterDateISO(occ[occ.length-1]) : null;
 }
 
-document.getElementById('save-edit-recurrent').addEventListener('click', async ()=>{
+document.getElementById('save-edit-recurrent').addEventListener('click', actionVerrouillee(document.getElementById('save-edit-recurrent'), async ()=>{
   if(!recurrenceEnEdition) return;
   const nom = document.getElementById('edit-rec-nom').value.trim();
   const montant = parseFloat(document.getElementById('edit-rec-montant').value);
   if(!nom || !montant || montant<=0){ afficherAlerte("Merci d'entrer un nom et un montant valides."); return; }
   const categorie = document.getElementById('edit-rec-categorie').value;
-  const dateDebutFormulaire = document.getElementById('edit-rec-date-debut').value || recurrenceEnEdition.dateDebut;
+  const dateDebutFormulaire = document.getElementById('edit-rec-date-debut').value;
   const cfgRepetition = lireControlesRecurrence(CONTROLES_RECURRENCE_EDITION) || { unite:'mois', intervalle:1, typeMensuel:'jour_mois' };
   const finType = document.getElementById('edit-rec-fin-type').value;
   const finNombreFormulaire = finType==='nombre' ? (parseInt(document.getElementById('edit-rec-fin-nombre').value,10) || null) : null;
@@ -4452,10 +4625,11 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   const famille = familleDeRecurrence(recurrenceEnEdition);
   const segmentsAbsorbes = famille.filter(r => r.id !== recurrenceEnEdition.id);
 
-  /* Début = le plus ancien de la famille (sauf si l'utilisateur avance délibérément le
-     départ dans le formulaire). */
+  /* Début = la date du formulaire, qui affiche le début de toute la famille à l'ouverture.
+     Avant, une date plus tardive était ignorée sans message : impossible de retarder le
+     départ d'une série. */
   const vraiDebut = famille.reduce((a,b) => b.dateDebut < a.dateDebut ? b : a).dateDebut;
-  const dateDebut = dateDebutFormulaire < vraiDebut ? dateDebutFormulaire : vraiDebut;
+  const dateDebut = dateDebutFormulaire || vraiDebut;
 
   /* Fin : si l'utilisateur n'a pas touché "Se termine", on reprend la vraie fin de la
      famille (portée par le segment le plus tardif) plutôt que la fin tronquée du segment
@@ -4482,18 +4656,20 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
     Qui: nomPersonneSupabase(who), Actif: actif, EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1
   };
 
-  try{
-    let { error } = await supabaseClient.from('Recurrences').update(update).eq('id', recurrenceEnEdition.id);
-    if(error){
+  if(recurrencesSupabaseDisponible){
+    let res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(update).eq('id', recurrenceEnEdition.id));
+    if(!res.ok){
       /* Colonnes récentes peut-être absentes sur une base plus ancienne : on réessaie sans
          elles pour que la mise à jour ne soit pas totalement bloquée. */
-      console.warn("Mise à jour avec certaines colonnes récentes impossible, nouvel essai sans elles.", error);
+      console.warn("Mise à jour avec certaines colonnes récentes impossible, nouvel essai sans elles.", res.error);
       const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, ...sansColonnesRecentes } = update;
-      const retry = await supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', recurrenceEnEdition.id);
-      if(retry.error) throw retry.error;
+      res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', recurrenceEnEdition.id));
+      if(!res.ok){
+        /* La fenêtre reste ouverte avec la saisie : on peut réessayer sans tout retaper. */
+        signalerEchecEnregistrement("La modification de la série", res.error);
+        return;
+      }
     }
-  } catch(err){
-    console.warn("Impossible de mettre à jour la récurrence dans Supabase, sauvegarde locale seulement.", err);
   }
 
   Object.assign(recurrenceEnEdition, {
@@ -4509,8 +4685,8 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
      puis disparaissent. Les modifications individuelles restantes sont effacées : la
      nouvelle règle s'applique désormais à toutes les occurrences. */
   for(const segment of segmentsAbsorbes){
-    await transfererSuppressions(segment.id, recurrenceEnEdition.id);
-    await supprimerRecurrence(segment.id, true);
+    if(!(await transfererSuppressions(segment.id, recurrenceEnEdition.id))) break;
+    if(!(await supprimerRecurrence(segment.id, true))) break;
   }
   await supprimerExceptions(recurrenceEnEdition.id, { garderSuppressions: true });
 
@@ -4518,7 +4694,7 @@ document.getElementById('save-edit-recurrent').addEventListener('click', async (
   afficherRecurrencesScope(recurrenceEnEdition.type==='personnelle' ? 'personnel' : 'conjoint');
   rafraichirActif();
   if(recurrenceEnEdition.type==='conjointe') notifierActivitePartenaire('modification', `${categorieFinale} — ${formaterMonnaie(montant)}`);
-});
+}));
 
 /* Utilitaires réutilisés pour calculer les dépôts requis au compte conjoint (voir plus bas
    dans le module Récurrent) : nombre de paies aux 2 semaines par année.
@@ -4536,19 +4712,10 @@ function nomPersonneSupabase(who){
   return cle === 'p2' ? 'Mélissa' : 'Gabriel';
 }
 
-function dansMoisActif(dateStr){ return dansMois(dateStr, moisActif.year, moisActif.month); }
 function dansAnnee(dateStr, year){ return new Date(dateStr+"T00:00:00").getFullYear()===year; }
 function dansMois(dateStr, year, month){
   const d = new Date(dateStr+"T00:00:00");
   return d.getFullYear()===year && d.getMonth()===month;
-}
-
-/* Filtres qui définissent le contenu de chaque grande section */
-function filtreMoisScope(scope){
-  return e => dansMoisActif(e.date) && (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser));
-}
-function filtreAnneeScope(scope){
-  return e => dansAnnee(e.date, anneeActive) && (scope==='conjoint' ? e.type==='conjointe' : (e.type==='personnelle' && e.who===currentUser));
 }
 
 /* Rafraîchit les selects "Qui" et "Catégorie" des deux formulaires d'ajout (Conjoint / Personnel) */
@@ -4642,17 +4809,26 @@ function afficherNavigationPeriode(){
 }
 
 function afficherComparaison(){
+  /* Uniquement des dépenses (les revenus étaient additionnés comme des dépenses), et jamais
+     les dépenses personnelles de l'autre personne. */
   const source = depenses.filter(e=>{
+    if(e.estRevenu) return false;
     if(modeCompareScope==='conjoint') return e.type==='conjointe';
     if(modeCompareScope==='personnel') return e.type==='personnelle' && e.who===currentUser;
-    return true;
+    return e.type==='conjointe' || e.who===currentUser;
   });
   const options=[...new Set(source.map(e=>{const d=new Date(e.date+'T00:00:00');return modeComparaison==='mois'?`${d.getFullYear()}-${d.getMonth()}`:String(d.getFullYear());}))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   const label=key=>modeComparaison==='mois'?(()=>{const [y,m]=key.split('-').map(Number);return `${NOMS_MOIS[m]} ${y}`;})():key;
   const period=key=>modeComparaison==='mois'?(()=>{const [y,m]=key.split('-').map(Number);return e=>dansMois(e.date,y,m);})():e=>dansAnnee(e.date,Number(key));
   const a=document.getElementById('compare-a'),b=document.getElementById('compare-b');
+  /* On garde la sélection de l'utilisateur quand elle existe encore. Avant, chaque
+     changement de sélection reconstruisait les listes et revenait de force aux deux
+     dernières périodes : on ne pouvait rien comparer d'autre. */
+  const choixA = a.value, choixB = b.value;
   a.innerHTML=options.map(key=>`<option value="${key}">${label(key)}</option>`).join(''); b.innerHTML=a.innerHTML;
   if(options.length>1){a.selectedIndex=options.length-2;b.selectedIndex=options.length-1;}
+  if(options.includes(choixA)) a.value = choixA;
+  if(options.includes(choixB)) b.value = choixB;
   const listA=source.filter(period(a.value)),listB=source.filter(period(b.value));
   const totalA=listA.reduce((s,e)=>s+e.amount,0),totalB=listB.reduce((s,e)=>s+e.amount,0),diff=totalB-totalA;
   document.getElementById('compare-stats').innerHTML=`<div class="stat-card"><div class="label">${label(a.value||'')}</div><div class="value">${formaterMonnaie(totalA)}</div></div><div class="stat-card"><div class="label">${label(b.value||'')}</div><div class="value">${formaterMonnaie(totalB)}</div></div><div class="stat-card"><div class="label">Écart</div><div class="value">${diff>=0?'+':''}${formaterMonnaie(diff)}</div></div>`;
@@ -4697,6 +4873,11 @@ function rafraichirSousOnglet(scope, sub){
 
 /* Rafraîchit tout ce qui est visible à l'écran en ce moment (après un ajout/modif/suppr.) */
 function rafraichirActif(){
+  /* L'échéancier lu par les notifications est recalculé à chaque changement, peu importe
+     l'onglet ouvert. Avant, il ne l'était qu'à l'affichage de « Prochains dépôts » et
+     jamais quand la carte était masquée : d'anciens montants restaient notifiés. Toujours
+     le même nombre de paies, pour que la signature ne change pas d'un écran à l'autre. */
+  if(currentSession && currentUser) synchroniserEcheancierNotifications(calculerEcheancierCompte(NB_PAIES_ECHEANCIER));
   appliquerTheme();
   rafraichirOptionsFormulaires();
   if(activeMainTab==='conjoint' || activeMainTab==='personnel'){
@@ -4863,11 +5044,12 @@ async function ajouterDepense(scope){
     if(finType==='nombre' && !finNombre){ afficherAlerte("Merci d'entrer un nombre de paiements valide."); return; }
     if(finType==='date' && !finDate){ afficherAlerte("Merci d'entrer une date de fin."); return; }
 
-    await creerRecurrenceDepuisValeurs({
+    const idCree = await creerRecurrenceDepuisValeurs({
       type, nom: note, montant: amount, categorie: category,
       unite: cfgRepetition.unite, intervalle: cfgRepetition.intervalle, joursSemaine: cfgRepetition.joursSemaine, typeMensuel: cfgRepetition.typeMensuel,
       dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1
     });
+    if(!idCree) return; /* saisie conservée dans le formulaire pour réessayer */
     recalculerDepenses();
     reinitialiserFormulaireAjoutDepense(scope);
     afficherRecurrencesScope(scope);
@@ -4958,8 +5140,10 @@ function reinitialiserFormulaireAjoutDepense(scope){
   }
   rafraichirOptionsFormulaires();
 }
-document.getElementById('btn-add-conjoint').addEventListener('click', ()=>ajouterDepense('conjoint'));
-document.getElementById('btn-add-personnel').addEventListener('click', ()=>ajouterDepense('personnel'));
+['conjoint','personnel'].forEach(scope=>{
+  const bouton = document.getElementById(`btn-add-${scope}`);
+  bouton.addEventListener('click', actionVerrouillee(bouton, ()=>ajouterDepense(scope)));
+});
 
 /* ===================== RÉCURRENCE : CONTRÔLES EN LIGNE =====================
    Une bascule « Se répète » dans le formulaire ; quand elle est à ON, les réglages se
@@ -5046,8 +5230,13 @@ function remplirControlesRecurrence(ids, cfg){
   appliquerAffichageRecurrence(ids);
   const selMensuel = document.getElementById(ids.typeMensuel);
   if(selMensuel && c.typeMensuel === 'dernier_jour'){
+    /* Une série existante réglée sur « dernier jour » garde ce réglage même si sa date de
+       début n'est pas un dernier jour (données d'une version précédente) : on ajoute
+       l'option plutôt que de la convertir en silence. */
+    if(!selMensuel.querySelector('option[value="dernier_jour"]')){
+      selMensuel.insertAdjacentHTML('beforeend', '<option value="dernier_jour">Le dernier jour du mois</option>');
+    }
     selMensuel.value = 'dernier_jour';
-    if(selMensuel.value !== 'dernier_jour') selMensuel.value = 'jour_mois'; /* option absente */
   }
 }
 
@@ -5334,7 +5523,7 @@ function ouvrirEdition(id, mode){
   activerChamp('edit-date-field', modeEditionDepense !== 'suivantes', 'edit-date');
   document.getElementById('edit-date').disabled = modeEditionDepense === 'suivantes';
   document.getElementById('edit-note').value=depense.note;
-  document.getElementById('edit-category').innerHTML=categories.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('edit-category').innerHTML=categories.map(c=>`<option>${echapperHTML(c)}</option>`).join('');
   document.getElementById('edit-category').value=depense.category;
   document.getElementById('edit-compte-nom-p1').textContent = nomsPersonnes.p1;
   document.getElementById('edit-compte-repartition').value = depense.pourcentageP1 != null ? depense.pourcentageP1 : 50;
@@ -5393,8 +5582,8 @@ function ouvrirEdition(id, mode){
   document.getElementById('edit-modal').style.display='flex';
 }
 document.getElementById('close-edit').addEventListener('click',()=>{document.getElementById('edit-modal').style.display='none'; modeEditionDepense='normal'; document.getElementById('edit-date').disabled=false;});
-document.getElementById('delete-edit').addEventListener('click',async()=>{if(depenseEnEdition && confirm('Supprimer cette dépense ?')){document.getElementById('edit-modal').style.display='none';await supprimerDepense(depenseEnEdition.id);}});
-document.getElementById('save-edit').addEventListener('click',async()=>{
+document.getElementById('delete-edit').addEventListener('click', actionVerrouillee(document.getElementById('delete-edit'), async()=>{if(depenseEnEdition && confirm('Supprimer cette dépense ?')){document.getElementById('edit-modal').style.display='none';await supprimerDepense(depenseEnEdition.id);}}));
+document.getElementById('save-edit').addEventListener('click', actionVerrouillee(document.getElementById('save-edit'), async()=>{
   const amount=parseFloat(document.getElementById('edit-amount').value),date=document.getElementById('edit-date').value;
   if(!depenseEnEdition||!amount||amount<=0||!date){afficherAlerte('Merci d’entrer un montant et une date valides.');return;}
   const type=editTypeActuel==='personnelle'?'personnelle':'conjointe';
@@ -5418,8 +5607,8 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
   if(depenseEnEdition.virtuelle){
     if(modeEditionDepense === 'suivantes'){
       await diviserRecurrenceAPartirDe(depenseEnEdition, nouvellesValeurs);
-    } else {
-      await modifierOccurrenceSeule(depenseEnEdition, nouvellesValeurs);
+    } else if(!(await modifierOccurrenceSeule(depenseEnEdition, nouvellesValeurs))){
+      return; /* échec signalé : la fenêtre reste ouverte avec la saisie */
     }
     fermer();
     if(depenseEnEdition.type==='conjointe') notifierActivitePartenaire('modification', `${categorieFinale} — ${formaterMonnaie(amount)}`);
@@ -5439,14 +5628,17 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
     if(finType==='nombre' && !finNombre){ afficherAlerte("Merci d'entrer un nombre de paiements valide."); return; }
     if(finType==='date' && !finDate){ afficherAlerte("Merci d'entrer une date de fin."); return; }
 
-    await creerRecurrenceDepuisValeurs({
+    const idCree = await creerRecurrenceDepuisValeurs({
       type, nom: noteFinale, montant: amount, categorie: categorieFinale,
       unite: cfg.unite, intervalle: cfg.intervalle, joursSemaine: cfg.joursSemaine, typeMensuel: cfg.typeMensuel,
       dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1
     });
+    /* Série non créée : on ne touche surtout pas à la dépense d'origine (elle était
+       supprimée quand même avant, et donc perdue). */
+    if(!idCree) return;
 
     /* La dépense d'origine disparaît : elle est désormais la première occurrence de la série. */
-    const { error: erreurSuppression } = await supabaseClient.from('Depenses').delete().eq('id', depenseEnEdition.id);
+    const { error: erreurSuppression } = await ecritureVerifiee(supabaseClient.from('Depenses').delete().eq('id', depenseEnEdition.id));
     if(erreurSuppression){
       afficherAlerte("La série a été créée, mais la dépense d'origine n'a pas pu être supprimée : elle risque d'apparaître en double.");
     } else {
@@ -5473,19 +5665,22 @@ document.getElementById('save-edit').addEventListener('click',async()=>{
     PourcentageP1: pourcentageP1,
     user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
-  let {error}=await supabaseClient.from('Depenses').update(update).eq('id',depenseEnEdition.id);
-  if(error){
-    console.warn("Mise à jour avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
+  const resultat = await ecritureVerifiee(supabaseClient.from('Depenses').update(update).eq('id',depenseEnEdition.id));
+  if(!resultat.ok){
+    console.warn("Mise à jour avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", resultat.error);
     const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = update;
-    const retry = await supabaseClient.from('Depenses').update(sansColonnesRecentes).eq('id',depenseEnEdition.id);
-    if(retry.error){afficherAlerte('Erreur lors de la modification.');console.error(retry.error);return;}
+    const retry = await ecritureVerifiee(supabaseClient.from('Depenses').update(sansColonnesRecentes).eq('id',depenseEnEdition.id));
+    if(!retry.ok){ signalerEchecEnregistrement("La modification de la dépense", retry.error); return; }
   }
-  Object.assign(depenseEnEdition,{who,amount,date,category:update.Categorie,note:update.Note,type:update.Type,estCompte,estRevenu,pourcentageP1});
+  /* On met à jour la dépense réelle elle-même (et non une copie qui aurait pu être
+     remplacée par un rechargement entre-temps). */
+  const reelle = depensesReelles.find(e => e.id === depenseEnEdition.id) || depenseEnEdition;
+  Object.assign(reelle,{who,amount,date,category:update.Categorie,note:update.Note,type:update.Type,estCompte,estRevenu,pourcentageP1});
   recalculerDepenses();
   fermer();
   rafraichirActif();
   if(type==='conjointe') notifierActivitePartenaire('modification', `${categorieFinale} — ${formaterMonnaie(amount)}`);
-});
+}));
 
 document.getElementById('dark-mode').addEventListener('change',e=>{localStorage.setItem('depenses_theme',e.target.checked?'dark':'light');appliquerTheme();});
 
@@ -5619,21 +5814,30 @@ async function enregistrerAbonnementPush(){
     afficherStatutNotif("Ce navigateur ne prend pas en charge les notifications.", true);
     return false;
   }
-  const permission = await Notification.requestPermission();
-  if(permission !== 'granted'){
-    afficherStatutNotif("Permission refusée : autorise les notifications pour ce site dans ton navigateur.", true);
+  let sub;
+  try{
+    const permission = await Notification.requestPermission();
+    if(permission !== 'granted'){
+      afficherStatutNotif("Permission refusée : autorise les notifications pour ce site dans ton navigateur.", true);
+      return false;
+    }
+    const registration = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if(!subscription){
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    sub = subscription.toJSON();
+  } catch(err){
+    /* Ex. sur iPhone, l'app doit d'abord être ajoutée à l'écran d'accueil. Avant, l'erreur
+       n'était pas attrapée : la bascule restait activée sans rien afficher. */
+    console.error(err);
+    afficherStatutNotif("Impossible d'activer les notifications sur cet appareil. Sur iPhone, ajoute d'abord l'app à l'écran d'accueil.", true);
     return false;
   }
-  const registration = await navigator.serviceWorker.register('sw.js');
-  await navigator.serviceWorker.ready;
-  let subscription = await registration.pushManager.getSubscription();
-  if(!subscription){
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-    });
-  }
-  const sub = subscription.toJSON();
   const { error } = await supabaseClient.from('push_subscriptions').upsert({
     user_id: currentSession.user.id,
     endpoint: sub.endpoint,
@@ -5726,9 +5930,9 @@ async function supprimerDepense(id){
   const occurrence = depenses.find(e => e.id === id);
   if(occurrence && occurrence.virtuelle){ await supprimerOccurrenceSeule(occurrence); return; }
 
-  const { error } = await supabaseClient.from('Depenses').delete().eq('id', id);
-  if(error){
-    afficherAlerte("Erreur lors de la suppression.");
+  const res = await ecritureVerifiee(supabaseClient.from('Depenses').delete().eq('id', id));
+  if(!res.ok){
+    signalerEchecEnregistrement("La suppression de la dépense", res.error);
     return;
   }
   depensesReelles = depensesReelles.filter(e=>e.id!==id);
@@ -6075,7 +6279,7 @@ function fermerExport(){
 function remplirSelectsExport(){
   const moisDisponibles = new Map();
   const anneesDisponibles = new Set();
-  depenses.forEach(e=>{
+  depenses.filter(e => e.type === 'conjointe' || e.who === currentUser).forEach(e=>{
     const d = new Date(e.date+"T00:00:00");
     const cle = `${d.getFullYear()}-${d.getMonth()}`;
     moisDisponibles.set(cle, `${NOMS_MOIS[d.getMonth()]} ${d.getFullYear()}`);
@@ -6098,21 +6302,26 @@ function remplirSelectsExport(){
 }
 
 /* Export Excel (.xlsx) via SheetJS pour une liste de dépenses déjà filtrée */
+/* Les colonnes Revenu / Compte / PourcentageP1 permettent un aller-retour complet : sans
+   elles, un revenu réimporté redevenait une dépense. */
 function exporterExcel(liste, suffixeFichier){
   if(!liste.length){ afficherAlerte("Aucune dépense à exporter pour cette période."); return; }
   const data = liste
     .slice()
     .sort((a,b)=> a.date.localeCompare(b.date))
     .map(e => ({
-      Qui: libellePersonne(e.who),
+      Qui: e.estCompte ? 'Compte conjoint' : libellePersonne(e.who),
       Date: e.date,
       Montant: e.amount,
       Categorie: e.category,
       Note: e.note || '',
-      Type: e.type === 'personnelle' ? 'Personnelle' : 'Conjointe'
+      Type: e.type === 'personnelle' ? 'Personnelle' : 'Conjointe',
+      Revenu: e.estRevenu ? 'Oui' : 'Non',
+      Compte: e.estCompte ? 'Oui' : 'Non',
+      PourcentageP1: e.type === 'personnelle' ? '' : (e.pourcentageP1 != null ? e.pourcentageP1 : 50)
     }));
   const feuille = XLSX.utils.json_to_sheet(data);
-  feuille['!cols'] = [{wch:10},{wch:12},{wch:10},{wch:14},{wch:30},{wch:12}];
+  feuille['!cols'] = [{wch:16},{wch:12},{wch:10},{wch:14},{wch:30},{wch:12},{wch:8},{wch:8},{wch:14}];
   const classeur = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(classeur, feuille, 'Dépenses');
   XLSX.writeFile(classeur, `depenses_${suffixeFichier}.xlsx`);
@@ -6159,6 +6368,8 @@ function parserCSV(texte){
   });
 }
 
+/* Dates « a/b/aaaa » : jour/mois par défaut (usage au Québec), sauf si l'ordre inverse est
+   la seule lecture possible (ex. 04/25/2026). */
 function normaliserDate(val){
   if(val instanceof Date) return `${val.getFullYear()}-${String(val.getMonth()+1).padStart(2,'0')}-${String(val.getDate()).padStart(2,'0')}`;
   if(typeof val === 'number'){
@@ -6170,18 +6381,40 @@ function normaliserDate(val){
   const str = String(val ?? '').trim();
   let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-  m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  m = str.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+  if(m){
+    let jour = Number(m[1]), mois = Number(m[2]);
+    if(mois > 12 && jour <= 12){ [jour, mois] = [mois, jour]; }
+    if(mois < 1 || mois > 12 || jour < 1 || jour > 31) return null;
+    return `${m[3]}-${String(mois).padStart(2,'0')}-${String(jour).padStart(2,'0')}`;
+  }
   return null;
 }
 
+/* Formats acceptés : 1234.56, 1234,56, 1 234,56 $, 1,234.56, 1.234,56. Quand les deux
+   séparateurs sont présents, le DERNIER est le séparateur décimal (avant, « 1,234.56 »
+   donnait 1,23). Un seul séparateur suivi de groupes de 3 chiffres (« 1,234 ») est lu
+   comme un séparateur de milliers. */
 function normaliserMontant(val){
   if(typeof val === 'number') return val;
   let str = String(val ?? '').trim().replace(/[\s$]/g,'');
-  if(str.includes(',') && str.includes('.')) str = str.replace(/\./g,'').replace(',', '.');
-  else str = str.replace(',', '.');
+  const virgule = str.lastIndexOf(','), point = str.lastIndexOf('.');
+  if(virgule !== -1 && point !== -1){
+    const decimal = virgule > point ? ',' : '.';
+    const milliers = decimal === ',' ? '.' : ',';
+    str = str.split(milliers).join('').replace(decimal, '.');
+  } else if(virgule !== -1 || point !== -1){
+    const sep = virgule !== -1 ? ',' : '.';
+    const groupesDeMilliers = new RegExp(`^-?\\d{1,3}(\\${sep}\\d{3})+$`);
+    str = groupesDeMilliers.test(str) ? str.split(sep).join('') : str.replace(sep, '.');
+  }
+  if(!/^-?\d*\.?\d+$/.test(str)) return null;
   const n = parseFloat(str);
   return isNaN(n) ? null : n;
+}
+
+function estOui(val){
+  return ['oui','o','yes','y','true','vrai','1','x'].includes(String(val ?? '').trim().toLowerCase());
 }
 
 function normaliserQui(val, parDefaut){
@@ -6224,6 +6457,9 @@ async function importerLignes(lignes){
     const catVal = valeurColonne(ligne, ['categorie','catégorie','category']);
     const noteVal = valeurColonne(ligne, ['note','notes']);
     const typeVal = valeurColonne(ligne, ['type']);
+    const revenuVal = valeurColonne(ligne, ['revenu','estrevenu']);
+    const compteVal = valeurColonne(ligne, ['compte','estcompte']);
+    const pctVal = valeurColonne(ligne, ['pourcentagep1','pourcentage']);
 
     const date = normaliserDate(dateVal);
     const amount = normaliserMontant(montantVal);
@@ -6232,16 +6468,27 @@ async function importerLignes(lignes){
     const type = normaliserType(typeVal) === 'Personnelle' ? 'personnelle' : 'conjointe';
     /* Une dépense personnelle importée est toujours attribuée à la personne qui importe
        (comme pour l'ajout manuel), afin qu'elle reste visible pour elle et cachée pour l'autre. */
-    const qui = type === 'personnelle' ? utilisateurParDefaut : normaliserQui(quiVal, utilisateurParDefaut);
+    const estCompte = type === 'conjointe'
+      && (estOui(compteVal) || String(quiVal ?? '').trim().toLowerCase() === 'compte conjoint');
+    const qui = type === 'personnelle' ? utilisateurParDefaut
+      : (estCompte ? 'compte' : normaliserQui(quiVal, utilisateurParDefaut));
+    const estRevenu = (type === 'personnelle' || estCompte) && estOui(revenuVal);
+    const pctLu = normaliserMontant(pctVal);
+    const pourcentageP1 = type === 'conjointe'
+      ? (pctLu != null && pctLu >= 0 && pctLu <= 100 ? Math.round(pctLu) : 50)
+      : null;
 
     aInserer.push({
       id: uid(),
       Qui: nomPersonneSupabase(qui),
       Montant: amount,
       Date: date,
-      Categorie: normaliserCategorie(catVal),
+      Categorie: estRevenu ? 'Revenu' : normaliserCategorie(catVal),
       Note: String(noteVal ?? '').trim(),
       Type: type,
+      EstCompte: estCompte,
+      EstRevenu: estRevenu,
+      PourcentageP1: pourcentageP1,
       user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
     });
   });
@@ -6254,9 +6501,17 @@ async function importerLignes(lignes){
   const statut = document.getElementById('import-status');
   if(statut) statut.textContent = "Importation en cours...";
 
-  const { error } = await supabaseClient.from('Depenses').insert(aInserer);
+  let { error } = await supabaseClient.from('Depenses').insert(aInserer);
+  let colonnesRecentes = true;
   if(error){
-    afficherAlerte("Erreur lors de l'importation dans Supabase.");
+    /* Même repli que pour l'ajout manuel : base sans les colonnes récentes. */
+    console.warn("Import avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
+    colonnesRecentes = false;
+    ({ error } = await supabaseClient.from('Depenses').insert(
+      aInserer.map(({ EstCompte, EstRevenu, PourcentageP1, ...reste }) => reste)));
+  }
+  if(error){
+    afficherAlerte("Erreur lors de l'importation dans Supabase. Aucune ligne n'a été ajoutée.");
     console.error(error);
     if(statut) statut.textContent = "";
     return;
@@ -6264,7 +6519,10 @@ async function importerLignes(lignes){
 
   aInserer.forEach(d => depensesReelles.push({
     id: d.id, who: clePersonne(d.Qui), amount: d.Montant, date: d.Date, category: d.Categorie, note: d.Note, type: d.Type,
-    recurrenceId: null, estCompte: false, estRevenu: false, pourcentageP1: 50
+    recurrenceId: null,
+    estCompte: colonnesRecentes && d.EstCompte,
+    estRevenu: colonnesRecentes && d.EstRevenu,
+    pourcentageP1: colonnesRecentes && d.PourcentageP1 != null ? d.PourcentageP1 : 50
   }));
   recalculerDepenses();
 
@@ -6288,13 +6546,15 @@ document.querySelectorAll('#export-toggle button').forEach(bouton=>{
 });
 document.getElementById('do-export').addEventListener('click', ()=>{
   const mode = document.querySelector('#export-toggle button.active').dataset.mode;
+  /* Jamais les dépenses personnelles de l'autre personne dans un export. */
+  const exportables = depenses.filter(e => e.type === 'conjointe' || e.who === currentUser);
   if(mode === 'mois'){
     const [y,m] = document.getElementById('export-mois').value.split('-').map(Number);
-    const liste = depenses.filter(e=>dansMois(e.date,y,m));
+    const liste = exportables.filter(e=>dansMois(e.date,y,m));
     exporterExcel(liste, `${y}-${String(m+1).padStart(2,'0')}`);
   } else {
     const y = Number(document.getElementById('export-annee').value);
-    const liste = depenses.filter(e=>dansAnnee(e.date,y));
+    const liste = exportables.filter(e=>dansAnnee(e.date,y));
     exporterExcel(liste, String(y));
   }
   fermerExport();
@@ -6344,11 +6604,21 @@ function appliquerRegleNumerique(champ){
   /* Saisie en cours d'être invalide (ex: "12.") : le navigateur renvoie une valeur vide,
      on le laisse finir plutôt que d'effacer ce qu'il tape. */
   if(champ.value === '') return;
-  const saisi = Number(champ.value);
+  const texte = champ.value;
+  const saisi = Number(texte);
   if(!isFinite(saisi)) return;
 
-  const facteur = Math.pow(10, regle.decimales);
-  let corrige = Math.trunc(saisi * facteur) / facteur;
+  /* Troncature sur le TEXTE, pas sur le nombre : Math.trunc(2.3 * 100) donne 229 à cause de
+     l'arrondi binaire, et 2,30 devenait 2,29 (ainsi qu'environ 4,6 % des montants en cents),
+     y compris sur un montant existant au simple passage dans le champ. La valeur d'un
+     <input type="number"> utilise toujours le point décimal, peu importe la langue. */
+  let texteCorrige = texte;
+  const [partieEntiere, decimales] = texte.split('.');
+  if(decimales !== undefined && !/e/i.test(texte) && decimales.length > regle.decimales){
+    texteCorrige = regle.decimales > 0 ? `${partieEntiere}.${decimales.slice(0, regle.decimales)}` : partieEntiere;
+  }
+  let corrige = Number(texteCorrige);
+  if(!isFinite(corrige)) return;
   if(regle.min != null && corrige < regle.min) corrige = regle.min;
   if(regle.max != null && corrige > regle.max) corrige = regle.max;
 
