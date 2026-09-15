@@ -874,6 +874,17 @@
   /* Avertissement quand la projection passe sous zéro : c'est LA réponse à « est-ce que le
      compte va suffire ? », donc elle doit se voir avant le tableau. */
   .solde-alerte{font-size:13px;line-height:1.5;border-radius:10px;padding:10px 13px;margin-bottom:12px;}
+  .solde-bloc{border:1px solid var(--border);border-radius:10px;padding:12px 13px;margin-bottom:12px;}
+  .solde-bloc-haut{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .solde-bloc-titre{font-size:13px;color:var(--text-secondary);}
+  .solde-bloc-montant{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .solde-bloc-montant.negatif{color:var(--red);}
+  .solde-bloc-detail{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:4px;}
+  .solde-bloc-lien{font-size:13px;color:var(--accent, var(--text));text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;margin-top:8px;}
+  .solde-bloc-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:10px;}
+  .solde-bloc-form .aide{grid-column:1 / -1;font-size:12px;color:var(--text-secondary);line-height:1.45;}
+  .solde-bloc-form .actions{grid-column:1 / -1;display:flex;gap:8px;justify-content:flex-end;}
+  .echeancier-legende{font-size:12px;color:var(--text-secondary);margin-top:8px;line-height:1.45;}
   .solde-alerte.manque{background:color-mix(in srgb, var(--red) 10%, var(--surface));
     border:1px solid color-mix(in srgb, var(--red) 35%, var(--surface));color:var(--red);}
   .solde-alerte.ok{background:color-mix(in srgb, var(--green) 10%, var(--surface));
@@ -1103,6 +1114,7 @@
         <div class="table-head-row">
           <h3>Prochains dépôts au compte conjoint</h3>
         </div>
+        <div id="solde-compte-bloc"></div>
         <div id="solde-compte-alerte"></div>
         <div id="recurrent-compte-echeancier-conjoint"></div>
       </div>
@@ -2730,6 +2742,8 @@ function nombrePaiesEntre(ancre, a, b){
 }
 const enCents = m => Math.round(Number(m || 0) * 100);
 const enDollars = c => c / 100;
+/* Termine une phrase par un point, sans doubler celui d'une abréviation (« 1 oct. »). */
+function finPhrase(texte){ return /\.$/.test(texte) ? texte : texte + '.'; }
 function dateCourteNum(n){
   return dateLocaleDepuisISO(isoDuNumero(n)).toLocaleDateString('fr-CA', { day:'numeric', month:'short' });
 }
@@ -2773,7 +2787,7 @@ function construireRegistreCompte(finCalcul){
       parts.push({ ...base, jour, p1, p2,
         explication: enRetard
           ? `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, ajouté après la dernière paie qui le précède : à déposer dès que possible.`
-          : `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, aucune paie depuis ${texteDebut} : mis de côté à la paie du ${dateCourteNum(jour)}.` });
+          : `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, aucune paie depuis ${texteDebut} : ` + finPhrase(`mis de côté à la paie du ${dateCourteNum(jour)}`) });
       return;
     }
     const m1 = morceauxEgaux(p1, n), m2 = morceauxEgaux(p2, n);
@@ -2787,7 +2801,7 @@ function construireRegistreCompte(finCalcul){
     if(jour < debut) return;
     const { p1, p2, pct } = partagerCents(cents, pourcentageP1);
     versements.push({ jour, p1, p2, libelle, categorie, pourcentageP1: pct,
-      explication: `${jour > aujourdhui ? 'Prévu' : 'Reçu'} le ${dateCourteNum(jour)}.` });
+      explication: finPhrase(`${jour > aujourdhui ? 'Prévu' : 'Reçu'} le ${dateCourteNum(jour)}`) });
   }
 
   /* Dépenses et dépôts ponctuels */
@@ -3027,12 +3041,12 @@ function projeterSoldeCompte(echeancier){
   if(!soldeCompte || !echeancier || !echeancier.length || !echeancier.registre) return null;
   const reg = echeancier.registre;
   const evenements = [];
-  reg.sorties.forEach(x => evenements.push({ jour: x.jour, cents: -x.cents, ordre: 1 }));
-  reg.versements.forEach(v => evenements.push({ jour: v.jour, cents: v.p1 + v.p2, ordre: 0, reel: true }));
+  reg.sorties.forEach(x => evenements.push({ jour: x.jour, cents: -x.cents, ordre: 1, libelle: x.libelle }));
+  reg.versements.forEach(v => evenements.push({ jour: v.jour, cents: v.p1 + v.p2, ordre: 0, reel: true, libelle: v.libelle }));
   if(echeancier.immediat){
-    evenements.push({ jour: reg.aujourdhui, cents: echeancier.immediat.cents.p1 + echeancier.immediat.cents.p2, ordre: 0 });
+    evenements.push({ jour: reg.aujourdhui, cents: echeancier.immediat.cents.p1 + echeancier.immediat.cents.p2, ordre: 0, libelle: 'Dépôt demandé tout de suite' });
   }
-  echeancier.forEach(l => evenements.push({ jour: numeroJour(l.iso), cents: enCents(l.p1) + enCents(l.p2), ordre: 0, prevu: true }));
+  echeancier.forEach(l => evenements.push({ jour: numeroJour(l.iso), cents: enCents(l.p1) + enCents(l.p2), ordre: 0, prevu: true, libelle: 'Dépôt demandé à cette paie' }));
   evenements.sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
 
   const jours = echeancier.map(l => numeroJour(l.iso));
@@ -3046,21 +3060,101 @@ function projeterSoldeCompte(echeancier){
   }
   const projection = jours.map((jour, k) => {
     const fin = k + 1 < jours.length ? jours[k+1] : jour + 14;
-    let min = null, sorties = 0, entrees = 0, depots = 0;
+    const avant = courant;
+    let min = null, sorties = 0, entrees = 0, depots = 0, apresDepot = null;
+    const mouvements = [];
     while(i < evenements.length && evenements[i].jour < fin){
       const e = evenements[i];
+      /* Le premier retrait (ou le premier jour suivant) marque la fin des dépôts de la paie. */
+      if(apresDepot === null && (e.jour > jour || e.cents < 0)) apresDepot = courant;
       if(e.cents < 0) sorties -= e.cents;
       else if(e.prevu) depots += e.cents;
       else entrees += e.cents;
       courant += e.cents;
       if(min === null || courant < min) min = courant;
+      mouvements.push({ iso: isoDuNumero(e.jour), libelle: e.libelle, montant: enDollars(e.cents), solde: enDollars(courant) });
       i++;
     }
+    if(apresDepot === null) apresDepot = courant;
     if(min === null) min = courant;
-    return { solde: enDollars(courant), soldeMin: enDollars(min), sorties: enDollars(sorties), entrees: enDollars(entrees), depots: enDollars(depots) };
+    return { avant: enDollars(avant), apresDepot: enDollars(apresDepot), solde: enDollars(courant), soldeMin: enDollars(min),
+             sorties: enDollars(sorties), entrees: enDollars(entrees), depots: enDollars(depots), mouvements };
   });
   projection.creuxAvantPaie = creuxAvant === null ? null : enDollars(creuxAvant);
   return projection;
+}
+
+/* Solde théorique du compte aujourd'hui : solde de départ + dépôts et revenus enregistrés −
+   dépenses du compte, de la date du solde jusqu'à aujourd'hui inclus. C'est le chiffre qui
+   bouge à chaque dépôt ou paiement ; il doit correspondre au solde réel à la banque. */
+function soldeActuelCompte(registre){
+  if(!soldeCompte || !registre) return null;
+  const auj = registre.aujourdhui;
+  const entrees = registre.versements.filter(v => v.jour <= auj).reduce((t, v) => t + v.p1 + v.p2, 0);
+  const sorties = registre.sorties.filter(x => x.jour <= auj).reduce((t, x) => t + x.cents, 0);
+  const depart = enCents(soldeCompte.montant);
+  return { depart: enDollars(depart), entrees: enDollars(entrees), sorties: enDollars(sorties),
+           actuel: enDollars(depart + entrees - sorties), depuis: soldeCompte.depuis };
+}
+
+let editionSoldeOuverte = false;
+function afficherBlocSoldeCompte(registre){
+  const zone = document.getElementById('solde-compte-bloc');
+  if(!zone) return;
+  const dateLongue = iso => dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', { day:'numeric', month:'long', year:'numeric' });
+  const s = soldeActuelCompte(registre);
+  const formulaire = () => `
+    <div class="solde-bloc-form">
+      <div class="field"><label for="solde-depart-montant">Solde réel</label>
+        <input type="number" id="solde-depart-montant" step="0.01" inputmode="decimal" value="${soldeCompte ? soldeCompte.montant : ''}" placeholder="0,00 $"></div>
+      <div class="field"><label for="solde-depart-date">En date du</label>
+        <input type="date" id="solde-depart-date" value="${soldeCompte && soldeCompte.depuis ? soldeCompte.depuis : formaterDateISO(new Date())}"></div>
+      <div class="aide">Le solde de la banque au début de cette journée, avant ses dépôts et paiements. Tout ce qui est daté de ce jour ou après s'ajoute par-dessus. Les dépôts faits depuis doivent être enregistrés comme revenus « Compte conjoint ».</div>
+      <div class="actions">
+        <button class="btn-secondary" id="solde-depart-annuler">Annuler</button>
+        <button class="btn-add" id="solde-depart-enregistrer">Enregistrer</button>
+      </div>
+    </div>`;
+  if(!s){
+    zone.innerHTML = `<div class="solde-bloc">
+      <div class="solde-bloc-titre">Aucun solde de départ : entrez le solde réel du compte pour que les dépôts passés comptent et pour suivre le solde.</div>
+      ${editionSoldeOuverte ? formulaire() : `<button class="solde-bloc-lien" id="solde-depart-ouvrir">Entrer le solde du compte</button>`}
+    </div>`;
+  } else {
+    zone.innerHTML = `<div class="solde-bloc">
+      <div class="solde-bloc-haut">
+        <span class="solde-bloc-titre">Solde actuel du compte (théorique)</span>
+        <span class="solde-bloc-montant ${s.actuel < 0 ? 'negatif' : ''}">${formaterMonnaie(s.actuel)}</span>
+      </div>
+      <div class="solde-bloc-detail">${formaterMonnaie(s.depart)} le ${dateLongue(s.depuis)} + ${formaterMonnaie(s.entrees)} de dépôts et revenus − ${formaterMonnaie(s.sorties)} de paiements. Comparez avec le solde à la banque.</div>
+      ${editionSoldeOuverte ? formulaire() : `<button class="solde-bloc-lien" id="solde-depart-ouvrir">Modifier le solde de départ</button>`}
+    </div>`;
+  }
+  const ouvrir = document.getElementById('solde-depart-ouvrir');
+  if(ouvrir) ouvrir.addEventListener('click', () => { editionSoldeOuverte = true; afficherBlocSoldeCompte(registre); });
+  const annuler = document.getElementById('solde-depart-annuler');
+  if(annuler) annuler.addEventListener('click', () => { editionSoldeOuverte = false; afficherBlocSoldeCompte(registre); });
+  const enregistrer = document.getElementById('solde-depart-enregistrer');
+  if(enregistrer) enregistrer.addEventListener('click', actionVerrouillee(enregistrer, sauvegarderSoldeCompte));
+}
+
+async function sauvegarderSoldeCompte(){
+  const texte = document.getElementById('solde-depart-montant').value;
+  const montant = Math.round(Number(texte) * 100) / 100;
+  const depuis = document.getElementById('solde-depart-date').value;
+  if(texte === '' || !isFinite(montant)){ afficherAlerte('Entrez le solde du compte.'); return; }
+  if(!depuis){ afficherAlerte('Entrez la date du solde.'); return; }
+  if(depuis > formaterDateISO(new Date())){ afficherAlerte("La date du solde ne peut pas être dans le futur."); return; }
+  const { data, error } = await supabaseClient.from('compte_solde')
+    .upsert({ id: 1, montant, depuis, updated_at: new Date().toISOString() })
+    .select('id');
+  if(error || !data || !data.length){
+    signalerEchecEnregistrement('Le solde du compte', error || new Error('Aucune ligne enregistrée (règles RLS ?)'));
+    return;
+  }
+  soldeCompte = { montant, depuis };
+  editionSoldeOuverte = false;
+  rafraichirActif();
 }
 
 /* ===================== DÉTAIL D'UN DÉPÔT (vérification du calcul) =====================
@@ -3068,6 +3162,7 @@ function projeterSoldeCompte(echeancier){
    ligne du montant demandé : d'où vient chaque part, comment elle a été répartie, et le
    total qui doit correspondre exactement au montant de la ligne cliquée. */
 let dernierEcheancier = [];
+let dernieresProjections = {};
 
 function fermerDepotModal(){ document.getElementById('depot-modal').style.display = 'none'; }
 
@@ -3125,6 +3220,21 @@ function ouvrirDetailDepot(iso){
     ? ''
     : `<div class="depot-ligne-explication" style="margin-top:10px;color:var(--red);">⚠ Écart de ${formaterMonnaie(ecart)} entre le détail et le montant affiché.</div>`;
 
+  /* Le compte pendant la période : solde avant la paie, chaque mouvement, point le plus bas. */
+  const proj = dernieresProjections[iso];
+  let blocCompte = '';
+  if(proj){
+    const jourCourt = d => dateLocaleDepuisISO(d).toLocaleDateString('fr-CA', { day:'numeric', month:'short' });
+    blocCompte = `<div class="depot-section-titre">Compte conjoint jusqu'à la paie suivante</div>
+      <div class="depot-ligne"><div class="depot-ligne-haut"><span class="depot-ligne-nom">Solde avant la paie</span><span class="value">${formaterMonnaie(proj.avant)}</span></div></div>
+      ${proj.mouvements.map(m => `
+        <div class="depot-ligne"><div class="depot-ligne-haut">
+          <span class="depot-ligne-nom">${jourCourt(m.iso)} · ${echapperHTML(m.libelle || '')}</span>
+          <span class="value">${m.montant < 0 ? '−' : '+'} ${formaterMonnaie(Math.abs(m.montant))}</span>
+        </div><div class="depot-ligne-explication">Solde : ${formaterMonnaie(m.solde)}</div></div>`).join('')}
+      <div class="depot-ligne"><div class="depot-ligne-haut"><span class="depot-ligne-nom">Point le plus bas</span><span class="value ${proj.soldeMin < 0 ? 'solde-negatif' : ''}">${formaterMonnaie(proj.soldeMin)}</span></div></div>`;
+  }
+
   document.getElementById('depot-modal-content').innerHTML = `
     <div class="modal-header">
       <h3>Dépôt au compte conjoint<span class="modal-sous-titre">${dateLisible}</span></h3>
@@ -3141,6 +3251,7 @@ function ouvrirDetailDepot(iso){
         <span class="depot-ligne-montants">${montantHTML(paie.p1,'p1')}${montantHTML(paie.p2,'p2')}</span>
       </div>
       ${controle}
+      ${blocCompte}
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" id="depot-fermer-bas">Fermer</button>
@@ -3186,6 +3297,7 @@ function afficherEcheancierCompteConjoint(){
   /* Conservé pour la fenêtre de détail : elle réutilise exactement le calcul affiché plutôt
      que de le refaire, sinon les deux pourraient diverger sans qu'on s'en aperçoive. */
   dernierEcheancier = echeancierComplet || [];
+  afficherBlocSoldeCompte(echeancierComplet ? echeancierComplet.registre : null);
   if(!echeancierComplet || !echeancierComplet.length){
     conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
     afficherAlerteSoldeCompte(null, null);
@@ -3198,6 +3310,7 @@ function afficherEcheancierCompteConjoint(){
   const projection = projeterSoldeCompte(echeancierComplet);
   const projParIso = {};
   if(projection) echeancierComplet.forEach((l,i)=>{ projParIso[l.iso] = projection[i]; });
+  dernieresProjections = projParIso;
   afficherAlerteSoldeCompte(projection ? echeancierComplet.map((l,i)=>({ iso:l.iso, date:l.date, ...projection[i] })) : null, echeancierComplet, projection);
 
   /* Le contenu de l'échéancier suit le type de période choisi (Jour/Semaine/Paie/Mois/
@@ -3251,13 +3364,12 @@ function afficherEcheancierCompteConjoint(){
     /* C'est le CREUX de la période qui décide de l'alerte, pas le solde de fin : un revenu
        arrivant en fin de période peut ramener le solde dans le vert après un découvert. */
     const enManque = p.soldeMin < 0;
-    const mouvements = [];
-    if(p.depots) mouvements.push(`+ ${formaterMonnaie(p.depots)} de dépôts demandés`);
-    if(p.entrees) mouvements.push(`+ ${formaterMonnaie(p.entrees)} de dépôts et revenus enregistrés`);
-    if(p.sorties) mouvements.push(`− ${formaterMonnaie(p.sorties)} de dépenses`);
-    const titre = (mouvements.length ? mouvements.join(', ') + ' d\'ici la paie suivante. ' : "Aucun mouvement d'ici la paie suivante. ")
-      + (enManque ? `Le compte descend à ${formaterMonnaie(p.soldeMin)}.` : `Creux de la période : ${formaterMonnaie(p.soldeMin)}.`);
-    return `<span class="col-nombre value ${enManque ? 'solde-negatif' : ''}" title="${echapperHTML(titre)}">${enManque ? '⚠ ' : ''}${formaterMonnaie(p.solde)}</span>`;
+    const titre = `Après le dépôt : ${formaterMonnaie(p.apresDepot)}. Paiements d'ici la paie suivante : ${formaterMonnaie(p.sorties)}. `
+      + (enManque ? `Le compte descend à ${formaterMonnaie(p.soldeMin)}.` : `Point le plus bas : ${formaterMonnaie(p.soldeMin)}.`);
+    /* On affiche le solde juste après le dépôt de la paie : c'est l'argent disponible pour
+       la période. Le solde de fin de période est souvent 0 $ quand les dépôts couvrent
+       exactement les paiements, ce qui laissait croire que le compteur ne bougeait pas. */
+    return `<span class="col-nombre value ${enManque ? 'solde-negatif' : ''}" title="${echapperHTML(titre)}">${enManque ? '⚠ ' : ''}${formaterMonnaie(p.apresDepot)}</span>`;
   };
 
   conteneur.innerHTML = `
@@ -3277,7 +3389,8 @@ function afficherEcheancierCompteConjoint(){
         </div>
       `).join('')}
     </div>
-  ` + (afficherVoirPlus ? `
+  ` + (avecSolde ? `<div class="echeancier-legende">Solde : ce que le compte contient juste après le dépôt de la paie. Touchez une paie pour voir les paiements de la période et le point le plus bas.</div>` : '')
+    + (afficherVoirPlus ? `
     <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir plus (le reste de l'année)</div>
   ` : (afficherVoirMoins ? `
     <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-moins">Voir moins</div>
@@ -3318,7 +3431,10 @@ function afficherAlerteSoldeCompte(projection, echeancier, projectionBrute){
       messages.push(`<div class="solde-alerte manque">Le compte descend à ${formaterMonnaie(premierManque.soldeMin)} dans la période du ${dateLongue(premierManque.iso)}, même en déposant les montants demandés. Vérifiez le solde de départ et les dépôts enregistrés.</div>`);
     } else if(!immediat){
       const creux = projection.reduce((min, p) => p.soldeMin < min.soldeMin ? p : min, projection[0]);
-      messages.push(`<div class="solde-alerte ok">En déposant les montants demandés, le compte couvre toutes les dépenses prévues. Point le plus bas : ${formaterMonnaie(creux.soldeMin)} autour du ${dateLongue(creux.iso)}.</div>`);
+      const precision = creux.soldeMin < 0.005
+        ? ' Un point bas à 0 $ est normal : les dépôts couvrent exactement les paiements, sans coussin.'
+        : '';
+      messages.push(`<div class="solde-alerte ok">En déposant les montants demandés, le compte couvre toutes les dépenses prévues. Point le plus bas : ${formaterMonnaie(creux.soldeMin)} autour du ${dateLongue(creux.iso)}.${precision}</div>`);
     }
   }
 
