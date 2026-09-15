@@ -676,6 +676,10 @@
   .settings-row input[type="color"]{width:42px;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:var(--surface);}
   .theme-toggle{display:flex;align-items:center;gap:10px;}
   .toggle-field{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .heure-select{display:flex;align-items:center;gap:8px;}
+  .heure-select select{flex:1;min-width:0;}
+  .heure-sep{font-size:14px;color:var(--text-secondary);flex:0 0 auto;}
+
   .toggle-field-label{font-size:14px;display:inline-flex;align-items:center;gap:7px;}
   .switch{position:relative;display:inline-flex;width:48px;height:28px;cursor:pointer;flex-shrink:0;}
   .switch input{position:absolute;opacity:0;width:0;height:0;}
@@ -1404,8 +1408,12 @@
               <input type="number" id="notif-jours" data-num="entier" min="1" step="1" value="1" inputmode="numeric" autocomplete="off">
             </div>
             <div class="field">
-              <label>À quelle heure</label>
-              <input type="time" id="notif-heure" value="08:00" autocomplete="off">
+              <label for="notif-heure-h">À quelle heure</label>
+              <div class="heure-select">
+                <select id="notif-heure-h" aria-label="Heure"></select>
+                <span class="heure-sep">h</span>
+                <select id="notif-heure-m" aria-label="Minutes"></select>
+              </div>
             </div>
           </div>
           <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-statut"></p>
@@ -5537,13 +5545,46 @@ function ecrireJoursOffsetFormulaireNotif(joursOffset){
   document.getElementById('notif-jours-field').style.display = quand === 'le-jour' ? 'none' : '';
 }
 
+/* Sélecteur d'heure maison, deux listes déroulantes, plutôt qu'un <input type="time"> : la
+   boîte de dialogue « horloge » d'Android se dessinait de travers, ses boutons finissant
+   hors de l'écran, et elle est rendue par le système — aucun CSS ne peut la replacer. Deux
+   <select> s'ouvrent en feuille native, toujours bien positionnée, et produisent exactement
+   la même valeur "HH:MM" que le champ d'avant. Rien à changer en base. */
+(function peuplerSelecteurHeure(){
+  const selH = document.getElementById('notif-heure-h');
+  const selM = document.getElementById('notif-heure-m');
+  if(!selH || !selM) return;
+  let h = '', m = '';
+  for(let i=0; i<24; i++){ const v = String(i).padStart(2,'0'); h += `<option value="${v}">${v}</option>`; }
+  for(let i=0; i<60; i+=5){ const v = String(i).padStart(2,'0'); m += `<option value="${v}">${v}</option>`; }
+  selH.innerHTML = h;
+  selM.innerHTML = m;
+})();
+
+function lireHeureNotif(){
+  const h = document.getElementById('notif-heure-h').value || '08';
+  const m = document.getElementById('notif-heure-m').value || '00';
+  return `${h}:${m}`;
+}
+
+function ecrireHeureNotif(valeur){
+  const [hh, mm] = String(valeur || '08:00').split(':').map(n => parseInt(n, 10));
+  /* Les minutes vont de 5 en 5. Une valeur enregistrée hors de ces crans (héritée de l'ancien
+     champ horloge, qui permettait la minute près) est ramenée au cran le plus proche : sans
+     ça le <select> resterait sur sa première option et l'heure changerait toute seule au
+     prochain enregistrement. */
+  const m = Math.min(55, Math.round((Number.isFinite(mm) ? mm : 0) / 5) * 5);
+  document.getElementById('notif-heure-h').value = String(Number.isFinite(hh) ? hh : 8).padStart(2,'0');
+  document.getElementById('notif-heure-m').value = String(m).padStart(2,'0');
+}
+
 async function chargerPreferencesNotification(){
   if(!currentSession) return;
   const { data, error } = await supabaseClient.from('notification_prefs').select('*').eq('user_id', currentSession.user.id).maybeSingle();
   if(error){ console.warn("Impossible de charger les préférences de notification.", error); return; }
   document.getElementById('notif-toggle').checked = !!(data && data.enabled);
   ecrireJoursOffsetFormulaireNotif(data ? data.jours_offset : 0);
-  document.getElementById('notif-heure').value = data ? data.heure : '08:00';
+  ecrireHeureNotif(data ? data.heure : '08:00');
   document.getElementById('notif-reglages').style.display = (data && data.enabled) ? '' : 'none';
   document.getElementById('notif-activite-toggle').checked = !!(data && data.notif_activite);
 }
@@ -5616,7 +5657,7 @@ function lirePreferencesNotificationCompletes(){
     personne: currentUser,
     enabled: document.getElementById('notif-toggle').checked,
     jours_offset: lireJoursOffsetFormulaireNotif(),
-    heure: document.getElementById('notif-heure').value || '08:00',
+    heure: lireHeureNotif(),
     notif_activite: document.getElementById('notif-activite-toggle').checked,
     updated_at: new Date().toISOString()
   };
@@ -5651,9 +5692,9 @@ document.getElementById('notif-quand').addEventListener('change', function(){
 document.getElementById('notif-jours').addEventListener('change', ()=>{
   if(document.getElementById('notif-toggle').checked) sauvegarderPreferencesNotification(true);
 });
-document.getElementById('notif-heure').addEventListener('change', ()=>{
+['notif-heure-h','notif-heure-m'].forEach(id => document.getElementById(id).addEventListener('change', ()=>{
   if(document.getElementById('notif-toggle').checked) sauvegarderPreferencesNotification(true);
-});
+}));
 
 function afficherStatutNotifActivite(message, estErreur){
   const el = document.getElementById('notif-activite-statut');
