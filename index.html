@@ -2175,7 +2175,9 @@ async function chargerDepensesSupabase() {
     recurrenceId: e.RecurrenceId || null,
     estCompte: e.EstCompte === true,
     estRevenu: e.EstRevenu === true,
-    pourcentageP1: e.PourcentageP1 != null ? Number(e.PourcentageP1) : 50
+    pourcentageP1: e.PourcentageP1 != null ? Number(e.PourcentageP1) : 50,
+    /* Date d'ajout (début de la répartition sur les paies), en date locale. */
+    ajout: e.created_at ? formaterDateISO(new Date(e.created_at)) : null
   }));
   /* Migration ponctuelle des anciennes valeurs 'p1'/'p2' de la colonne Qui vers les vrais
      prénoms. On ne l'exécute que si les données qu'on vient de charger en contiennent
@@ -2426,6 +2428,7 @@ async function chargerRecurrencesSupabase(){
         racineId: r.RacineId || r.id,
         pourcentageP1: r.PourcentageP1 != null ? Number(r.PourcentageP1) : 50,
         actif: r.Actif !== false,
+        ajout: r.created_at ? formaterDateISO(new Date(r.created_at)) : null,
         /* Dates d'occurrences individuelles explicitement supprimées ("cette dépense
            seulement") : à ne jamais régénérer, même si leur date n'a plus de dépense liée. */
         datesExclues: r.DatesExclues ? String(r.DatesExclues).split(',').map(s=>s.trim()).filter(Boolean) : []
@@ -2457,7 +2460,6 @@ function occurrencesParAnnee(rec){
   return 12 / intervalle; /* mois */
 }
 function multiplicateurMensuel(rec){ return occurrencesParAnnee(rec) / 12; }
-function multiplicateurAnnuel(rec){ return occurrencesParAnnee(rec); }
 
 const NOMS_JOURS_COURTS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const NOMS_JOURS_LETTRE = ['D','L','M','M','J','V','S'];
@@ -2648,19 +2650,33 @@ function formaterDateISO(d){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-/* ===================== ÉCHÉANCIER RÉEL DES DÉPÔTS AU COMPTE CONJOINT ===================== */
-/* Remplace l'ancien calcul par moyenne annuelle / 26. Ici, chaque dépense/récurrence "compte"
-   a une date d'échéance (= date où l'argent doit être dans le compte), et son montant se
-   répartit également sur les vraies paies (aux 2 semaines) qui la précèdent :
-     - Dépense/revenu unique : sur les paies entre aujourd'hui et sa date d'échéance (incluses).
-     - Récurrence (chaque occurrence) : sur les paies entre l'occurrence précédente (exclue)
-       et celle-ci (incluse) — sauf la toute première occurrence d'une récurrence sans
-       précédente, qui se comporte comme un item unique (part d'aujourd'hui).
-   Un revenu (EstRevenu) fonctionne pareil mais soustrait au lieu d'additionner. Si la fenêtre
-   d'une part est déjà entièrement passée (ou trop étroite pour contenir une paie), cette part
-   est automatiquement reportée sur la toute première paie à venir affichée — c'est ainsi que
-   se gère un écart de paiement, sans concept séparé : un dépôt réel (ou un ajustement) est
-   simplement une dépense/revenu "compte" daté au bon jour avec le bon %. */
+/* ===================== DÉPÔTS AU COMPTE CONJOINT : REGISTRE PAR PERSONNE =====================
+   But : dire combien Gabriel et Mélissa doivent déposer à chaque paie pour que le compte ne
+   soit JAMAIS en souffrance, avec des montants aussi réguliers que possible.
+
+   1. Parts fixes. Chaque dépense « compte » est séparée en deux (selon son %) puis répartie
+      également sur les paies de sa fenêtre, une fois pour toutes :
+        - dépense ponctuelle : de sa date d'ajout (created_at) jusqu'à son échéance ;
+        - occurrence d'une série : du lendemain de l'occurrence précédente jusqu'à son échéance
+          (la première part de la date de création de la série).
+      Une paie qui tombe le jour même de l'échéance compte. Une fenêtre sans aucune paie (ex.
+      paiement hebdomadaire) est assignée à la dernière paie avant l'échéance ; si cette paie
+      est antérieure à l'ajout, la part est en retard dès sa création.
+   2. Registre. Pour chaque personne : ce qu'elle doit jusqu'à une paie (ses parts) moins ce
+      qu'elle a versé (dépôts et revenus « compte », selon leur %). Le résultat est le montant
+      à déposer ; un surplus réduit les paies suivantes, dans l'ordre ; un retard s'ajoute à
+      la prochaine paie.
+   3. Urgence. Si une personne est en retard et qu'une dépense du compte passe AVANT la
+      prochaine paie, le retard est demandé tout de suite (sinon le compte serait à découvert).
+   4. Départ. Le registre commence à la date du solde réel (table compte_solde). Ce qui est dû
+      avant cette date est considéré réglé ; l'écart entre le solde réel et ce qui aurait dû
+      être mis de côté pour les dépenses à venir est ajouté (ou crédité) à chacun selon sa
+      part. Sans solde enregistré, le registre part d'aujourd'hui, sans mémoire des dépôts.
+   5. Compteur. Le solde projeté part du solde réel, ajoute les dépôts enregistrés ET les
+      dépôts demandés, retire les dépenses : si les calculs sont bons, il ne descend jamais
+      sous zéro.
+   Les dépenses payées avec l'option Gabriel ou Mélissa (pas « Compte conjoint ») ne passent
+   pas par le compte : elles n'entrent pas dans ces calculs. */
 
 function debutJour(date){ const d = new Date(date); d.setHours(0,0,0,0); return d; }
 function dateLocaleDepuisISO(dateStr){ return new Date(dateStr+"T00:00:00"); }
@@ -2675,36 +2691,6 @@ function joursEntreDates(a, b){
 function indexPaiePourDate(ancrage, date){ return Math.floor(joursEntreDates(ancrage, date) / 14); }
 function paieDate(ancrage, n){ return ajouterJours(ancrage, n*14); }
 
-/* Liste triée de toutes les dates de paie tombant dans [debut, finInclusive] (bornes incluses). */
-function paiesDansIntervalle(ancrage, debut, finInclusive){
-  const res = [];
-  if(finInclusive < debut) return res;
-  let n = indexPaiePourDate(ancrage, debut);
-  let d = paieDate(ancrage, n);
-  while(d < debut){ n++; d = paieDate(ancrage, n); }
-  while(d <= finInclusive){ res.push(new Date(d)); n++; d = paieDate(ancrage, n); }
-  return res;
-}
-
-/* Les nbPaies prochaines paies à partir d'aujourd'hui (aujourd'hui inclus si c'est une paie). */
-function prochainesPaies(ancrage, nbPaies){
-  const aujourdhui = debutJour(new Date());
-  const paies = [];
-  let n = indexPaiePourDate(ancrage, aujourdhui);
-  let d = paieDate(ancrage, n);
-  while(d < aujourdhui){ n++; d = paieDate(ancrage, n); }
-  for(let i=0;i<nbPaies;i++){ paies.push(new Date(d)); n++; d = paieDate(ancrage, n); }
-  return paies;
-}
-
-/* Première date de paie (sur la grille ancrée) qui tombe sur ou après `date`. */
-function premierePaieDepuis(ancrage, date){
-  let n = indexPaiePourDate(ancrage, date);
-  let d = paieDate(ancrage, n);
-  while(d < date){ n++; d = paieDate(ancrage, n); }
-  return d;
-}
-
 /* Vrai si `date` tombe sur une paie : la grille des paies est ancrée et régulière (aux 2
    semaines), donc il suffit de compter les jours depuis l'ancrage. Le double modulo gère les
    dates ANTÉRIEURES à l'ancrage, où le reste serait négatif. */
@@ -2716,279 +2702,292 @@ function estJourDePaie(date){
 
 const NB_PAIES_ECHEANCIER = 8; /* ~3-4 mois, aux 2 semaines */
 
-/* Calcule, pour les prochaines paies, le vrai montant net dû par p1 et p2. Retourne null si
-   le calendrier de paie n'est pas encore configuré.
+/* Jours entiers, sans heure ni fuseau : un numéro par date, pour compter sans surprise
+   (changements d'heure compris). Les montants du registre sont en CENTS entiers pour que
+   les additions et les reports ne dérivent jamais d'un sou. */
+function numeroJour(iso){
+  const [a, m, j] = String(iso).slice(0,10).split('-').map(Number);
+  return Math.round(Date.UTC(a, m-1, j) / 86400000);
+}
+function isoDuNumero(n){
+  const d = new Date(n * 86400000);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+/* Première paie à la date n ou après. */
+function premierePaieNum(ancre, n){
+  const r = (((n - ancre) % 14) + 14) % 14;
+  return r === 0 ? n : n + (14 - r);
+}
+/* Dernière paie à la date n ou avant. */
+function dernierePaieNum(ancre, n){
+  const r = (((n - ancre) % 14) + 14) % 14;
+  return n - r;
+}
+function nombrePaiesEntre(ancre, a, b){
+  if(b < a) return 0;
+  const p = premierePaieNum(ancre, a);
+  return p > b ? 0 : Math.floor((b - p) / 14) + 1;
+}
+const enCents = m => Math.round(Number(m || 0) * 100);
+const enDollars = c => c / 100;
+function dateCourteNum(n){
+  return dateLocaleDepuisISO(isoDuNumero(n)).toLocaleDateString('fr-CA', { day:'numeric', month:'short' });
+}
+/* Découpe `cents` en n morceaux entiers qui diffèrent d'au plus 1 cent. Les cents restants
+   vont aux premières paies : l'argent est légèrement en avance, jamais en retard. */
+function morceauxEgaux(cents, n){
+  const base = Math.floor(cents / n);
+  const reste = cents - base * n;
+  return Array.from({ length:n }, (_, i) => base + (i < reste ? 1 : 0));
+}
+function partagerCents(cents, pourcentageP1){
+  const pct = pourcentageP1 != null ? pourcentageP1 : 50;
+  const p1 = Math.round(cents * pct / 100);
+  return { p1, p2: cents - p1, pct };
+}
 
-   Deux comportements bien distincts :
-   - Une DÉPENSE (charge à venir, EstRevenu=false) doit être ÉPARGNÉE À L'AVANCE : son montant
-     est étalé également sur toutes les paies entre l'occurrence précédente (ou aujourd'hui,
-     si c'est la toute première occurrence) et son échéance.
-   - Un REVENU (dépôt/argent qui entre, EstRevenu=true) N'EST JAMAIS ÉTALÉ : il n'existe pas
-     avant sa date, donc son montant plein s'applique d'un coup à la toute première paie sur
-     ou après cette date (pas de division entre plusieurs paies).
-   Dans les deux cas, si la paie visée par une part est déjà passée (la personne n'a pas
-   déposé/reçu ce qu'il fallait à temps), cette part est automatiquement reportée en bloc sur
-   la toute prochaine paie à venir (report des écarts, positif ou négatif). */
+/* Construit le registre : toutes les parts dues, tous les versements, toutes les sorties
+   du compte, depuis la date de départ. `finCalcul` = dernier jour de paie à couvrir. */
+function construireRegistreCompte(finCalcul){
+  const ancre = numeroJour(paieAncrage);
+  const aujourdhui = numeroJour(formaterDateISO(new Date()));
+  const debut = soldeCompte && soldeCompte.depuis ? Math.min(numeroJour(soldeCompte.depuis), aujourdhui) : aujourdhui;
+  const parts = [];
+  const versements = [];
+  const sorties = [];
+  let sansDateAjout = 0;
+
+  function ajouterDepense({ cle, libelle, categorie, cents, pourcentageP1, echeance, debutFenetre, texteDebut, ajout }){
+    if(echeance < debut) return; /* déjà réglée avant le départ du registre */
+    sorties.push({ jour: echeance, cents, libelle });
+    const { p1, p2, pct } = partagerCents(cents, pourcentageP1);
+    const base = { cle, libelle, categorie, pourcentageP1: pct, nature: 'depense' };
+    const echeanceTxt = dateCourteNum(echeance);
+    const n = nombrePaiesEntre(ancre, debutFenetre, echeance);
+    if(n === 0){
+      /* Aucune paie dans la fenêtre : l'argent doit être là à la dernière paie avant
+         l'échéance. Si cette paie précède l'ajout, la part est en retard dès le départ. */
+      let jour = dernierePaieNum(ancre, echeance);
+      const enRetard = jour < ajout;
+      if(jour < debut && ajout >= debut) jour = debut;
+      parts.push({ ...base, jour, p1, p2,
+        explication: enRetard
+          ? `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, ajouté après la dernière paie qui le précède : à déposer dès que possible.`
+          : `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, aucune paie depuis ${texteDebut} : mis de côté à la paie du ${dateCourteNum(jour)}.` });
+      return;
+    }
+    const m1 = morceauxEgaux(p1, n), m2 = morceauxEgaux(p2, n);
+    const explication = `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, réparti sur ${n} paie${n>1?'s':''} depuis ${texteDebut} : ${formaterMonnaie(enDollars(cents)/n)} par paie.`;
+    let jour = premierePaieNum(ancre, debutFenetre);
+    for(let i = 0; i < n; i++, jour += 14){
+      parts.push({ ...base, jour, p1: m1[i], p2: m2[i], explication });
+    }
+  }
+  function ajouterVersement({ libelle, categorie, cents, pourcentageP1, jour }){
+    if(jour < debut) return;
+    const { p1, p2, pct } = partagerCents(cents, pourcentageP1);
+    versements.push({ jour, p1, p2, libelle, categorie, pourcentageP1: pct,
+      explication: `${jour > aujourdhui ? 'Prévu' : 'Reçu'} le ${dateCourteNum(jour)}.` });
+  }
+
+  /* Dépenses et dépôts ponctuels */
+  depensesReelles
+    .filter(e => e.type === 'conjointe' && e.estCompte && !e.recurrenceId)
+    .forEach(e => {
+      const jour = numeroJour(e.date);
+      const cents = enCents(e.amount);
+      const libelle = e.note || e.category;
+      if(e.estRevenu){
+        ajouterVersement({ libelle, categorie: e.category, cents, pourcentageP1: e.pourcentageP1, jour });
+        return;
+      }
+      if(!e.ajout && jour >= debut) sansDateAjout++;
+      const ajout = e.ajout ? numeroJour(e.ajout) : debut;
+      ajouterDepense({ cle: `d:${e.id}`, libelle, categorie: e.category, cents, pourcentageP1: e.pourcentageP1,
+        echeance: jour, debutFenetre: ajout, ajout, texteDebut: `l'ajout le ${dateCourteNum(ajout)}` });
+    });
+
+  /* Séries : une « famille » regroupe les segments issus d'une même série (scissions). */
+  const familles = new Map();
+  recurrences.filter(r => r.actif && r.type === 'conjointe').forEach(r => {
+    const cle = r.racineId || r.id;
+    if(!familles.has(cle)) familles.set(cle, []);
+    familles.get(cle).push(r);
+  });
+  familles.forEach((segments, cleFamille) => {
+    const occurrences = [];
+    segments.forEach(rec => {
+      const limite = dateLocaleDepuisISO(isoDuNumero(finCalcul + 366 * Math.max(1, rec.intervalle || 1)));
+      occurrencesEffectives(rec, limite).forEach(o => { if(o.estCompte) occurrences.push(o); });
+    });
+    if(!occurrences.length) return;
+    occurrences.sort((a, b) => a.date.localeCompare(b.date));
+    const ajouts = segments.map(r => r.ajout).filter(Boolean).sort();
+    const ajoutFamille = ajouts.length ? numeroJour(ajouts[0]) : debut;
+    if(!ajouts.length && occurrences.some(o => !o.estRevenu && numeroJour(o.date) >= debut)) sansDateAjout++;
+
+    let precedente = null;
+    occurrences.forEach(o => {
+      const jour = numeroJour(o.date);
+      const cents = enCents(o.amount);
+      const libelle = o.note || o.category;
+      if(o.estRevenu){
+        ajouterVersement({ libelle, categorie: o.category, cents, pourcentageP1: o.pourcentageP1, jour });
+        return;
+      }
+      const apresPrecedente = precedente != null ? precedente + 1 : ajoutFamille;
+      const debutFenetre = Math.max(apresPrecedente, ajoutFamille);
+      const texteDebut = precedente != null && apresPrecedente >= ajoutFamille
+        ? `l'occurrence du ${dateCourteNum(precedente)}`
+        : `la création de la série le ${dateCourteNum(ajoutFamille)}`;
+      ajouterDepense({ cle: `r:${cleFamille}`, libelle, categorie: o.category, cents, pourcentageP1: o.pourcentageP1,
+        echeance: jour, debutFenetre, ajout: ajoutFamille, texteDebut });
+      precedente = jour;
+    });
+  });
+
+  /* Départ : écart entre le solde réel et ce qui aurait dû être mis de côté. */
+  if(soldeCompte){
+    let att1 = 0, att2 = 0;
+    parts.forEach(p => { if(p.jour < debut){ att1 += p.p1; att2 += p.p2; } });
+    const reel = enCents(soldeCompte.montant);
+    const attendu = att1 + att2;
+    const surplus = reel - attendu;
+    if(surplus !== 0){
+      const s1 = attendu > 0 ? Math.round(surplus * att1 / attendu) : Math.round(surplus / 2);
+      parts.push({
+        cle: 'ecart-depart', nature: 'ajustement', jour: debut,
+        p1: -s1, p2: -(surplus - s1),
+        libelle: surplus > 0 ? 'Surplus au départ du registre' : 'Manque au départ du registre',
+        explication: `Le ${dateCourteNum(debut)}, le compte contenait ${formaterMonnaie(enDollars(reel))} alors que ${formaterMonnaie(enDollars(attendu))} auraient dû y être mis de côté pour les dépenses à venir : ${surplus > 0 ? 'surplus' : 'manque'} de ${formaterMonnaie(enDollars(Math.abs(surplus)))}, partagé selon la part de chacun.`
+      });
+    }
+  }
+
+  return {
+    ancre, aujourdhui, debut, sansDateAjout,
+    parts: parts.filter(p => p.jour >= debut),
+    versements, sorties
+  };
+}
+
+/* Montant à déposer par Gabriel (p1) et Mélissa (p2) aux `nbPaies` prochaines paies.
+   Chaque ligne : { date, iso, p1, p2, lignes } (en dollars). Le tableau porte aussi
+   `immediat` (dépôt à faire avant la prochaine paie, ou null) et `registre`. */
 function calculerEcheancierCompte(nbPaies){
   nbPaies = nbPaies || NB_PAIES_ECHEANCIER;
   if(!paieAncrage) return null;
-  const ancrage = debutJour(dateLocaleDepuisISO(paieAncrage));
-  const aujourdhui = debutJour(new Date());
-  const paies = prochainesPaies(ancrage, nbPaies);
-  if(!paies.length) return null;
-  const derniere = paies[paies.length-1];
-  const totaux = {};
-  /* Trace de vérification : pour chaque paie, la liste des contributions qui composent le
-     montant affiché. Purement descriptif — aucune de ces lignes n'influence le calcul, elles
-     sont seulement enregistrées au passage pour pouvoir expliquer le résultat (voir
-     ouvrirDetailDepot). La somme des lignes d'une paie doit toujours redonner exactement le
-     montant affiché pour cette paie : c'est ce qui permet de valider les calculs. */
-  const lignes = {};
-  paies.forEach(p => {
-    const iso = formaterDateISO(p);
-    totaux[iso] = {p1:0, p2:0};
-    lignes[iso] = [];
-  });
-  const premierePaieIso = formaterDateISO(paies[0]);
+  const ancre = numeroJour(paieAncrage);
+  const aujourdhui = numeroJour(formaterDateISO(new Date()));
+  const premiere = premierePaieNum(ancre, aujourdhui);
+  const paies = Array.from({ length: nbPaies }, (_, k) => premiere + 14*k);
+  const reg = construireRegistreCompte(paies[paies.length-1]);
 
-  function pct(pourcentageP1){ return (pourcentageP1 != null ? pourcentageP1 : 50) / 100; }
+  const somme = (liste, garder) => liste.reduce((t, x) => {
+    if(garder(x)){ t.p1 += x.p1; t.p2 += x.p2; }
+    return t;
+  }, { p1: 0, p2: 0 });
 
-  /* Applique une contribution à une paie ET l'enregistre dans la trace.
-     `signe` vaut +1 pour une dépense à provisionner, -1 pour un revenu qui réduit le dépôt. */
-  function contribuer(iso, signe, montant, p1Pct, info){
-    if(!totaux[iso]) return;
-    const partP1 = signe*montant*p1Pct;
-    const partP2 = signe*montant*(1-p1Pct);
-    totaux[iso].p1 += partP1;
-    totaux[iso].p2 += partP2;
-    lignes[iso].push({
-      libelle: info.libelle,
-      categorie: info.categorie,
-      explication: info.explication,
-      nature: info.nature,        /* 'depense' | 'revenu' | 'ajustement' */
-      rattrapage: !!info.rattrapage,
-      pourcentageP1: Math.round(p1Pct*1000)/10,
-      p1: partP1,
-      p2: partP2
-    });
-  }
-
-  function reporterSurPremierePaie(signe, montant, p1Pct, info){
-    contribuer(premierePaieIso, signe, montant, p1Pct, Object.assign({}, info, { rattrapage:true }));
-  }
-
-  /* DÉPENSE : étalée entre `previousDate` (ou aujourd'hui si null) et `dueDate`. */
-  function ajouterDepense(dueDate, montant, pourcentageP1, previousDate, inclusifFin, info){
-    const p1Pct = pct(pourcentageP1);
-    const debut = previousDate || aujourdhui;
-    const finBorne = inclusifFin ? dueDate : ajouterJours(dueDate, -1);
-    const echeance = formaterDateISO(dueDate);
-    if(finBorne < debut){
-      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature: montant < 0 ? 'ajustement' : 'depense',
-        explication:`Échéance du ${echeance} déjà dépassée : le montant complet de ${formaterMonnaie(montant)} est rattrapé sur cette paie.` }));
-      return;
-    }
-    const slots = paiesDansIntervalle(ancrage, debut, finBorne);
-    if(!slots.length){
-      reporterSurPremierePaie(1, montant, p1Pct, Object.assign({}, info, { nature: montant < 0 ? 'ajustement' : 'depense',
-        explication:`Aucune paie ne tombe avant l'échéance du ${echeance} : les ${formaterMonnaie(montant)} sont mis en entier sur cette paie.` }));
-      return;
-    }
-    const part = montant / slots.length;
-    const nature = montant < 0 ? 'ajustement' : 'depense';
-    const base = montant < 0
-      ? `${formaterMonnaie(-montant)} qui n'est plus à provisionner d'ici le ${echeance}, retiré sur ${slots.length} paie${slots.length>1?'s':''} = ${formaterMonnaie(-part)} de moins par paie.`
-      : `${formaterMonnaie(montant)} à provisionner d'ici le ${echeance}, réparti sur ${slots.length} paie${slots.length>1?'s':''} = ${formaterMonnaie(part)} par paie.`;
-    slots.forEach(s=>{
-      const sIso = formaterDateISO(s);
-      if(s < aujourdhui){
-        /* paie déjà passée : report automatique */
-        reporterSurPremierePaie(1, part, p1Pct, Object.assign({}, info, { nature,
-          explication:`${base} La part du ${sIso} est déjà passée, elle est rattrapée ici.` }));
-      } else if(totaux[sIso]){
-        contribuer(sIso, 1, part, p1Pct, Object.assign({}, info, { nature, explication: base }));
-      }
-      /* sinon : paie à venir mais au-delà de l'horizon affiché -> ignorée pour l'instant. */
-    });
-  }
-
-  /* REVENU : jamais étalé. Montant plein sur la première paie sur/après `dateArrivee`. */
-  function ajouterRevenu(dateArrivee, montant, pourcentageP1, info){
-    const p1Pct = pct(pourcentageP1);
-    const cible = premierePaieDepuis(ancrage, dateArrivee);
-    const arrivee = formaterDateISO(dateArrivee);
-    if(cible < aujourdhui){
-      /* paie visée déjà passée : report automatique */
-      reporterSurPremierePaie(-1, montant, p1Pct, Object.assign({}, info, { nature:'revenu',
-        explication:`Revenu du ${arrivee} dont la paie visée est déjà passée : il est déduit ici à la place.` }));
-      return;
-    }
-    const cIso = formaterDateISO(cible);
-    if(totaux[cIso]){
-      contribuer(cIso, -1, montant, p1Pct, Object.assign({}, info, { nature:'revenu',
-        explication:`Revenu de ${formaterMonnaie(montant)} arrivant le ${arrivee} : jamais étalé, il est déduit en entier de la première paie qui suit.` }));
-    }
-    /* sinon : paie visée au-delà de l'horizon affiché -> ignorée pour l'instant. */
-  }
-
-  /* 1) Dépenses/revenus "compte" ponctuels (sans récurrence) */
-  depenses.filter(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId).forEach(e=>{
-    const due = debutJour(dateLocaleDepuisISO(e.date));
-    const info = { libelle: e.note || e.category, categorie: e.category, source:'ponctuelle' };
-    if(e.estRevenu) ajouterRevenu(due, e.amount, e.pourcentageP1, info);
-    else ajouterDepense(due, e.amount, e.pourcentageP1, null, true, info);
-  });
-
-  /* 2) Récurrences "compte" actives */
-  const aujourdhuiIso = formaterDateISO(aujourdhui);
-  /* Une occurrence modifiée individuellement peut avoir changé de nature (dépense/revenu)
-     ou ne plus passer par le compte : on la traite alors comme un item ponctuel, et
-     seulement si sa paie visée n'est pas encore passée (comme les revenus récurrents). */
-  function ajouterOccurrenceIsolee(o, info){
-    if(!o.estCompte) return;
-    const due = debutJour(dateLocaleDepuisISO(o.date));
-    if(premierePaieDepuis(ancrage, due) < aujourdhui) return; /* déjà réglé */
-    if(o.estRevenu) ajouterRevenu(due, o.amount, o.pourcentageP1, info);
-    else ajouterDepense(due, o.amount, o.pourcentageP1, null, true, info);
-  }
-
-  recurrences.filter(r=>r.type==='conjointe' && r.estCompte && r.actif).forEach(rec=>{
-    const libelle = rec.nom || rec.categorie;
-    const categorie = rec.categorie;
-    if(rec.estRevenu){
-      /* Chaque occurrence est indépendante (pas de fenêtre à fermer) : seules celles dont
-         la première paie visée n'est pas encore passée sont encore pertinentes. Les
-         occurrences plus anciennes sont considérées déjà réglées, pour ne jamais ré-empiler
-         de l'historique sur la prochaine paie. */
-      occurrencesEffectives(rec, derniere).forEach(o=>{
-        ajouterOccurrenceIsolee(o, { libelle: o.note || libelle, categorie: o.category, source:'recurrence' });
+  /* 1) Dépôt immédiat. Un retard est normalement reporté à la prochaine paie. On ne le
+     demande tout de suite que s'il manque VRAIMENT de l'argent dans le compte avant cette
+     paie, et seulement ce qui manque : si l'un a déposé en trop, son surplus est dans le
+     compte et couvre le retard de l'autre en attendant la paie. Le manque est demandé aux
+     personnes en retard, au prorata de leur retard. */
+  const duAvant = somme(reg.parts, p => p.jour < premiere);
+  const verseAvant = somme(reg.versements, v => v.jour < premiere);
+  const retard = { p1: Math.max(0, duAvant.p1 - verseAvant.p1), p2: Math.max(0, duAvant.p2 - verseAvant.p2) };
+  let immediat = null;
+  if(retard.p1 > 0 || retard.p2 > 0){
+    /* Solde du compte d'ici la prochaine paie, sans nouveau dépôt. Sans solde enregistré,
+       on ne connaît pas l'argent disponible : on demande tout le retard dû avant une sortie. */
+    let manque = 0, sortieCritique = null;
+    const sortiesAvant = reg.sorties.filter(x => x.jour >= aujourdhui && x.jour < premiere);
+    if(soldeCompte){
+      const evts = [
+        ...reg.sorties.filter(x => x.jour < premiere).map(x => ({ jour: x.jour, cents: -x.cents, ordre: 1, x })),
+        ...reg.versements.filter(v => v.jour < premiere).map(v => ({ jour: v.jour, cents: v.p1 + v.p2, ordre: 0 }))
+      ].sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
+      let solde = enCents(soldeCompte.montant);
+      evts.forEach(e => {
+        solde += e.cents;
+        if(e.jour >= aujourdhui && e.x && -solde > manque){ manque = -solde; sortieCritique = e.x; }
       });
-    } else {
-      /* Dépense récurrente : pour obtenir un montant STABLE d'une paie à l'autre (plutôt que
-         des à-coups selon qu'un mois contienne 2 ou 3 paies), on ne répartit plus occurrence
-         par occurrence. On calcule plutôt le montant total qui reste à payer sur toute la
-         durée restante de la récurrence, et le nombre réel de paies qui tombent dans cette
-         même période, puis on divise l'un par l'autre : chaque paie reçoit exactement la
-         même part jusqu'à la fin de la récurrence.
-         Ex: 5 paiements de 200$ à venir, et 12 paies tombent d'ici le dernier paiement
-         => chaque paie reçoit 200$*5/12, tout du long. */
-      if(rec.finType === 'jamais'){
-        /* Récurrence sans fin connue : pas de "durée restante" à calculer, donc on garde une
-           moyenne annuelle stable (identique à chaque paie, indéfiniment). */
-        const totalAnnuel = rec.montant * multiplicateurAnnuel(rec);
-        const partParPaie = totalAnnuel / PAIES_PAR_ANNEE;
-        const p1Pct = pct(rec.pourcentageP1);
-        const occAn = Math.round(occurrencesParAnnee(rec)*100)/100;
-        const explication = `Récurrence sans date de fin : ${formaterMonnaie(rec.montant)} × ${occAn} occurrence${occAn>1?'s':''} par an = ${formaterMonnaie(totalAnnuel)}, lissé sur les ${PAIES_PAR_ANNEE} paies de l'année = ${formaterMonnaie(partParPaie)} par paie.`;
-        paies.forEach(p=>{
-          contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
-        });
-
-        /* La moyenne ci-dessus suppose que chaque occurrence a lieu telle quelle. Pour chaque
-           occurrence à venir supprimée ou modifiée individuellement, on retire la part
-           prévue et on ajoute la version modifiée (s'il en reste une). */
-        const exclusions = new Set(rec.datesExclues || []);
-        const ecarts = exceptions
-          .filter(x => x.recurrenceId === rec.id && x.dateOrigine >= aujourdhuiIso)
-          .map(x => ({ dateOrigine: x.dateOrigine, ex: x }))
-          .concat([...exclusions].filter(d => d >= aujourdhuiIso).map(d => ({ dateOrigine: d, ex: { supprimee: true } })));
-        if(ecarts.length){
-          const plusTardive = ecarts.reduce((m, e) => e.dateOrigine > m ? e.dateOrigine : m, ecarts[0].dateOrigine);
-          const datesValides = new Set(genererOccurrences(rec, dateLocaleDepuisISO(plusTardive)).map(formaterDateISO));
-          const dejaTraitees = new Set();
-          ecarts.forEach(({ dateOrigine, ex })=>{
-            if(!datesValides.has(dateOrigine) || dejaTraitees.has(dateOrigine)) return;
-            dejaTraitees.add(dateOrigine);
-            ajouterDepense(debutJour(dateLocaleDepuisISO(dateOrigine)), -rec.montant, rec.pourcentageP1, null, true,
-              { libelle: `${libelle} (occurrence du ${dateOrigine} ${ex.supprimee ? 'supprimée' : 'modifiée'})`, categorie });
-            if(!ex.supprimee && !exclusions.has(dateOrigine)){
-              const o = construireOccurrence(rec, dateOrigine, ex);
-              ajouterOccurrenceIsolee(o, { libelle: `${o.note || libelle} (modifiée)`, categorie: o.category, source:'recurrence' });
-            }
-          });
-        }
-      } else {
-        const occsRestantes = occurrencesEffectives(rec, horizonMaximal()).filter(o => o.date >= aujourdhuiIso);
-        /* Les occurrences retouchées pour ne plus être des dépenses du compte sortent du
-           lissage et sont traitées individuellement. */
-        const aLisser = occsRestantes.filter(o => o.estCompte && !o.estRevenu);
-        occsRestantes.filter(o => !(o.estCompte && !o.estRevenu)).forEach(o=>{
-          ajouterOccurrenceIsolee(o, { libelle: o.note || libelle, categorie: o.category, source:'recurrence' });
-        });
-        if(!aLisser.length) return; /* récurrence entièrement terminée */
-        const finRecurrence = aLisser.reduce((m, o) => {
-          const d = debutJour(dateLocaleDepuisISO(o.date));
-          return d > m ? d : m;
-        }, debutJour(dateLocaleDepuisISO(aLisser[0].date)));
-        const paiesRestantes = paiesDansIntervalle(ancrage, aujourdhui, finRecurrence);
-        const nPaies = paiesRestantes.length || 1;
-        /* Regroupé par répartition : une occurrence retouchée peut avoir un autre %. */
-        const parPct = new Map();
-        aLisser.forEach(o => {
-          const cle = o.pourcentageP1 != null ? o.pourcentageP1 : 50;
-          parPct.set(cle, (parPct.get(cle) || 0) + o.amount);
-        });
-        parPct.forEach((montantTotalRestant, pourcentage) => {
-          const partParPaie = montantTotalRestant / nPaies;
-          const p1Pct = pct(pourcentage);
-          const explication = `${aLisser.length} paiement${aLisser.length>1?'s':''} restant${aLisser.length>1?'s':''} d'ici le ${formaterDateISO(finRecurrence)} = ${formaterMonnaie(montantTotalRestant)}${parPct.size>1 ? ` (part à ${pourcentage} %)` : ''}, réparti sur les ${nPaies} paie${nPaies>1?'s':''} de cette période = ${formaterMonnaie(partParPaie)} par paie.`;
-          paies.forEach(p=>{
-            if(p >= aujourdhui && p <= finRecurrence){
-              contribuer(formaterDateISO(p), 1, partParPaie, p1Pct, { libelle, categorie, nature:'depense', explication });
-            }
-          });
-        });
-      }
+    } else if(sortiesAvant.length){
+      manque = retard.p1 + retard.p2;
+      sortieCritique = sortiesAvant.sort((a, b) => a.jour - b.jour)[0];
     }
-  });
-
-  /* Report du surplus : un montant "dû" négatif à une paie (revenu plus gros que ce qui
-     était attendu) ne peut pas se traduire par un dépôt négatif — on affiche 0$ et le
-     surplus réduit d'autant le montant dû à la PROCHAINE paie, en chaîne si besoin.
-     Appliqué séparément pour Gabriel et Mélissa, dans l'ordre chronologique.
-
-     On note au passage les deux mouvements (surplus reçu / surplus renvoyé plus loin) pour
-     que la somme des lignes de la fenêtre de détail redonne exactement le montant affiché,
-     même quand un report entre en jeu. */
-  const surplusRecu = {}, surplusRenvoye = {};
-  paies.forEach(p=>{ const iso = formaterDateISO(p); surplusRecu[iso] = {p1:0,p2:0}; surplusRenvoye[iso] = {p1:0,p2:0}; });
-
-  ['p1','p2'].forEach(personne=>{
-    let report = 0;
-    paies.forEach(p=>{
-      const iso = formaterDateISO(p);
-      if(report < 0) surplusRecu[iso][personne] = report;
-      const brut = totaux[iso][personne] + report;
-      if(brut < 0){
-        report = brut; /* surplus à reporter sur la paie suivante */
-        surplusRenvoye[iso][personne] = -brut;
-        totaux[iso][personne] = 0;
-      } else {
-        report = 0;
-        totaux[iso][personne] = brut;
+    if(manque > 0){
+      const total = retard.p1 + retard.p2;
+      let a1, a2;
+      if(total <= manque){ a1 = retard.p1; a2 = retard.p2; }
+      else {
+        a1 = Math.min(retard.p1, Math.ceil(manque * retard.p1 / total));
+        a2 = Math.min(retard.p2, manque - a1);
+        if(a1 + a2 < manque) a1 = Math.min(retard.p1, manque - a2);
       }
+      immediat = { p1: enDollars(a1), p2: enDollars(a2), cents: { p1: a1, p2: a2 },
+                   avant: isoDuNumero(sortieCritique.jour), pour: sortieCritique.libelle };
+    }
+  }
+
+  /* 2) Registre paie par paie. */
+  const verse = somme(reg.versements, v => v.jour <= aujourdhui);
+  if(immediat){ verse.p1 += immediat.cents.p1; verse.p2 += immediat.cents.p2; }
+  let borne = aujourdhui;
+  const resultat = paies.map((paie, k) => {
+    const nouveaux = somme(reg.versements, v => v.jour > borne && v.jour <= paie);
+    verse.p1 += nouveaux.p1; verse.p2 += nouveaux.p2;
+    borne = paie;
+    const du = somme(reg.parts, p => p.jour <= paie);
+    const besoin = { p1: du.p1 - verse.p1, p2: du.p2 - verse.p2 };
+    const depot = { p1: Math.max(0, besoin.p1), p2: Math.max(0, besoin.p2) };
+    verse.p1 += depot.p1; verse.p2 += depot.p2;
+
+    /* Détail : ce qui appartient à la période (paie précédente, cette paie]. */
+    const dansPeriode = x => x.jour > paie - 14 && x.jour <= paie;
+    const lignes = [];
+    const parCle = new Map();
+    reg.parts.filter(dansPeriode).forEach(p => {
+      const cle = `${p.cle}|${p.jour}|${p.explication}`;
+      const deja = parCle.get(cle);
+      if(deja){ deja.p1 += p.p1; deja.p2 += p.p2; }
+      else parCle.set(cle, { ...p });
     });
-  });
-
-  paies.forEach(p=>{
-    const iso = formaterDateISO(p);
-    const recu = surplusRecu[iso], renvoye = surplusRenvoye[iso];
-    if(recu.p1 || recu.p2){
-      lignes[iso].push({ libelle:'Surplus de la paie précédente', nature:'ajustement',
-        explication:"Un revenu a dépassé ce qui était dû à la paie précédente : le surplus vient réduire le dépôt de cette paie-ci.",
-        p1: recu.p1, p2: recu.p2 });
+    parCle.forEach(p => lignes.push({ ...p, _p1: p.p1, _p2: p.p2 }));
+    reg.versements.filter(dansPeriode).forEach(v => lignes.push({
+      nature: 'revenu', libelle: v.libelle, categorie: v.categorie, pourcentageP1: v.pourcentageP1,
+      explication: v.explication, _p1: -v.p1, _p2: -v.p2
+    }));
+    if(k === 0 && immediat){
+      lignes.push({ nature: 'revenu', libelle: 'Dépôt demandé tout de suite',
+        explication: `Montant en retard à déposer avant le ${dateCourteNum(numeroJour(immediat.avant))} (${immediat.pour}), déduit de cette paie.`,
+        _p1: -immediat.cents.p1, _p2: -immediat.cents.p2 });
     }
-    if(renvoye.p1 || renvoye.p2){
-      lignes[iso].push({ libelle:'Surplus reporté sur la paie suivante', nature:'ajustement',
-        explication:"Le solde de cette paie serait négatif : on ne demande pas un dépôt négatif, donc le dépôt est ramené à 0 $ et le surplus est repoussé sur la paie suivante.",
-        p1: renvoye.p1, p2: renvoye.p2 });
+    const sousTotal = lignes.reduce((t, l) => ({ p1: t.p1 + l._p1, p2: t.p2 + l._p2 }), { p1: 0, p2: 0 });
+    const report = { p1: besoin.p1 - sousTotal.p1, p2: besoin.p2 - sousTotal.p2 };
+    if(report.p1 !== 0 || report.p2 !== 0){
+      const decrire = (nom, c) => c > 0 ? `${nom} : ${formaterMonnaie(enDollars(c))} non déposé aux paies précédentes` :
+                                  c < 0 ? `${nom} : ${formaterMonnaie(enDollars(-c))} déposé en trop aux paies précédentes` : null;
+      lignes.push({ nature: 'ajustement', libelle: 'Report des paies précédentes',
+        explication: [decrire(nomsPersonnes.p1, report.p1), decrire(nomsPersonnes.p2, report.p2)].filter(Boolean).join(' ; ') + '.',
+        _p1: report.p1, _p2: report.p2 });
     }
+    if(besoin.p1 < 0 || besoin.p2 < 0){
+      lignes.push({ nature: 'ajustement', libelle: 'Surplus reporté à la paie suivante',
+        explication: 'Les dépôts dépassent ce qui est dû : le reste réduira les prochaines paies.',
+        _p1: Math.max(0, -besoin.p1), _p2: Math.max(0, -besoin.p2) });
+    }
+    return {
+      date: dateLocaleDepuisISO(isoDuNumero(paie)),
+      iso: isoDuNumero(paie),
+      p1: enDollars(depot.p1),
+      p2: enDollars(depot.p2),
+      lignes: lignes.map(({ _p1, _p2, jour, cle, ...l }) => ({ ...l, p1: enDollars(_p1), p2: enDollars(_p2) }))
+    };
   });
-
-  return paies.map(p=>{
-    const iso = formaterDateISO(p);
-    return { date:p, iso, p1: totaux[iso].p1, p2: totaux[iso].p2, lignes: lignes[iso] };
-  });
+  resultat.immediat = immediat;
+  resultat.registre = reg;
+  return resultat;
 }
 
 /* ===================== SOLDE RÉEL DU COMPTE CONJOINT =====================
@@ -3015,60 +3014,53 @@ async function chargerSoldeCompte(){
 }
 
 
-/* Projette ce qu'il RESTE dans le compte, paie après paie.
+/* Compteur de vérification : ce qu'il y aura dans le compte, paie après paie, SI chacun
+   dépose ce qui est demandé. Il part du solde réel à sa date, ajoute les dépôts enregistrés
+   et les dépôts demandés (y compris un dépôt immédiat), et retire les dépenses du compte à
+   leur date. Le même jour, les dépôts passent avant les dépenses (un paiement dû le jour de
+   la paie est couvert par ce dépôt). Si les calculs sont bons, il ne descend jamais sous 0.
 
-   Un seul principe : on part du solde constaté, les dépenses « compte » le font baisser à
-   leur date d'échéance, les revenus « compte » le font monter. 1000 $ au départ, 200 $ de
-   dépenses d'ici la paie 1 : il reste 800 $.
-
-   Le dépôt recommandé (les colonnes Gabriel/Mélissa) n'entre PAS dans ce calcul, et c'est
-   volontaire : c'est une recommandation, pas un mouvement constaté. L'ajouter reviendrait à
-   supposer que le dépôt a été fait, et le solde ne pourrait alors jamais manquer — la
-   projection ne dirait plus rien. Un dépôt réellement effectué se saisit comme un revenu
-   « compte » à sa date, exactement comme le reste : il apparaît alors dans la projection.
-
-   Pour chaque paie, deux chiffres :
-     - `solde`    : ce qui reste à la fin de la période (juste avant la paie suivante) ;
-     - `soldeMin` : le creux atteint pendant la période — un solde de fin positif peut cacher
-       un découvert en milieu de période, comblé ensuite par un revenu.
-
-   Retourne null tant qu'aucun solde n'a été saisi (rien à projeter à partir de rien). */
+   Pour chaque paie : `solde` (fin de période, veille de la paie suivante) et `soldeMin`
+   (creux de la période). Le tableau porte aussi `creuxAvantPaie` : le creux entre
+   aujourd'hui et la première paie. Retourne null sans solde enregistré. */
 function projeterSoldeCompte(echeancier){
-  if(!soldeCompte || !echeancier || !echeancier.length) return null;
-  const depuisIso = soldeCompte.depuis;
+  if(!soldeCompte || !echeancier || !echeancier.length || !echeancier.registre) return null;
+  const reg = echeancier.registre;
+  const evenements = [];
+  reg.sorties.forEach(x => evenements.push({ jour: x.jour, cents: -x.cents, ordre: 1 }));
+  reg.versements.forEach(v => evenements.push({ jour: v.jour, cents: v.p1 + v.p2, ordre: 0, reel: true }));
+  if(echeancier.immediat){
+    evenements.push({ jour: reg.aujourdhui, cents: echeancier.immediat.cents.p1 + echeancier.immediat.cents.p2, ordre: 0 });
+  }
+  echeancier.forEach(l => evenements.push({ jour: numeroJour(l.iso), cents: enCents(l.p1) + enCents(l.p2), ordre: 0, prevu: true }));
+  evenements.sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
 
-  const mouvements = depenses
-    .filter(e => e.type === 'conjointe' && e.estCompte && e.date >= depuisIso)
-    .map(e => ({ iso: e.date, montant: e.estRevenu ? e.amount : -e.amount }))
-    .sort((a,b) => a.iso.localeCompare(b.iso));
-
-  /* La dernière période est bornée à 14 jours, comme les autres : sans borne, elle avalerait
-     tout ce que `depenses` contient au-delà (l'horizon va jusqu'à un an) et afficherait un
-     dernier solde sans rapport avec la période visible. */
-  const bornes = echeancier.map((l,i) => ({
-    debut: l.iso,
-    fin: echeancier[i+1] ? echeancier[i+1].iso : formaterDateISO(ajouterJours(dateLocaleDepuisISO(l.iso), 14))
-  }));
-
-  let courant = Number(soldeCompte.montant || 0);
-  let k = 0;
-  /* Mouvements survenus entre la date du solde constaté et la première paie affichée : ils
-     ont déjà eu lieu, le solde de départ affiché en tient donc compte. */
-  while(k < mouvements.length && mouvements[k].iso < bornes[0].debut){ courant += mouvements[k].montant; k++; }
-
-  return bornes.map(b => {
-    let min = null;
-    let sorties = 0, entrees = 0;
-    while(k < mouvements.length && mouvements[k].iso < b.fin){
-      const m = mouvements[k].montant;
-      if(m < 0) sorties += -m; else entrees += m;
-      courant += m;
+  const jours = echeancier.map(l => numeroJour(l.iso));
+  let courant = enCents(soldeCompte.montant);
+  let i = 0;
+  let creuxAvant = null;
+  while(i < evenements.length && evenements[i].jour < jours[0]){
+    courant += evenements[i].cents;
+    if(evenements[i].jour >= reg.aujourdhui) creuxAvant = creuxAvant === null ? courant : Math.min(creuxAvant, courant);
+    i++;
+  }
+  const projection = jours.map((jour, k) => {
+    const fin = k + 1 < jours.length ? jours[k+1] : jour + 14;
+    let min = null, sorties = 0, entrees = 0, depots = 0;
+    while(i < evenements.length && evenements[i].jour < fin){
+      const e = evenements[i];
+      if(e.cents < 0) sorties -= e.cents;
+      else if(e.prevu) depots += e.cents;
+      else entrees += e.cents;
+      courant += e.cents;
       if(min === null || courant < min) min = courant;
-      k++;
+      i++;
     }
-    if(min === null) min = courant; /* aucune opération dans la période : le solde ne bouge pas */
-    return { solde: courant, soldeMin: min, sorties, entrees };
+    if(min === null) min = courant;
+    return { solde: enDollars(courant), soldeMin: enDollars(min), sorties: enDollars(sorties), entrees: enDollars(entrees), depots: enDollars(depots) };
   });
+  projection.creuxAvantPaie = creuxAvant === null ? null : enDollars(creuxAvant);
+  return projection;
 }
 
 /* ===================== DÉTAIL D'UN DÉPÔT (vérification du calcul) =====================
@@ -3090,7 +3082,7 @@ function ouvrirDetailDepot(iso){
      ce qu'il faut provisionner, ce qui vient en déduction, puis les reports. */
   const groupes = [
     ['depense',    'À provisionner'],
-    ['revenu',     'Revenus déduits'],
+    ['revenu',     'Dépôts et revenus déduits'],
     ['ajustement', 'Reports et ajustements']
   ];
 
@@ -3121,7 +3113,7 @@ function ouvrirDetailDepot(iso){
   });
 
   if(!lignes.length){
-    corps = `<div class="budget-empty">Aucune dépense ni revenu ne vise cette paie : rien à déposer.</div>`;
+    corps = `<div class="budget-empty">Aucune part ne tombe sur cette paie : rien à déposer.</div>`;
   }
 
   /* Contrôle de cohérence : la somme des lignes doit redonner le montant affiché. S'il y a
@@ -3196,7 +3188,7 @@ function afficherEcheancierCompteConjoint(){
   dernierEcheancier = echeancierComplet || [];
   if(!echeancierComplet || !echeancierComplet.length){
     conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
-    afficherAlerteSoldeCompte(null);
+    afficherAlerteSoldeCompte(null, null);
     return;
   }
 
@@ -3206,7 +3198,7 @@ function afficherEcheancierCompteConjoint(){
   const projection = projeterSoldeCompte(echeancierComplet);
   const projParIso = {};
   if(projection) echeancierComplet.forEach((l,i)=>{ projParIso[l.iso] = projection[i]; });
-  afficherAlerteSoldeCompte(projection ? echeancierComplet.map((l,i)=>({ iso:l.iso, date:l.date, ...projection[i] })) : null);
+  afficherAlerteSoldeCompte(projection ? echeancierComplet.map((l,i)=>({ iso:l.iso, date:l.date, ...projection[i] })) : null, echeancierComplet, projection);
 
   /* Le contenu de l'échéancier suit le type de période choisi (Jour/Semaine/Paie/Mois/
      Année, partagé avec Transactions et Résumé) : on montre les paies qui tombent dans la
@@ -3260,8 +3252,9 @@ function afficherEcheancierCompteConjoint(){
        arrivant en fin de période peut ramener le solde dans le vert après un découvert. */
     const enManque = p.soldeMin < 0;
     const mouvements = [];
+    if(p.depots) mouvements.push(`+ ${formaterMonnaie(p.depots)} de dépôts demandés`);
+    if(p.entrees) mouvements.push(`+ ${formaterMonnaie(p.entrees)} de dépôts et revenus enregistrés`);
     if(p.sorties) mouvements.push(`− ${formaterMonnaie(p.sorties)} de dépenses`);
-    if(p.entrees) mouvements.push(`+ ${formaterMonnaie(p.entrees)} de revenus`);
     const titre = (mouvements.length ? mouvements.join(', ') + ' d\'ici la paie suivante. ' : "Aucun mouvement d'ici la paie suivante. ")
       + (enManque ? `Le compte descend à ${formaterMonnaie(p.soldeMin)}.` : `Creux de la période : ${formaterMonnaie(p.soldeMin)}.`);
     return `<span class="col-nombre value ${enManque ? 'solde-negatif' : ''}" title="${echapperHTML(titre)}">${enManque ? '⚠ ' : ''}${formaterMonnaie(p.solde)}</span>`;
@@ -3297,31 +3290,46 @@ function afficherEcheancierCompteConjoint(){
 }
 
 
-/* Verdict au-dessus du tableau. Il ne se déclenche que si c'est la TOUTE PROCHAINE paie qui
-   manque déjà d'argent — donc quelque chose à régler maintenant. Sans cette restriction le
-   message était permanent : sur un horizon de quatre mois, un compte finit toujours par
-   passer sous zéro à un moment ou à un autre, et un avertissement affiché en continu ne veut
-   plus rien dire. Les manques plus lointains restent signalés par le ⚠ de la colonne Solde,
-   là où ils se produisent. */
-function afficherAlerteSoldeCompte(projection){
+/* Messages au-dessus du tableau, du plus urgent au plus informatif :
+   - dépôt à faire tout de suite (retard + dépense avant la prochaine paie) ;
+   - compteur qui passe sous zéro (ne devrait pas arriver si tout est enregistré) ;
+   - réglages manquants (solde de départ, dates d'ajout) ;
+   - sinon, confirmation avec le point le plus bas. */
+function afficherAlerteSoldeCompte(projection, echeancier, projectionBrute){
   const zone = document.getElementById('solde-compte-alerte');
   if(!zone) return;
-  if(!projection || !projection.length){
-    zone.innerHTML = '';
-    return;
+  const messages = [];
+  const dateLongue = iso => dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', { day:'numeric', month:'long' });
+
+  const immediat = echeancier && echeancier.immediat;
+  if(immediat){
+    const qui = [];
+    if(immediat.p1 > 0) qui.push(`${nomsPersonnes.p1} ${formaterMonnaie(immediat.p1)}`);
+    if(immediat.p2 > 0) qui.push(`${nomsPersonnes.p2} ${formaterMonnaie(immediat.p2)}`);
+    messages.push(`<div class="solde-alerte manque">À déposer tout de suite, avant le ${dateLongue(immediat.avant)} (${echapperHTML(immediat.pour)}) : ${qui.join(', ')}. Sinon le compte sera à découvert avant la prochaine paie.</div>`);
   }
-  const prochaine = projection[0];
-  if(prochaine.soldeMin < 0){
-    const dateLisible = dateLocaleDepuisISO(prochaine.iso).toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
-    zone.innerHTML = `<div class="solde-alerte manque">Dès la prochaine paie, le ${dateLisible}, le compte n'y arrive plus : il descend à ${formaterMonnaie(prochaine.soldeMin)}, il manque donc ${formaterMonnaie(-prochaine.soldeMin)}.</div>`;
-    return;
+
+  if(projection && projection.length){
+    const creuxAvant = projectionBrute && projectionBrute.creuxAvantPaie;
+    const premierManque = projection.find(p => p.soldeMin < 0);
+    if(creuxAvant != null && creuxAvant < 0){
+      messages.push(`<div class="solde-alerte manque">Avant la prochaine paie, le compte descend à ${formaterMonnaie(creuxAvant)}. Vérifiez que tous les dépôts faits sont enregistrés.</div>`);
+    } else if(premierManque){
+      messages.push(`<div class="solde-alerte manque">Le compte descend à ${formaterMonnaie(premierManque.soldeMin)} dans la période du ${dateLongue(premierManque.iso)}, même en déposant les montants demandés. Vérifiez le solde de départ et les dépôts enregistrés.</div>`);
+    } else if(!immediat){
+      const creux = projection.reduce((min, p) => p.soldeMin < min.soldeMin ? p : min, projection[0]);
+      messages.push(`<div class="solde-alerte ok">En déposant les montants demandés, le compte couvre toutes les dépenses prévues. Point le plus bas : ${formaterMonnaie(creux.soldeMin)} autour du ${dateLongue(creux.iso)}.</div>`);
+    }
   }
-  /* Tout va bien sur tout l'horizon : on le dit une fois, avec le point le plus bas. Dès
-     qu'un manque apparaît plus loin, on se tait ici et on laisse la colonne le montrer. */
-  if(projection.some(p => p.soldeMin < 0)){ zone.innerHTML = ''; return; }
-  const creux = projection.reduce((min,p) => p.soldeMin < min.soldeMin ? p : min, projection[0]);
-  const dateCreux = dateLocaleDepuisISO(creux.iso).toLocaleDateString('fr-CA', {day:'numeric', month:'long'});
-  zone.innerHTML = `<div class="solde-alerte ok">Le compte couvre les dépenses prévues sur toute la période calculée. Point le plus bas : ${formaterMonnaie(creux.soldeMin)} autour du ${dateCreux}.</div>`;
+
+  const reg = echeancier && echeancier.registre;
+  if(reg && !soldeCompte){
+    messages.push(`<div class="solde-alerte neutre">Aucun solde de départ enregistré (table compte_solde) : les dépôts passés ne sont pas pris en compte et le solde projeté n'est pas affiché.</div>`);
+  }
+  if(reg && reg.sansDateAjout > 0){
+    messages.push(`<div class="solde-alerte neutre">${reg.sansDateAjout} dépense${reg.sansDateAjout > 1 ? 's' : ''} ou série${reg.sansDateAjout > 1 ? 's' : ''} sans date d'ajout (colonne created_at) : leur répartition commence au départ du registre.</div>`);
+  }
+  zone.innerHTML = messages.join('');
 }
 
 /* ===================== CALCUL DES OCCURRENCES À L'AFFICHAGE =====================
@@ -3699,7 +3707,10 @@ async function creerRecurrenceDepuisValeurs(champs){
     racineId,
     dateDebut:champs.dateDebut, finType:champs.finType, finNombre:champs.finNombre, finDate:champs.finDate,
     who:champs.who, type:champs.type, estCompte:champs.estCompte, estRevenu:champs.estRevenu,
-    pourcentageP1: champs.pourcentageP1 != null ? champs.pourcentageP1 : 50, actif:true, datesExclues: []
+    pourcentageP1: champs.pourcentageP1 != null ? champs.pourcentageP1 : 50, actif:true, datesExclues: [],
+    /* Même valeur que created_at en base : la répartition sur les paies part d'aujourd'hui,
+       sans attendre un rechargement. */
+    ajout: formaterDateISO(new Date())
   });
   sauvegarderRecurrencesLocal();
   return id;
@@ -4509,6 +4520,28 @@ function fermerJourModal(){ document.getElementById('jour-modal').style.display 
 document.getElementById('close-jour-modal').addEventListener('click', fermerJourModal);
 
 /* Modal d'édition d'un paiement récurrent */
+/* Le même champ % sert pour une dépense (part de chacun) et pour un dépôt (qui a mis
+   l'argent). Pour un dépôt, le libellé le dit clairement : 100 = dépôt de Gabriel,
+   0 = dépôt de Mélissa. Un dépôt mal réparti fausserait le montant de chacun. */
+const CHAMPS_REPARTITION = [
+  { nom:'f-compte-nom-p1-conjoint', revenu:'f-est-revenu-conjoint' },
+  { nom:'edit-compte-nom-p1',       revenu:'edit-est-revenu' },
+  { nom:'edit-rec-compte-nom-p1',   revenu:'edit-rec-est-revenu' }
+];
+function majLibellesRepartition(){
+  CHAMPS_REPARTITION.forEach(({ nom, revenu }) => {
+    const span = document.getElementById(nom), caseRevenu = document.getElementById(revenu);
+    if(!span || !caseRevenu) return;
+    const label = span.parentElement;
+    const estDepot = caseRevenu.checked;
+    label.innerHTML = `${estDepot ? 'Part versée par' : 'Part de'} <span id="${nom}">${echapperHTML(nomsPersonnes.p1)}</span> (%)`
+      + (estDepot ? `<span style="display:block;font-weight:400;font-size:12px;color:var(--text-secondary)">100 = dépôt de ${echapperHTML(nomsPersonnes.p1)}, 0 = dépôt de ${echapperHTML(nomsPersonnes.p2)}, 50 = argent commun</span>` : '');
+  });
+}
+document.addEventListener('change', e => {
+  if(e.target && CHAMPS_REPARTITION.some(c => c.revenu === e.target.id)) majLibellesRepartition();
+});
+
 function ouvrirEditionRecurrence(id){
   const rec = recurrences.find(r=>r.id===id); if(!rec) return;
   recurrenceEnEdition = rec;
@@ -4558,6 +4591,7 @@ function ouvrirEditionRecurrence(id){
   document.getElementById('edit-rec-sous-titre').textContent =
     `Toute la série · ${libelleRecurrence(rec)}`;
   document.getElementById('edit-recurrent-modal').style.display = 'flex';
+  majLibellesRepartition();
 }
 document.getElementById('edit-rec-qui').addEventListener('change', ()=>{
   /* Même mécanique qu'à l'ouverture (activerChamp) : avant, ce gestionnaire masquait le
@@ -4695,11 +4729,6 @@ document.getElementById('save-edit-recurrent').addEventListener('click', actionV
   rafraichirActif();
   if(recurrenceEnEdition.type==='conjointe') notifierActivitePartenaire('modification', `${categorieFinale} — ${formaterMonnaie(montant)}`);
 }));
-
-/* Utilitaires réutilisés pour calculer les dépôts requis au compte conjoint (voir plus bas
-   dans le module Récurrent) : nombre de paies aux 2 semaines par année.
-   (multiplicateurAnnuel est défini plus haut, avec multiplicateurMensuel.) */
-const PAIES_PAR_ANNEE = 26; /* aux 2 semaines */
 
 function libellePersonne(who){ return nomsPersonnes[who] || who; }
 function clePersonne(who){
@@ -5089,6 +5118,7 @@ async function ajouterDepense(scope){
   }
 
   depensesReelles.push({
+    ajout: formaterDateISO(new Date()),
     id: nouvelleDepenseDB.id,
     who: clePersonne(who),
     amount: nouvelleDepenseDB.Montant,
@@ -5139,6 +5169,7 @@ function reinitialiserFormulaireAjoutDepense(scope){
     document.getElementById('f-est-revenu-personnel').checked = false;
   }
   rafraichirOptionsFormulaires();
+  majLibellesRepartition();
 }
 ['conjoint','personnel'].forEach(scope=>{
   const bouton = document.getElementById(`btn-add-${scope}`);
@@ -5416,6 +5447,7 @@ function appliquerChoixQuiConjoint(quiSelectId, repartitionInputId, revenuFieldI
   return estCompte;
 }
 document.getElementById('f-compte-nom-p1-conjoint').textContent = nomsPersonnes.p1;
+majLibellesRepartition();
 document.getElementById('f-who-conjoint').addEventListener('change', ()=>
   appliquerChoixQuiConjoint('f-who-conjoint','f-compte-repartition-conjoint','f-est-revenu-field-conjoint'));
 
@@ -5580,6 +5612,7 @@ function ouvrirEdition(id, mode){
     ? `Série récurrente · ${libelleRecurrence(rec)}`
     : 'Dépense ponctuelle';
   document.getElementById('edit-modal').style.display='flex';
+  majLibellesRepartition();
 }
 document.getElementById('close-edit').addEventListener('click',()=>{document.getElementById('edit-modal').style.display='none'; modeEditionDepense='normal'; document.getElementById('edit-date').disabled=false;});
 document.getElementById('delete-edit').addEventListener('click', actionVerrouillee(document.getElementById('delete-edit'), async()=>{if(depenseEnEdition && confirm('Supprimer cette dépense ?')){document.getElementById('edit-modal').style.display='none';await supprimerDepense(depenseEnEdition.id);}}));
@@ -6518,6 +6551,7 @@ async function importerLignes(lignes){
   }
 
   aInserer.forEach(d => depensesReelles.push({
+    ajout: formaterDateISO(new Date()),
     id: d.id, who: clePersonne(d.Qui), amount: d.Montant, date: d.Date, category: d.Categorie, note: d.Note, type: d.Type,
     recurrenceId: null,
     estCompte: colonnesRecentes && d.EstCompte,
