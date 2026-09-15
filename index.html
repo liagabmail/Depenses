@@ -881,9 +881,6 @@
   .solde-bloc-montant.negatif{color:var(--red);}
   .solde-bloc-detail{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:4px;}
   .solde-bloc-lien{font-size:13px;color:var(--accent, var(--text));text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;margin-top:8px;}
-  .solde-bloc-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:10px;}
-  .solde-bloc-form .aide{grid-column:1 / -1;font-size:12px;color:var(--text-secondary);line-height:1.45;}
-  .solde-bloc-form .actions{grid-column:1 / -1;display:flex;gap:8px;justify-content:flex-end;}
   .echeancier-legende{font-size:12px;color:var(--text-secondary);margin-top:8px;line-height:1.45;}
   .solde-alerte.manque{background:color-mix(in srgb, var(--red) 10%, var(--surface));
     border:1px solid color-mix(in srgb, var(--red) 35%, var(--surface));color:var(--red);}
@@ -1829,7 +1826,7 @@ async function gererSession(session){
   /* Récurrences d'abord : chargerExceptionsSupabase s'appuie sur le mode (Supabase ou local)
      déterminé par ce chargement. */
   await chargerRecurrencesSupabase();
-  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerExceptionsSupabase(), chargerSoldeCompte() ]);
+  await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerExceptionsSupabase() ]);
   recalculerDepenses();
   rafraichirActif();
   chargerPreferencesNotification();
@@ -2680,13 +2677,11 @@ function formaterDateISO(d){
       la prochaine paie.
    3. Urgence. Si une personne est en retard et qu'une dépense du compte passe AVANT la
       prochaine paie, le retard est demandé tout de suite (sinon le compte serait à découvert).
-   4. Départ. Le registre commence à la date du solde réel (table compte_solde). Ce qui est dû
-      avant cette date est considéré réglé ; l'écart entre le solde réel et ce qui aurait dû
-      être mis de côté pour les dépenses à venir est ajouté (ou crédité) à chacun selon sa
-      part. Sans solde enregistré, le registre part d'aujourd'hui, sans mémoire des dépôts.
-   5. Compteur. Le solde projeté part du solde réel, ajoute les dépôts enregistrés ET les
-      dépôts demandés, retire les dépenses : si les calculs sont bons, il ne descend jamais
-      sous zéro.
+   4. Solde du compte. C'est un relevé : la somme de TOUTES les transactions « compte »
+      depuis la première (l'argent déjà présent s'enregistre comme un revenu « Base du
+      compte »). Chaque revenu ou dépôt l'augmente à sa date, chaque dépense le diminue.
+   5. Compteur. Le solde projeté part du solde d'aujourd'hui, ajoute les dépôts demandés et
+      retire les dépenses à venir : si les calculs sont bons, il ne descend jamais sous 0.
    Les dépenses payées avec l'option Gabriel ou Mélissa (pas « Compte conjoint ») ne passent
    pas par le compte : elles n'entrent pas dans ces calculs. */
 
@@ -2765,11 +2760,11 @@ function partagerCents(cents, pourcentageP1){
 function construireRegistreCompte(finCalcul){
   const ancre = numeroJour(paieAncrage);
   const aujourdhui = numeroJour(formaterDateISO(new Date()));
-  const debut = soldeCompte && soldeCompte.depuis ? Math.min(numeroJour(soldeCompte.depuis), aujourdhui) : aujourdhui;
+  /* Aucune date de coupure : tout l'historique du compte compte, comme sur un relevé. */
+  const debut = -Infinity;
   const parts = [];
   const versements = [];
   const sorties = [];
-  let sansDateAjout = 0;
 
   function ajouterDepense({ cle, libelle, categorie, cents, pourcentageP1, echeance, debutFenetre, texteDebut, ajout }){
     if(echeance < debut) return; /* déjà réglée avant le départ du registre */
@@ -2783,7 +2778,6 @@ function construireRegistreCompte(finCalcul){
          l'échéance. Si cette paie précède l'ajout, la part est en retard dès le départ. */
       let jour = dernierePaieNum(ancre, echeance);
       const enRetard = jour < ajout;
-      if(jour < debut && ajout >= debut) jour = debut;
       parts.push({ ...base, jour, p1, p2,
         explication: enRetard
           ? `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, ajouté après la dernière paie qui le précède : à déposer dès que possible.`
@@ -2815,8 +2809,8 @@ function construireRegistreCompte(finCalcul){
         ajouterVersement({ libelle, categorie: e.category, cents, pourcentageP1: e.pourcentageP1, jour });
         return;
       }
-      if(!e.ajout && jour >= debut) sansDateAjout++;
-      const ajout = e.ajout ? numeroJour(e.ajout) : debut;
+      /* Sans date d'ajout connue : la paie qui précède l'échéance la couvre. */
+      const ajout = e.ajout ? numeroJour(e.ajout) : dernierePaieNum(ancre, jour);
       ajouterDepense({ cle: `d:${e.id}`, libelle, categorie: e.category, cents, pourcentageP1: e.pourcentageP1,
         echeance: jour, debutFenetre: ajout, ajout, texteDebut: `l'ajout le ${dateCourteNum(ajout)}` });
     });
@@ -2837,8 +2831,11 @@ function construireRegistreCompte(finCalcul){
     if(!occurrences.length) return;
     occurrences.sort((a, b) => a.date.localeCompare(b.date));
     const ajouts = segments.map(r => r.ajout).filter(Boolean).sort();
-    const ajoutFamille = ajouts.length ? numeroJour(ajouts[0]) : debut;
-    if(!ajouts.length && occurrences.some(o => !o.estRevenu && numeroJour(o.date) >= debut)) sansDateAjout++;
+    /* Sans date de création connue (colonne created_at absente) : la série commence à être
+       provisionnée à la paie qui précède sa première dépense. */
+    const premiereDepense = occurrences.find(o => !o.estRevenu);
+    const ajoutFamille = ajouts.length ? numeroJour(ajouts[0])
+      : dernierePaieNum(ancre, numeroJour(premiereDepense ? premiereDepense.date : occurrences[0].date));
 
     let precedente = null;
     occurrences.forEach(o => {
@@ -2860,28 +2857,9 @@ function construireRegistreCompte(finCalcul){
     });
   });
 
-  /* Départ : écart entre le solde réel et ce qui aurait dû être mis de côté. */
-  if(soldeCompte){
-    let att1 = 0, att2 = 0;
-    parts.forEach(p => { if(p.jour < debut){ att1 += p.p1; att2 += p.p2; } });
-    const reel = enCents(soldeCompte.montant);
-    const attendu = att1 + att2;
-    const surplus = reel - attendu;
-    if(surplus !== 0){
-      const s1 = attendu > 0 ? Math.round(surplus * att1 / attendu) : Math.round(surplus / 2);
-      parts.push({
-        cle: 'ecart-depart', nature: 'ajustement', jour: debut,
-        p1: -s1, p2: -(surplus - s1),
-        libelle: surplus > 0 ? 'Surplus au départ du registre' : 'Manque au départ du registre',
-        explication: `Le ${dateCourteNum(debut)}, le compte contenait ${formaterMonnaie(enDollars(reel))} alors que ${formaterMonnaie(enDollars(attendu))} auraient dû y être mis de côté pour les dépenses à venir : ${surplus > 0 ? 'surplus' : 'manque'} de ${formaterMonnaie(enDollars(Math.abs(surplus)))}, partagé selon la part de chacun.`
-      });
-    }
-  }
-
   return {
-    ancre, aujourdhui, debut, sansDateAjout,
-    parts: parts.filter(p => p.jour >= debut),
-    versements, sorties
+    ancre, aujourdhui,
+    parts, versements, sorties
   };
 }
 
@@ -2912,24 +2890,17 @@ function calculerEcheancierCompte(nbPaies){
   const retard = { p1: Math.max(0, duAvant.p1 - verseAvant.p1), p2: Math.max(0, duAvant.p2 - verseAvant.p2) };
   let immediat = null;
   if(retard.p1 > 0 || retard.p2 > 0){
-    /* Solde du compte d'ici la prochaine paie, sans nouveau dépôt. Sans solde enregistré,
-       on ne connaît pas l'argent disponible : on demande tout le retard dû avant une sortie. */
+    /* Solde du compte d'ici la prochaine paie, sans nouveau dépôt. */
     let manque = 0, sortieCritique = null;
-    const sortiesAvant = reg.sorties.filter(x => x.jour >= aujourdhui && x.jour < premiere);
-    if(soldeCompte){
-      const evts = [
-        ...reg.sorties.filter(x => x.jour < premiere).map(x => ({ jour: x.jour, cents: -x.cents, ordre: 1, x })),
-        ...reg.versements.filter(v => v.jour < premiere).map(v => ({ jour: v.jour, cents: v.p1 + v.p2, ordre: 0 }))
-      ].sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
-      let solde = enCents(soldeCompte.montant);
-      evts.forEach(e => {
-        solde += e.cents;
-        if(e.jour >= aujourdhui && e.x && -solde > manque){ manque = -solde; sortieCritique = e.x; }
-      });
-    } else if(sortiesAvant.length){
-      manque = retard.p1 + retard.p2;
-      sortieCritique = sortiesAvant.sort((a, b) => a.jour - b.jour)[0];
-    }
+    const evts = [
+      ...reg.sorties.filter(x => x.jour < premiere).map(x => ({ jour: x.jour, cents: -x.cents, ordre: 1, x })),
+      ...reg.versements.filter(v => v.jour < premiere).map(v => ({ jour: v.jour, cents: v.p1 + v.p2, ordre: 0 }))
+    ].sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
+    let solde = 0;
+    evts.forEach(e => {
+      solde += e.cents;
+      if(e.jour >= aujourdhui && e.x && -solde > manque){ manque = -solde; sortieCritique = e.x; }
+    });
     if(manque > 0){
       const total = retard.p1 + retard.p2;
       let a1, a2;
@@ -3004,41 +2975,22 @@ function calculerEcheancierCompte(nbPaies){
   return resultat;
 }
 
-/* ===================== SOLDE RÉEL DU COMPTE CONJOINT =====================
-   L'échéancier dit combien DÉPOSER; il ne dit pas ce qu'il restera dans le compte. Pour ça il
-   faut un point de départ: ce qu'il y a vraiment dans le compte, à une date donnée. Le reste
-   se déduit — les dépenses « compte » qui sortent, les revenus « compte » qui entrent — et
-   donne le solde projeté à chaque paie (voir projeterSoldeCompte).
-
-   Une seule ligne en base (table `compte_solde`, id=1): le compte est unique et son solde
-   n'appartient à personne en particulier. L'application le LIT seulement — il n'y a plus
-   d'écran de saisie, la valeur se modifie directement dans la table. Sans ligne enregistrée,
-   `soldeCompte` reste null et la colonne Solde disparaît simplement de l'échéancier. */
-let soldeCompte = null; /* { montant, depuis } ou null si aucune ligne en base */
-
-async function chargerSoldeCompte(){
-  try{
-    const { data, error } = await supabaseClient.from('compte_solde').select('*').eq('id', 1).maybeSingle();
-    if(error) throw error;
-    soldeCompte = data ? { montant: Number(data.montant || 0), depuis: data.depuis } : null;
-  } catch(err){
-    soldeCompte = null;
-    console.warn("Impossible de charger le solde du compte conjoint.", err);
-  }
-}
-
+/* ===================== SOLDE DU COMPTE CONJOINT =====================
+   Le solde est la somme de toutes les transactions « Compte conjoint » : revenus et dépôts
+   en plus, dépenses en moins, chacun à sa date. L'argent présent au départ s'enregistre
+   comme un revenu (ex. « Base du compte »). La table compte_solde n'est plus utilisée. */
 
 /* Compteur de vérification : ce qu'il y aura dans le compte, paie après paie, SI chacun
-   dépose ce qui est demandé. Il part du solde réel à sa date, ajoute les dépôts enregistrés
-   et les dépôts demandés (y compris un dépôt immédiat), et retire les dépenses du compte à
-   leur date. Le même jour, les dépôts passent avant les dépenses (un paiement dû le jour de
+   dépose ce qui est demandé. Il rejoue toutes les transactions du compte depuis la première
+   (solde de 0 $ avant), ajoute les dépôts demandés (y compris un dépôt immédiat), et retire
+   les dépenses du compte à leur date. Le même jour, les dépôts passent avant les dépenses (un paiement dû le jour de
    la paie est couvert par ce dépôt). Si les calculs sont bons, il ne descend jamais sous 0.
 
    Pour chaque paie : `solde` (fin de période, veille de la paie suivante) et `soldeMin`
    (creux de la période). Le tableau porte aussi `creuxAvantPaie` : le creux entre
-   aujourd'hui et la première paie. Retourne null sans solde enregistré. */
+   aujourd'hui et la première paie. */
 function projeterSoldeCompte(echeancier){
-  if(!soldeCompte || !echeancier || !echeancier.length || !echeancier.registre) return null;
+  if(!echeancier || !echeancier.length || !echeancier.registre) return null;
   const reg = echeancier.registre;
   const evenements = [];
   reg.sorties.forEach(x => evenements.push({ jour: x.jour, cents: -x.cents, ordre: 1, libelle: x.libelle }));
@@ -3050,7 +3002,7 @@ function projeterSoldeCompte(echeancier){
   evenements.sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
 
   const jours = echeancier.map(l => numeroJour(l.iso));
-  let courant = enCents(soldeCompte.montant);
+  let courant = 0;
   let i = 0;
   let creuxAvant = null;
   while(i < evenements.length && evenements[i].jour < jours[0]){
@@ -3084,77 +3036,46 @@ function projeterSoldeCompte(echeancier){
   return projection;
 }
 
-/* Solde théorique du compte aujourd'hui : solde de départ + dépôts et revenus enregistrés −
-   dépenses du compte, de la date du solde jusqu'à aujourd'hui inclus. C'est le chiffre qui
-   bouge à chaque dépôt ou paiement ; il doit correspondre au solde réel à la banque. */
-function soldeActuelCompte(registre){
-  if(!soldeCompte || !registre) return null;
+/* Solde du compte aujourd'hui et relevé des transactions, comme à la banque. */
+function releveCompte(registre){
+  if(!registre) return null;
   const auj = registre.aujourdhui;
-  const entrees = registre.versements.filter(v => v.jour <= auj).reduce((t, v) => t + v.p1 + v.p2, 0);
-  const sorties = registre.sorties.filter(x => x.jour <= auj).reduce((t, x) => t + x.cents, 0);
-  const depart = enCents(soldeCompte.montant);
-  return { depart: enDollars(depart), entrees: enDollars(entrees), sorties: enDollars(sorties),
-           actuel: enDollars(depart + entrees - sorties), depuis: soldeCompte.depuis };
+  const lignes = [
+    ...registre.versements.filter(v => v.jour <= auj).map(v => ({ jour: v.jour, cents: v.p1 + v.p2, libelle: v.libelle, ordre: 0 })),
+    ...registre.sorties.filter(x => x.jour <= auj).map(x => ({ jour: x.jour, cents: -x.cents, libelle: x.libelle, ordre: 1 }))
+  ].sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
+  let solde = 0, entrees = 0, sorties = 0;
+  lignes.forEach(l => {
+    solde += l.cents;
+    if(l.cents >= 0) entrees += l.cents; else sorties -= l.cents;
+    l.solde = solde;
+  });
+  return { lignes, actuel: enDollars(solde), entrees: enDollars(entrees), sorties: enDollars(sorties) };
 }
 
-let editionSoldeOuverte = false;
+let historiqueCompteOuvert = false;
 function afficherBlocSoldeCompte(registre){
   const zone = document.getElementById('solde-compte-bloc');
   if(!zone) return;
-  const dateLongue = iso => dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', { day:'numeric', month:'long', year:'numeric' });
-  const s = soldeActuelCompte(registre);
-  const formulaire = () => `
-    <div class="solde-bloc-form">
-      <div class="field"><label for="solde-depart-montant">Solde réel</label>
-        <input type="number" id="solde-depart-montant" step="0.01" inputmode="decimal" value="${soldeCompte ? soldeCompte.montant : ''}" placeholder="0,00 $"></div>
-      <div class="field"><label for="solde-depart-date">En date du</label>
-        <input type="date" id="solde-depart-date" value="${soldeCompte && soldeCompte.depuis ? soldeCompte.depuis : formaterDateISO(new Date())}"></div>
-      <div class="aide">Le solde de la banque au début de cette journée, avant ses dépôts et paiements. Tout ce qui est daté de ce jour ou après s'ajoute par-dessus. Les dépôts faits depuis doivent être enregistrés comme revenus « Compte conjoint ».</div>
-      <div class="actions">
-        <button class="btn-secondary" id="solde-depart-annuler">Annuler</button>
-        <button class="btn-add" id="solde-depart-enregistrer">Enregistrer</button>
-      </div>
-    </div>`;
-  if(!s){
-    zone.innerHTML = `<div class="solde-bloc">
-      <div class="solde-bloc-titre">Aucun solde de départ : entrez le solde réel du compte pour que les dépôts passés comptent et pour suivre le solde.</div>
-      ${editionSoldeOuverte ? formulaire() : `<button class="solde-bloc-lien" id="solde-depart-ouvrir">Entrer le solde du compte</button>`}
-    </div>`;
-  } else {
-    zone.innerHTML = `<div class="solde-bloc">
-      <div class="solde-bloc-haut">
-        <span class="solde-bloc-titre">Solde actuel du compte (théorique)</span>
-        <span class="solde-bloc-montant ${s.actuel < 0 ? 'negatif' : ''}">${formaterMonnaie(s.actuel)}</span>
-      </div>
-      <div class="solde-bloc-detail">${formaterMonnaie(s.depart)} le ${dateLongue(s.depuis)} + ${formaterMonnaie(s.entrees)} de dépôts et revenus − ${formaterMonnaie(s.sorties)} de paiements. Comparez avec le solde à la banque.</div>
-      ${editionSoldeOuverte ? formulaire() : `<button class="solde-bloc-lien" id="solde-depart-ouvrir">Modifier le solde de départ</button>`}
-    </div>`;
-  }
-  const ouvrir = document.getElementById('solde-depart-ouvrir');
-  if(ouvrir) ouvrir.addEventListener('click', () => { editionSoldeOuverte = true; afficherBlocSoldeCompte(registre); });
-  const annuler = document.getElementById('solde-depart-annuler');
-  if(annuler) annuler.addEventListener('click', () => { editionSoldeOuverte = false; afficherBlocSoldeCompte(registre); });
-  const enregistrer = document.getElementById('solde-depart-enregistrer');
-  if(enregistrer) enregistrer.addEventListener('click', actionVerrouillee(enregistrer, sauvegarderSoldeCompte));
-}
-
-async function sauvegarderSoldeCompte(){
-  const texte = document.getElementById('solde-depart-montant').value;
-  const montant = Math.round(Number(texte) * 100) / 100;
-  const depuis = document.getElementById('solde-depart-date').value;
-  if(texte === '' || !isFinite(montant)){ afficherAlerte('Entrez le solde du compte.'); return; }
-  if(!depuis){ afficherAlerte('Entrez la date du solde.'); return; }
-  if(depuis > formaterDateISO(new Date())){ afficherAlerte("La date du solde ne peut pas être dans le futur."); return; }
-  const { data, error } = await supabaseClient.from('compte_solde')
-    .upsert({ id: 1, montant, depuis, updated_at: new Date().toISOString() })
-    .select('id');
-  if(error || !data || !data.length){
-    signalerEchecEnregistrement('Le solde du compte', error || new Error('Aucune ligne enregistrée (règles RLS ?)'));
-    return;
-  }
-  soldeCompte = { montant, depuis };
-  editionSoldeOuverte = false;
-  rafraichirActif();
+  const releve = releveCompte(registre);
+  if(!releve){ zone.innerHTML = ''; return; }
+  const dateLongue = n => dateLocaleDepuisISO(isoDuNumero(n)).toLocaleDateString('fr-CA', { day:'numeric', month:'short', year:'numeric' });
+  const historique = releve.lignes.slice().reverse().map(l => `
+    <div class="depot-ligne"><div class="depot-ligne-haut">
+      <span class="depot-ligne-nom">${dateLongue(l.jour)} · ${echapperHTML(l.libelle || '')}</span>
+      <span class="value">${l.cents < 0 ? '−' : '+'} ${formaterMonnaie(Math.abs(enDollars(l.cents)))}</span>
+    </div><div class="depot-ligne-explication">Solde : ${formaterMonnaie(enDollars(l.solde))}</div></div>`).join('');
+  zone.innerHTML = `<div class="solde-bloc">
+    <div class="solde-bloc-haut">
+      <span class="solde-bloc-titre">Solde du compte aujourd'hui</span>
+      <span class="solde-bloc-montant ${releve.actuel < 0 ? 'negatif' : ''}">${formaterMonnaie(releve.actuel)}</span>
+    </div>
+    <div class="solde-bloc-detail">${formaterMonnaie(releve.entrees)} de revenus et dépôts − ${formaterMonnaie(releve.sorties)} de paiements, depuis la première transaction du compte.</div>
+    ${releve.lignes.length ? `<button class="solde-bloc-lien" id="solde-historique-bascule">${historiqueCompteOuvert ? "Masquer l'historique" : "Voir l'historique"}</button>` : ''}
+    ${historiqueCompteOuvert ? `<div style="margin-top:6px;">${historique}</div>` : ''}
+  </div>`;
+  const bascule = document.getElementById('solde-historique-bascule');
+  if(bascule) bascule.addEventListener('click', () => { historiqueCompteOuvert = !historiqueCompteOuvert; afficherBlocSoldeCompte(registre); });
 }
 
 /* ===================== DÉTAIL D'UN DÉPÔT (vérification du calcul) =====================
@@ -3276,9 +3197,7 @@ function afficherEcheancierCompteConjoint(){
     recurrences.some(r=>r.type==='conjointe' && r.estCompte && r.actif) ||
     depenses.some(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId);
 
-  /* Un solde saisi suffit à garder la carte visible : sans ça, vider ses dépenses « compte »
-     cacherait aussi le seul endroit où se règle le solde, sans moyen d'y revenir. */
-  if(!compteActifsExistent && !soldeCompte){
+  if(!compteActifsExistent){
     carte.style.display = 'none';
     conteneur.innerHTML = '';
     return;
@@ -3428,7 +3347,7 @@ function afficherAlerteSoldeCompte(projection, echeancier, projectionBrute){
     if(creuxAvant != null && creuxAvant < 0){
       messages.push(`<div class="solde-alerte manque">Avant la prochaine paie, le compte descend à ${formaterMonnaie(creuxAvant)}. Vérifiez que tous les dépôts faits sont enregistrés.</div>`);
     } else if(premierManque){
-      messages.push(`<div class="solde-alerte manque">Le compte descend à ${formaterMonnaie(premierManque.soldeMin)} dans la période du ${dateLongue(premierManque.iso)}, même en déposant les montants demandés. Vérifiez le solde de départ et les dépôts enregistrés.</div>`);
+      messages.push(`<div class="solde-alerte manque">Le compte descend à ${formaterMonnaie(premierManque.soldeMin)} dans la période du ${dateLongue(premierManque.iso)}, même en déposant les montants demandés. Vérifiez que toutes les transactions du compte sont enregistrées.</div>`);
     } else if(!immediat){
       const creux = projection.reduce((min, p) => p.soldeMin < min.soldeMin ? p : min, projection[0]);
       const precision = creux.soldeMin < 0.005
@@ -3438,13 +3357,6 @@ function afficherAlerteSoldeCompte(projection, echeancier, projectionBrute){
     }
   }
 
-  const reg = echeancier && echeancier.registre;
-  if(reg && !soldeCompte){
-    messages.push(`<div class="solde-alerte neutre">Aucun solde de départ enregistré (table compte_solde) : les dépôts passés ne sont pas pris en compte et le solde projeté n'est pas affiché.</div>`);
-  }
-  if(reg && reg.sansDateAjout > 0){
-    messages.push(`<div class="solde-alerte neutre">${reg.sansDateAjout} dépense${reg.sansDateAjout > 1 ? 's' : ''} ou série${reg.sansDateAjout > 1 ? 's' : ''} sans date d'ajout (colonne created_at) : leur répartition commence au départ du registre.</div>`);
-  }
   zone.innerHTML = messages.join('');
 }
 
