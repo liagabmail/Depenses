@@ -888,6 +888,84 @@
     border:1px solid color-mix(in srgb, var(--green) 30%, var(--surface));color:var(--green);}
   .solde-alerte.neutre{background:var(--bg);border:1px solid var(--border);color:var(--text-secondary);}
 
+  /* Moteur du compte : parts, réglages, sous-lignes du tableau, saisie d'un dépôt */
+  .compte-parts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+  .compte-parts > div{display:flex;flex-direction:column;gap:2px;}
+  .compte-parts .value{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .compte-parts .value.p1{color:var(--blue-dark);}
+  .compte-parts .value.p2{color:var(--red);}
+  .compte-reglages{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .compte-reglages-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;}
+  .echeancier-sous{display:block;font-size:11px;font-weight:400;color:var(--text-secondary);}
+  .echeancier-sous.solde-negatif{color:var(--red);}
+  .depot-formulaire{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:10px;}
+  .depot-formulaire .field{margin:0;min-width:0;}
+  .solde-alerte .depot-formulaire .field label{color:var(--text-secondary);}
+  @media (max-width:760px){
+    .depot-formulaire{grid-template-columns:1fr 1fr;}
+    .depot-formulaire .btn-add, .depot-formulaire .btn-secondary{grid-column:1 / -1;}
+  }
+  /* Dépôts récurrents prévus : même carte, contour pointillé pour les distinguer d'un dépôt fait */
+  .cal-agenda-item.depot-planifie{background:transparent;border:1px dashed var(--green);}
+  body.dark .cal-agenda-item.depot-planifie{background:transparent;}
+  /* Carte « Compte conjoint » simplifiée */
+  .cs-solde{border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+  .cs-label{font-size:13px;color:var(--text-secondary);}
+  .cs-montant{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;margin:2px 0 10px;}
+  .cs-parts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .cs-part{display:flex;flex-direction:column;gap:2px;}
+  .cs-part strong{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .cs-nom{font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;}
+  .cs-lien{margin-top:10px;font-size:13px;}
+  .cs-historique{margin-top:8px;max-height:260px;overflow:auto;}
+  .cs-hist-ligne{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:5px 0;border-top:1px solid var(--border);}
+  .cs-hist-ligne span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .cs-plus{color:var(--green);}
+  .cs-minimum{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:10px;}
+  .cs-minimum label{font-size:14px;font-weight:500;}
+  .cs-min-champ{display:flex;align-items:center;gap:6px;}
+  .cs-min-champ input{width:110px;text-align:right;font-size:16px;font-family:inherit;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);}
+  .cs-min-champ .btn-add{width:auto;padding:8px 14px;margin:0;}
+  .cs-bloc{border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#f1f3f4;}
+  body.dark .cs-bloc{background:#2c3136;}
+  .cs-bloc.cs-ok{background:rgba(52,168,83,.12);}
+  .cs-bloc.cs-manque{background:rgba(234,67,53,.12);}
+  .cs-bloc.cs-avert{background:rgba(251,188,4,.15);}
+  .cs-titre{font-size:14px;font-weight:600;}
+  .cs-ok .cs-titre{color:var(--green);}
+  .cs-manque .cs-titre{color:var(--red);}
+  .cs-texte{font-size:13px;color:var(--text-secondary);margin-top:3px;}
+  .cs-correction{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:8px;font-size:13px;}
+  .cs-correction > span{flex:1 1 100%;}
+  .cs-bouton{border:1px solid var(--border);background:var(--surface);color:inherit;border-radius:999px;
+    padding:6px 12px;font-size:13px;cursor:pointer;margin:6px 6px 0 0;font-variant-numeric:tabular-nums;}
+  body.dark .cs-bouton{background:#202428;}
+  .cs-correction .cs-bouton{margin:0;}
+  .cs-avance{font-size:11px;color:var(--green);}
+  .cs-titre-section{display:flex;justify-content:space-between;align-items:center;width:100%;margin:16px 0 6px;
+    background:none;border:none;padding:0;color:inherit;font:inherit;font-size:14px;font-weight:600;text-align:left;}
+  .cs-depliable{cursor:pointer;}
+  .cs-liste{display:flex;flex-direction:column;}
+  .cs-ligne-depot{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;width:100%;
+    background:none;border:none;border-top:1px solid var(--border);padding:10px 0;color:inherit;font:inherit;text-align:left;cursor:pointer;}
+  .cs-date{font-size:14px;white-space:nowrap;}
+  .cs-qui{font-size:14px;display:flex;align-items:center;gap:6px;color:var(--text-secondary);min-width:0;}
+  .cs-somme{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .cs-graphique{position:relative;height:170px;margin:4px 0 6px;}
+  .cs-journal{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+  .cs-jour{border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
+  .cs-jour.aujourdhui{border-color:var(--blue, #1a73e8);border-width:2px;}
+  .cs-jour-haut{display:flex;justify-content:space-between;gap:10px;align-items:baseline;}
+  .cs-jour-date{font-size:14px;font-weight:600;}
+  .cs-jour-solde{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .cs-jour-parts{font-size:12px;color:var(--text-secondary);margin:1px 0 4px;}
+  .cs-mvt{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2px 0;}
+  .cs-mvt span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .cs-mvt.prevu{color:var(--text-secondary);font-style:italic;}
+  .cs-bloc.cs-attente{background:rgba(251,188,4,.15);}
+  .cs-plages{display:flex;gap:6px;margin:4px 0;}
+  .cs-plage{border:1px solid var(--border);background:transparent;color:var(--text-secondary);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;}
+  .cs-plage.actif{background:var(--blue, #1a73e8);border-color:var(--blue, #1a73e8);color:#fff;}
   .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
   .depot-total.final .value{font-weight:600;}
@@ -1093,6 +1171,17 @@
             <span class="toggle-field-label"><span class="icone-revenu" aria-hidden="true">+</span>Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
+          <div class="field toggle-field champ-bascule bascule-droite" id="f-est-depot-field-conjoint" style="display:none;">
+            <span class="toggle-field-label"><span aria-hidden="true">🏦&nbsp;</span>Dépôt pour payer le compte</span>
+            <label class="switch"><input type="checkbox" id="f-est-depot-conjoint"><span class="switch-track"></span></label>
+          </div>
+          <div class="field" id="f-depot-qui-field-conjoint" style="display:none;">
+            <label for="f-depot-qui-conjoint">Déposé par</label>
+            <select id="f-depot-qui-conjoint"></select>
+          </div>
+          <div class="field pleine-largeur apercu-recurrence" id="f-depot-info-conjoint" style="display:none;">
+            <span id="f-depot-info-texte-conjoint"></span>
+          </div>
         </div>
         </div>
         <div class="modal-footer">
@@ -1109,7 +1198,7 @@
       <div class="stats-row" id="annee-stats-conjoint" style="display:none;"></div>
       <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
         <div class="table-head-row">
-          <h3>Prochains dépôts au compte conjoint</h3>
+          <h3>Compte conjoint</h3>
         </div>
         <div id="solde-compte-bloc"></div>
         <div id="solde-compte-alerte"></div>
@@ -1676,6 +1765,11 @@
         <span class="toggle-field-label" id="edit-rec-est-revenu-label"><span class="icone-revenu" aria-hidden="true">+</span>Revenu</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
       </div>
+      <div class="field toggle-field champ-bascule bascule-droite" id="edit-rec-est-depot-field">
+        <span class="toggle-field-label"><span aria-hidden="true">🏦&nbsp;</span>Dépôt pour payer le compte</span>
+        <label class="switch"><input type="checkbox" id="edit-rec-est-depot"><span class="switch-track"></span></label>
+      </div>
+      <div class="field pleine-largeur apercu-recurrence" id="edit-rec-depot-info" style="display:none;"></div>
       <div class="field pleine-largeur">
         <button type="button" class="btn-secondary" id="edit-rec-toggle-type" style="width:100%;" disabled></button>
       </div>
@@ -1827,6 +1921,8 @@ async function gererSession(session){
      déterminé par ce chargement. */
   await chargerRecurrencesSupabase();
   await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerExceptionsSupabase() ]);
+  /* Le moteur du compte n'enregistre un nouveau plan qu'une fois toutes les données en main. */
+  donneesCompteChargees = depensesChargeesOk;
   recalculerDepenses();
   rafraichirActif();
   chargerPreferencesNotification();
@@ -2167,12 +2263,15 @@ document.getElementById('f-date-personnel').value = formaterDateISO(debutJour(ne
 });
 
 /* Chargement initial depuis Supabase (avec les noms exacts des colonnes) */
+let depensesChargeesOk = false;
 async function chargerDepensesSupabase() {
   const { data, error } = await chargerToutesLesLignes('Depenses');
   if (error) {
     console.error("Erreur de chargement Supabase :", error);
+    depensesChargeesOk = false;
     return;
   }
+  depensesChargeesOk = true;
   depensesReelles = (data || []).map(e => ({
     id: e.id,
     who: clePersonne(e.Qui),
@@ -2659,32 +2758,6 @@ function formaterDateISO(d){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-/* ===================== DÉPÔTS AU COMPTE CONJOINT : REGISTRE PAR PERSONNE =====================
-   But : dire combien Gabriel et Mélissa doivent déposer à chaque paie pour que le compte ne
-   soit JAMAIS en souffrance, avec des montants aussi réguliers que possible.
-
-   1. Parts fixes. Chaque dépense « compte » est séparée en deux (selon son %) puis répartie
-      également sur les paies de sa fenêtre, une fois pour toutes :
-        - dépense ponctuelle : de sa date d'ajout (created_at) jusqu'à son échéance ;
-        - occurrence d'une série : du lendemain de l'occurrence précédente jusqu'à son échéance
-          (la première part de la date de création de la série).
-      Une paie qui tombe le jour même de l'échéance compte. Une fenêtre sans aucune paie (ex.
-      paiement hebdomadaire) est assignée à la dernière paie avant l'échéance ; si cette paie
-      est antérieure à l'ajout, la part est en retard dès sa création.
-   2. Registre. Pour chaque personne : ce qu'elle doit jusqu'à une paie (ses parts) moins ce
-      qu'elle a versé (dépôts et revenus « compte », selon leur %). Le résultat est le montant
-      à déposer ; un surplus réduit les paies suivantes, dans l'ordre ; un retard s'ajoute à
-      la prochaine paie.
-   3. Urgence. Si une personne est en retard et qu'une dépense du compte passe AVANT la
-      prochaine paie, le retard est demandé tout de suite (sinon le compte serait à découvert).
-   4. Solde du compte. C'est un relevé : la somme de TOUTES les transactions « compte »
-      depuis la première (l'argent déjà présent s'enregistre comme un revenu « Base du
-      compte »). Chaque revenu ou dépôt l'augmente à sa date, chaque dépense le diminue.
-   5. Compteur. Le solde projeté part du solde d'aujourd'hui, ajoute les dépôts demandés et
-      retire les dépenses à venir : si les calculs sont bons, il ne descend jamais sous 0.
-   Les dépenses payées avec l'option Gabriel ou Mélissa (pas « Compte conjoint ») ne passent
-   pas par le compte : elles n'entrent pas dans ces calculs. */
-
 function debutJour(date){ const d = new Date(date); d.setHours(0,0,0,0); return d; }
 function dateLocaleDepuisISO(dateStr){ return new Date(dateStr+"T00:00:00"); }
 function ajouterJours(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
@@ -2755,609 +2828,1013 @@ function partagerCents(cents, pourcentageP1){
   return { p1, p2: cents - p1, pct };
 }
 
-/* Construit le registre : toutes les parts dues, tous les versements, toutes les sorties
-   du compte, depuis la date de départ. `finCalcul` = dernier jour de paie à couvrir. */
-function construireRegistreCompte(finCalcul){
-  const ancre = numeroJour(paieAncrage);
-  const aujourdhui = numeroJour(formaterDateISO(new Date()));
-  /* Aucune date de coupure : tout l'historique du compte compte, comme sur un relevé. */
-  const debut = -Infinity;
-  const parts = [];
-  const versements = [];
-  const sorties = [];
+/* ===================== MOTEUR DU COMPTE CONJOINT : SUIVI JOUR PAR JOUR =====================
+   Les dépôts prévus sont des revenus récurrents (ou uniques) avec l'option « Dépôt pour payer
+   le compte », au montant et à la fréquence que VOUS choisissez. Le moteur ne les change
+   jamais : il suit le solde jour par jour et vérifie que ça tient.
 
-  function ajouterDepense({ cle, libelle, categorie, cents, pourcentageP1, echeance, debutFenetre, texteDebut, ajout }){
-    if(echeance < debut) return; /* déjà réglée avant le départ du registre */
-    sorties.push({ jour: echeance, cents, libelle });
-    const { p1, p2, pct } = partagerCents(cents, pourcentageP1);
-    const base = { cle, libelle, categorie, pourcentageP1: pct, nature: 'depense' };
-    const echeanceTxt = dateCourteNum(echeance);
-    const n = nombrePaiesEntre(ancre, debutFenetre, echeance);
-    if(n === 0){
-      /* Aucune paie dans la fenêtre : l'argent doit être là à la dernière paie avant
-         l'échéance. Si cette paie précède l'ajout, la part est en retard dès le départ. */
-      let jour = dernierePaieNum(ancre, echeance);
-      const enRetard = jour < ajout;
-      parts.push({ ...base, jour, p1, p2,
-        explication: enRetard
-          ? `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, ajouté après la dernière paie qui le précède : à déposer dès que possible.`
-          : `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, aucune paie depuis ${texteDebut} : ` + finPhrase(`mis de côté à la paie du ${dateCourteNum(jour)}`) });
-      return;
-    }
-    const m1 = morceauxEgaux(p1, n), m2 = morceauxEgaux(p2, n);
-    const explication = `${formaterMonnaie(enDollars(cents))} dû le ${echeanceTxt}, réparti sur ${n} paie${n>1?'s':''} depuis ${texteDebut} : ${formaterMonnaie(enDollars(cents)/n)} par paie.`;
-    let jour = premierePaieNum(ancre, debutFenetre);
-    for(let i = 0; i < n; i++, jour += 14){
-      parts.push({ ...base, jour, p1: m1[i], p2: m2[i], explication });
-    }
-  }
-  function ajouterVersement({ libelle, categorie, cents, pourcentageP1, jour }){
-    if(jour < debut) return;
-    const { p1, p2, pct } = partagerCents(cents, pourcentageP1);
-    versements.push({ jour, p1, p2, libelle, categorie, pourcentageP1: pct,
-      explication: finPhrase(`${jour > aujourdhui ? 'Prévu' : 'Reçu'} le ${dateCourteNum(jour)}`) });
-  }
+   1. Réalité. Les transactions du compte datées d'aujourd'hui ou avant donnent le SOLDE et la
+      PART de chacun : un dépôt compte pour la personne qui l'a fait (100 % = Gabriel,
+      0 % = Mélissa), une dépense ou un revenu selon son %. Part G + part M = solde.
+   2. Prévision. Les dépenses et revenus à venir, plus les dépôts prévus datés d'aujourd'hui
+      ou après. Un dépôt prévu dont la date est passée et qui n'est pas confirmé n'est PAS
+      compté : il est « à confirmer ».
+   3. Vérification, chaque jour de la prochaine année (fin de journée) :
+      - le compte (total) ne descend pas sous le minimum, qui sert aux deux ;
+      - chaque part reste au-dessus de la portion du minimum de la personne. Un surplus de
+        Gabriel protège le compte, mais il reste à Gabriel : il ne remplit pas la part de
+        Mélissa, et il donne à Gabriel une avance (« marge »).
+   4. Correction, par personne : ajouter le montant qui manque au dernier dépôt prévu avant le
+      premier jour à problème, ou, s'il n'y en a pas, un dépôt unique ce jour-là (ou aujourd'hui).
+   Montants en cents entiers, dates en numéros de jour (voir numeroJour). */
 
-  /* Dépenses et dépôts ponctuels */
-  depensesReelles
-    .filter(e => e.type === 'conjointe' && e.estCompte && !e.recurrenceId)
-    .forEach(e => {
-      const jour = numeroJour(e.date);
-      const cents = enCents(e.amount);
-      const libelle = e.note || e.category;
-      if(e.estRevenu){
-        ajouterVersement({ libelle, categorie: e.category, cents, pourcentageP1: e.pourcentageP1, jour });
-        return;
-      }
-      /* Sans date d'ajout connue : la paie qui précède l'échéance la couvre. */
-      const ajout = e.ajout ? numeroJour(e.ajout) : dernierePaieNum(ancre, jour);
-      ajouterDepense({ cle: `d:${e.id}`, libelle, categorie: e.category, cents, pourcentageP1: e.pourcentageP1,
-        echeance: jour, debutFenetre: ajout, ajout, texteDebut: `l'ajout le ${dateCourteNum(ajout)}` });
-    });
+const MOTEUR_HORIZON_JOURS = 366;
+const MOTEUR_PERSONNES = ['p1', 'p2'];
 
-  /* Séries : une « famille » regroupe les segments issus d'une même série (scissions). */
-  const familles = new Map();
-  recurrences.filter(r => r.actif && r.type === 'conjointe').forEach(r => {
-    const cle = r.racineId || r.id;
-    if(!familles.has(cle)) familles.set(cle, []);
-    familles.get(cle).push(r);
+function arrondiDollarSup(cents){ return cents <= 0 ? 0 : Math.ceil(Math.ceil(cents) / 100) * 100; }
+function deposantDe(m){
+  if(!m.estRevenu) return null;
+  if(m.pct === 100) return 'p1';
+  if(m.pct === 0) return 'p2';
+  return null;
+}
+
+/* entree = { mouvements, prevus, aujourdhui, coussin, pctCoussinP1, horizon }
+   mouvements : transactions réelles du compte et prévisions ordinaires (dépenses et revenus
+                récurrents), dépôts confirmés compris : [{ id, jour, cents, estRevenu, pct, libelle }]
+   prevus     : dépôts prévus non confirmés : [{ id, X, jour, cents, libelle }] */
+function calculerMoteurCompte(entree){
+  const auj = entree.aujourdhui;
+  const fin = auj + (entree.horizon || MOTEUR_HORIZON_JOURS);
+  const coussin = Math.max(0, entree.coussin || 0);
+  const pctC = entree.pctCoussinP1 != null ? entree.pctCoussinP1 : 50;
+  const cible = { p1: Math.round(coussin * pctC / 100) };
+  cible.p2 = coussin - cible.p1;
+
+  /* Mouvements du compte, avec la part de chacun. */
+  const mvts = (entree.mouvements || []).map(m => {
+    const s = partagerCents(m.cents, m.pct);
+    const signe = m.estRevenu ? 1 : -1;
+    return { ...m, type: 'reel', deposant: deposantDe(m), d: { p1: signe * s.p1, p2: signe * s.p2 } };
   });
-  familles.forEach((segments, cleFamille) => {
-    const occurrences = [];
-    segments.forEach(rec => {
-      const limite = dateLocaleDepuisISO(isoDuNumero(finCalcul + 366 * Math.max(1, rec.intervalle || 1)));
-      occurrencesEffectives(rec, limite).forEach(o => { if(o.estCompte) occurrences.push(o); });
-    });
-    if(!occurrences.length) return;
-    occurrences.sort((a, b) => a.date.localeCompare(b.date));
-    const ajouts = segments.map(r => r.ajout).filter(Boolean).sort();
-    /* Sans date de création connue (colonne created_at absente) : la série commence à être
-       provisionnée à la paie qui précède sa première dépense. */
-    const premiereDepense = occurrences.find(o => !o.estRevenu);
-    const ajoutFamille = ajouts.length ? numeroJour(ajouts[0])
-      : dernierePaieNum(ancre, numeroJour(premiereDepense ? premiereDepense.date : occurrences[0].date));
+  const prevus = (entree.prevus || []).map(q => {
+    const d = { p1: 0, p2: 0 }; d[q.X] = q.cents;
+    return { ...q, type: 'prevu', estRevenu: true, deposant: q.X, d };
+  });
+  const aConfirmer = prevus.filter(q => q.jour < auj).sort((a, b) => a.jour - b.jour);
+  const dusAujourdhui = prevus.filter(q => q.jour === auj);
 
-    let precedente = null;
-    occurrences.forEach(o => {
-      const jour = numeroJour(o.date);
-      const cents = enCents(o.amount);
-      const libelle = o.note || o.category;
-      if(o.estRevenu){
-        ajouterVersement({ libelle, categorie: o.category, cents, pourcentageP1: o.pourcentageP1, jour });
-        return;
-      }
-      const apresPrecedente = precedente != null ? precedente + 1 : ajoutFamille;
-      const debutFenetre = Math.max(apresPrecedente, ajoutFamille);
-      const texteDebut = precedente != null && apresPrecedente >= ajoutFamille
-        ? `l'occurrence du ${dateCourteNum(precedente)}`
-        : `la création de la série le ${dateCourteNum(ajoutFamille)}`;
-      ajouterDepense({ cle: `r:${cleFamille}`, libelle, categorie: o.category, cents, pourcentageP1: o.pourcentageP1,
-        echeance: jour, debutFenetre, ajout: ajoutFamille, texteDebut });
-      precedente = jour;
+  /* 1) Réalité : solde et parts à la fin d'aujourd'hui (transactions réelles seulement). */
+  const tri = (a, b) => a.jour - b.jour || (b.estRevenu - a.estRevenu);
+  const passes = mvts.filter(m => m.jour <= auj).sort(tri);
+  const parts = { p1: 0, p2: 0 };
+  passes.forEach(m => { parts.p1 += m.d.p1; parts.p2 += m.d.p2; });
+  const solde = parts.p1 + parts.p2;
+
+  /* 2) Journal jour par jour : historique réel, puis prévision (aujourd'hui compris). */
+  const grouper = (liste, depart) => {
+    const acc = { ...depart };
+    const jours = [];
+    liste.forEach(m => {
+      acc.p1 += m.d.p1; acc.p2 += m.d.p2;
+      let j = jours[jours.length - 1];
+      if(!j || j.jour !== m.jour){ j = { jour: m.jour, mouvements: [] }; jours.push(j); }
+      j.mouvements.push({ id: m.id, libelle: m.libelle, cents: m.estRevenu ? m.cents : -m.cents,
+        deposant: m.deposant, type: m.type, X: m.X || null });
+      j.solde = acc.p1 + acc.p2;
+      j.parts = { ...acc };
     });
+    return jours;
+  };
+  const historique = grouper(passes, { p1: 0, p2: 0 });
+
+  const aVenir = [
+    ...mvts.filter(m => m.jour > auj && m.jour <= fin),
+    ...prevus.filter(q => q.jour >= auj && q.jour <= fin)
+  ].sort(tri);
+  const projection = grouper(aVenir, parts);
+  /* Aujourd'hui figure toujours en tête de la projection, avec ses mouvements réels (déjà
+     dans le solde) suivis des dépôts prévus aujourd'hui. */
+  const derniereJournee = historique[historique.length - 1];
+  const reelsDuJour = derniereJournee && derniereJournee.jour === auj ? derniereJournee.mouvements : [];
+  if(projection.length && projection[0].jour === auj){
+    projection[0].mouvements = [...reelsDuJour, ...projection[0].mouvements];
+  } else {
+    projection.unshift({ jour: auj, mouvements: [...reelsDuJour], solde, parts: { ...parts } });
+  }
+
+  /* 3) Vérifications. */
+  let minimum = projection[0];
+  projection.forEach(j => { if(j.solde < minimum.solde) minimum = j; });
+  const sousMinimum = projection.find(j => j.solde < coussin) || null;
+
+  const personnes = {};
+  MOTEUR_PERSONNES.forEach(X => {
+    const depotsX = prevus.filter(q => q.X === X && q.jour >= auj && q.jour <= fin).sort((a, b) => a.jour - b.jour);
+    const probleme = projection.find(j => j.parts[X] < cible[X]) || null;
+    let plusBas = projection[0];
+    projection.forEach(j => { if(j.parts[X] < plusBas.parts[X]) plusBas = j; });
+    const info = {
+      ok: !probleme,
+      marge: plusBas.parts[X] - cible[X],                     /* > 0 : avance ; < 0 : manque */
+      plusBas: { jour: plusBas.jour, part: plusBas.parts[X] },
+      probleme: probleme ? { jour: probleme.jour, part: probleme.parts[X] } : null,
+      prochainDepot: depotsX[0] || null,
+      correction: null
+    };
+    if(probleme){
+      /* Dernier dépôt prévu au plus tard le jour du problème ; sinon un dépôt unique. */
+      const avant = depotsX.filter(q => q.jour <= probleme.jour);
+      const q = avant.length ? avant[avant.length - 1] : null;
+      const depuis = q ? q.jour : probleme.jour;
+      let manque = 0;
+      projection.forEach(j => { if(j.jour >= depuis) manque = Math.max(manque, cible[X] - j.parts[X]); });
+      info.correction = q
+        ? { type: 'ajout', depot: q, cents: arrondiDollarSup(manque) }
+        : { type: 'nouveau', jour: depuis, cents: arrondiDollarSup(manque) };
+    }
+    personnes[X] = info;
   });
 
   return {
-    ancre, aujourdhui,
-    parts, versements, sorties
+    aujourdhui: auj, fin, coussin, cible, solde, parts,
+    historique, projection, minimum, sousMinimum, personnes,
+    aConfirmer, dusAujourdhui,
+    prochains: prevus.filter(q => q.jour >= auj).sort((a, b) => a.jour - b.jour)
   };
 }
 
-/* Montant à déposer par Gabriel (p1) et Mélissa (p2) aux `nbPaies` prochaines paies.
-   Chaque ligne : { date, iso, p1, p2, lignes } (en dollars). Le tableau porte aussi
-   `immediat` (dépôt à faire avant la prochaine paie, ou null) et `registre`. */
-function calculerEcheancierCompte(nbPaies){
-  nbPaies = nbPaies || NB_PAIES_ECHEANCIER;
-  if(!paieAncrage) return null;
+/* ===================== COMPTE CONJOINT : RÉGLAGES =====================
+   Le minimum du compte (et la portion de chacun, 50 % par défaut) est gardé dans la table
+   Budgets, sous la période spéciale « moteur-compte » (Personne = Conjoint), en cents.
+   Aucune nouvelle table ni colonne. Si Budgets est inaccessible, on le garde sur l'appareil. */
+const PERIODE_MOTEUR = 'moteur-compte';
+const CLE_LOCALE_MOTEUR = 'depenses_moteur_compte';
+let donneesCompteChargees = false;
+let dernierResultatMoteur = null;
+let fileSauvegardeMoteur = Promise.resolve();
+
+function lireEtatMoteur(){
+  const carte = budgets.conjoint && budgets.conjoint[PERIODE_MOTEUR];
+  if(carte && Object.keys(carte).length) return carte;
+  try{ return JSON.parse(localStorage.getItem(CLE_LOCALE_MOTEUR) || 'null') || {}; }
+  catch(e){ return {}; }
+}
+function reglagesDepuisEtat(c){
+  return {
+    coussin: c.COUSSIN_CENTS != null ? Math.max(0, c.COUSSIN_CENTS) : 0,
+    pctCoussinP1: c.COUSSIN_PCT_P1 != null ? Math.min(100, Math.max(0, c.COUSSIN_PCT_P1)) : 50
+  };
+}
+function sauvegarderEtatMoteur(valeurs){
+  const ancien = lireEtatMoteur();
+  const modifies = Object.keys(valeurs).filter(cle => ancien[cle] !== valeurs[cle]);
+  if(!modifies.length) return fileSauvegardeMoteur;
+  if(!budgets.conjoint) budgets.conjoint = {};
+  budgets.conjoint[PERIODE_MOTEUR] = { ...ancien, ...valeurs };
+  const lignes = modifies.map(cle => ({
+    id: `moteur-${cle}`, Personne: 'Conjoint', Categorie: cle, Periode: PERIODE_MOTEUR, Montant: valeurs[cle]
+  }));
+  fileSauvegardeMoteur = fileSauvegardeMoteur.then(async () => {
+    try{
+      if(!budgetsSupabaseDisponible) throw new Error('Budgets indisponible');
+      const { error } = await supabaseClient.from('Budgets').upsert(lignes, { onConflict: 'id' });
+      if(error) throw error;
+    } catch(err){
+      console.warn("Minimum du compte gardé sur cet appareil seulement.", err);
+      localStorage.setItem(CLE_LOCALE_MOTEUR, JSON.stringify(budgets.conjoint[PERIODE_MOTEUR]));
+    }
+  });
+  return fileSauvegardeMoteur;
+}
+async function enregistrerReglagesCompte(coussinDollars){
+  await sauvegarderEtatMoteur({ COUSSIN_CENTS: Math.max(0, Math.round((coussinDollars || 0) * 100)) });
+  rafraichirActif();
+}
+
+/* ===================== COMPTE CONJOINT : DONNÉES POUR LE MOTEUR ===================== */
+function estDepotPersonne(e){ return !!e.estRevenu && (e.pourcentageP1 === 100 || e.pourcentageP1 === 0); }
+
+/* Transactions réelles du compte et prévisions ordinaires (séries qui ne sont pas des
+   dépôts prévus). */
+function collecterMouvementsCompte(limite){
+  const liste = [];
+  const ajouter = (e, id) => liste.push({
+    id, jour: numeroJour(e.date), cents: enCents(e.amount), estRevenu: !!e.estRevenu,
+    pct: e.pourcentageP1 != null ? e.pourcentageP1 : 50,
+    libelle: estDepotPersonne(e) ? `Dépôt de ${nomsPersonnes[e.pourcentageP1 === 100 ? 'p1' : 'p2']}` : (e.note || e.category)
+  });
+  depensesReelles.filter(e => e.type === 'conjointe' && e.estCompte && !e.recurrenceId).forEach(e => ajouter(e, e.id));
+  recurrences.filter(r => r.actif && r.type === 'conjointe' && !estSerieDepot(r)).forEach(rec => {
+    occurrencesEffectives(rec, limite).forEach(o => { if(o.estCompte) ajouter(o, o.id); });
+  });
+  return liste;
+}
+
+function executerMoteurCompte(){
+  const reglages = reglagesDepuisEtat(lireEtatMoteur());
+  const auj = numeroJour(formaterDateISO(new Date()));
+  const limite = dateLocaleDepuisISO(isoDuNumero(auj + MOTEUR_HORIZON_JOURS));
+  const mouvements = collecterMouvementsCompte(limite);
+  const occ = occurrencesDepotsPrevus(limite);
+  const prevus = occ.map(o => ({ id: o.id, X: o.depotPersonne, jour: numeroJour(o.date), cents: enCents(o.amount), libelle: o.note }));
+  const r = calculerMoteurCompte({ mouvements, prevus, aujourdhui: auj, coussin: reglages.coussin, pctCoussinP1: reglages.pctCoussinP1 });
+  r.reglages = reglages;
+  r.occurrences = new Map(occ.map(o => [o.id, o]));
+  r.aDesMouvements = mouvements.length > 0 || occ.length > 0 || recurrences.some(estSerieDepot);
+  dernierResultatMoteur = r;
+  return r;
+}
+
+/* Ce que lit la fonction planifiée des notifications (inchangée dans ce bloc) : une ligne
+   par date de paie, avec le montant des dépôts prévus non confirmés de cette période. */
+function echeancierPourNotifications(r){
+  if(!r || !donneesCompteChargees || !paieAncrage) return null;
   const ancre = numeroJour(paieAncrage);
-  const aujourdhui = numeroJour(formaterDateISO(new Date()));
-  const premiere = premierePaieNum(ancre, aujourdhui);
-  const paies = Array.from({ length: nbPaies }, (_, k) => premiere + 14*k);
-  const reg = construireRegistreCompte(paies[paies.length-1]);
-
-  const somme = (liste, garder) => liste.reduce((t, x) => {
-    if(garder(x)){ t.p1 += x.p1; t.p2 += x.p2; }
-    return t;
-  }, { p1: 0, p2: 0 });
-
-  /* 1) Dépôt immédiat. Un retard est normalement reporté à la prochaine paie. On ne le
-     demande tout de suite que s'il manque VRAIMENT de l'argent dans le compte avant cette
-     paie, et seulement ce qui manque : si l'un a déposé en trop, son surplus est dans le
-     compte et couvre le retard de l'autre en attendant la paie. Le manque est demandé aux
-     personnes en retard, au prorata de leur retard. */
-  const duAvant = somme(reg.parts, p => p.jour < premiere);
-  const verseAvant = somme(reg.versements, v => v.jour < premiere);
-  const retard = { p1: Math.max(0, duAvant.p1 - verseAvant.p1), p2: Math.max(0, duAvant.p2 - verseAvant.p2) };
-  let immediat = null;
-  if(retard.p1 > 0 || retard.p2 > 0){
-    /* Solde du compte d'ici la prochaine paie, sans nouveau dépôt. */
-    let manque = 0, sortieCritique = null;
-    const evts = [
-      ...reg.sorties.filter(x => x.jour < premiere).map(x => ({ jour: x.jour, cents: -x.cents, ordre: 1, x })),
-      ...reg.versements.filter(v => v.jour < premiere).map(v => ({ jour: v.jour, cents: v.p1 + v.p2, ordre: 0 }))
-    ].sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
-    let solde = 0;
-    evts.forEach(e => {
-      solde += e.cents;
-      if(e.jour >= aujourdhui && e.x && -solde > manque){ manque = -solde; sortieCritique = e.x; }
-    });
-    if(manque > 0){
-      const total = retard.p1 + retard.p2;
-      let a1, a2;
-      if(total <= manque){ a1 = retard.p1; a2 = retard.p2; }
-      else {
-        a1 = Math.min(retard.p1, Math.ceil(manque * retard.p1 / total));
-        a2 = Math.min(retard.p2, manque - a1);
-        if(a1 + a2 < manque) a1 = Math.min(retard.p1, manque - a2);
-      }
-      immediat = { p1: enDollars(a1), p2: enDollars(a2), cents: { p1: a1, p2: a2 },
-                   avant: isoDuNumero(sortieCritique.jour), pour: sortieCritique.libelle };
-    }
+  const p0 = dernierePaieNum(ancre, r.aujourdhui);
+  const lignes = [];
+  for(let i = 0; i < NB_PAIES_ECHEANCIER; i++){
+    const p = p0 + 14 * i;
+    const somme = X => enDollars([...r.aConfirmer, ...r.prochains]
+      .filter(q => q.X === X && dernierePaieNum(ancre, q.jour) === p)
+      .reduce((t, q) => t + q.cents, 0));
+    lignes.push({ iso: isoDuNumero(p), p1: somme('p1'), p2: somme('p2') });
   }
-
-  /* 2) Registre paie par paie. */
-  const verse = somme(reg.versements, v => v.jour <= aujourdhui);
-  if(immediat){ verse.p1 += immediat.cents.p1; verse.p2 += immediat.cents.p2; }
-  let borne = aujourdhui;
-  const resultat = paies.map((paie, k) => {
-    const nouveaux = somme(reg.versements, v => v.jour > borne && v.jour <= paie);
-    verse.p1 += nouveaux.p1; verse.p2 += nouveaux.p2;
-    borne = paie;
-    const du = somme(reg.parts, p => p.jour <= paie);
-    const besoin = { p1: du.p1 - verse.p1, p2: du.p2 - verse.p2 };
-    const depot = { p1: Math.max(0, besoin.p1), p2: Math.max(0, besoin.p2) };
-    verse.p1 += depot.p1; verse.p2 += depot.p2;
-
-    /* Détail : ce qui appartient à la période (paie précédente, cette paie]. */
-    const dansPeriode = x => x.jour > paie - 14 && x.jour <= paie;
-    const lignes = [];
-    const parCle = new Map();
-    reg.parts.filter(dansPeriode).forEach(p => {
-      const cle = `${p.cle}|${p.jour}|${p.explication}`;
-      const deja = parCle.get(cle);
-      if(deja){ deja.p1 += p.p1; deja.p2 += p.p2; }
-      else parCle.set(cle, { ...p });
-    });
-    parCle.forEach(p => lignes.push({ ...p, _p1: p.p1, _p2: p.p2 }));
-    reg.versements.filter(dansPeriode).forEach(v => lignes.push({
-      nature: 'revenu', libelle: v.libelle, categorie: v.categorie, pourcentageP1: v.pourcentageP1,
-      explication: v.explication, _p1: -v.p1, _p2: -v.p2
-    }));
-    if(k === 0 && immediat){
-      lignes.push({ nature: 'revenu', libelle: 'Dépôt demandé tout de suite',
-        explication: `Montant en retard à déposer avant le ${dateCourteNum(numeroJour(immediat.avant))} (${immediat.pour}), déduit de cette paie.`,
-        _p1: -immediat.cents.p1, _p2: -immediat.cents.p2 });
-    }
-    const sousTotal = lignes.reduce((t, l) => ({ p1: t.p1 + l._p1, p2: t.p2 + l._p2 }), { p1: 0, p2: 0 });
-    const report = { p1: besoin.p1 - sousTotal.p1, p2: besoin.p2 - sousTotal.p2 };
-    if(report.p1 !== 0 || report.p2 !== 0){
-      const decrire = (nom, c) => c > 0 ? `${nom} : ${formaterMonnaie(enDollars(c))} non déposé aux paies précédentes` :
-                                  c < 0 ? `${nom} : ${formaterMonnaie(enDollars(-c))} déposé en trop aux paies précédentes` : null;
-      lignes.push({ nature: 'ajustement', libelle: 'Report des paies précédentes',
-        explication: [decrire(nomsPersonnes.p1, report.p1), decrire(nomsPersonnes.p2, report.p2)].filter(Boolean).join(' ; ') + '.',
-        _p1: report.p1, _p2: report.p2 });
-    }
-    if(besoin.p1 < 0 || besoin.p2 < 0){
-      lignes.push({ nature: 'ajustement', libelle: 'Surplus reporté à la paie suivante',
-        explication: 'Les dépôts dépassent ce qui est dû : le reste réduira les prochaines paies.',
-        _p1: Math.max(0, -besoin.p1), _p2: Math.max(0, -besoin.p2) });
-    }
-    return {
-      date: dateLocaleDepuisISO(isoDuNumero(paie)),
-      iso: isoDuNumero(paie),
-      p1: enDollars(depot.p1),
-      p2: enDollars(depot.p2),
-      lignes: lignes.map(({ _p1, _p2, jour, cle, ...l }) => ({ ...l, p1: enDollars(_p1), p2: enDollars(_p2) }))
-    };
-  });
-  resultat.immediat = immediat;
-  resultat.registre = reg;
-  return resultat;
+  return lignes;
 }
 
-/* ===================== SOLDE DU COMPTE CONJOINT =====================
-   Le solde est la somme de toutes les transactions « Compte conjoint » : revenus et dépôts
-   en plus, dépenses en moins, chacun à sa date. L'argent présent au départ s'enregistre
-   comme un revenu (ex. « Base du compte »). La table compte_solde n'est plus utilisée. */
+/* ===================== COMPTE CONJOINT : AFFICHAGE (onglet Résumé) ===================== */
+const argent = c => formaterMonnaie(enDollars(c || 0));
+const argentSigne = c => (c > 0 ? '+' : c < 0 ? '−' : '') + formaterMonnaie(Math.abs(enDollars(c || 0)));
+const dateCourte = n => dateLocaleDepuisISO(isoDuNumero(n)).toLocaleDateString('fr-CA', { day:'numeric', month:'short' });
+const dateLongueNum = n => dateLocaleDepuisISO(isoDuNumero(n)).toLocaleDateString('fr-CA', { day:'numeric', month:'long', year:'numeric' });
+const jourSemaine = n => dateLocaleDepuisISO(isoDuNumero(n)).toLocaleDateString('fr-CA', { weekday:'short', day:'numeric', month:'short' });
+const autrePersonne = X => X === 'p1' ? 'p2' : 'p1';
 
-/* Compteur de vérification : ce qu'il y aura dans le compte, paie après paie, SI chacun
-   dépose ce qui est demandé. Il rejoue toutes les transactions du compte depuis la première
-   (solde de 0 $ avant), ajoute les dépôts demandés (y compris un dépôt immédiat), et retire
-   les dépenses du compte à leur date. Le même jour, les dépôts passent avant les dépenses (un paiement dû le jour de
-   la paie est couvert par ce dépôt). Si les calculs sont bons, il ne descend jamais sous 0.
+let prochainsEtendus = false;
+let suiviOuvert = false;
+let suiviAvant = 7, suiviApres = 30;
+let graphiqueSuivi = null;
+let plageGraphique = 60;
 
-   Pour chaque paie : `solde` (fin de période, veille de la paie suivante) et `soldeMin`
-   (creux de la période). Le tableau porte aussi `creuxAvantPaie` : le creux entre
-   aujourd'hui et la première paie. */
-function projeterSoldeCompte(echeancier){
-  if(!echeancier || !echeancier.length || !echeancier.registre) return null;
-  const reg = echeancier.registre;
-  const evenements = [];
-  reg.sorties.forEach(x => evenements.push({ jour: x.jour, cents: -x.cents, ordre: 1, libelle: x.libelle }));
-  reg.versements.forEach(v => evenements.push({ jour: v.jour, cents: v.p1 + v.p2, ordre: 0, reel: true, libelle: v.libelle }));
-  if(echeancier.immediat){
-    evenements.push({ jour: reg.aujourdhui, cents: echeancier.immediat.cents.p1 + echeancier.immediat.cents.p2, ordre: 0, libelle: 'Dépôt demandé tout de suite' });
-  }
-  echeancier.forEach(l => evenements.push({ jour: numeroJour(l.iso), cents: enCents(l.p1) + enCents(l.p2), ordre: 0, prevu: true, libelle: 'Dépôt demandé à cette paie' }));
-  evenements.sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
-
-  const jours = echeancier.map(l => numeroJour(l.iso));
-  let courant = 0;
-  let i = 0;
-  let creuxAvant = null;
-  while(i < evenements.length && evenements[i].jour < jours[0]){
-    courant += evenements[i].cents;
-    if(evenements[i].jour >= reg.aujourdhui) creuxAvant = creuxAvant === null ? courant : Math.min(creuxAvant, courant);
-    i++;
-  }
-  const projection = jours.map((jour, k) => {
-    const fin = k + 1 < jours.length ? jours[k+1] : jour + 14;
-    const avant = courant;
-    let min = null, sorties = 0, entrees = 0, depots = 0, apresDepot = null;
-    const mouvements = [];
-    while(i < evenements.length && evenements[i].jour < fin){
-      const e = evenements[i];
-      /* Le premier retrait (ou le premier jour suivant) marque la fin des dépôts de la paie. */
-      if(apresDepot === null && (e.jour > jour || e.cents < 0)) apresDepot = courant;
-      if(e.cents < 0) sorties -= e.cents;
-      else if(e.prevu) depots += e.cents;
-      else entrees += e.cents;
-      courant += e.cents;
-      if(min === null || courant < min) min = courant;
-      mouvements.push({ iso: isoDuNumero(e.jour), libelle: e.libelle, montant: enDollars(e.cents), solde: enDollars(courant) });
-      i++;
-    }
-    if(apresDepot === null) apresDepot = courant;
-    if(min === null) min = courant;
-    return { avant: enDollars(avant), apresDepot: enDollars(apresDepot), solde: enDollars(courant), soldeMin: enDollars(min),
-             sorties: enDollars(sorties), entrees: enDollars(entrees), depots: enDollars(depots), mouvements };
-  });
-  projection.creuxAvantPaie = creuxAvant === null ? null : enDollars(creuxAvant);
-  return projection;
-}
-
-/* Solde du compte aujourd'hui et relevé des transactions, comme à la banque. */
-function releveCompte(registre){
-  if(!registre) return null;
-  const auj = registre.aujourdhui;
-  const lignes = [
-    ...registre.versements.filter(v => v.jour <= auj).map(v => ({ jour: v.jour, cents: v.p1 + v.p2, libelle: v.libelle, ordre: 0 })),
-    ...registre.sorties.filter(x => x.jour <= auj).map(x => ({ jour: x.jour, cents: -x.cents, libelle: x.libelle, ordre: 1 }))
-  ].sort((a, b) => a.jour - b.jour || a.ordre - b.ordre);
-  let solde = 0, entrees = 0, sorties = 0;
-  lignes.forEach(l => {
-    solde += l.cents;
-    if(l.cents >= 0) entrees += l.cents; else sorties -= l.cents;
-    l.solde = solde;
-  });
-  return { lignes, actuel: enDollars(solde), entrees: enDollars(entrees), sorties: enDollars(sorties) };
-}
-
-let historiqueCompteOuvert = false;
-function afficherBlocSoldeCompte(registre){
+function afficherBlocSoldeCompte(r){
   const zone = document.getElementById('solde-compte-bloc');
   if(!zone) return;
-  const releve = releveCompte(registre);
-  if(!releve){ zone.innerHTML = ''; return; }
-  const dateLongue = n => dateLocaleDepuisISO(isoDuNumero(n)).toLocaleDateString('fr-CA', { day:'numeric', month:'short', year:'numeric' });
-  const historique = releve.lignes.slice().reverse().map(l => `
-    <div class="depot-ligne"><div class="depot-ligne-haut">
-      <span class="depot-ligne-nom">${dateLongue(l.jour)} · ${echapperHTML(l.libelle || '')}</span>
-      <span class="value">${l.cents < 0 ? '−' : '+'} ${formaterMonnaie(Math.abs(enDollars(l.cents)))}</span>
-    </div><div class="depot-ligne-explication">Solde : ${formaterMonnaie(enDollars(l.solde))}</div></div>`).join('');
-  zone.innerHTML = `<div class="solde-bloc">
-    <div class="solde-bloc-haut">
-      <span class="solde-bloc-titre">Solde du compte aujourd'hui</span>
-      <span class="solde-bloc-montant ${releve.actuel < 0 ? 'negatif' : ''}">${formaterMonnaie(releve.actuel)}</span>
-    </div>
-    <div class="solde-bloc-detail">${formaterMonnaie(releve.entrees)} de revenus et dépôts − ${formaterMonnaie(releve.sorties)} de paiements, depuis la première transaction du compte.</div>
-    ${releve.lignes.length ? `<button class="solde-bloc-lien" id="solde-historique-bascule">${historiqueCompteOuvert ? "Masquer l'historique" : "Voir l'historique"}</button>` : ''}
-    ${historiqueCompteOuvert ? `<div style="margin-top:6px;">${historique}</div>` : ''}
-  </div>`;
-  const bascule = document.getElementById('solde-historique-bascule');
-  if(bascule) bascule.addEventListener('click', () => { historiqueCompteOuvert = !historiqueCompteOuvert; afficherBlocSoldeCompte(registre); });
-}
-
-/* ===================== DÉTAIL D'UN DÉPÔT (vérification du calcul) =====================
-   Cliquer une paie dans "Prochains dépôts au compte conjoint" ouvre le détail ligne par
-   ligne du montant demandé : d'où vient chaque part, comment elle a été répartie, et le
-   total qui doit correspondre exactement au montant de la ligne cliquée. */
-let dernierEcheancier = [];
-let dernieresProjections = {};
-
-function fermerDepotModal(){ document.getElementById('depot-modal').style.display = 'none'; }
-
-function ouvrirDetailDepot(iso){
-  const paie = dernierEcheancier.find(l => l.iso === iso);
-  if(!paie) return;
-
-  const dateLisible = capitaliser(paie.date.toLocaleDateString('fr-CA', {weekday:'long', day:'numeric', month:'long', year:'numeric'}));
-  const lignes = paie.lignes || [];
-
-  /* Les lignes sont regroupées par nature pour que la lecture suive le raisonnement :
-     ce qu'il faut provisionner, ce qui vient en déduction, puis les reports. */
-  const groupes = [
-    ['depense',    'À provisionner'],
-    ['revenu',     'Dépôts et revenus déduits'],
-    ['ajustement', 'Reports et ajustements']
-  ];
-
-  const montantHTML = (v, classe) =>
-    `<span class="value ${classe}">${v < 0 ? '−' : ''}${formaterMonnaie(Math.abs(v))}</span>`;
-
-  /* Pastille de catégorie, aux mêmes couleurs que partout ailleurs dans l'app. */
-  const pastilleCategorie = (cat) => {
-    if(!cat) return '';
-    const c = COULEURS_CATEGORIES[cat] || '#9aa0a6';
-    return `<span class="cat-pill" style="background:${c}22;color:${c};">${echapperHTML(cat)}</span>`;
+  if(!r){ zone.innerHTML = ''; return; }
+  const part = X => {
+    const p = r.personnes[X];
+    const avance = p.ok && p.marge > 0 ? `<small class="cs-avance">avance ${argent(p.marge)}</small>` : '';
+    return `<div class="cs-part">
+      <span class="cs-nom"><span class="dot ${X}"></span>${echapperHTML(nomsPersonnes[X])}</span>
+      <strong class="${r.parts[X] < 0 ? 'solde-negatif' : ''}">${argent(r.parts[X])}</strong>${avance}
+    </div>`;
   };
-
-  let corps = '';
-  groupes.forEach(([nature, titre])=>{
-    const duGroupe = lignes.filter(l => l.nature === nature);
-    if(!duGroupe.length) return;
-    corps += `<div class="depot-section-titre">${titre}</div>`;
-    corps += duGroupe.map(l => `
-      <div class="depot-ligne">
-        <div class="depot-ligne-haut">
-          <span class="depot-ligne-nom">${echapperHTML(l.libelle)}${l.rattrapage ? '<span class="depot-pill">rattrapage</span>' : ''}</span>
-          <span class="depot-ligne-montants">${montantHTML(l.p1,'p1')}${montantHTML(l.p2,'p2')}</span>
-        </div>
-        ${pastilleCategorie(l.categorie)}
-        <div class="depot-ligne-explication">${echapperHTML(l.explication || '')}${l.pourcentageP1 != null ? ` Partagé ${l.pourcentageP1}% / ${Math.round((100-l.pourcentageP1)*10)/10}%.` : ''}</div>
-      </div>`).join('');
-  });
-
-  if(!lignes.length){
-    corps = `<div class="budget-empty">Aucune part ne tombe sur cette paie : rien à déposer.</div>`;
-  }
-
-  /* Contrôle de cohérence : la somme des lignes doit redonner le montant affiché. S'il y a
-     un écart, on le montre au lieu de le cacher — c'est tout l'intérêt de cette fenêtre. */
-  const sommeP1 = lignes.reduce((s,l)=>s+l.p1, 0);
-  const sommeP2 = lignes.reduce((s,l)=>s+l.p2, 0);
-  const ecart = Math.abs(sommeP1 - paie.p1) + Math.abs(sommeP2 - paie.p2);
-  const controle = ecart < 0.005
-    ? ''
-    : `<div class="depot-ligne-explication" style="margin-top:10px;color:var(--red);">⚠ Écart de ${formaterMonnaie(ecart)} entre le détail et le montant affiché.</div>`;
-
-  /* Le compte pendant la période : solde avant la paie, chaque mouvement, point le plus bas. */
-  const proj = dernieresProjections[iso];
-  let blocCompte = '';
-  if(proj){
-    const jourCourt = d => dateLocaleDepuisISO(d).toLocaleDateString('fr-CA', { day:'numeric', month:'short' });
-    blocCompte = `<div class="depot-section-titre">Compte conjoint jusqu'à la paie suivante</div>
-      <div class="depot-ligne"><div class="depot-ligne-haut"><span class="depot-ligne-nom">Solde avant la paie</span><span class="value">${formaterMonnaie(proj.avant)}</span></div></div>
-      ${proj.mouvements.map(m => `
-        <div class="depot-ligne"><div class="depot-ligne-haut">
-          <span class="depot-ligne-nom">${jourCourt(m.iso)} · ${echapperHTML(m.libelle || '')}</span>
-          <span class="value">${m.montant < 0 ? '−' : '+'} ${formaterMonnaie(Math.abs(m.montant))}</span>
-        </div><div class="depot-ligne-explication">Solde : ${formaterMonnaie(m.solde)}</div></div>`).join('')}
-      <div class="depot-ligne"><div class="depot-ligne-haut"><span class="depot-ligne-nom">Point le plus bas</span><span class="value ${proj.soldeMin < 0 ? 'solde-negatif' : ''}">${formaterMonnaie(proj.soldeMin)}</span></div></div>`;
-  }
-
-  document.getElementById('depot-modal-content').innerHTML = `
-    <div class="modal-header">
-      <h3>Dépôt au compte conjoint<span class="modal-sous-titre">${dateLisible}</span></h3>
-      <button class="modal-close-btn" id="depot-fermer" aria-label="Fermer">&times;</button>
+  zone.innerHTML = `
+    <div class="cs-solde">
+      <div class="cs-label">Solde du compte</div>
+      <div class="cs-montant ${r.solde < 0 ? 'solde-negatif' : ''}">${argent(r.solde)}</div>
+      <div class="cs-parts">${part('p1')}${part('p2')}</div>
     </div>
-    <div class="modal-body">
-      <div class="depot-entete">
-        <span>Provenance</span>
-        <span class="depot-entete-montants"><span class="p1">${nomsPersonnes.p1}</span><span class="p2">${nomsPersonnes.p2}</span></span>
+    <div class="cs-minimum">
+      <label for="cs-min">Minimum du compte</label>
+      <div class="cs-min-champ">
+        <input type="number" id="cs-min" min="0" step="1" inputmode="decimal" value="${enDollars(r.reglages.coussin)}">
+        <span>$</span>
+        <button class="btn-add" id="cs-min-ok" style="display:none;">OK</button>
       </div>
-      ${corps}
-      <div class="depot-total final">
-        <span>Total à déposer</span>
-        <span class="depot-ligne-montants">${montantHTML(paie.p1,'p1')}${montantHTML(paie.p2,'p2')}</span>
-      </div>
-      ${controle}
-      ${blocCompte}
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" id="depot-fermer-bas">Fermer</button>
-    </div>
-  `;
-  document.getElementById('depot-fermer').addEventListener('click', fermerDepotModal);
-  document.getElementById('depot-fermer-bas').addEventListener('click', fermerDepotModal);
-  document.getElementById('depot-modal').style.display = 'flex';
+    </div>`;
+  const champ = document.getElementById('cs-min');
+  const ok = document.getElementById('cs-min-ok');
+  const initial = champ.value;
+  champ.addEventListener('input', () => { ok.style.display = champ.value !== initial ? '' : 'none'; });
+  ok.addEventListener('click', actionVerrouillee(ok, async () => {
+    const c = parseFloat(champ.value);
+    if(isNaN(c) || c < 0){ afficherAlerte('Le minimum doit être un montant positif.'); return; }
+    await enregistrerReglagesCompte(c);
+  }));
+  champ.addEventListener('keydown', e => { if(e.key === 'Enter' && ok.style.display !== 'none'){ e.preventDefault(); ok.click(); } });
 }
 
-/* Affiche l'échéancier calculé dans la carte "🏦 Prochains dépôts au compte conjoint". */
-/* En mode "Année", l'échéancier montre par défaut les paies du mois civil en cours ; ce
-   drapeau bascule vers "voir plus" (jusqu'à 7 paies à venir, peu importe le mois). */
-let echeancierAnneeEtendu = false;
+/* Ligne de correction pour une personne dont la part ne tient pas. */
+function correctionPersonne(r, X){
+  const p = r.personnes[X];
+  if(p.ok) return '';
+  const nom = echapperHTML(nomsPersonnes[X]);
+  const c = p.correction;
+  const bouton = c.type === 'ajout'
+    ? `<button class="cs-bouton" data-ajout-depot="${X}">Ajouter ${argent(c.cents)} au dépôt du ${dateCourte(c.depot.jour)}</button>`
+    : `<button class="cs-bouton" data-nouveau-depot="${X}">Prévoir un dépôt de ${argent(c.cents)} ${Math.max(c.jour, r.aujourdhui) === r.aujourdhui ? "aujourd'hui" : `le ${dateCourte(c.jour)}`}</button>`;
+  const quand = p.probleme.jour === r.aujourdhui
+    ? `sa part est à ${argent(p.probleme.part)}`
+    : `sa part descendrait à ${argent(p.probleme.part)} le ${dateCourte(p.probleme.jour)}`;
+  return `<div class="cs-correction"><span><strong>${nom}</strong> : ${quand}, sous ${r.reglages.pctCoussinP1 === 50 ? 'sa moitié' : 'sa portion'} du minimum (${argent(r.cible[X])}).</span>${bouton}</div>`;
+}
+
+function afficherAlerteSoldeCompte(r){
+  const zone = document.getElementById('solde-compte-alerte');
+  if(!zone) return;
+  if(!r){ zone.innerHTML = ''; return; }
+  const blocs = [];
+
+  /* À confirmer : dépôts dont la date est arrivée (aujourd'hui compris). */
+  const dus = [...r.aConfirmer, ...r.dusAujourdhui];
+  if(dus.length){
+    blocs.push(`<div class="cs-bloc cs-attente"><div class="cs-titre">À confirmer</div>${dus.map(q =>
+      `<button class="cs-bouton" data-ouvrir-depot="${q.id}">${echapperHTML(nomsPersonnes[q.X])} · ${argent(q.cents)} · ${q.jour === r.aujourdhui ? "aujourd'hui" : dateCourte(q.jour)}</button>`).join('')}
+      ${r.aConfirmer.length ? `<div class="cs-texte">Un dépôt non confirmé ne compte pas dans le solde ni dans la vérification.</div>` : ''}</div>`);
+  }
+
+  /* Verdict. */
+  const corrections = MOTEUR_PERSONNES.map(X => correctionPersonne(r, X)).filter(Boolean).join('');
+  const sm = r.sousMinimum;
+  if(sm){
+    const titre = sm.jour === r.aujourdhui
+      ? `⚠ Le compte est sous le minimum de ${argent(r.coussin)}`
+      : `⚠ Le ${dateLongueNum(sm.jour)}, le compte descendrait à ${argent(sm.solde)}`;
+    blocs.push(`<div class="cs-bloc cs-manque"><div class="cs-titre">${titre}</div>
+      ${sm.jour === r.aujourdhui ? '' : `<div class="cs-texte">C'est sous le minimum de ${argent(r.coussin)}.</div>`}${corrections}</div>`);
+  } else if(corrections){
+    const aide = MOTEUR_PERSONNES.filter(X => r.personnes[X].ok).map(X => nomsPersonnes[X]);
+    blocs.push(`<div class="cs-bloc cs-avert"><div class="cs-titre">⚠ Une part n'est pas remplie</div>
+      <div class="cs-texte">Le compte reste au-dessus de ${argent(r.coussin)}${aide.length ? ` grâce à l'avance de ${echapperHTML(aide.join(' et '))}` : ''}, mais chacun doit remplir sa part.</div>${corrections}</div>`);
+  } else {
+    blocs.push(`<div class="cs-bloc cs-ok"><div class="cs-titre">✓ Le compte reste au-dessus de ${argent(r.coussin)} toute l'année</div>
+      <div class="cs-texte">Plus bas : ${argent(r.minimum.solde)} le ${dateLongueNum(r.minimum.jour)}. Chacun remplit sa part.</div></div>`);
+  }
+
+  zone.innerHTML = blocs.join('');
+  zone.querySelectorAll('[data-ouvrir-depot]').forEach(b => b.addEventListener('click', () => ouvrirDepotPlanifie(b.dataset.ouvrirDepot)));
+  const surClic = (sel, f) => zone.querySelectorAll(sel).forEach(b => b.addEventListener('click', actionVerrouillee(b, () => f(b))));
+  surClic('[data-ajout-depot]', async b => appliquerCorrection(b.dataset.ajoutDepot));
+  surClic('[data-nouveau-depot]', async b => appliquerCorrection(b.dataset.nouveauDepot));
+}
+
+/* Tableau des dépôts à venir (montants des dépôts créés). */
+function afficherProchainsDepots(r){
+  const liste = prochainsEtendus ? r.prochains : r.prochains.slice(0, 8);
+  const lignes = liste.map(q => `
+    <button class="cs-ligne-depot" data-ouvrir-depot="${q.id}">
+      <span class="cs-date">${jourSemaine(q.jour)}</span>
+      <span class="cs-qui"><span class="dot ${q.X}"></span>${echapperHTML(nomsPersonnes[q.X])}</span>
+      <span class="cs-somme">${argent(q.cents)}</span>
+    </button>`).join('');
+  return `
+    <div class="cs-titre cs-titre-section">Dépôts prévus</div>
+    ${liste.length ? `<div class="cs-liste">${lignes}</div>` : `<div class="cs-texte">Aucun dépôt prévu. Ajoutez un revenu du compte avec l'option « Dépôt pour payer le compte ».</div>`}
+    ${r.prochains.length > 8 ? `<button class="solde-bloc-lien cs-lien" id="prochains-bascule">${prochainsEtendus ? 'Voir moins' : `Voir les ${r.prochains.length} dépôts de l'année`}</button>` : ''}`;
+}
+
+/* Suivi du solde jour par jour : graphique + journal. */
+function journeesSuivi(r){
+  const debut = r.aujourdhui - suiviAvant, fin = r.aujourdhui + suiviApres;
+  const passes = r.historique.filter(j => j.jour >= debut && j.jour < r.aujourdhui);
+  const futurs = r.projection.filter(j => j.jour <= fin);
+  return { passes, futurs };
+}
+function afficherSuivi(r){
+  const { passes, futurs } = journeesSuivi(r);
+  const ligneJour = (j, prevision) => {
+    const sous = prevision && j.solde < r.coussin;
+    const mvts = j.mouvements.map(m => `<div class="cs-mvt ${m.type === 'prevu' ? 'prevu' : ''}">
+        <span>${echapperHTML(m.type === 'prevu' ? `Dépôt prévu de ${nomsPersonnes[m.X]}` : (m.libelle || ''))}</span>
+        <span class="${m.cents > 0 ? 'cs-plus' : ''}">${argentSigne(m.cents)}</span></div>`).join('');
+    return `<div class="cs-jour ${j.jour === r.aujourdhui ? 'aujourdhui' : ''}">
+      <div class="cs-jour-haut">
+        <span class="cs-jour-date">${j.jour === r.aujourdhui ? "Aujourd'hui" : jourSemaine(j.jour)}</span>
+        <span class="cs-jour-solde ${sous ? 'solde-negatif' : ''}">${sous ? '⚠ ' : ''}${argent(j.solde)}</span>
+      </div>
+      <div class="cs-jour-parts">${echapperHTML(nomsPersonnes.p1)} ${argent(j.parts.p1)} · ${echapperHTML(nomsPersonnes.p2)} ${argent(j.parts.p2)}</div>
+      ${mvts}
+    </div>`;
+  };
+  return `
+    <button class="cs-titre cs-titre-section cs-depliable" id="suivi-bascule" aria-expanded="${suiviOuvert}">
+      <span>Solde jour par jour</span><span>${suiviOuvert ? '▴' : '▾'}</span>
+    </button>
+    <div class="cs-plages">${[[30, '1 mois'], [90, '3 mois'], [365, '1 an']].map(([n, t]) =>
+      `<button class="cs-plage ${plageGraphique === n ? 'actif' : ''}" data-plage="${n}">${t}</button>`).join('')}</div>
+    <div class="cs-graphique"><canvas id="suivi-graphique" height="170"></canvas></div>
+    ${suiviOuvert ? `
+      <button class="solde-bloc-lien cs-lien" id="suivi-avant">Voir plus tôt</button>
+      <div class="cs-journal">
+        ${passes.map(j => ligneJour(j, false)).join('')}
+        ${futurs.map(j => ligneJour(j, true)).join('')}
+      </div>
+      ${suiviApres < MOTEUR_HORIZON_JOURS ? `<button class="solde-bloc-lien cs-lien" id="suivi-apres">Voir plus loin</button>` : ''}` : ''}`;
+}
+function dessinerGraphiqueSuivi(r){
+  const canvas = document.getElementById('suivi-graphique');
+  if(!canvas || typeof Chart === 'undefined') return;
+  if(graphiqueSuivi && graphiqueSuivi.destroy) graphiqueSuivi.destroy();
+  /* 30 jours d'historique + la projection d'un an, en fin de journée, jour par jour. */
+  const jours = [], passe = [], prevu = [];
+  const debut = r.aujourdhui - 14;
+  const finGraphique = Math.min(r.fin, r.aujourdhui + plageGraphique);
+  let courant = r.historique.filter(j => j.jour < debut).pop();
+  let soldeCourant = courant ? courant.solde : 0;
+  const parJour = new Map();
+  r.historique.forEach(j => parJour.set(j.jour, j.solde));
+  r.projection.forEach(j => parJour.set(j.jour, j.solde));
+  for(let n = debut; n <= finGraphique; n++){
+    if(parJour.has(n)) soldeCourant = parJour.get(n);
+    jours.push(n);
+    passe.push(n <= r.aujourdhui ? enDollars(soldeCourant) : null);
+    prevu.push(n >= r.aujourdhui ? enDollars(soldeCourant) : null);
+  }
+  const indexAuj = jours.indexOf(r.aujourdhui);
+  const sombre = document.body.classList.contains('dark');
+  const couleurTexte = sombre ? '#bdc1c6' : '#5f6368';
+  graphiqueSuivi = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: jours.map(n => dateCourte(n)),
+      datasets: [
+        { label: 'Solde', data: passe, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, stepped: true, fill: false, spanGaps: false },
+        { label: 'Prévu', data: prevu, borderColor: sombre ? '#8ab4f8' : '#8ab4f8', backgroundColor: 'rgba(138,180,248,.12)',
+          borderWidth: 2, pointRadius: 0, stepped: true, fill: 'origin', spanGaps: false },
+        { label: 'Minimum', data: jours.map(() => enDollars(r.coussin)), borderColor: '#ea4335', borderWidth: 1,
+          borderDash: [2, 3], pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { filter: (item, i, items) => !(item.datasetIndex === 1 && items.some(x => x.datasetIndex === 0)), callbacks: {
+          title: items => {
+            const n = jours[items[0].dataIndex];
+            return `${n === r.aujourdhui ? "Aujourd'hui" : dateLongueNum(n)}${n > r.aujourdhui ? ' (prévu)' : ''}`;
+          },
+          label: item => item.datasetIndex === 2 ? `Minimum : ${formaterMonnaie(item.parsed.y)}` : `Solde : ${formaterMonnaie(item.parsed.y)}`
+        } },
+        annotation: undefined
+      },
+      scales: {
+        x: { ticks: { color: couleurTexte, maxTicksLimit: 6, maxRotation: 0 }, grid: { display: false } },
+        y: { ticks: { color: couleurTexte, maxTicksLimit: 5, callback: v => formaterMonnaie(v).replace(/,00\s?\$/, ' $') },
+             grid: { color: sombre ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)' } }
+      }
+    },
+    plugins: [{
+      id: 'ligneAujourdhui',
+      afterDraw(chart){
+        const x = chart.scales.x.getPixelForValue(indexAuj);
+        const { top, bottom } = chart.chartArea;
+        const c = chart.ctx;
+        c.save(); c.strokeStyle = couleurTexte; c.setLineDash([3, 3]); c.beginPath();
+        c.moveTo(x, top); c.lineTo(x, bottom); c.stroke(); c.restore();
+      }
+    }]
+  });
+}
 
 function afficherEcheancierCompteConjoint(){
   const carte = document.getElementById('recurrent-compte-echeancier-card-conjoint');
   const conteneur = document.getElementById('recurrent-compte-echeancier-conjoint');
   if(!carte || !conteneur) return;
-
-  const compteActifsExistent =
-    recurrences.some(r=>r.type==='conjointe' && r.estCompte && r.actif) ||
-    depenses.some(e=>e.type==='conjointe' && e.estCompte && !e.recurrenceId);
-
-  if(!compteActifsExistent){
+  const r = executerMoteurCompte();
+  if(!r || !r.aDesMouvements){
     carte.style.display = 'none';
     conteneur.innerHTML = '';
     return;
   }
   carte.style.display = '';
-
-  /* Le nombre de paies à calculer doit couvrir toute la période affichée : 8 paies (~4 mois)
-     suffisent d'ordinaire, mais "Année" — ou une navigation loin en avant en vue "Paie" —
-     doit pouvoir aller plus loin, sinon l'échéancier s'arrête avant la période consultée. */
-  const { fin: finPeriodeAffichee } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
-  /* +1 jour en vue "Paie" : le dépôt visé est celui qui suit la fin de la période affichée
-     (voir le filtrage plus bas), il doit donc entrer dans le nombre de paies calculées. */
-  const finACouvrir = etatCalendrierPeriode.vue === 'paie' ? ajouterJours(finPeriodeAffichee, 1) : finPeriodeAffichee;
-  const nbPaiesNecessaires = Math.max(8, Math.ceil(joursEntreDates(debutJour(new Date()), finACouvrir)/14) + 2);
-  const echeancierComplet = calculerEcheancierCompte(nbPaiesNecessaires);
-  /* Conservé pour la fenêtre de détail : elle réutilise exactement le calcul affiché plutôt
-     que de le refaire, sinon les deux pourraient diverger sans qu'on s'en aperçoive. */
-  dernierEcheancier = echeancierComplet || [];
-  afficherBlocSoldeCompte(echeancierComplet ? echeancierComplet.registre : null);
-  if(!echeancierComplet || !echeancierComplet.length){
-    conteneur.innerHTML = `<div class="budget-empty">Aucune paie à venir à afficher.</div>`;
-    afficherAlerteSoldeCompte(null, null);
-    return;
-  }
-
-  /* La projection se calcule TOUJOURS sur l'échéancier complet, jamais sur la portion
-     affichée : le solde est un cumul, il perdrait son sens si on repartait du solde constaté
-     au milieu de la liste. Les lignes affichées y piochent ensuite par date. */
-  const projection = projeterSoldeCompte(echeancierComplet);
-  const projParIso = {};
-  if(projection) echeancierComplet.forEach((l,i)=>{ projParIso[l.iso] = projection[i]; });
-  dernieresProjections = projParIso;
-  afficherAlerteSoldeCompte(projection ? echeancierComplet.map((l,i)=>({ iso:l.iso, date:l.date, ...projection[i] })) : null, echeancierComplet, projection);
-
-  /* Le contenu de l'échéancier suit le type de période choisi (Jour/Semaine/Paie/Mois/
-     Année, partagé avec Transactions et Résumé) : on montre les paies qui tombent dans la
-     période affichée, et rien d'autre. "Paie" en montre donc exactement une, celle qu'on est
-     en train de consulter — auparavant elle affichait toujours le tout prochain dépôt, si
-     bien que naviguer avec ‹ › ne changeait rien à l'écran. "Année" affiche par défaut le
-     mois en cours, avec un "voir plus" vers le reste des paies de l'année sélectionnée. */
-  let echeancier;
-  let afficherVoirPlus = false;
-  let afficherVoirMoins = false;
-
-  if(etatCalendrierPeriode.vue === 'paie'){
-    /* Une période de paie va d'un jour de paie au lendemain de la suivante : le dépôt qu'on
-       prépare PENDANT cette période est donc celui du jour de paie qui la CLÔT, pas celui de
-       son premier jour (déjà versé, c'est ce qui l'a ouverte). Filtrer bêtement sur la
-       fenêtre affichée laissait donc l'écran vide sur la période en cours. */
-    const { fin } = bornePeriode('paie', etatCalendrierPeriode.dateRef);
-    const paieVisee = formaterDateISO(ajouterJours(fin, 1));
-    echeancier = echeancierComplet.filter(l => l.iso === paieVisee);
-  } else if(etatCalendrierPeriode.vue === 'annee'){
-    if(!echeancierAnneeEtendu){
-      const debutMoisStr = formaterDateISO(new Date(moisActif.year, moisActif.month, 1));
-      const finMoisStr = formaterDateISO(new Date(moisActif.year, moisActif.month+1, 0));
-      echeancier = echeancierComplet.filter(l => l.iso >= debutMoisStr && l.iso <= finMoisStr);
-      afficherVoirPlus = echeancier.length < echeancierComplet.length;
-    } else {
-      const { debut, fin } = bornePeriode('annee', etatCalendrierPeriode.dateRef);
-      const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
-      echeancier = echeancierComplet.filter(l => l.iso >= debutStr && l.iso <= finStr);
-      afficherVoirMoins = true;
-    }
-  } else {
-    const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
-    const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
-    echeancier = echeancierComplet.filter(l => l.iso >= debutStr && l.iso <= finStr);
-  }
-
-  if(!echeancier.length){
-    conteneur.innerHTML = `<div class="budget-empty">Aucun dépôt prévu pour cette période.</div>`;
-    return;
-  }
-
-  const formatDate = d => d.toLocaleDateString('fr-CA', {weekday:'short', day:'numeric', month:'short'});
-  /* La colonne Solde n'apparaît que si un solde a été saisi : sans point de départ, afficher
-     une colonne vide laisserait croire à un bug plutôt qu'à un réglage manquant. */
-  const avecSolde = !!projection;
-  const celluleSolde = ligne => {
-    const p = projParIso[ligne.iso];
-    if(!p) return '';
-    /* C'est le CREUX de la période qui décide de l'alerte, pas le solde de fin : un revenu
-       arrivant en fin de période peut ramener le solde dans le vert après un découvert. */
-    const enManque = p.soldeMin < 0;
-    const titre = `Après le dépôt : ${formaterMonnaie(p.apresDepot)}. Paiements d'ici la paie suivante : ${formaterMonnaie(p.sorties)}. `
-      + (enManque ? `Le compte descend à ${formaterMonnaie(p.soldeMin)}.` : `Point le plus bas : ${formaterMonnaie(p.soldeMin)}.`);
-    /* On affiche le solde juste après le dépôt de la paie : c'est l'argent disponible pour
-       la période. Le solde de fin de période est souvent 0 $ quand les dépôts couvrent
-       exactement les paiements, ce qui laissait croire que le compteur ne bougeait pas. */
-    return `<span class="col-nombre value ${enManque ? 'solde-negatif' : ''}" title="${echapperHTML(titre)}">${enManque ? '⚠ ' : ''}${formaterMonnaie(p.apresDepot)}</span>`;
-  };
-
-  conteneur.innerHTML = `
-    <div class="echeancier ${avecSolde ? 'avec-solde' : ''}">
-      <div class="echeancier-entete">
-        <span>Paie</span>
-        <span class="col-nombre">${nomsPersonnes.p1}</span>
-        <span class="col-nombre">${nomsPersonnes.p2}</span>
-        ${avecSolde ? `<span class="col-nombre">Solde</span>` : ''}
-      </div>
-      ${echeancier.map(ligne => `
-        <div class="echeancier-ligne" onclick="ouvrirDetailDepot('${ligne.iso}')" title="Voir le détail du calcul">
-          <span class="echeancier-date">${formatDate(ligne.date)}</span>
-          <span class="col-nombre value p1">${formaterMonnaie(ligne.p1)}</span>
-          <span class="col-nombre value p2">${formaterMonnaie(ligne.p2)}</span>
-          ${avecSolde ? celluleSolde(ligne) : ''}
-        </div>
-      `).join('')}
-    </div>
-  ` + (avecSolde ? `<div class="echeancier-legende">Solde : ce que le compte contient juste après le dépôt de la paie. Touchez une paie pour voir les paiements de la période et le point le plus bas.</div>` : '')
-    + (afficherVoirPlus ? `
-    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-plus">Voir plus (le reste de l'année)</div>
-  ` : (afficherVoirMoins ? `
-    <div class="cal-more" style="text-align:center;padding-top:6px;cursor:pointer;" id="echeancier-voir-moins">Voir moins</div>
-  ` : ''));
-
-  const boutonPlus = document.getElementById('echeancier-voir-plus');
-  if(boutonPlus) boutonPlus.addEventListener('click', ()=>{ echeancierAnneeEtendu = true; afficherEcheancierCompteConjoint(); });
-  const boutonMoins = document.getElementById('echeancier-voir-moins');
-  if(boutonMoins) boutonMoins.addEventListener('click', ()=>{ echeancierAnneeEtendu = false; afficherEcheancierCompteConjoint(); });
+  afficherBlocSoldeCompte(r);
+  afficherAlerteSoldeCompte(r);
+  conteneur.innerHTML = afficherProchainsDepots(r) + afficherSuivi(r);
+  conteneur.querySelectorAll('[data-ouvrir-depot]').forEach(b => b.addEventListener('click', () => ouvrirDepotPlanifie(b.dataset.ouvrirDepot)));
+  const lier = (id, f) => { const el = document.getElementById(id); if(el) el.addEventListener('click', f); };
+  lier('prochains-bascule', () => { prochainsEtendus = !prochainsEtendus; afficherEcheancierCompteConjoint(); });
+  conteneur.querySelectorAll('[data-plage]').forEach(b => b.addEventListener('click', () => {
+    plageGraphique = Number(b.dataset.plage);
+    afficherEcheancierCompteConjoint();
+  }));
+  lier('suivi-bascule', () => { suiviOuvert = !suiviOuvert; afficherEcheancierCompteConjoint(); });
+  lier('suivi-avant', () => { suiviAvant += 30; afficherEcheancierCompteConjoint(); });
+  lier('suivi-apres', () => { suiviApres = Math.min(MOTEUR_HORIZON_JOURS, suiviApres + 60); afficherEcheancierCompteConjoint(); });
+  try{ dessinerGraphiqueSuivi(r); } catch(e){ console.warn('Graphique du solde indisponible.', e); }
 }
 
+function fermerDepotModal(){ const m = document.getElementById('depot-modal'); if(m) m.style.display = 'none'; }
 
-/* Messages au-dessus du tableau, du plus urgent au plus informatif :
-   - dépôt à faire tout de suite (retard + dépense avant la prochaine paie) ;
-   - compteur qui passe sous zéro (ne devrait pas arriver si tout est enregistré) ;
-   - réglages manquants (solde de départ, dates d'ajout) ;
-   - sinon, confirmation avec le point le plus bas. */
-function afficherAlerteSoldeCompte(projection, echeancier, projectionBrute){
-  const zone = document.getElementById('solde-compte-alerte');
-  if(!zone) return;
-  const messages = [];
-  const dateLongue = iso => dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', { day:'numeric', month:'long' });
+/* ===================== DÉPÔTS PRÉVUS AU COMPTE CONJOINT =====================
+   Un dépôt prévu est un revenu du compte (récurrent ou unique) avec l'option « Dépôt pour
+   payer le compte ». On en crée autant qu'on veut, à la fréquence voulue, et on les modifie
+   comme les autres dépenses. Reconnu par sa catégorie (CATEGORIE_DEPOT) et sa part
+   (100 % = Gabriel, 0 % = Mélissa) : aucune colonne à ajouter.
 
-  const immediat = echeancier && echeancier.immediat;
-  if(immediat){
-    const qui = [];
-    if(immediat.p1 > 0) qui.push(`${nomsPersonnes.p1} ${formaterMonnaie(immediat.p1)}`);
-    if(immediat.p2 > 0) qui.push(`${nomsPersonnes.p2} ${formaterMonnaie(immediat.p2)}`);
-    messages.push(`<div class="solde-alerte manque">À déposer tout de suite, avant le ${dateLongue(immediat.avant)} (${echapperHTML(immediat.pour)}) : ${qui.join(', ')}. Sinon le compte sera à découvert avant la prochaine paie.</div>`);
+   - C'est une prévision : le moteur s'en sert pour vérifier le compte, jamais pour le solde.
+   - À sa date, on le confirme (montant et date réels) : un vrai dépôt est créé dans Depenses
+     et l'occurrence prévue est retirée par une exception « supprimée » dont la note garde le
+     lien (« confirme:<id du dépôt> »), pour pouvoir annuler la confirmation.
+   - Le passé ne se modifie pas : une occurrence passée non confirmée se confirme, se
+     reporte (à aujourd'hui ou plus tard) ou se supprime. « Toute la série » ne change que les
+     dépôts à venir. */
+const CATEGORIE_DEPOT = 'Dépôt compte';
+const PREFIXE_CONFIRMATION = 'confirme:';
+let depotsAConfirmer = [];
+
+function aujourdhuiISO(){ return formaterDateISO(new Date()); }
+function lendemainISO(iso){ return formaterDateISO(ajouterJours(dateLocaleDepuisISO(iso), 1)); }
+function personneSerieDepot(rec){
+  return rec && rec.pourcentageP1 === 100 ? 'p1' : rec && rec.pourcentageP1 === 0 ? 'p2' : null;
+}
+function estSerieDepot(rec){
+  return !!rec && rec.type === 'conjointe' && !!rec.estCompte && !!rec.estRevenu
+    && rec.categorie === CATEGORIE_DEPOT && personneSerieDepot(rec) != null;
+}
+function serieTerminee(rec){
+  if(rec.finType !== 'date' && rec.finType !== 'nombre') return false;
+  const limite = rec.finType === 'date' && rec.finDate ? dateLocaleDepuisISO(rec.finDate) : horizonMaximal();
+  const occ = genererOccurrences(rec, limite);
+  return !occ.length || formaterDateISO(occ[occ.length - 1]) < aujourdhuiISO();
+}
+function dateLongueISO(iso){
+  return dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', { day:'numeric', month:'long', year:'numeric' });
+}
+const STATUT_DEPOT_TEXTE = { prevu: 'Dépôt prévu', aujourdhui: 'À confirmer', a_confirmer: 'Non confirmé' };
+
+/* Anciennes versions : un dépôt confirmé était relié par sa note « paie du AAAA-MM-JJ ». */
+function lienAncienDepot(X, dateOrigine){
+  return depensesReelles.some(e => e.type === 'conjointe' && e.estCompte && estDepotPersonne(e)
+    && (e.pourcentageP1 === 100 ? 'p1' : 'p2') === X && (e.note || '').includes(`paie du ${dateOrigine}`));
+}
+
+/* Occurrences prévues (non confirmées) de toutes les séries de dépôt. */
+function occurrencesDepotsPrevus(limiteDate){
+  const auj = aujourdhuiISO();
+  const res = [];
+  recurrences.filter(r => r.actif && estSerieDepot(r)).forEach(rec => {
+    const X = personneSerieDepot(rec);
+    occurrencesEffectives(rec, limiteDate).forEach(o => {
+      if(!(o.amount > 0) || lienAncienDepot(X, o.dateOrigine)) return;
+      res.push({ ...o,
+        note: o.note || rec.nom || `Dépôt de ${nomsPersonnes[X]}`,
+        depotPlanifie: true, depotPersonne: X,
+        depotStatut: o.date > auj ? 'prevu' : o.date === auj ? 'aujourdhui' : 'a_confirmer'
+      });
+    });
+  });
+  return res.sort((a, b) => a.date.localeCompare(b.date));
+}
+/* Pour les listes et le calendrier : les dates passées non confirmées sont à part
+   (affichées, jamais comptées dans les totaux). */
+function occurrencesDepots(limiteDate){
+  const toutes = occurrencesDepotsPrevus(limiteDate);
+  const auj = aujourdhuiISO();
+  return { futures: toutes.filter(o => o.date >= auj), aConfirmer: toutes.filter(o => o.date < auj) };
+}
+function trouverDepotPlanifie(id){
+  return depenses.concat(depotsAConfirmer).find(e => e.depotPlanifie && e.id === id) || null;
+}
+function occurrencesDeLaFamille(rec){
+  const ids = new Set(familleDeRecurrence(rec).map(r => r.id));
+  return depenses.concat(depotsAConfirmer).filter(e => e.depotPlanifie && ids.has(e.recurrenceId))
+    .sort((a, b) => a.dateOrigine.localeCompare(b.dateOrigine));
+}
+function premiereOccurrenceAVenir(rec){
+  const auj = aujourdhuiISO();
+  return occurrencesDeLaFamille(rec).find(e => e.dateOrigine >= auj) || null;
+}
+
+/* ----- Confirmer / annuler une confirmation ----- */
+async function confirmerDepot(occ, montant, dateIso){
+  const aujIso = aujourdhuiISO();
+  if(!(montant > 0) || !dateIso){ afficherAlerte("Merci d'entrer un montant et une date valides."); return false; }
+  if(dateIso > aujIso){ afficherAlerte('La date du transfert ne peut pas être dans le futur.'); return false; }
+  const rec = recurrences.find(r => r.id === occ.recurrenceId);
+  if(!rec) return false;
+  const X = occ.depotPersonne;
+  const note = `Dépôt de ${nomsPersonnes[X]}`;
+  const ligne = {
+    id: uid(), Qui: nomPersonneSupabase('compte'), Montant: Math.round(montant * 100) / 100, Date: dateIso,
+    Categorie: 'Revenu', Note: note, Type: 'conjointe', EstCompte: true, EstRevenu: true,
+    PourcentageP1: X === 'p1' ? 100 : 0, user_id: null
+  };
+  const { error } = await supabaseClient.from('Depenses').insert([ligne]);
+  if(error){ signalerEchecEnregistrement('Le dépôt', error); return false; }
+  /* L'occurrence prévue est retirée ; si ça échoue, on annule le dépôt pour ne rien compter deux fois. */
+  const exc = await enregistrerException(rec, occ.dateOrigine, { supprimee: true, note: PREFIXE_CONFIRMATION + ligne.id });
+  if(!exc){
+    await supabaseClient.from('Depenses').delete().eq('id', ligne.id);
+    return false;
   }
+  depensesReelles.push({
+    id: ligne.id, who: 'compte', amount: ligne.Montant, date: dateIso, category: 'Revenu', note,
+    type: 'conjointe', recurrenceId: null, estCompte: true, estRevenu: true,
+    pourcentageP1: ligne.PourcentageP1, ajout: aujIso
+  });
+  recalculerDepenses();
+  rafraichirActif();
+  notifierActivitePartenaire('ajout', `${note} confirmé — ${formaterMonnaie(ligne.Montant)}`);
+  return true;
+}
+/* Appelé quand un dépôt réel est supprimé : l'occurrence prévue qu'il remplaçait revient. */
+async function libererDepotConfirme(depenseId){
+  const exc = exceptions.find(x => x.supprimee && x.note === PREFIXE_CONFIRMATION + depenseId);
+  if(!exc) return;
+  if(exceptionsSupabaseDisponible){
+    const { error } = await supabaseClient.from('RecurrenceExceptions').delete().eq('id', exc.id);
+    if(error){ console.warn("Le dépôt prévu n'a pas pu être rétabli.", error); return; }
+  }
+  exceptions = exceptions.filter(x => x.id !== exc.id);
+}
 
-  if(projection && projection.length){
-    const creuxAvant = projectionBrute && projectionBrute.creuxAvantPaie;
-    const premierManque = projection.find(p => p.soldeMin < 0);
-    if(creuxAvant != null && creuxAvant < 0){
-      messages.push(`<div class="solde-alerte manque">Avant la prochaine paie, le compte descend à ${formaterMonnaie(creuxAvant)}. Vérifiez que tous les dépôts faits sont enregistrés.</div>`);
-    } else if(premierManque){
-      messages.push(`<div class="solde-alerte manque">Le compte descend à ${formaterMonnaie(premierManque.soldeMin)} dans la période du ${dateLongue(premierManque.iso)}, même en déposant les montants demandés. Vérifiez que toutes les transactions du compte sont enregistrées.</div>`);
-    } else if(!immediat){
-      const creux = projection.reduce((min, p) => p.soldeMin < min.soldeMin ? p : min, projection[0]);
-      const precision = creux.soldeMin < 0.005
-        ? ' Un point bas à 0 $ est normal : les dépôts couvrent exactement les paiements, sans coussin.'
-        : '';
-      messages.push(`<div class="solde-alerte ok">En déposant les montants demandés, le compte couvre toutes les dépenses prévues. Point le plus bas : ${formaterMonnaie(creux.soldeMin)} autour du ${dateLongue(creux.iso)}.${precision}</div>`);
+/* ----- Créer ----- */
+function valeursSerieDepot(X, champs){
+  return { type: 'conjointe', categorie: CATEGORIE_DEPOT, who: 'compte', estCompte: true, estRevenu: true,
+    pourcentageP1: X === 'p1' ? 100 : 0, ...champs };
+}
+async function creerDepotUnique(X, dateIso, cents){
+  return creerRecurrenceDepuisValeurs(valeursSerieDepot(X, {
+    nom: `Dépôt de ${nomsPersonnes[X]}`, montant: enDollars(cents),
+    unite: 'mois', intervalle: 1, joursSemaine: null, typeMensuel: 'jour_mois',
+    dateDebut: dateIso, finType: 'nombre', finNombre: 1, finDate: null
+  }));
+}
+
+/* Correction proposée par la vérification. */
+async function appliquerCorrection(X){
+  const r = dernierResultatMoteur;
+  const c = r && r.personnes[X] && r.personnes[X].correction;
+  if(!c) return;
+  if(c.type === 'ajout'){
+    const occ = trouverDepotPlanifie(c.depot.id);
+    if(!occ) return;
+    await modifierDepot(occ, 'seule', occ.amount + enDollars(c.cents), occ.date);
+  } else {
+    const iso = isoDuNumero(Math.max(c.jour, r.aujourdhui));
+    if(!(await creerDepotUnique(X, iso, c.cents))) return;
+    recalculerDepenses();
+    afficherRecurrencesScope('conjoint');
+    rafraichirActif();
+    notifierActivitePartenaire('ajout', `Dépôt prévu de ${nomsPersonnes[X]} : ${formaterMonnaie(enDollars(c.cents))} le ${dateLongueISO(iso)}`);
+  }
+}
+
+/* ----- Modifier ----- */
+/* Remplace les dépôts À VENIR d'une série par une nouvelle règle ; le passé ne bouge pas.
+   `v` = { nom, montant, X, cfg, dateDebut (voulue), finType, finNombre, finDate } */
+async function remplacerAvenirSerieDepot(rec, v){
+  const famille = familleDeRecurrence(rec);
+  const idsFamille = new Set(famille.map(r => r.id));
+  const auj = aujourdhuiISO();
+  /* Un dépôt déjà confirmé aujourd'hui reste dans l'ancienne règle. */
+  const coupe = exceptions.some(x => idsFamille.has(x.recurrenceId) && x.supprimee && x.dateOrigine === auj) ? lendemainISO(auj) : auj;
+  let debut = v.dateDebut;
+  if(debut < coupe){
+    const suivante = genererOccurrences({ ...v.cfg, dateDebut: v.dateDebut, finType: 'jamais' }, horizonMaximal())
+      .map(formaterDateISO).find(d => d >= coupe);
+    if(!suivante){ afficherAlerte('Aucun dépôt à venir avec cette fréquence.'); return false; }
+    debut = suivante;
+  }
+  const nouvelId = await creerRecurrenceDepuisValeurs(valeursSerieDepot(v.X, {
+    nom: v.nom, montant: v.montant,
+    unite: v.cfg.unite, intervalle: v.cfg.intervalle, joursSemaine: v.cfg.joursSemaine, typeMensuel: v.cfg.typeMensuel,
+    dateDebut: debut, finType: v.finType || 'jamais', finNombre: v.finNombre || null, finDate: v.finDate || null,
+    racineId: rec.racineId || rec.id
+  }));
+  if(!nouvelId) return false;
+  for(const seg of famille){
+    if(!(await transfererSuppressions(seg.id, nouvelId, coupe))) break;
+    if(seg.dateDebut >= coupe){
+      if(!(await supprimerRecurrence(seg.id, true))) break;
+    } else if(!serieTermineeAvant(seg, coupe)){
+      if(!(await tronquerRecurrenceAvant(seg.id, coupe))) break;
+      await supprimerExceptions(seg.id, { depuis: coupe });
     }
   }
+  recalculerDepenses();
+  afficherRecurrencesScope('conjoint');
+  rafraichirActif();
+  notifierActivitePartenaire('modification', `Dépôts prévus de ${nomsPersonnes[v.X]} : ${formaterMonnaie(v.montant)} à partir du ${dateLongueISO(debut)}`);
+  return true;
+}
+function serieTermineeAvant(rec, iso){
+  if(rec.finType === 'date' && rec.finDate) return rec.finDate < iso;
+  if(rec.finType === 'nombre'){
+    const occ = genererOccurrences(rec, horizonMaximal());
+    return !occ.length || formaterDateISO(occ[occ.length - 1]) < iso;
+  }
+  return false;
+}
+function cfgDe(rec){
+  return { unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel };
+}
 
-  zone.innerHTML = messages.join('');
+/* portee : 'seule' | 'suivantes' | 'serie' (= tous les dépôts à venir) */
+async function modifierDepot(occ, portee, montant, dateIso, nom){
+  const rec = recurrences.find(r => r.id === occ.recurrenceId);
+  if(!rec) return false;
+  if(!(montant > 0)){ afficherAlerte("Merci d'entrer un montant valide."); return false; }
+  const auj = aujourdhuiISO();
+  montant = Math.round(montant * 100) / 100;
+  const X = occ.depotPersonne;
+  if(portee === 'seule'){
+    if(!dateIso || dateIso < auj){ afficherAlerte("La date doit être aujourd'hui ou plus tard."); return false; }
+    const ok = await enregistrerException(rec, occ.dateOrigine, {
+      supprimee: false, nouvelleDate: dateIso !== occ.dateOrigine ? dateIso : null, montant,
+      categorie: CATEGORIE_DEPOT, note: nom || occ.note, who: 'compte', estCompte: true, estRevenu: true,
+      pourcentageP1: rec.pourcentageP1
+    });
+    recalculerDepenses();
+    rafraichirActif();
+    if(ok) notifierActivitePartenaire('modification', `Dépôt prévu de ${nomsPersonnes[X]} : ${formaterMonnaie(montant)} le ${dateLongueISO(dateIso)}`);
+    return !!ok;
+  }
+  if(portee === 'suivantes'){
+    if(occ.dateOrigine < auj){ afficherAlerte('Les dépôts passés ne se modifient pas.'); return false; }
+    await diviserRecurrenceAPartirDe(occ, { note: nom || rec.nom, amount: montant, category: CATEGORIE_DEPOT,
+      who: 'compte', estCompte: true, estRevenu: true, pourcentageP1: rec.pourcentageP1 });
+    afficherRecurrencesScope('conjoint');
+    notifierActivitePartenaire('modification', `Dépôts prévus de ${nomsPersonnes[X]} : ${formaterMonnaie(montant)} à partir du ${dateLongueISO(occ.dateOrigine)}`);
+    return true;
+  }
+  const famille = familleDeRecurrence(rec);
+  const queue = famille.reduce((a, b) => b.dateDebut > a.dateDebut ? b : a);
+  const tete = famille.reduce((a, b) => b.dateDebut < a.dateDebut ? b : a);
+  return remplacerAvenirSerieDepot(rec, {
+    nom: nom || rec.nom, montant, X, cfg: cfgDe(queue), dateDebut: tete.dateDebut,
+    finType: queue.finType, finNombre: queue.finNombre, finDate: queue.finDate
+  });
+}
+
+/* ----- Supprimer ----- */
+async function supprimerDepot(occ, portee){
+  const rec = recurrences.find(r => r.id === occ.recurrenceId);
+  if(!rec) return;
+  if(portee === 'seule'){ await supprimerOccurrenceSeule(occ); return; }
+  const depart = portee === 'serie' ? premiereOccurrenceAVenir(rec) : occ;
+  if(!depart){ afficherAlerte('Aucun dépôt à venir dans cette série.'); return; }
+  await supprimerDepuisOccurrence(depart);
+  afficherRecurrencesScope('conjoint');
+}
+
+/* ----- Fenêtre d'un dépôt prévu ----- */
+function ouvrirDepotPlanifie(id){
+  const occ = trouverDepotPlanifie(id);
+  if(!occ){ afficherAlerte('Ce dépôt prévu est introuvable : il a peut-être déjà été confirmé.'); return; }
+  occurrenceCourante = occ;
+  rendreVueDepotPlanifie();
+  document.getElementById('occurrence-modal').style.display = 'flex';
+}
+
+function rendreVueDepotPlanifie(){
+  const d = occurrenceCourante;
+  if(!d) return;
+  const X = d.depotPersonne;
+  const aujIso = aujourdhuiISO();
+  const du = d.date <= aujIso;
+  const passe = d.date < aujIso;
+  const sousTitre = d.date === aujIso ? "Aujourd'hui" : passe ? `${dateLongueISO(d.date)} · pas encore confirmé` : dateLongueISO(d.date);
+  document.getElementById('occurrence-modal-content').innerHTML = `
+    <div class="modal-header">
+      <h3>Dépôt de ${echapperHTML(nomsPersonnes[X])} · ${formaterMonnaie(d.amount)}<span class="modal-sous-titre">${echapperHTML(sousTitre)}</span></h3>
+      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      ${du ? `
+      <div class="depot-section-titre">As-tu transféré ${formaterMonnaie(d.amount)} ?</div>
+      <div class="depot-formulaire">
+        <div class="field"><label for="occ-depot-montant">Montant ($)</label>
+          <input type="number" id="occ-depot-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
+        <div class="field"><label for="occ-depot-date">Date</label>
+          <input type="date" id="occ-depot-date" max="${aujIso}" value="${d.date}"></div>
+        <button class="btn-add" id="occ-depot-confirmer">Oui, confirmer</button>
+      </div>
+      <div class="depot-section-titre">Pas encore fait ?</div>
+      <div class="depot-formulaire">
+        <div class="field"><label for="occ-report-montant">Montant ($)</label>
+          <input type="number" id="occ-report-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
+        <div class="field"><label for="occ-report-date">Nouvelle date</label>
+          <input type="date" id="occ-report-date" min="${aujIso}" value="${lendemainISO(aujIso)}"></div>
+        <button class="btn-secondary" id="occ-report-enregistrer">Reporter</button>
+      </div>` : `
+      <div style="color:var(--text-secondary);font-size:14px;">Prévision. Vous pourrez le confirmer à partir du ${echapperHTML(dateLongueISO(d.date))}.</div>`}
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary btn-danger" id="occ-depot-supprimer">Supprimer</button>
+      ${passe ? `<button class="btn-secondary" id="occ-depot-fermer">Fermer</button>` : `<button class="btn-secondary" id="occ-depot-modifier">Modifier</button>`}
+    </div>`;
+  const lier = (id, f) => { const el = document.getElementById(id); if(el) el.addEventListener('click', f); };
+  lier('occ-fermer', fermerOccurrenceModal);
+  lier('occ-depot-fermer', fermerOccurrenceModal);
+  lier('occ-depot-modifier', () => rendreChoixPorteeDepot('modifier'));
+  lier('occ-depot-supprimer', () => passe
+    ? (confirm('Supprimer ce dépôt prévu ?') && (fermerOccurrenceModal(), supprimerDepot(d, 'seule')))
+    : rendreChoixPorteeDepot('supprimer'));
+  const confirmer = document.getElementById('occ-depot-confirmer');
+  if(confirmer) confirmer.addEventListener('click', actionVerrouillee(confirmer, async () => {
+    const montant = parseFloat(document.getElementById('occ-depot-montant').value);
+    const date = document.getElementById('occ-depot-date').value;
+    if(await confirmerDepot(d, montant, date)) fermerOccurrenceModal();
+  }));
+  const reporter = document.getElementById('occ-report-enregistrer');
+  if(reporter) reporter.addEventListener('click', actionVerrouillee(reporter, async () => {
+    const montant = parseFloat(document.getElementById('occ-report-montant').value);
+    const date = document.getElementById('occ-report-date').value;
+    if(await modifierDepot(d, 'seule', montant, date)) fermerOccurrenceModal();
+  }));
+}
+
+function rendreChoixPorteeDepot(action){
+  const d = occurrenceCourante;
+  const rec = recurrences.find(r => r.id === d.recurrenceId);
+  const unique = rec && rec.finType === 'nombre' && rec.finNombre === 1 && familleDeRecurrence(rec).length === 1;
+  if(unique){
+    if(action === 'modifier'){ rendreFormulaireDepot('seule'); return; }
+    if(confirm('Supprimer ce dépôt prévu ?')){ fermerOccurrenceModal(); supprimerDepot(d, 'seule'); }
+    return;
+  }
+  const verbe = action === 'modifier' ? 'Modifier' : 'Supprimer';
+  const jour = dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA', { day:'numeric', month:'long' });
+  document.getElementById('occurrence-modal-content').innerHTML = `
+    <div class="modal-header">
+      <h3>${verbe} un dépôt prévu<span class="modal-sous-titre">${echapperHTML(d.note || '')}</span></h3>
+      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="portee-choix">
+        <button class="portee-option" data-portee="seule">
+          <span class="portee-titre">Ce dépôt seulement</span>
+          <span class="portee-desc">Celui du ${jour}</span>
+        </button>
+        <button class="portee-option" data-portee="suivantes">
+          <span class="portee-titre">Ce dépôt et les suivants</span>
+          <span class="portee-desc">Les précédents restent inchangés</span>
+        </button>
+        <button class="portee-option" data-portee="serie">
+          <span class="portee-titre">Toute la série</span>
+          <span class="portee-desc">Tous les dépôts à venir ; le passé ne change pas</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn-secondary" id="portee-annuler">Retour</button></div>`;
+  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
+  document.getElementById('portee-annuler').addEventListener('click', rendreVueDepotPlanifie);
+  document.querySelectorAll('#occurrence-modal-content [data-portee]').forEach(b => b.addEventListener('click', actionVerrouillee(b, async () => {
+    const portee = b.dataset.portee;
+    if(action === 'modifier'){ rendreFormulaireDepot(portee); return; }
+    const texte = { seule: 'Supprimer ce dépôt prévu ?', suivantes: 'Supprimer ce dépôt et tous les suivants ?',
+      serie: 'Supprimer tous les dépôts à venir de cette série ? Les dépôts confirmés restent.' }[portee];
+    if(!confirm(texte)) return;
+    fermerOccurrenceModal();
+    await supprimerDepot(d, portee);
+  })));
+}
+
+function rendreFormulaireDepot(portee){
+  const d = occurrenceCourante;
+  const titre = { seule: 'Ce dépôt seulement', suivantes: 'Ce dépôt et les suivants', serie: 'Toute la série' }[portee];
+  document.getElementById('occurrence-modal-content').innerHTML = `
+    <div class="modal-header">
+      <h3>Modifier le dépôt prévu<span class="modal-sous-titre">${titre}</span></h3>
+      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="field"><label for="dep-mod-montant">Montant ($)</label>
+          <input type="number" id="dep-mod-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
+        ${portee === 'seule' ? `<div class="field"><label for="dep-mod-date">Date</label>
+          <input type="date" id="dep-mod-date" min="${aujourdhuiISO()}" value="${d.date}"></div>` : ''}
+      </div>
+      ${portee === 'seule' ? '' : `<button class="solde-bloc-lien" id="dep-mod-frequence" style="margin-top:10px;">Changer la fréquence ou la date de début</button>`}
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="dep-mod-annuler">Retour</button>
+      <button class="btn-add" id="dep-mod-enregistrer">Enregistrer</button>
+    </div>`;
+  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
+  document.getElementById('dep-mod-annuler').addEventListener('click', () => rendreChoixPorteeDepot('modifier'));
+  const freq = document.getElementById('dep-mod-frequence');
+  if(freq) freq.addEventListener('click', () => { fermerOccurrenceModal(); ouvrirEditionRecurrence(d.recurrenceId); });
+  const bouton = document.getElementById('dep-mod-enregistrer');
+  bouton.addEventListener('click', actionVerrouillee(bouton, async () => {
+    const montant = parseFloat(document.getElementById('dep-mod-montant').value);
+    const champDate = document.getElementById('dep-mod-date');
+    if(await modifierDepot(d, portee, montant, champDate ? champDate.value : null)) fermerOccurrenceModal();
+  }));
+}
+
+/* ----- Dépôt confirmé : lecture seule, on peut annuler la confirmation ----- */
+function estDepotConfirme(d){
+  return !!d && !d.virtuelle && d.type === 'conjointe' && !!d.estCompte && !!d.estRevenu
+    && (d.pourcentageP1 === 100 || d.pourcentageP1 === 0);
+}
+function rendreVueDepotConfirme(){
+  const d = occurrenceCourante;
+  const X = d.pourcentageP1 === 100 ? 'p1' : 'p2';
+  document.getElementById('occurrence-modal-content').innerHTML = `
+    <div class="modal-header">
+      <h3>Dépôt confirmé · ${formaterMonnaie(d.amount)}<span class="modal-sous-titre">${echapperHTML(nomsPersonnes[X])} · ${echapperHTML(dateLongueISO(d.date))}</span></h3>
+      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="color:var(--text-secondary);font-size:14px;">Un dépôt confirmé ne se modifie pas. En cas d'erreur, annulez la confirmation : le dépôt redevient prévu.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary btn-danger" id="occ-annuler-confirmation">Annuler la confirmation</button>
+      <button class="btn-secondary" id="occ-fermer-bas">Fermer</button>
+    </div>`;
+  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
+  document.getElementById('occ-fermer-bas').addEventListener('click', fermerOccurrenceModal);
+  const bouton = document.getElementById('occ-annuler-confirmation');
+  bouton.addEventListener('click', actionVerrouillee(bouton, async () => {
+    if(!confirm('Annuler la confirmation de ce dépôt ?')) return;
+    fermerOccurrenceModal();
+    await supprimerDepense(d.id);
+    notifierActivitePartenaire('suppression', `Confirmation annulée : dépôt de ${nomsPersonnes[X]} du ${dateLongueISO(d.date)}`);
+  }));
+}
+
+/* ----- Formulaire d'ajout : option « Dépôt pour payer le compte » ----- */
+function depotAjoutActif(){
+  const bascule = document.getElementById('f-est-depot-conjoint');
+  return !!bascule && bascule.checked
+    && document.getElementById('f-who-conjoint').value === 'Compte conjoint'
+    && document.getElementById('f-est-revenu-conjoint').checked;
+}
+function appliquerAffichageDepotAjout(){
+  const champ = document.getElementById('f-est-depot-field-conjoint');
+  if(!champ) return;
+  const bascule = document.getElementById('f-est-depot-conjoint');
+  const possible = document.getElementById('f-who-conjoint').value === 'Compte conjoint'
+    && document.getElementById('f-est-revenu-conjoint').checked;
+  champ.style.display = possible ? '' : 'none';
+  if(!possible) bascule.checked = false;
+  const actif = depotAjoutActif();
+  const selectQui = document.getElementById('f-depot-qui-conjoint');
+  if(!selectQui.options.length){
+    selectQui.innerHTML = MOTEUR_PERSONNES.map(X => `<option value="${X}">${echapperHTML(nomsPersonnes[X])}</option>`).join('');
+  }
+  if(actif && !selectQui.dataset.choisi) selectQui.value = currentUser === 'p2' ? 'p2' : 'p1';
+  document.getElementById('f-depot-qui-field-conjoint').style.display = actif ? '' : 'none';
+  document.getElementById('f-depot-info-conjoint').style.display = actif ? '' : 'none';
+  activerChamp('f-compte-repartition-field-conjoint', !actif);
+  if(actif){
+    document.getElementById('f-depot-info-texte-conjoint').textContent =
+      "Prévision : sert à vérifier le compte. Chaque dépôt se confirme à sa date.";
+  }
+}
+function brancherOptionDepotAjout(){
+  if(!document.getElementById('f-est-depot-conjoint')) return;
+  ['f-who-conjoint', 'f-est-revenu-conjoint', 'f-est-depot-conjoint'].forEach(id =>
+    document.getElementById(id).addEventListener('change', appliquerAffichageDepotAjout));
+  document.getElementById('f-depot-qui-conjoint').addEventListener('change', e => { e.target.dataset.choisi = '1'; });
+}
+/* Valeurs imposées par l'option dans ajouterDepense. */
+function valeursDepotAjout(){
+  const X = document.getElementById('f-depot-qui-conjoint').value;
+  return { X, pourcentageP1: X === 'p1' ? 100 : 0, categorie: CATEGORIE_DEPOT, nom: `Dépôt de ${nomsPersonnes[X]}` };
+}
+
+/* ----- Fenêtre d'édition d'une série (liste des paiements récurrents) ----- */
+function depotEditionActif(){
+  return document.getElementById('edit-rec-est-depot').checked
+    && document.getElementById('edit-rec-qui').value === 'Compte conjoint'
+    && document.getElementById('edit-rec-est-revenu').checked;
+}
+function appliquerAffichageDepotEdition(){
+  const rec = recurrenceEnEdition;
+  const possible = !!rec && rec.type === 'conjointe'
+    && document.getElementById('edit-rec-qui').value === 'Compte conjoint'
+    && document.getElementById('edit-rec-est-revenu').checked;
+  activerChamp('edit-rec-est-depot-field', possible);
+  if(!possible) document.getElementById('edit-rec-est-depot').checked = false;
+  const actif = depotEditionActif();
+  const info = document.getElementById('edit-rec-depot-info');
+  info.style.display = actif ? '' : 'none';
+  if(actif){
+    info.textContent = `Part de ${nomsPersonnes.p1} : 100 % = dépôt de ${nomsPersonnes.p1}, 0 % = dépôt de ${nomsPersonnes.p2}.`
+      + (estSerieDepot(rec) && rec.dateDebut < aujourdhuiISO() ? ' Les changements s\'appliquent aux dépôts à venir seulement.' : '');
+  }
+}
+function brancherOptionDepotEdition(){
+  if(!document.getElementById('edit-rec-est-depot')) return;
+  ['edit-rec-qui', 'edit-rec-est-revenu', 'edit-rec-est-depot'].forEach(id =>
+    document.getElementById(id).addEventListener('change', appliquerAffichageDepotEdition));
+}
+/* Enregistrement d'une série de dépôt depuis la fenêtre d'édition : les dépôts à venir
+   seulement. Renvoie true si c'est pris en charge ici. */
+async function enregistrerSerieDepotEdition(rec, v){
+  const X = v.pourcentageP1 === 100 ? 'p1' : v.pourcentageP1 === 0 ? 'p2' : null;
+  if(!X){
+    afficherAlerte(`Pour un dépôt, la part de ${nomsPersonnes.p1} doit être 100 % (dépôt de ${nomsPersonnes.p1}) ou 0 % (dépôt de ${nomsPersonnes.p2}).`);
+    return false;
+  }
+  return remplacerAvenirSerieDepot(rec, { nom: v.nom, montant: v.montant, X, cfg: v.cfg, dateDebut: v.dateDebut,
+    finType: v.finType, finNombre: v.finNombre, finDate: v.finDate });
+}
+
+brancherOptionDepotAjout();
+brancherOptionDepotEdition();
+
+async function supprimerSerieDepotEdition(rec){
+  const occ = occurrencesDeLaFamille(rec)[0];
+  if(!occ){ afficherAlerte('Aucun dépôt prévu dans cette série.'); return; }
+  await supprimerDepuisOccurrence(occ);
+  afficherRecurrencesScope('conjoint');
 }
 
 /* ===================== CALCUL DES OCCURRENCES À L'AFFICHAGE =====================
@@ -3430,9 +3907,14 @@ function occurrencesEffectives(rec, limiteDate){
 
 function recalculerDepenses(){
   const liste = depensesReelles.slice();
-  recurrences.filter(r => r.actif).forEach(rec => {
+  recurrences.filter(r => r.actif && !estSerieDepot(r)).forEach(rec => {
     liste.push(...occurrencesEffectives(rec, horizonAffichage));
   });
+  /* Dépôts récurrents : rien pour une paie déjà confirmée ; les dates passées non
+     confirmées sont à part (affichées, jamais comptées). */
+  const depots = occurrencesDepots(horizonAffichage);
+  liste.push(...depots.futures);
+  depotsAConfirmer = depots.aConfirmer;
   depenses = liste;
 }
 
@@ -3933,10 +4415,12 @@ function fermerOccurrenceModal(){
 }
 
 function ouvrirDetailOccurrence(id){
-  const depense = depenses.find(e=>e.id===id);
+  const depense = depenses.find(e=>e.id===id) || depotsAConfirmer.find(e=>e.id===id);
   if(!depense) return;
   occurrenceCourante = depense;
-  rendreVueDetailOccurrence();
+  if(depense.depotPlanifie) rendreVueDepotPlanifie();
+  else if(estDepotConfirme(depense)) rendreVueDepotConfirme();
+  else rendreVueDetailOccurrence();
   document.getElementById('occurrence-modal').style.display = 'flex';
 }
 
@@ -4028,7 +4512,10 @@ function partPersonnelleRecurrence(r){
 }
 
 function afficherRecurrencesScope(scope){
-  const liste = recurrences.filter(r => scope==='conjoint' ? r.type==='conjointe' : (r.type==='personnelle' && r.who===currentUser));
+  /* Les segments terminés d'une série de dépôt (après « ce dépôt et les suivants ») ne sont
+     que l'historique : on n'affiche que la série en cours. */
+  const liste = recurrences.filter(r => (scope==='conjoint' ? r.type==='conjointe' : (r.type==='personnelle' && r.who===currentUser))
+    && !(estSerieDepot(r) && serieTerminee(r)));
   const listeSansRevenu = liste.filter(r=>!r.estRevenu);
   const actifs = listeSansRevenu.filter(r=>r.actif);
   const totalMensuel = actifs.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r),0);
@@ -4063,7 +4550,9 @@ function afficherRecurrencesScope(scope){
   const listeTriee = listeComplete.sort((a,b)=> (b.actif - a.actif) || a.nom.localeCompare(b.nom));
   listEl.innerHTML = listeTriee.map(r=>{
     const partPct = Math.round(partPersonnelleRecurrence(r)*100);
-    const badgeType = r.estRevenu
+    const badgeType = estSerieDepot(r)
+      ? `<span class="freq-pill badge-revenu" title="Dépôt pour payer le compte ; chaque dépôt se confirme à la main">🏦 Dépôt au compte</span>`
+      : r.estRevenu
       ? `<span class="freq-pill badge-revenu">Revenu</span>`
       : (r.estCompte
           ? `<span class="freq-pill badge-compte" title="Payé automatiquement par le compte conjoint">🏦</span>`
@@ -4075,7 +4564,7 @@ function afficherRecurrencesScope(scope){
     return `
     <div class="recurrent-row ${r.actif?'':'inactive'} ${r.estRevenu?'row-revenu-item':(r.estCompte?'row-compte-item':(r.estConjoint?'row-conjoint-share':''))}" onclick="ouvrirEditionRecurrence('${r.id}')" style="cursor:pointer;">
       <div class="recurrent-info">
-        <div class="recurrent-nom">${echapperHTML(r.nom || r.categorie)}${(scope==='conjoint' || r.estConjoint) ? ` <span class="who-badge"><span class="dot ${r.who}"></span>${echapperHTML(libellePersonne(r.who))}</span>` : ''}</div>
+        <div class="recurrent-nom">${echapperHTML(r.nom || r.categorie)}${(scope==='conjoint' || r.estConjoint) ? ` <span class="who-badge"><span class="dot ${estSerieDepot(r) ? personneSerieDepot(r) : r.who}"></span>${echapperHTML(libellePersonne(estSerieDepot(r) ? personneSerieDepot(r) : r.who))}</span>` : ''}</div>
         <div class="recurrent-meta">
           ${badgeType}
           ${r.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}">${echapperHTML(r.categorie)}</span>`}
@@ -4187,7 +4676,7 @@ function depensesPourCalendrier(scope, debut, fin){
   const appliquerFiltres = e => !(filtres.masquerRevenus && e.estRevenu) && !filtres.categoriesCachees.includes(e.category) && !filtres.quiCaches.includes(e.who)
     && e.amount >= filtres.montantMin && (filtres.montantMax == null || e.amount <= filtres.montantMax);
 
-  let liste = depenses
+  let liste = (type==='conjointe' ? depenses.concat(depotsAConfirmer) : depenses)
     .filter(e => e.type===type && e.date>=debutStr && e.date<=finStr)
     .filter(appliquerFiltres)
     .map(e=>({...e, partagee:false}));
@@ -4477,11 +4966,13 @@ function rendreCarteDepenseHTML(e, scope){
     pourcentageAffiche = `<span class="cal-agenda-pct">${pct}%</span>`;
   }
   const dateCourte = dateLocaleDepuisISO(e.date).toLocaleDateString('fr-CA',{day:'numeric', month:'short'});
-  const categorieAffichee = e.estRevenu ? 'Revenu' : e.category;
-  const couleurCategorie = e.estRevenu ? 'var(--green)' : (COULEURS_CATEGORIES[e.category]||'#9aa0a6');
+  const categorieAffichee = e.depotPlanifie ? (STATUT_DEPOT_TEXTE[e.depotStatut] || 'Dépôt prévu')
+    : estDepotConfirme(e) ? 'Dépôt confirmé' : (e.estRevenu ? 'Revenu' : e.category);
+  const couleurCategorie = e.depotPlanifie && e.depotStatut !== 'prevu' ? '#e8710a'
+    : e.estRevenu ? 'var(--green)' : (COULEURS_CATEGORIES[e.category]||'#9aa0a6');
 
   return `
-    <div class="cal-agenda-item" onclick="ouvrirDetailOccurrence('${e.id}')">
+    <div class="cal-agenda-item${e.depotPlanifie ? ' depot-planifie' : ''}" onclick="ouvrirDetailOccurrence('${e.id}')">
       <div class="cal-agenda-item-ligne1">
         <span class="cal-agenda-item-date">${dateCourte}</span>
         <span class="cal-agenda-item-recur">${iconeRecurrente}</span>
@@ -4616,8 +5107,11 @@ function ouvrirEditionRecurrence(id){
 
   appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
 
-  document.getElementById('edit-rec-sous-titre').textContent =
-    `Toute la série · ${libelleRecurrence(rec)}`;
+  document.getElementById('edit-rec-est-depot').checked = estSerieDepot(rec);
+  appliquerAffichageDepotEdition();
+  document.getElementById('edit-rec-sous-titre').textContent = estSerieDepot(rec) && rec.dateDebut < formaterDateISO(new Date())
+    ? `Dépôts à venir · ${libelleRecurrence(rec)}`
+    : `Toute la série · ${libelleRecurrence(rec)}`;
   document.getElementById('edit-recurrent-modal').style.display = 'flex';
   majLibellesRepartition();
 }
@@ -4632,6 +5126,13 @@ document.getElementById('edit-rec-qui').addEventListener('change', ()=>{
 });
 document.getElementById('close-edit-recurrent').addEventListener('click', ()=>document.getElementById('edit-recurrent-modal').style.display='none');
 document.getElementById('delete-edit-recurrent').addEventListener('click', actionVerrouillee(document.getElementById('delete-edit-recurrent'), async ()=>{
+  if(recurrenceEnEdition && estSerieDepot(recurrenceEnEdition)){
+    if(confirm("Supprimer les dépôts prévus de cette série (à venir et à confirmer) ? Les dépôts confirmés restent.")){
+      document.getElementById('edit-recurrent-modal').style.display='none';
+      await supprimerSerieDepotEdition(recurrenceEnEdition);
+    }
+    return;
+  }
   if(recurrenceEnEdition && confirm("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")){
     document.getElementById('edit-recurrent-modal').style.display='none';
     /* Supprime toute la famille : une série fractionnée par des "et les suivantes" est
@@ -4705,6 +5206,16 @@ document.getElementById('save-edit-recurrent').addEventListener('click', actionV
     const dateFin = finDateEquivalente(queue);
     if(dateFin == null){ finTypeFinal = 'jamais'; finNombreFinal = null; finDateFinal = null; }
     else { finTypeFinal = 'date'; finDateFinal = dateFin; finNombreFinal = null; }
+  }
+
+  /* Série de dépôt : seuls les dépôts à venir changent (voir remplacerAvenirSerieDepot). */
+  if(depotEditionActif() && estRevenu){
+    const recDepot = recurrenceEnEdition;
+    document.getElementById('edit-recurrent-modal').style.display = 'none';
+    const okDepot = await enregistrerSerieDepotEdition(recDepot, { nom, montant, pourcentageP1, cfg: cfgRepetition,
+      dateDebut, finType: finTypeFinal, finNombre: finNombreFinal, finDate: finDateFinal });
+    if(!okDepot) document.getElementById('edit-recurrent-modal').style.display = 'flex';
+    return;
   }
 
   const update = {
@@ -4934,7 +5445,7 @@ function rafraichirActif(){
      l'onglet ouvert. Avant, il ne l'était qu'à l'affichage de « Prochains dépôts » et
      jamais quand la carte était masquée : d'anciens montants restaient notifiés. Toujours
      le même nombre de paies, pour que la signature ne change pas d'un écran à l'autre. */
-  if(currentSession && currentUser) synchroniserEcheancierNotifications(calculerEcheancierCompte(NB_PAIES_ECHEANCIER));
+  if(currentSession && currentUser) synchroniserEcheancierNotifications(echeancierPourNotifications(executerMoteurCompte()));
   appliquerTheme();
   rafraichirOptionsFormulaires();
   if(activeMainTab==='conjoint' || activeMainTab==='personnel'){
@@ -5073,16 +5584,30 @@ async function ajouterDepense(scope){
   const estCompte = scope==='conjoint' && document.getElementById('f-who-conjoint').value === 'Compte conjoint';
   const estRevenu = scope==='conjoint' ? (estCompte && document.getElementById('f-est-revenu-conjoint').checked) : document.getElementById('f-est-revenu-personnel').checked;
   const who = estCompte ? 'compte' : determinerQui(scope);
-  const pourcentageP1 = type==='conjointe' ? Number(document.getElementById('f-compte-repartition-conjoint').value) : null;
+  let pourcentageP1 = type==='conjointe' ? Number(document.getElementById('f-compte-repartition-conjoint').value) : null;
   const amount = parseFloat(document.getElementById(`f-amount-${scope}`).value);
   const date = document.getElementById(`f-date-${scope}`).value;
-  const category = estRevenu ? 'Revenu' : document.getElementById(`f-category-${scope}`).value;
-  const note = document.getElementById(`f-note-${scope}`).value.trim();
+  let category = estRevenu ? 'Revenu' : document.getElementById(`f-category-${scope}`).value;
+  let note = document.getElementById(`f-note-${scope}`).value.trim();
   /* La bascule « Se répète » décide : à OFF c'est une dépense ponctuelle, à ON on lit les
      réglages dépliés juste en dessous. */
-  const cfgRepetition = document.getElementById(`f-repete-${scope}`).checked
+  let cfgRepetition = document.getElementById(`f-repete-${scope}`).checked
     ? lireControlesRecurrence(controlesRecurrenceAjout(scope))
     : null;
+  /* Dépôt pour payer le compte : toujours une prévision (récurrente, ou unique). */
+  const depotPrevu = scope==='conjoint' && depotAjoutActif();
+  let depotUnique = false;
+  if(depotPrevu){
+    if(date && date < formaterDateISO(new Date())){ afficherAlerte("Un dépôt prévu doit être daté d'aujourd'hui ou plus tard."); return; }
+    const v = valeursDepotAjout();
+    pourcentageP1 = v.pourcentageP1;
+    category = v.categorie;
+    if(!note) note = v.nom;
+    if(!cfgRepetition){
+      depotUnique = true;
+      cfgRepetition = { unite: 'mois', intervalle: 1, joursSemaine: null, typeMensuel: 'jour_mois' };
+    }
+  }
 
   if(!amount || amount<=0 || !date){
     afficherAlerte("Merci d'entrer un montant et une date valides.");
@@ -5093,8 +5618,8 @@ async function ajouterDepense(scope){
      récurrence à partir de cette date (façon "Se répète" de Google Agenda) — le calendrier
      matérialisera ensuite ses occurrences comme n'importe quelle autre récurrence. */
   if(cfgRepetition){
-    const finType = document.getElementById(`f-fin-type-${scope}`).value;
-    const finNombreRaw = document.getElementById(`f-fin-nombre-${scope}`).value;
+    const finType = depotUnique ? 'nombre' : document.getElementById(`f-fin-type-${scope}`).value;
+    const finNombreRaw = depotUnique ? '1' : document.getElementById(`f-fin-nombre-${scope}`).value;
     const finNombre = finType==='nombre' ? (parseInt(finNombreRaw,10) || null) : null;
     const finDateRaw = document.getElementById(`f-fin-date-${scope}`).value;
     const finDate = finType==='date' ? (finDateRaw || null) : null;
@@ -5111,7 +5636,12 @@ async function ajouterDepense(scope){
     reinitialiserFormulaireAjoutDepense(scope);
     afficherRecurrencesScope(scope);
     rafraichirActif();
-    if(type==='conjointe') notifierActivitePartenaire('ajout', `${category} — ${formaterMonnaie(amount)}`);
+    if(type==='conjointe') notifierActivitePartenaire('ajout', depotPrevu ? `${note} prévu — ${formaterMonnaie(amount)}` : `${category} — ${formaterMonnaie(amount)}`);
+    if(depotPrevu){
+      document.getElementById('f-est-depot-conjoint').checked = false;
+      delete document.getElementById('f-depot-qui-conjoint').dataset.choisi;
+      appliquerAffichageDepotAjout();
+    }
     return;
   }
 
@@ -5193,6 +5723,8 @@ function reinitialiserFormulaireAjoutDepense(scope){
     document.getElementById('f-compte-repartition-conjoint').value = 50;
     document.getElementById('f-who-conjoint').value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
     appliquerChoixQuiConjoint('f-who-conjoint','f-compte-repartition-conjoint','f-est-revenu-field-conjoint');
+    document.getElementById('f-est-depot-conjoint').checked = false;
+    appliquerAffichageDepotAjout();
   } else {
     document.getElementById('f-est-revenu-personnel').checked = false;
   }
@@ -5997,6 +6529,7 @@ async function supprimerDepense(id){
     return;
   }
   depensesReelles = depensesReelles.filter(e=>e.id!==id);
+  await libererDepotConfirme(id);
   recalculerDepenses();
   rafraichirActif();
 }
