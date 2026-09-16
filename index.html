@@ -966,6 +966,21 @@
   .cs-plages{display:flex;gap:6px;margin:4px 0;}
   .cs-plage{border:1px solid var(--border);background:transparent;color:var(--text-secondary);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;}
   .cs-plage.actif{background:var(--blue, #1a73e8);border-color:var(--blue, #1a73e8);color:#fff;}
+  /* Récurrence « dates précises » */
+  .dates-multiples{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+  .date-puce{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;}
+  .date-puce button{border:none;background:none;color:var(--text-secondary);font-size:16px;line-height:1;cursor:pointer;padding:0 4px;}
+  .dates-vide{font-size:13px;color:var(--text-secondary);}
+  .dates-ajout{display:flex;gap:8px;align-items:center;}
+  .dates-ajout input{flex:1;min-width:0;}
+  .dates-ajout .btn-secondary{width:auto;margin:0;padding:8px 14px;}
+  /* Sous-onglet Compte : période */
+  .cs-depart{margin-top:8px;}
+  .cs-somme small.cs-statut{display:block;font-size:11px;font-weight:400;color:var(--text-secondary);text-align:right;}
+  .cs-somme small.cs-statut.fait{color:var(--green);}
+  .cs-somme small.cs-statut.a_confirmer, .cs-somme small.cs-statut.aujourdhui{color:#e8710a;}
+  .cs-lien-probleme{display:block;width:100%;text-align:left;border:1px solid var(--border);background:transparent;color:var(--red);
+    border-radius:12px;padding:10px 14px;margin-bottom:10px;font:inherit;font-size:13px;cursor:pointer;}
   .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
   .depot-total.final .value{font-weight:600;}
@@ -1073,6 +1088,7 @@
     <nav class="subtabs">
       <button class="subtab-btn active" data-scope="conjoint" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="resume">Résumé</button>
+      <button class="subtab-btn" data-scope="conjoint" data-sub="compte">Compte</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="budget">Budget</button>
     </nav>
     <div id="period-nav-slot-conjoint"></div>
@@ -1135,12 +1151,18 @@
                 <option value="semaine">semaine(s)</option>
                 <option value="mois">mois</option>
                 <option value="annee">an(s)</option>
+                <option value="dates">dates précises</option>
               </select>
             </div>
           </div>
           <div class="field pleine-largeur bloc-recurrence" id="f-rec-jours-field-conjoint" style="display:none;">
             <label>Se répète le</label>
             <div class="jours-semaine-select" id="f-rec-jours-conjoint"></div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-conjoint-dates-field" style="display:none;">
+            <label>Chaque année le</label>
+            <div class="dates-multiples" id="f-rec-conjoint-dates"></div>
+            <div class="dates-ajout"><input type="date" id="f-rec-conjoint-dates-ajout" aria-label="Ajouter une date"><button type="button" class="btn-secondary" id="f-rec-conjoint-dates-bouton">Ajouter</button></div>
           </div>
           <div class="field pleine-largeur bloc-recurrence" id="f-rec-mensuel-field-conjoint" style="display:none;">
             <label>Chaque mois</label>
@@ -1196,14 +1218,6 @@
     <div class="subtab-panel" data-scope="conjoint" data-sub="resume">
       <div class="stats-row" id="mois-stats-conjoint"></div>
       <div class="stats-row" id="annee-stats-conjoint" style="display:none;"></div>
-      <div class="card" id="recurrent-compte-echeancier-card-conjoint" style="display:none;">
-        <div class="table-head-row">
-          <h3>Compte conjoint</h3>
-        </div>
-        <div id="solde-compte-bloc"></div>
-        <div id="solde-compte-alerte"></div>
-        <div id="recurrent-compte-echeancier-conjoint"></div>
-      </div>
       <div class="grid-2" id="resume-mois-conjoint">
         <div class="card">
           <h3 id="month-evolution-title-conjoint">Évolution des dépenses</h3>
@@ -1223,6 +1237,15 @@
           <h3>Répartition par catégorie (année)</h3>
           <div class="chart-wrap"><canvas id="chart-annee-categories-conjoint"></canvas></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Sous-onglet : COMPTE (solde, minimum, dépôts prévus, suivi jour par jour) -->
+    <div class="subtab-panel" data-scope="conjoint" data-sub="compte">
+      <div class="card" id="recurrent-compte-echeancier-card-conjoint">
+        <div id="solde-compte-bloc"></div>
+        <div id="solde-compte-alerte"></div>
+        <div id="recurrent-compte-echeancier-conjoint"></div>
       </div>
     </div>
 
@@ -1318,12 +1341,18 @@
                 <option value="semaine">semaine(s)</option>
                 <option value="mois">mois</option>
                 <option value="annee">an(s)</option>
+                <option value="dates">dates précises</option>
               </select>
             </div>
           </div>
           <div class="field pleine-largeur bloc-recurrence" id="f-rec-jours-field-personnel" style="display:none;">
             <label>Se répète le</label>
             <div class="jours-semaine-select" id="f-rec-jours-personnel"></div>
+          </div>
+          <div class="field pleine-largeur bloc-recurrence" id="f-rec-personnel-dates-field" style="display:none;">
+            <label>Chaque année le</label>
+            <div class="dates-multiples" id="f-rec-personnel-dates"></div>
+            <div class="dates-ajout"><input type="date" id="f-rec-personnel-dates-ajout" aria-label="Ajouter une date"><button type="button" class="btn-secondary" id="f-rec-personnel-dates-bouton">Ajouter</button></div>
           </div>
           <div class="field pleine-largeur bloc-recurrence" id="f-rec-mensuel-field-personnel" style="display:none;">
             <label>Chaque mois</label>
@@ -1658,6 +1687,7 @@
             <option value="semaine">semaine(s)</option>
             <option value="mois">mois</option>
             <option value="annee">an(s)</option>
+                <option value="dates">dates précises</option>
           </select>
         </div>
       </div>
@@ -1665,6 +1695,11 @@
         <label>Se répète le</label>
         <div class="jours-semaine-select" id="edit-nouv-rec-jours"></div>
       </div>
+          <div class="field pleine-largeur bloc-recurrence-edit" id="edit-nouv-rec-dates-field" style="display:none;">
+            <label>Chaque année le</label>
+            <div class="dates-multiples" id="edit-nouv-rec-dates"></div>
+            <div class="dates-ajout"><input type="date" id="edit-nouv-rec-dates-ajout" aria-label="Ajouter une date"><button type="button" class="btn-secondary" id="edit-nouv-rec-dates-bouton">Ajouter</button></div>
+          </div>
       <div class="field pleine-largeur bloc-recurrence-edit" id="edit-nouv-rec-mensuel-field" style="display:none;">
         <label>Chaque mois</label>
         <select id="edit-nouv-rec-type-mensuel"></select>
@@ -1734,6 +1769,7 @@
             <option value="semaine">semaine(s)</option>
             <option value="mois">mois</option>
             <option value="annee">an(s)</option>
+                <option value="dates">dates précises</option>
           </select>
         </div>
       </div>
@@ -1741,6 +1777,11 @@
         <label>Se répète le</label>
         <div class="jours-semaine-select" id="edit-rec-jours"></div>
       </div>
+          <div class="field pleine-largeur " id="edit-rec-dates-field" style="display:none;">
+            <label>Chaque année le</label>
+            <div class="dates-multiples" id="edit-rec-dates"></div>
+            <div class="dates-ajout"><input type="date" id="edit-rec-dates-ajout" aria-label="Ajouter une date"><button type="button" class="btn-secondary" id="edit-rec-dates-bouton">Ajouter</button></div>
+          </div>
       <div class="field pleine-largeur" id="edit-rec-mensuel-field" style="display:none;">
         <label>Chaque mois</label>
         <select id="edit-rec-type-mensuel"></select>
@@ -2506,7 +2547,7 @@ async function chargerRecurrencesSupabase(){
       const aLeNouveauModele = r.Unite != null;
       const modele = aLeNouveauModele
         ? {
-            unite: ['jour','semaine','mois','annee'].includes(r.Unite) ? r.Unite : 'mois',
+            unite: ['jour','semaine','mois','annee','dates'].includes(r.Unite) ? r.Unite : 'mois',
             intervalle: r.Intervalle != null ? Math.max(1, parseInt(r.Intervalle,10)) : 1,
             joursSemaine: r.JoursSemaine ? String(r.JoursSemaine).split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n)) : null,
             typeMensuel: r.TypeMensuel === 'dernier_jour' ? 'dernier_jour' : 'jour_mois'
@@ -2565,6 +2606,7 @@ function occurrencesParAnnee(rec){
     return (52 / intervalle) * nbJours;
   }
   if(rec.unite === 'annee') return 1 / intervalle;
+  if(rec.unite === 'dates') return ((rec.joursSemaine && rec.joursSemaine.length) || 1) / intervalle;
   return 12 / intervalle; /* mois */
 }
 function multiplicateurMensuel(rec){ return occurrencesParAnnee(rec) / 12; }
@@ -2577,6 +2619,11 @@ const NOMS_JOURS_LETTRE = ['D','L','M','M','J','V','S'];
 /* Construit un libellé humain (façon Google Agenda) à partir d'une config de répétition. */
 function libelleRecurrence(rec){
   const intervalle = Math.max(1, rec.intervalle || 1);
+  if(rec.unite === 'dates'){
+    const liste = datesMultiplesTriees(rec.joursSemaine).map(libelleDateMultiple);
+    const texte = liste.length > 1 ? `${liste.slice(0, -1).join(', ')} et ${liste[liste.length - 1]}` : (liste[0] || '');
+    return intervalle === 1 ? `Chaque année le ${texte}` : `Tous les ${intervalle} ans le ${texte}`;
+  }
   if(rec.unite === 'jour'){
     return intervalle === 1 ? 'Tous les jours' : `Tous les ${intervalle} jours`;
   }
@@ -2640,6 +2687,10 @@ function normaliserConfigRepetition(cfg, dateISO){
       return { unite:'jour', intervalle:1 };
     }
     normalisee.joursSemaine = jours;
+  } else if(normalisee.unite === 'dates'){
+    const liste = datesMultiplesTriees(normalisee.joursSemaine);
+    if(!liste.length && dateISO) liste.push(codeDateMultiple(dateISO));
+    normalisee.joursSemaine = liste;
   } else {
     delete normalisee.joursSemaine;
   }
@@ -2713,6 +2764,23 @@ function genererOccurrences(rec, limiteDate){
         }
       }
       curseur.setDate(curseur.getDate()+1);
+    }
+    return dates;
+  }
+
+  if(unite === 'dates'){
+    const codes = datesMultiplesTriees(rec.joursSemaine);
+    if(!codes.length) codes.push((debut.getMonth() + 1) * 100 + debut.getDate());
+    let compte = 0;
+    for(let annee = debut.getFullYear(); compte < maxOccurrences; annee += intervalle){
+      if(new Date(annee, 0, 1) > limite) break;
+      for(const code of codes){
+        const mois = Math.floor(code / 100) - 1;
+        const occ = new Date(annee, mois, Math.min(code % 100, dernierJourDuMois(annee, mois).getDate()));
+        if(occ < debut) continue;
+        if(occ > limite || compte >= maxOccurrences) break;
+        dates.push(occ); compte++;
+      }
     }
     return dates;
   }
@@ -3031,14 +3099,16 @@ function collecterMouvementsCompte(limite){
   return liste;
 }
 
-function executerMoteurCompte(){
+function executerMoteurCompte(jusquA){
   const reglages = reglagesDepuisEtat(lireEtatMoteur());
   const auj = numeroJour(formaterDateISO(new Date()));
-  const limite = dateLocaleDepuisISO(isoDuNumero(auj + MOTEUR_HORIZON_JOURS));
+  /* Au moins un an ; plus loin si la période affichée le demande (au plus 5 ans). */
+  const horizon = Math.min(MOTEUR_HORIZON_JOURS * 5, Math.max(MOTEUR_HORIZON_JOURS, (jusquA || 0) - auj));
+  const limite = dateLocaleDepuisISO(isoDuNumero(auj + horizon));
   const mouvements = collecterMouvementsCompte(limite);
   const occ = occurrencesDepotsPrevus(limite);
   const prevus = occ.map(o => ({ id: o.id, X: o.depotPersonne, jour: numeroJour(o.date), cents: enCents(o.amount), libelle: o.note }));
-  const r = calculerMoteurCompte({ mouvements, prevus, aujourdhui: auj, coussin: reglages.coussin, pctCoussinP1: reglages.pctCoussinP1 });
+  const r = calculerMoteurCompte({ mouvements, prevus, aujourdhui: auj, horizon, coussin: reglages.coussin, pctCoussinP1: reglages.pctCoussinP1 });
   r.reglages = reglages;
   r.occurrences = new Map(occ.map(o => [o.id, o]));
   r.aDesMouvements = mouvements.length > 0 || occ.length > 0 || recurrences.some(estSerieDepot);
@@ -3071,29 +3141,55 @@ const dateLongueNum = n => dateLocaleDepuisISO(isoDuNumero(n)).toLocaleDateStrin
 const jourSemaine = n => dateLocaleDepuisISO(isoDuNumero(n)).toLocaleDateString('fr-CA', { weekday:'short', day:'numeric', month:'short' });
 const autrePersonne = X => X === 'p1' ? 'p2' : 'p1';
 
-let prochainsEtendus = false;
-let suiviOuvert = false;
-let suiviAvant = 7, suiviApres = 30;
+let depotsEtendus = false;
+let journalOuvert = null;       /* null = selon la vue (fermé en vue Année) */
 let graphiqueSuivi = null;
-let plageGraphique = 60;
 
-function afficherBlocSoldeCompte(r){
+/* Période choisie dans le sélecteur commun (Jour / Semaine / Paie / Mois / Année). */
+function periodeCompte(){
+  const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
+  return { vue: etatCalendrierPeriode.vue, debut: numeroJour(formaterDateISO(debut)), fin: numeroJour(formaterDateISO(fin)) };
+}
+/* Solde et parts à la fin d'un jour, passé (réel) ou futur (prévu). */
+function soldeAuJour(r, n){
+  const liste = n < r.aujourdhui ? r.historique : r.projection;
+  let dernier = null;
+  for(const j of liste){ if(j.jour <= n) dernier = j; else break; }
+  if(dernier) return { solde: dernier.solde, parts: dernier.parts };
+  return { solde: 0, parts: { p1: 0, p2: 0 } };
+}
+function allerALaDate(n){
+  etatCalendrierPeriode.dateRef = dateLocaleDepuisISO(isoDuNumero(n));
+  synchroniserMoisActif();
+  rafraichirSousOnglet('conjoint', 'compte');
+  afficherNavigationPeriode();
+}
+
+function afficherBlocSoldeCompte(r, per){
   const zone = document.getElementById('solde-compte-bloc');
   if(!zone) return;
   if(!r){ zone.innerHTML = ''; return; }
+  const contientAuj = per.debut <= r.aujourdhui && r.aujourdhui <= per.fin;
+  const reference = contientAuj ? r.aujourdhui : per.fin;
+  const etat = contientAuj ? { solde: r.solde, parts: r.parts } : soldeAuJour(r, reference);
+  const titre = contientAuj ? 'Solde du compte'
+    : per.fin < r.aujourdhui ? `Solde au ${dateLongueNum(per.fin)}`
+    : `Solde prévu au ${dateLongueNum(per.fin)}`;
+  const depart = per.vue !== 'jour' && per.debut <= r.aujourdhui + 366 ? soldeAuJour(r, per.debut - 1) : null;
   const part = X => {
     const p = r.personnes[X];
-    const avance = p.ok && p.marge > 0 ? `<small class="cs-avance">avance ${argent(p.marge)}</small>` : '';
+    const avance = contientAuj && p.ok && p.marge > 0 ? `<small class="cs-avance">avance ${argent(p.marge)}</small>` : '';
     return `<div class="cs-part">
       <span class="cs-nom"><span class="dot ${X}"></span>${echapperHTML(nomsPersonnes[X])}</span>
-      <strong class="${r.parts[X] < 0 ? 'solde-negatif' : ''}">${argent(r.parts[X])}</strong>${avance}
+      <strong class="${etat.parts[X] < 0 ? 'solde-negatif' : ''}">${argent(etat.parts[X])}</strong>${avance}
     </div>`;
   };
   zone.innerHTML = `
     <div class="cs-solde">
-      <div class="cs-label">Solde du compte</div>
-      <div class="cs-montant ${r.solde < 0 ? 'solde-negatif' : ''}">${argent(r.solde)}</div>
+      <div class="cs-label">${titre}</div>
+      <div class="cs-montant ${etat.solde < 0 ? 'solde-negatif' : ''}">${argent(etat.solde)}</div>
       <div class="cs-parts">${part('p1')}${part('p2')}</div>
+      ${depart ? `<div class="cs-texte cs-depart">Au début de la période (${dateCourte(per.debut)}) : ${argent(depart.solde)}</div>` : ''}
     </div>
     <div class="cs-minimum">
       <label for="cs-min">Minimum du compte</label>
@@ -3115,28 +3211,22 @@ function afficherBlocSoldeCompte(r){
   champ.addEventListener('keydown', e => { if(e.key === 'Enter' && ok.style.display !== 'none'){ e.preventDefault(); ok.click(); } });
 }
 
-/* Ligne de correction pour une personne dont la part ne tient pas. */
-function correctionPersonne(r, X){
-  const p = r.personnes[X];
-  if(p.ok) return '';
+/* Ligne d'une personne dont la part n'est pas remplie pendant la période. */
+function lignePartPersonne(r, X, jour){
   const nom = echapperHTML(nomsPersonnes[X]);
-  const c = p.correction;
-  const bouton = c.type === 'ajout'
-    ? `<button class="cs-bouton" data-ajout-depot="${X}">Ajouter ${argent(c.cents)} au dépôt du ${dateCourte(c.depot.jour)}</button>`
-    : `<button class="cs-bouton" data-nouveau-depot="${X}">Prévoir un dépôt de ${argent(c.cents)} ${Math.max(c.jour, r.aujourdhui) === r.aujourdhui ? "aujourd'hui" : `le ${dateCourte(c.jour)}`}</button>`;
-  const quand = p.probleme.jour === r.aujourdhui
-    ? `sa part est à ${argent(p.probleme.part)}`
-    : `sa part descendrait à ${argent(p.probleme.part)} le ${dateCourte(p.probleme.jour)}`;
-  return `<div class="cs-correction"><span><strong>${nom}</strong> : ${quand}, sous ${r.reglages.pctCoussinP1 === 50 ? 'sa moitié' : 'sa portion'} du minimum (${argent(r.cible[X])}).</span>${bouton}</div>`;
+  const part = soldeAuJour(r, jour).parts[X];
+  const portion = r.reglages.pctCoussinP1 === 50 ? 'sa moitié' : 'sa portion';
+  const quand = jour === r.aujourdhui ? `sa part est à ${argent(part)}` : `sa part descendrait à ${argent(part)} le ${dateCourte(jour)}`;
+  return `<div class="cs-correction"><span><strong>${nom}</strong> : ${quand}, sous ${portion} du minimum (${argent(r.cible[X])}).</span></div>`;
 }
 
-function afficherAlerteSoldeCompte(r){
+function afficherAlerteSoldeCompte(r, per){
   const zone = document.getElementById('solde-compte-alerte');
   if(!zone) return;
   if(!r){ zone.innerHTML = ''; return; }
   const blocs = [];
 
-  /* À confirmer : dépôts dont la date est arrivée (aujourd'hui compris). */
+  /* À confirmer : toujours affiché, peu importe la période (c'est à faire maintenant). */
   const dus = [...r.aConfirmer, ...r.dusAujourdhui];
   if(dus.length){
     blocs.push(`<div class="cs-bloc cs-attente"><div class="cs-titre">À confirmer</div>${dus.map(q =>
@@ -3144,56 +3234,87 @@ function afficherAlerteSoldeCompte(r){
       ${r.aConfirmer.length ? `<div class="cs-texte">Un dépôt non confirmé ne compte pas dans le solde ni dans la vérification.</div>` : ''}</div>`);
   }
 
-  /* Verdict. */
-  const corrections = MOTEUR_PERSONNES.map(X => correctionPersonne(r, X)).filter(Boolean).join('');
-  const sm = r.sousMinimum;
-  if(sm){
-    const titre = sm.jour === r.aujourdhui
-      ? `⚠ Le compte est sous le minimum de ${argent(r.coussin)}`
-      : `⚠ Le ${dateLongueNum(sm.jour)}, le compte descendrait à ${argent(sm.solde)}`;
-    blocs.push(`<div class="cs-bloc cs-manque"><div class="cs-titre">${titre}</div>
-      ${sm.jour === r.aujourdhui ? '' : `<div class="cs-texte">C'est sous le minimum de ${argent(r.coussin)}.</div>`}${corrections}</div>`);
-  } else if(corrections){
-    const aide = MOTEUR_PERSONNES.filter(X => r.personnes[X].ok).map(X => nomsPersonnes[X]);
-    blocs.push(`<div class="cs-bloc cs-avert"><div class="cs-titre">⚠ Une part n'est pas remplie</div>
-      <div class="cs-texte">Le compte reste au-dessus de ${argent(r.coussin)}${aide.length ? ` grâce à l'avance de ${echapperHTML(aide.join(' et '))}` : ''}, mais chacun doit remplir sa part.</div>${corrections}</div>`);
+  /* Vérification sur la partie à venir de la période. */
+  const debutVerif = Math.max(per.debut, r.aujourdhui);
+  const jours = r.projection.filter(j => j.jour >= debutVerif && j.jour <= per.fin);
+  const partSous = X => jours.find(j => j.parts[X] < r.cible[X]);
+  if(per.fin < r.aujourdhui){
+    const passes = r.historique.filter(j => j.jour >= per.debut && j.jour <= per.fin);
+    const bas = passes.reduce((m, j) => (!m || j.solde < m.solde) ? j : m, null);
+    blocs.push(`<div class="cs-bloc"><div class="cs-titre">Période passée</div>
+      <div class="cs-texte">${bas ? `Plus bas : ${argent(bas.solde)} le ${dateLongueNum(bas.jour)}.` : 'Aucun mouvement pendant cette période.'}</div></div>`);
+  } else if(jours.length){
+    const sm = jours.find(j => j.solde < r.coussin);
+    const lignes = MOTEUR_PERSONNES.map(X => { const j = partSous(X); return j ? lignePartPersonne(r, X, j.jour) : ''; }).join('');
+    if(sm){
+      const titre = sm.jour === r.aujourdhui
+        ? `⚠ Le compte est sous le minimum de ${argent(r.coussin)}`
+        : `⚠ Le ${dateLongueNum(sm.jour)}, le compte descendrait à ${argent(sm.solde)}`;
+      blocs.push(`<div class="cs-bloc cs-manque"><div class="cs-titre">${titre}</div>
+        ${sm.jour === r.aujourdhui ? '' : `<div class="cs-texte">C'est sous le minimum de ${argent(r.coussin)}.</div>`}${lignes}</div>`);
+    } else if(lignes){
+      blocs.push(`<div class="cs-bloc cs-avert"><div class="cs-titre">⚠ Une part n'est pas remplie</div>
+        <div class="cs-texte">Le compte reste au-dessus de ${argent(r.coussin)}, mais chacun doit remplir sa part.</div>${lignes}</div>`);
+    } else {
+      const bas = jours.reduce((m, j) => j.solde < m.solde ? j : m, jours[0]);
+      blocs.push(`<div class="cs-bloc cs-ok"><div class="cs-titre">✓ Le compte reste au-dessus de ${argent(r.coussin)}${per.vue === 'jour' ? '' : ' pendant cette période'}</div>
+        <div class="cs-texte">Plus bas : ${argent(bas.solde)} le ${dateLongueNum(bas.jour)}. Chacun remplit sa part.</div></div>`);
+    }
   } else {
-    blocs.push(`<div class="cs-bloc cs-ok"><div class="cs-titre">✓ Le compte reste au-dessus de ${argent(r.coussin)} toute l'année</div>
-      <div class="cs-texte">Plus bas : ${argent(r.minimum.solde)} le ${dateLongueNum(r.minimum.jour)}. Chacun remplit sa part.</div></div>`);
+    blocs.push(`<div class="cs-bloc"><div class="cs-texte">Cette période dépasse la prévision (un an).</div></div>`);
+  }
+
+  /* Problème ailleurs dans l'année : un lien pour y aller. */
+  const problemes = [r.sousMinimum && r.sousMinimum.jour,
+    ...MOTEUR_PERSONNES.map(X => r.personnes[X].probleme && r.personnes[X].probleme.jour)]
+    .filter(n => n != null && (n < per.debut || n > per.fin));
+  if(problemes.length){
+    const n = Math.min(...problemes);
+    blocs.push(`<button class="cs-lien-probleme" data-aller="${n}">${n === r.aujourdhui
+      ? "⚠ Le compte a un problème aujourd'hui — voir"
+      : `⚠ Problème prévu le ${dateLongueNum(n)} — voir`}</button>`);
   }
 
   zone.innerHTML = blocs.join('');
   zone.querySelectorAll('[data-ouvrir-depot]').forEach(b => b.addEventListener('click', () => ouvrirDepotPlanifie(b.dataset.ouvrirDepot)));
-  const surClic = (sel, f) => zone.querySelectorAll(sel).forEach(b => b.addEventListener('click', actionVerrouillee(b, () => f(b))));
-  surClic('[data-ajout-depot]', async b => appliquerCorrection(b.dataset.ajoutDepot));
-  surClic('[data-nouveau-depot]', async b => appliquerCorrection(b.dataset.nouveauDepot));
+  zone.querySelectorAll('[data-aller]').forEach(b => b.addEventListener('click', () => allerALaDate(Number(b.dataset.aller))));
 }
 
-/* Tableau des dépôts à venir (montants des dépôts créés). */
-function afficherProchainsDepots(r){
-  const liste = prochainsEtendus ? r.prochains : r.prochains.slice(0, 8);
+/* Dépôts de la période : confirmés, à confirmer et prévus. */
+function afficherDepotsPeriode(r, per){
+  const confirmes = [];
+  r.historique.filter(j => j.jour >= per.debut && j.jour <= per.fin).forEach(j => j.mouvements.forEach(m => {
+    if(m.type === 'reel' && m.deposant) confirmes.push({ id: m.id, X: m.deposant, jour: j.jour, cents: m.cents, statut: 'fait' });
+  }));
+  const prevus = [...r.aConfirmer, ...r.prochains].filter(q => q.jour >= per.debut && q.jour <= per.fin)
+    .map(q => ({ id: q.id, X: q.X, jour: q.jour, cents: q.cents, statut: q.jour < r.aujourdhui ? 'a_confirmer' : q.jour === r.aujourdhui ? 'aujourdhui' : 'prevu' }));
+  const tous = [...confirmes, ...prevus].sort((a, b) => a.jour - b.jour || a.X.localeCompare(b.X));
+  const liste = depotsEtendus ? tous : tous.slice(0, 12);
+  const sous = { fait: '✓ confirmé', a_confirmer: 'à confirmer', aujourdhui: 'à confirmer', prevu: 'prévu' };
   const lignes = liste.map(q => `
-    <button class="cs-ligne-depot" data-ouvrir-depot="${q.id}">
+    <button class="cs-ligne-depot" ${q.statut === 'fait' ? `data-depot-confirme="${q.id}"` : `data-ouvrir-depot="${q.id}"`}>
       <span class="cs-date">${jourSemaine(q.jour)}</span>
       <span class="cs-qui"><span class="dot ${q.X}"></span>${echapperHTML(nomsPersonnes[q.X])}</span>
-      <span class="cs-somme">${argent(q.cents)}</span>
+      <span class="cs-somme">${argent(q.cents)}<small class="cs-statut ${q.statut}">${sous[q.statut]}</small></span>
     </button>`).join('');
   return `
-    <div class="cs-titre cs-titre-section">Dépôts prévus</div>
-    ${liste.length ? `<div class="cs-liste">${lignes}</div>` : `<div class="cs-texte">Aucun dépôt prévu. Ajoutez un revenu du compte avec l'option « Dépôt pour payer le compte ».</div>`}
-    ${r.prochains.length > 8 ? `<button class="solde-bloc-lien cs-lien" id="prochains-bascule">${prochainsEtendus ? 'Voir moins' : `Voir les ${r.prochains.length} dépôts de l'année`}</button>` : ''}`;
+    <div class="cs-titre cs-titre-section">Dépôts</div>
+    ${liste.length ? `<div class="cs-liste">${lignes}</div>`
+      : `<div class="cs-texte">Aucun dépôt pendant cette période.${r.prochains.length ? '' : " Pour en prévoir, ajoutez un revenu du compte avec l'option « Dépôt pour payer le compte »."}</div>`}
+    ${tous.length > 12 ? `<button class="solde-bloc-lien cs-lien" id="depots-bascule">${depotsEtendus ? 'Voir moins' : `Voir les ${tous.length} dépôts`}</button>` : ''}`;
 }
 
-/* Suivi du solde jour par jour : graphique + journal. */
-function journeesSuivi(r){
-  const debut = r.aujourdhui - suiviAvant, fin = r.aujourdhui + suiviApres;
-  const passes = r.historique.filter(j => j.jour >= debut && j.jour < r.aujourdhui);
-  const futurs = r.projection.filter(j => j.jour <= fin);
-  return { passes, futurs };
+/* Suivi jour par jour de la période : graphique + journal. */
+function journeesPeriode(r, per){
+  const passes = r.historique.filter(j => j.jour >= per.debut && j.jour <= per.fin && j.jour < r.aujourdhui);
+  const futurs = r.projection.filter(j => j.jour >= per.debut && j.jour <= per.fin);
+  return [...passes, ...futurs];
 }
-function afficherSuivi(r){
-  const { passes, futurs } = journeesSuivi(r);
-  const ligneJour = (j, prevision) => {
+function afficherSuivi(r, per){
+  const jours = journeesPeriode(r, per);
+  const ouvert = journalOuvert == null ? per.vue !== 'annee' : journalOuvert;
+  const ligneJour = j => {
+    const prevision = j.jour >= r.aujourdhui;
     const sous = prevision && j.solde < r.coussin;
     const mvts = j.mouvements.map(m => `<div class="cs-mvt ${m.type === 'prevu' ? 'prevu' : ''}">
         <span>${echapperHTML(m.type === 'prevu' ? `Dépôt prévu de ${nomsPersonnes[m.X]}` : (m.libelle || ''))}</span>
@@ -3204,42 +3325,31 @@ function afficherSuivi(r){
         <span class="cs-jour-solde ${sous ? 'solde-negatif' : ''}">${sous ? '⚠ ' : ''}${argent(j.solde)}</span>
       </div>
       <div class="cs-jour-parts">${echapperHTML(nomsPersonnes.p1)} ${argent(j.parts.p1)} · ${echapperHTML(nomsPersonnes.p2)} ${argent(j.parts.p2)}</div>
-      ${mvts}
+      ${mvts || '<div class="cs-mvt"><span>Aucun mouvement</span><span></span></div>'}
     </div>`;
   };
+  const graphique = per.vue !== 'jour' ? `<div class="cs-graphique"><canvas id="suivi-graphique" height="170"></canvas></div>` : '';
   return `
-    <button class="cs-titre cs-titre-section cs-depliable" id="suivi-bascule" aria-expanded="${suiviOuvert}">
-      <span>Solde jour par jour</span><span>${suiviOuvert ? '▴' : '▾'}</span>
-    </button>
-    <div class="cs-plages">${[[30, '1 mois'], [90, '3 mois'], [365, '1 an']].map(([n, t]) =>
-      `<button class="cs-plage ${plageGraphique === n ? 'actif' : ''}" data-plage="${n}">${t}</button>`).join('')}</div>
-    <div class="cs-graphique"><canvas id="suivi-graphique" height="170"></canvas></div>
-    ${suiviOuvert ? `
-      <button class="solde-bloc-lien cs-lien" id="suivi-avant">Voir plus tôt</button>
-      <div class="cs-journal">
-        ${passes.map(j => ligneJour(j, false)).join('')}
-        ${futurs.map(j => ligneJour(j, true)).join('')}
-      </div>
-      ${suiviApres < MOTEUR_HORIZON_JOURS ? `<button class="solde-bloc-lien cs-lien" id="suivi-apres">Voir plus loin</button>` : ''}` : ''}`;
+    <div class="cs-titre cs-titre-section">Solde jour par jour</div>
+    ${graphique}
+    <button class="solde-bloc-lien cs-lien" id="journal-bascule">${ouvert ? 'Masquer le détail des jours' : `Voir le détail des jours (${jours.length})`}</button>
+    ${ouvert ? `<div class="cs-journal">${jours.length ? jours.map(ligneJour).join('') : '<div class="cs-texte">Aucun mouvement pendant cette période.</div>'}</div>` : ''}`;
 }
-function dessinerGraphiqueSuivi(r){
+function dessinerGraphiqueSuivi(r, per){
   const canvas = document.getElementById('suivi-graphique');
   if(!canvas || typeof Chart === 'undefined') return;
   if(graphiqueSuivi && graphiqueSuivi.destroy) graphiqueSuivi.destroy();
-  /* 30 jours d'historique + la projection d'un an, en fin de journée, jour par jour. */
   const jours = [], passe = [], prevu = [];
-  const debut = r.aujourdhui - 14;
-  const finGraphique = Math.min(r.fin, r.aujourdhui + plageGraphique);
-  let courant = r.historique.filter(j => j.jour < debut).pop();
-  let soldeCourant = courant ? courant.solde : 0;
   const parJour = new Map();
   r.historique.forEach(j => parJour.set(j.jour, j.solde));
   r.projection.forEach(j => parJour.set(j.jour, j.solde));
-  for(let n = debut; n <= finGraphique; n++){
-    if(parJour.has(n)) soldeCourant = parJour.get(n);
+  let courant = soldeAuJour(r, per.debut - 1).solde;
+  const fin = Math.min(per.fin, r.fin);
+  for(let n = per.debut; n <= fin; n++){
+    if(parJour.has(n)) courant = parJour.get(n);
     jours.push(n);
-    passe.push(n <= r.aujourdhui ? enDollars(soldeCourant) : null);
-    prevu.push(n >= r.aujourdhui ? enDollars(soldeCourant) : null);
+    passe.push(n <= r.aujourdhui ? enDollars(courant) : null);
+    prevu.push(n >= r.aujourdhui ? enDollars(courant) : null);
   }
   const indexAuj = jours.indexOf(r.aujourdhui);
   const sombre = document.body.classList.contains('dark');
@@ -3249,9 +3359,9 @@ function dessinerGraphiqueSuivi(r){
     data: {
       labels: jours.map(n => dateCourte(n)),
       datasets: [
-        { label: 'Solde', data: passe, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, stepped: true, fill: false, spanGaps: false },
-        { label: 'Prévu', data: prevu, borderColor: sombre ? '#8ab4f8' : '#8ab4f8', backgroundColor: 'rgba(138,180,248,.12)',
-          borderWidth: 2, pointRadius: 0, stepped: true, fill: 'origin', spanGaps: false },
+        { label: 'Solde', data: passe, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, stepped: true, fill: false },
+        { label: 'Prévu', data: prevu, borderColor: '#8ab4f8', backgroundColor: 'rgba(138,180,248,.12)',
+          borderWidth: 2, pointRadius: 0, stepped: true, fill: 'origin' },
         { label: 'Minimum', data: jours.map(() => enDollars(r.coussin)), borderColor: '#ea4335', borderWidth: 1,
           borderDash: [2, 3], pointRadius: 0, fill: false }
       ]
@@ -3261,14 +3371,16 @@ function dessinerGraphiqueSuivi(r){
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: { filter: (item, i, items) => !(item.datasetIndex === 1 && items.some(x => x.datasetIndex === 0)), callbacks: {
-          title: items => {
-            const n = jours[items[0].dataIndex];
-            return `${n === r.aujourdhui ? "Aujourd'hui" : dateLongueNum(n)}${n > r.aujourdhui ? ' (prévu)' : ''}`;
-          },
-          label: item => item.datasetIndex === 2 ? `Minimum : ${formaterMonnaie(item.parsed.y)}` : `Solde : ${formaterMonnaie(item.parsed.y)}`
-        } },
-        annotation: undefined
+        tooltip: {
+          filter: (item, i, items) => !(item.datasetIndex === 1 && items.some(x => x.datasetIndex === 0)),
+          callbacks: {
+            title: items => {
+              const n = jours[items[0].dataIndex];
+              return `${n === r.aujourdhui ? "Aujourd'hui" : dateLongueNum(n)}${n > r.aujourdhui ? ' (prévu)' : ''}`;
+            },
+            label: item => item.datasetIndex === 2 ? `Minimum : ${formaterMonnaie(item.parsed.y)}` : `Solde : ${formaterMonnaie(item.parsed.y)}`
+          }
+        }
       },
       scales: {
         x: { ticks: { color: couleurTexte, maxTicksLimit: 6, maxRotation: 0 }, grid: { display: false } },
@@ -3279,6 +3391,7 @@ function dessinerGraphiqueSuivi(r){
     plugins: [{
       id: 'ligneAujourdhui',
       afterDraw(chart){
+        if(indexAuj < 0) return;
         const x = chart.scales.x.getPixelForValue(indexAuj);
         const { top, bottom } = chart.chartArea;
         const c = chart.ctx;
@@ -3293,27 +3406,25 @@ function afficherEcheancierCompteConjoint(){
   const carte = document.getElementById('recurrent-compte-echeancier-card-conjoint');
   const conteneur = document.getElementById('recurrent-compte-echeancier-conjoint');
   if(!carte || !conteneur) return;
-  const r = executerMoteurCompte();
+  const per = periodeCompte();
+  const r = executerMoteurCompte(per.fin);
   if(!r || !r.aDesMouvements){
-    carte.style.display = 'none';
-    conteneur.innerHTML = '';
+    afficherBlocSoldeCompte(null); afficherAlerteSoldeCompte(null);
+    conteneur.innerHTML = `<div class="cs-texte">Aucune transaction du compte conjoint pour l'instant.</div>`;
     return;
   }
-  carte.style.display = '';
-  afficherBlocSoldeCompte(r);
-  afficherAlerteSoldeCompte(r);
-  conteneur.innerHTML = afficherProchainsDepots(r) + afficherSuivi(r);
+  afficherBlocSoldeCompte(r, per);
+  afficherAlerteSoldeCompte(r, per);
+  conteneur.innerHTML = afficherDepotsPeriode(r, per) + afficherSuivi(r, per);
   conteneur.querySelectorAll('[data-ouvrir-depot]').forEach(b => b.addEventListener('click', () => ouvrirDepotPlanifie(b.dataset.ouvrirDepot)));
+  conteneur.querySelectorAll('[data-depot-confirme]').forEach(b => b.addEventListener('click', () => ouvrirDetailOccurrence(b.dataset.depotConfirme)));
   const lier = (id, f) => { const el = document.getElementById(id); if(el) el.addEventListener('click', f); };
-  lier('prochains-bascule', () => { prochainsEtendus = !prochainsEtendus; afficherEcheancierCompteConjoint(); });
-  conteneur.querySelectorAll('[data-plage]').forEach(b => b.addEventListener('click', () => {
-    plageGraphique = Number(b.dataset.plage);
+  lier('depots-bascule', () => { depotsEtendus = !depotsEtendus; afficherEcheancierCompteConjoint(); });
+  lier('journal-bascule', () => {
+    journalOuvert = !(journalOuvert == null ? per.vue !== 'annee' : journalOuvert);
     afficherEcheancierCompteConjoint();
-  }));
-  lier('suivi-bascule', () => { suiviOuvert = !suiviOuvert; afficherEcheancierCompteConjoint(); });
-  lier('suivi-avant', () => { suiviAvant += 30; afficherEcheancierCompteConjoint(); });
-  lier('suivi-apres', () => { suiviApres = Math.min(MOTEUR_HORIZON_JOURS, suiviApres + 60); afficherEcheancierCompteConjoint(); });
-  try{ dessinerGraphiqueSuivi(r); } catch(e){ console.warn('Graphique du solde indisponible.', e); }
+  });
+  try{ dessinerGraphiqueSuivi(r, per); } catch(e){ console.warn('Graphique du solde indisponible.', e); }
 }
 
 function fermerDepotModal(){ const m = document.getElementById('depot-modal'); if(m) m.style.display = 'none'; }
@@ -3835,6 +3946,74 @@ async function supprimerSerieDepotEdition(rec){
   if(!occ){ afficherAlerte('Aucun dépôt prévu dans cette série.'); return; }
   await supprimerDepuisOccurrence(occ);
   afficherRecurrencesScope('conjoint');
+}
+
+/* ===================== RÉCURRENCE « DATES PRÉCISES » =====================
+   Une dépense ou un revenu qui revient chaque année à des dates choisies (ex. 4 mai,
+   20 juin, 25 septembre, 3 décembre). Les dates sont gardées sous forme MMJJ (504, 620…)
+   dans la colonne JoursSemaine, avec Unite = 'dates' : aucune colonne à ajouter. */
+function codeDateMultiple(iso){
+  const d = dateLocaleDepuisISO(iso);
+  return (d.getMonth() + 1) * 100 + d.getDate();
+}
+function datesMultiplesTriees(liste){
+  return [...new Set((liste || []).map(Number).filter(n => n >= 101 && n <= 1231 && n % 100 >= 1 && n % 100 <= 31))]
+    .sort((a, b) => a - b);
+}
+function libelleDateMultiple(code){
+  return `${code % 100} ${NOMS_MOIS[Math.floor(code / 100) - 1]}`;
+}
+function lireDatesMultiples(ids){
+  const el = ids.dates && document.getElementById(ids.dates);
+  return el ? datesMultiplesTriees((el.dataset.codes || '').split(',').filter(Boolean)) : [];
+}
+function ecrireDatesMultiples(ids, codes){
+  const el = ids.dates && document.getElementById(ids.dates);
+  if(!el) return;
+  const liste = datesMultiplesTriees(codes);
+  el.dataset.codes = liste.join(',');
+  el.innerHTML = liste.length
+    ? liste.map(c => `<span class="date-puce">${libelleDateMultiple(c)}<button type="button" data-retirer="${c}" aria-label="Retirer le ${libelleDateMultiple(c)}">×</button></span>`).join('')
+    : `<span class="dates-vide">Aucune date : ajoutez-en une ci-dessous.</span>`;
+}
+function appliquerAffichageDatesMultiples(ids){
+  if(!ids.datesField) return;
+  const champ = document.getElementById(ids.datesField);
+  if(!champ) return;
+  const estDates = document.getElementById(ids.unite).value === 'dates';
+  champ.style.display = estDates ? '' : 'none';
+  /* « Se répète tous les [1] dates précises » ne veut rien dire : on cache le nombre. */
+  const intervalle = document.getElementById(ids.intervalle);
+  intervalle.style.display = estDates ? 'none' : '';
+  if(estDates) intervalle.value = 1;
+  const libelle = intervalle.closest('.field') && intervalle.closest('.field').querySelector('label');
+  if(libelle) libelle.textContent = estDates ? 'Se répète' : 'Se répète tous les';
+  /* Premier passage sur « dates précises » : on part de la date choisie. */
+  if(estDates && !lireDatesMultiples(ids).length){
+    const iso = document.getElementById(ids.date).value;
+    ecrireDatesMultiples(ids, iso ? [codeDateMultiple(iso)] : []);
+  }
+}
+function brancherDatesMultiples(ids){
+  if(!ids.dates || !document.getElementById(ids.dates)) return;
+  const conteneur = document.getElementById(ids.dates);
+  const signaler = () => conteneur.dispatchEvent(new Event('change'));
+  conteneur.addEventListener('click', e => {
+    const b = e.target.closest('[data-retirer]');
+    if(!b) return;
+    e.preventDefault();
+    ecrireDatesMultiples(ids, lireDatesMultiples(ids).filter(c => c !== Number(b.dataset.retirer)));
+    signaler();
+  });
+  const champ = document.getElementById(`${ids.dates}-ajout`);
+  const ajouter = () => {
+    if(!champ.value) return;
+    ecrireDatesMultiples(ids, [...lireDatesMultiples(ids), codeDateMultiple(champ.value)]);
+    champ.value = '';
+    signaler();
+  };
+  document.getElementById(`${ids.dates}-bouton`).addEventListener('click', ajouter);
+  champ.addEventListener('change', ajouter);
 }
 
 /* ===================== CALCUL DES OCCURRENCES À L'AFFICHAGE =====================
@@ -5339,7 +5518,7 @@ function afficherNavigationPeriode(){
   /* Un seul sélecteur de période, toujours au même endroit (juste sous les onglets
      principaux), pour Transactions, Résumé et Budget — plus besoin de chercher où cliquer
      d'un onglet à l'autre. */
-  if(!estSection || (sub!=='budget' && sub!=='resume' && sub!=='mois')){
+  if(!estSection || (sub!=='budget' && sub!=='resume' && sub!=='mois' && sub!=='compte')){
     nav.style.display = 'none';
     return;
   }
@@ -5358,7 +5537,7 @@ function afficherNavigationPeriode(){
     }));
     const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
     label.textContent = libellePeriodeCalendrier(etatCalendrierPeriode.vue, debut, fin);
-  } else if(sub==='resume' || sub==='mois'){
+  } else if(sub==='resume' || sub==='mois' || sub==='compte'){
     /* Transactions et Résumé partagent exactement le même sélecteur de période (Jour /
        Semaine / Paie / Mois / Année) — plus besoin de synchroniser deux états séparés, il
        n'y en a qu'un seul, donc c'est automatiquement pareil des deux côtés. */
@@ -5367,7 +5546,6 @@ function afficherNavigationPeriode(){
       `<button type="button" data-type="${v}" class="${etatCalendrierPeriode.vue===v?'active':''}">${lbl}</button>`).join('');
     switchEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
       etatCalendrierPeriode.vue = b.dataset.type;
-      echeancierAnneeEtendu = false;
       rafraichirSousOnglet(activeMainTab, sub);
       afficherNavigationPeriode();
     }));
@@ -5433,7 +5611,8 @@ function rafraichirSousOnglet(scope, sub){
     if(anneeBlock) anneeBlock.style.display = 'none';
     if(anneeStats) anneeStats.style.display = 'none';
     afficherResumeUnifie(scope);
-    if(scope==='conjoint') afficherEcheancierCompteConjoint();
+  } else if(sub==='compte'){
+    afficherEcheancierCompteConjoint();
   } else if(sub==='budget'){
     afficherSectionBudget(scope);
   }
@@ -5752,6 +5931,7 @@ function controlesRecurrenceAjout(scope){
     joursField: `f-rec-jours-field-${scope}`,
     typeMensuel: `f-rec-type-mensuel-${scope}`,
     mensuelField: `f-rec-mensuel-field-${scope}`,
+    dates: `f-rec-${scope}-dates`, datesField: `f-rec-${scope}-dates-field`,
     date: `f-date-${scope}`
   };
 }
@@ -5759,6 +5939,7 @@ const CONTROLES_RECURRENCE_EDITION = {
   intervalle:'edit-rec-intervalle', unite:'edit-rec-unite',
   jours:'edit-rec-jours', joursField:'edit-rec-jours-field',
   typeMensuel:'edit-rec-type-mensuel', mensuelField:'edit-rec-mensuel-field',
+  dates:'edit-rec-dates', datesField:'edit-rec-dates-field',
   date:'edit-rec-date-debut'
 };
 
@@ -5795,6 +5976,7 @@ function appliquerAffichageRecurrence(ids){
   document.getElementById(ids.mensuelField).style.display = unite === 'mois' ? '' : 'none';
   if(unite === 'mois') peuplerTypeMensuel(ids);
   if(unite === 'semaine') semerJoursDepuisDate(ids);
+  appliquerAffichageDatesMultiples(ids);
 }
 
 /* Les jours cochés SUIVENT la date choisie, tant que l'utilisateur n'en a pas coché
@@ -5815,6 +5997,7 @@ function remplirControlesRecurrence(ids, cfg){
   const c = cfg || { unite:'mois', intervalle:1 };
   document.getElementById(ids.intervalle).value = Math.max(1, c.intervalle || 1);
   document.getElementById(ids.unite).value = c.unite || 'mois';
+  ecrireDatesMultiples(ids, c.unite === 'dates' ? c.joursSemaine : []);
   const joursExplicites = !!(c.joursSemaine && c.joursSemaine.length);
   peuplerJoursSemaineBoutons(ids.jours, joursExplicites ? c.joursSemaine : [d.getDay()]);
   document.getElementById(ids.jours).dataset.choisiParUtilisateur = joursExplicites ? '1' : '0';
@@ -5836,7 +6019,7 @@ function lireControlesRecurrence(ids){
   const intervalle = Math.max(1, parseInt(document.getElementById(ids.intervalle).value,10) || 1);
   const joursSemaine = unite === 'semaine'
     ? Array.from(document.querySelectorAll(`#${ids.jours} .jour-btn.selected`)).map(b=>parseInt(b.dataset.jour,10)).sort((a,b)=>a-b)
-    : null;
+    : unite === 'dates' ? lireDatesMultiples(ids) : null;
   const selMensuel = document.getElementById(ids.typeMensuel);
   const typeMensuel = unite === 'mois' && selMensuel ? selMensuel.value : null;
   const dateISO = document.getElementById(ids.date).value;
@@ -5844,6 +6027,7 @@ function lireControlesRecurrence(ids){
 }
 
 function brancherControlesRecurrence(ids){
+  brancherDatesMultiples(ids);
   document.getElementById(ids.unite).addEventListener('change', ()=>appliquerAffichageRecurrence(ids));
   document.getElementById(ids.jours).addEventListener('click', (e)=>{
     const btn = e.target.closest('.jour-btn');
@@ -5871,7 +6055,7 @@ brancherControlesRecurrence(CONTROLES_RECURRENCE_EDITION);
   brancherControlesRecurrence(ids);
 
   /* Tout changement de réglage (unité, intervalle, jours, date) refait l'aperçu. */
-  [ids.unite, ids.intervalle, ids.jours, ids.typeMensuel, ids.date].forEach(elId=>{
+  [ids.unite, ids.intervalle, ids.jours, ids.typeMensuel, ids.date, ids.dates].forEach(elId=>{
     const el = document.getElementById(elId);
     if(el) ['change','click','input'].forEach(evt => el.addEventListener(evt, ()=>{
       if(document.getElementById(`f-repete-${scope}`).checked) rafraichirApercuRecurrence(scope);
@@ -6080,6 +6264,7 @@ const CONTROLES_RECURRENCE_NOUVELLE = {
   intervalle:'edit-nouv-rec-intervalle', unite:'edit-nouv-rec-unite',
   jours:'edit-nouv-rec-jours', joursField:'edit-nouv-rec-jours-field',
   typeMensuel:'edit-nouv-rec-type-mensuel', mensuelField:'edit-nouv-rec-mensuel-field',
+  dates:'edit-nouv-rec-dates', datesField:'edit-nouv-rec-dates-field',
   date:'edit-date'
 };
 brancherControlesRecurrence(CONTROLES_RECURRENCE_NOUVELLE);
