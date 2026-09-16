@@ -22,8 +22,20 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
+/* Toucher la notification d'un dépôt ouvre sa fenêtre de confirmation. Si l'app est déjà
+   ouverte, on la ramène au premier plan et on lui passe l'adresse (sans la recharger) ;
+   sinon on l'ouvre directement à cette adresse (?depot=p1&date=AAAA-MM-JJ). */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || './';
-  event.waitUntil(clients.openWindow(url));
+  const url = new URL((event.notification.data && event.notification.data.url) || './', self.registration.scope).href;
+  event.waitUntil((async () => {
+    const fenetres = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const app = fenetres.find((c) => c.url.startsWith(self.registration.scope));
+    if (app) {
+      await app.focus();
+      app.postMessage({ type: 'ouvrir-url', url });
+      return;
+    }
+    await clients.openWindow(url);
+  })());
 });

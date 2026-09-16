@@ -1160,7 +1160,7 @@
             <div class="jours-semaine-select" id="f-rec-jours-conjoint"></div>
           </div>
           <div class="field pleine-largeur bloc-recurrence" id="f-rec-conjoint-dates-field" style="display:none;">
-            <label>Chaque année le</label>
+            <label>Dates</label>
             <div class="dates-multiples" id="f-rec-conjoint-dates"></div>
             <div class="dates-ajout"><input type="date" id="f-rec-conjoint-dates-ajout" aria-label="Ajouter une date"><button type="button" class="btn-secondary" id="f-rec-conjoint-dates-bouton">Ajouter</button></div>
           </div>
@@ -1350,7 +1350,7 @@
             <div class="jours-semaine-select" id="f-rec-jours-personnel"></div>
           </div>
           <div class="field pleine-largeur bloc-recurrence" id="f-rec-personnel-dates-field" style="display:none;">
-            <label>Chaque année le</label>
+            <label>Dates</label>
             <div class="dates-multiples" id="f-rec-personnel-dates"></div>
             <div class="dates-ajout"><input type="date" id="f-rec-personnel-dates-ajout" aria-label="Ajouter une date"><button type="button" class="btn-secondary" id="f-rec-personnel-dates-bouton">Ajouter</button></div>
           </div>
@@ -1518,7 +1518,7 @@
       <div class="card settings-section" id="notifications-section">
         <h3>Notifications</h3>
         <div class="theme-toggle">
-          <span>Dépôt à faire au compte conjoint</span>
+          <span>Mes dépôts prévus au compte conjoint</span>
           <label class="switch" for="notif-toggle"><input type="checkbox" id="notif-toggle"><span class="switch-track"></span></label>
         </div>
         <div id="notif-reglages" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
@@ -1526,9 +1526,9 @@
             <div class="field">
               <label>Quand</label>
               <select id="notif-quand">
-                <option value="avant">Jour(s) avant la paie</option>
-                <option value="le-jour">Le jour même</option>
-                <option value="apres">Jour(s) après la paie</option>
+                <option value="avant">Jour(s) avant le dépôt</option>
+                <option value="le-jour">Le jour du dépôt</option>
+                <option value="apres">Jour(s) après le dépôt</option>
               </select>
             </div>
             <div class="field" id="notif-jours-field">
@@ -1544,6 +1544,7 @@
               </div>
             </div>
           </div>
+          <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;">Une notification pour chacun de vos dépôts prévus : touchez-la pour le confirmer ou le modifier. S'il n'est pas confirmé, un rappel suit le lendemain du dépôt.</p>
           <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-statut"></p>
         </div>
         <div class="theme-toggle" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
@@ -1696,7 +1697,7 @@
         <div class="jours-semaine-select" id="edit-nouv-rec-jours"></div>
       </div>
           <div class="field pleine-largeur bloc-recurrence-edit" id="edit-nouv-rec-dates-field" style="display:none;">
-            <label>Chaque année le</label>
+            <label>Dates</label>
             <div class="dates-multiples" id="edit-nouv-rec-dates"></div>
             <div class="dates-ajout"><input type="date" id="edit-nouv-rec-dates-ajout" aria-label="Ajouter une date"><button type="button" class="btn-secondary" id="edit-nouv-rec-dates-bouton">Ajouter</button></div>
           </div>
@@ -1778,7 +1779,7 @@
         <div class="jours-semaine-select" id="edit-rec-jours"></div>
       </div>
           <div class="field pleine-largeur " id="edit-rec-dates-field" style="display:none;">
-            <label>Chaque année le</label>
+            <label>Dates</label>
             <div class="dates-multiples" id="edit-rec-dates"></div>
             <div class="dates-ajout"><input type="date" id="edit-rec-dates-ajout" aria-label="Ajouter une date"><button type="button" class="btn-secondary" id="edit-rec-dates-bouton">Ajouter</button></div>
           </div>
@@ -1965,6 +1966,7 @@ async function gererSession(session){
   /* Le moteur du compte n'enregistre un nouveau plan qu'une fois toutes les données en main. */
   donneesCompteChargees = depensesChargeesOk;
   recalculerDepenses();
+  setTimeout(ouvrirDepotDepuisURL, 0);
   rafraichirActif();
   chargerPreferencesNotification();
   enregistrerPersonneUtilisateur();
@@ -2606,7 +2608,7 @@ function occurrencesParAnnee(rec){
     return (52 / intervalle) * nbJours;
   }
   if(rec.unite === 'annee') return 1 / intervalle;
-  if(rec.unite === 'dates') return ((rec.joursSemaine && rec.joursSemaine.length) || 1) / intervalle;
+  if(rec.unite === 'dates') return nombreDatesDansUnAn(rec);
   return 12 / intervalle; /* mois */
 }
 function multiplicateurMensuel(rec){ return occurrencesParAnnee(rec) / 12; }
@@ -2619,11 +2621,7 @@ const NOMS_JOURS_LETTRE = ['D','L','M','M','J','V','S'];
 /* Construit un libellé humain (façon Google Agenda) à partir d'une config de répétition. */
 function libelleRecurrence(rec){
   const intervalle = Math.max(1, rec.intervalle || 1);
-  if(rec.unite === 'dates'){
-    const liste = datesMultiplesTriees(rec.joursSemaine).map(libelleDateMultiple);
-    const texte = liste.length > 1 ? `${liste.slice(0, -1).join(', ')} et ${liste[liste.length - 1]}` : (liste[0] || '');
-    return intervalle === 1 ? `Chaque année le ${texte}` : `Tous les ${intervalle} ans le ${texte}`;
-  }
+  if(rec.unite === 'dates') return libelleDatesMultiples(rec);
   if(rec.unite === 'jour'){
     return intervalle === 1 ? 'Tous les jours' : `Tous les ${intervalle} jours`;
   }
@@ -2688,9 +2686,10 @@ function normaliserConfigRepetition(cfg, dateISO){
     }
     normalisee.joursSemaine = jours;
   } else if(normalisee.unite === 'dates'){
-    const liste = datesMultiplesTriees(normalisee.joursSemaine);
+    const liste = datesMultiplesTriees(normalisee.joursSemaine, dateISO);
     if(!liste.length && dateISO) liste.push(codeDateMultiple(dateISO));
     normalisee.joursSemaine = liste;
+    normalisee.intervalle = 1;
   } else {
     delete normalisee.joursSemaine;
   }
@@ -2768,22 +2767,7 @@ function genererOccurrences(rec, limiteDate){
     return dates;
   }
 
-  if(unite === 'dates'){
-    const codes = datesMultiplesTriees(rec.joursSemaine);
-    if(!codes.length) codes.push((debut.getMonth() + 1) * 100 + debut.getDate());
-    let compte = 0;
-    for(let annee = debut.getFullYear(); compte < maxOccurrences; annee += intervalle){
-      if(new Date(annee, 0, 1) > limite) break;
-      for(const code of codes){
-        const mois = Math.floor(code / 100) - 1;
-        const occ = new Date(annee, mois, Math.min(code % 100, dernierJourDuMois(annee, mois).getDate()));
-        if(occ < debut) continue;
-        if(occ > limite || compte >= maxOccurrences) break;
-        dates.push(occ); compte++;
-      }
-    }
-    return dates;
-  }
+  if(unite === 'dates') return occurrencesDatesMultiples(rec, debut, limite, maxOccurrences);
 
   if(unite === 'mois'){
     let moisCourant = new Date(debut.getFullYear(), debut.getMonth(), 1);
@@ -3116,22 +3100,50 @@ function executerMoteurCompte(jusquA){
   return r;
 }
 
-/* Ce que lit la fonction planifiée des notifications (inchangée dans ce bloc) : une ligne
-   par date de paie, avec le montant des dépôts prévus non confirmés de cette période. */
+/* Ce que lit la fonction planifiée des notifications (table depots_echeancier) : une ligne
+   par date où un dépôt prévu n'est pas encore confirmé, avec le total de chacun ce jour-là.
+   On garde les 3 derniers jours (pour le rappel du lendemain) et les 60 prochains. */
 function echeancierPourNotifications(r){
-  if(!r || !donneesCompteChargees || !paieAncrage) return null;
-  const ancre = numeroJour(paieAncrage);
-  const p0 = dernierePaieNum(ancre, r.aujourdhui);
-  const lignes = [];
-  for(let i = 0; i < NB_PAIES_ECHEANCIER; i++){
-    const p = p0 + 14 * i;
-    const somme = X => enDollars([...r.aConfirmer, ...r.prochains]
-      .filter(q => q.X === X && dernierePaieNum(ancre, q.jour) === p)
-      .reduce((t, q) => t + q.cents, 0));
-    lignes.push({ iso: isoDuNumero(p), p1: somme('p1'), p2: somme('p2') });
-  }
-  return lignes;
+  if(!r || !donneesCompteChargees) return null;
+  const debut = r.aujourdhui - 3, fin = r.aujourdhui + 60;
+  const parDate = new Map();
+  [...r.aConfirmer, ...r.prochains].forEach(q => {
+    if(q.jour < debut || q.jour > fin) return;
+    const iso = isoDuNumero(q.jour);
+    const l = parDate.get(iso) || { iso, p1: 0, p2: 0 };
+    l[q.X] += q.cents / 100;
+    parDate.set(iso, l);
+  });
+  return [...parDate.values()].sort((a, b) => a.iso.localeCompare(b.iso));
 }
+
+/* Ouverture depuis une notification : « ?depot=p1&date=AAAA-MM-JJ » (ou message du service
+   worker quand l'app est déjà ouverte) → la fenêtre de ce dépôt. */
+function ouvrirDepotDepuisParametres(params){
+  const X = params.get('depot');
+  const iso = params.get('date');
+  if(!MOTEUR_PERSONNES.includes(X) || !/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return false;
+  const bouton = document.querySelector('.tab-btn[data-tab="conjoint"]');
+  if(bouton && activeMainTab !== 'conjoint') bouton.click();
+  const sous = document.querySelector('.subtab-btn[data-scope="conjoint"][data-sub="compte"]');
+  if(sous && activeSubtab.conjoint !== 'compte') sous.click();
+  const occ = occurrencesDepotsPrevus(dateLocaleDepuisISO(isoDuNumero(numeroJour(iso) + 400)))
+    .find(o => o.depotPersonne === X && o.date === iso);
+  if(occ){ ouvrirDepotPlanifie(occ.id); return true; }
+  afficherAlerte(`Le dépôt de ${nomsPersonnes[X]} du ${dateLongueNum(numeroJour(iso))} est déjà confirmé ou n'est plus prévu.`);
+  return true;
+}
+function ouvrirDepotDepuisURL(){
+  const params = new URLSearchParams(location.search);
+  if(!params.has('depot')) return;
+  history.replaceState(null, '', location.pathname + location.hash);
+  ouvrirDepotDepuisParametres(params);
+}
+function recevoirMessageServiceWorker(e){
+  if(!e.data || e.data.type !== 'ouvrir-url' || !donneesCompteChargees) return;
+  try{ ouvrirDepotDepuisParametres(new URL(e.data.url).searchParams); } catch(err){ /* adresse invalide : rien à ouvrir */ }
+}
+if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', recevoirMessageServiceWorker);
 
 /* ===================== COMPTE CONJOINT : AFFICHAGE (onglet Résumé) ===================== */
 const argent = c => formaterMonnaie(enDollars(c || 0));
@@ -3949,19 +3961,72 @@ async function supprimerSerieDepotEdition(rec){
 }
 
 /* ===================== RÉCURRENCE « DATES PRÉCISES » =====================
-   Une dépense ou un revenu qui revient chaque année à des dates choisies (ex. 4 mai,
-   20 juin, 25 septembre, 3 décembre). Les dates sont gardées sous forme MMJJ (504, 620…)
-   dans la colonne JoursSemaine, avec Unite = 'dates' : aucune colonne à ajouter. */
-function codeDateMultiple(iso){
+   Une dépense ou un revenu prévu à quelques dates choisies (ex. 8 août 2026, 5 septembre
+   2026, 7 décembre 2026, 22 janvier 2027), puis plus rien. Les dates sont gardées sous forme
+   AAAAMMJJ (20260808…) dans la colonne JoursSemaine, avec Unite = 'dates' : aucune colonne
+   à ajouter. (Une première version gardait MMJJ, répété chaque année : ces codes sont lus
+   comme la prochaine date correspondante, une seule fois.) */
+function codeDateMultiple(iso){ return parseInt(String(iso).replace(/-/g, ''), 10); }
+function isoDeCodeDate(code){
+  const s = String(code);
+  return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+}
+function codeDateValide(n){
+  if(!(n >= 19000101 && n <= 29991231)) return false;
+  const iso = isoDeCodeDate(n);
   const d = dateLocaleDepuisISO(iso);
-  return (d.getMonth() + 1) * 100 + d.getDate();
+  return formaterDateISO(d) === iso;
 }
-function datesMultiplesTriees(liste){
-  return [...new Set((liste || []).map(Number).filter(n => n >= 101 && n <= 1231 && n % 100 >= 1 && n % 100 <= 31))]
-    .sort((a, b) => a - b);
+/* Codes complets et triés ; `debutIso` sert à convertir les anciens codes MMJJ. */
+function datesMultiplesTriees(liste, debutIso){
+  const codes = (liste || []).map(Number).map(n => {
+    if(n >= 101 && n <= 1231 && debutIso){
+      const annee = Number(debutIso.slice(0, 4));
+      let c = annee * 10000 + n;
+      if(c < codeDateMultiple(debutIso)) c += 10000;
+      return c;
+    }
+    return n;
+  }).filter(codeDateValide);
+  return [...new Set(codes)].sort((a, b) => a - b);
 }
-function libelleDateMultiple(code){
-  return `${code % 100} ${NOMS_MOIS[Math.floor(code / 100) - 1]}`;
+function libelleDateMultiple(code, court){
+  return dateLocaleDepuisISO(isoDeCodeDate(code)).toLocaleDateString('fr-CA',
+    { day: 'numeric', month: court ? 'short' : 'long', year: 'numeric' });
+}
+function libelleDatesMultiples(rec){
+  const codes = datesMultiplesTriees(rec.joursSemaine, rec.dateDebut);
+  const noms = codes.slice(0, 4).map(c => libelleDateMultiple(c, true));
+  if(codes.length > 4) return `Le ${noms.join(', ')} et ${codes.length - 4} autre${codes.length > 5 ? 's' : ''} date${codes.length > 5 ? 's' : ''}`;
+  return noms.length > 1 ? `Le ${noms.slice(0, -1).join(', ')} et ${noms[noms.length - 1]}` : `Le ${noms[0] || '—'}`;
+}
+function occurrencesDatesMultiples(rec, debut, limite, maxOccurrences){
+  const dates = [];
+  const codes = datesMultiplesTriees(rec.joursSemaine, rec.dateDebut);
+  if(!codes.length) codes.push(codeDateMultiple(formaterDateISO(debut)));
+  for(const code of codes){
+    if(dates.length >= maxOccurrences) break;
+    const d = dateLocaleDepuisISO(isoDeCodeDate(code));
+    if(d < debut) continue;
+    if(d > limite) break;
+    dates.push(d);
+  }
+  return dates;
+}
+function nombreDatesDansUnAn(rec){
+  const auj = formaterDateISO(new Date());
+  const dans1an = formaterDateISO(ajouterJours(new Date(), 365));
+  return datesMultiplesTriees(rec.joursSemaine, rec.dateDebut).map(isoDeCodeDate).filter(d => d >= auj && d <= dans1an).length;
+}
+
+/* ----- Contrôles du formulaire ----- */
+function champFinDe(ids){
+  const el = ids.finType && document.getElementById(ids.finType);
+  return el ? el.closest('.field') : null;
+}
+function libelleDateDe(ids){
+  const el = document.getElementById(ids.date);
+  return el && el.closest('.field') ? el.closest('.field').querySelector('label') : null;
 }
 function lireDatesMultiples(ids){
   const el = ids.dates && document.getElementById(ids.dates);
@@ -3970,17 +4035,23 @@ function lireDatesMultiples(ids){
 function ecrireDatesMultiples(ids, codes){
   const el = ids.dates && document.getElementById(ids.dates);
   if(!el) return;
-  const liste = datesMultiplesTriees(codes);
+  const liste = datesMultiplesTriees(codes, document.getElementById(ids.date).value || null);
   el.dataset.codes = liste.join(',');
   el.innerHTML = liste.length
     ? liste.map(c => `<span class="date-puce">${libelleDateMultiple(c)}<button type="button" data-retirer="${c}" aria-label="Retirer le ${libelleDateMultiple(c)}">×</button></span>`).join('')
     : `<span class="dates-vide">Aucune date : ajoutez-en une ci-dessous.</span>`;
+  /* La date de début de la série est toujours la première date choisie. */
+  if(liste.length && document.getElementById(ids.unite).value === 'dates'){
+    document.getElementById(ids.date).value = isoDeCodeDate(liste[0]);
+  }
 }
 function appliquerAffichageDatesMultiples(ids){
   if(!ids.datesField) return;
   const champ = document.getElementById(ids.datesField);
   if(!champ) return;
   const estDates = document.getElementById(ids.unite).value === 'dates';
+  const etaitDates = champ.dataset.actif === '1';
+  champ.dataset.actif = estDates ? '1' : '0';
   champ.style.display = estDates ? '' : 'none';
   /* « Se répète tous les [1] dates précises » ne veut rien dire : on cache le nombre. */
   const intervalle = document.getElementById(ids.intervalle);
@@ -3988,7 +4059,20 @@ function appliquerAffichageDatesMultiples(ids){
   if(estDates) intervalle.value = 1;
   const libelle = intervalle.closest('.field') && intervalle.closest('.field').querySelector('label');
   if(libelle) libelle.textContent = estDates ? 'Se répète' : 'Se répète tous les';
-  /* Premier passage sur « dates précises » : on part de la date choisie. */
+  /* Des dates choisies ont leur propre fin : pas de « Se termine ». */
+  const fin = champFinDe(ids);
+  if(fin){
+    if(estDates){
+      const select = document.getElementById(ids.finType);
+      if(select.value !== 'jamais'){ select.value = 'jamais'; select.dispatchEvent(new Event('change')); }
+      fin.style.display = 'none';
+    } else if(etaitDates){
+      fin.style.display = '';
+    }
+  }
+  const libDate = libelleDateDe(ids);
+  if(libDate && estDates) libDate.textContent = 'Première date';
+  else if(libDate && etaitDates) libDate.textContent = 'À partir de';
   if(estDates && !lireDatesMultiples(ids).length){
     const iso = document.getElementById(ids.date).value;
     ecrireDatesMultiples(ids, iso ? [codeDateMultiple(iso)] : []);
@@ -4002,7 +4086,9 @@ function brancherDatesMultiples(ids){
     const b = e.target.closest('[data-retirer]');
     if(!b) return;
     e.preventDefault();
-    ecrireDatesMultiples(ids, lireDatesMultiples(ids).filter(c => c !== Number(b.dataset.retirer)));
+    const reste = lireDatesMultiples(ids).filter(c => c !== Number(b.dataset.retirer));
+    if(!reste.length){ afficherAlerte('Il faut garder au moins une date.'); return; }
+    ecrireDatesMultiples(ids, reste);
     signaler();
   });
   const champ = document.getElementById(`${ids.dates}-ajout`);
@@ -4014,6 +4100,13 @@ function brancherDatesMultiples(ids){
   };
   document.getElementById(`${ids.dates}-bouton`).addEventListener('click', ajouter);
   champ.addEventListener('change', ajouter);
+  /* Changer la « Première date » l'ajoute à la liste. */
+  document.getElementById(ids.date).addEventListener('change', () => {
+    if(document.getElementById(ids.unite).value !== 'dates') return;
+    const iso = document.getElementById(ids.date).value;
+    if(!iso) return;
+    ecrireDatesMultiples(ids, [...lireDatesMultiples(ids), codeDateMultiple(iso)]);
+  });
 }
 
 /* ===================== CALCUL DES OCCURRENCES À L'AFFICHAGE =====================
@@ -5675,7 +5768,7 @@ function changerAnnee(amount){
    avancent directement `etatCalendrierPeriode.dateRef`. */
 function periodeNavigation(direction){
   const sub = activeSubtab[activeMainTab];
-  if(sub!=='budget' && sub!=='resume' && sub!=='mois') return;
+  if(sub!=='budget' && sub!=='resume' && sub!=='mois' && sub!=='compte') return;
   if(etatCalendrierPeriode.vue==='mois') changerMois(direction);
   else if(etatCalendrierPeriode.vue==='annee') changerAnnee(direction);
   else {
@@ -5687,7 +5780,7 @@ function periodeNavigation(direction){
 }
 function periodeLabelClick(){
   const sub = activeSubtab[activeMainTab];
-  if(sub!=='budget' && sub!=='resume' && sub!=='mois') return;
+  if(sub!=='budget' && sub!=='resume' && sub!=='mois' && sub!=='compte') return;
   if(etatCalendrierPeriode.vue==='mois'){
     allerAuMoisActuel();
   } else {
@@ -5931,7 +6024,7 @@ function controlesRecurrenceAjout(scope){
     joursField: `f-rec-jours-field-${scope}`,
     typeMensuel: `f-rec-type-mensuel-${scope}`,
     mensuelField: `f-rec-mensuel-field-${scope}`,
-    dates: `f-rec-${scope}-dates`, datesField: `f-rec-${scope}-dates-field`,
+    dates: `f-rec-${scope}-dates`, datesField: `f-rec-${scope}-dates-field`, finType: `f-fin-type-${scope}`,
     date: `f-date-${scope}`
   };
 }
@@ -5939,7 +6032,7 @@ const CONTROLES_RECURRENCE_EDITION = {
   intervalle:'edit-rec-intervalle', unite:'edit-rec-unite',
   jours:'edit-rec-jours', joursField:'edit-rec-jours-field',
   typeMensuel:'edit-rec-type-mensuel', mensuelField:'edit-rec-mensuel-field',
-  dates:'edit-rec-dates', datesField:'edit-rec-dates-field',
+  dates:'edit-rec-dates', datesField:'edit-rec-dates-field', finType:'edit-rec-fin-type',
   date:'edit-rec-date-debut'
 };
 
@@ -6264,7 +6357,7 @@ const CONTROLES_RECURRENCE_NOUVELLE = {
   intervalle:'edit-nouv-rec-intervalle', unite:'edit-nouv-rec-unite',
   jours:'edit-nouv-rec-jours', joursField:'edit-nouv-rec-jours-field',
   typeMensuel:'edit-nouv-rec-type-mensuel', mensuelField:'edit-nouv-rec-mensuel-field',
-  dates:'edit-nouv-rec-dates', datesField:'edit-nouv-rec-dates-field',
+  dates:'edit-nouv-rec-dates', datesField:'edit-nouv-rec-dates-field', finType:'edit-nouv-fin-type',
   date:'edit-date'
 };
 brancherControlesRecurrence(CONTROLES_RECURRENCE_NOUVELLE);
@@ -6484,7 +6577,7 @@ function urlBase64ToUint8Array(base64String){
    dernière synchronisation. */
 let dernierSignatureEcheancierSync = null;
 async function synchroniserEcheancierNotifications(echeancierComplet){
-  if(!currentSession || !echeancierComplet || !echeancierComplet.length) return;
+  if(!currentSession || !echeancierComplet) return;
   const lignes = echeancierComplet.map(l=>({
     iso: l.iso,
     montant_p1: Math.round(l.p1*100)/100,
@@ -6493,6 +6586,16 @@ async function synchroniserEcheancierNotifications(echeancierComplet){
   const signature = JSON.stringify(lignes);
   if(signature === dernierSignatureEcheancierSync) return;
   dernierSignatureEcheancierSync = signature;
+  /* Les dates qui n'ont plus de dépôt à confirmer (confirmé, déplacé, supprimé) sont remises
+     à 0 : la table ne permet pas de supprimer, et la fonction ignore les montants nuls. */
+  const { data: existantes, error: erreurLecture } = await supabaseClient.from('depots_echeancier').select('iso,montant_p1,montant_p2');
+  if(erreurLecture){ dernierSignatureEcheancierSync = null; return; }
+  const vues = new Set(lignes.map(l => l.iso));
+  (existantes || []).forEach(e => {
+    const iso = String(e.iso).slice(0, 10);
+    if(!vues.has(iso) && (Number(e.montant_p1) || Number(e.montant_p2))) lignes.push({ iso, montant_p1: 0, montant_p2: 0 });
+  });
+  if(!lignes.length) return;
   const { error } = await supabaseClient.from('depots_echeancier').upsert(
     lignes.map(l=>({ ...l, updated_at: new Date().toISOString() }))
   );
