@@ -981,6 +981,8 @@
   .cs-somme small.cs-statut.a_confirmer, .cs-somme small.cs-statut.aujourdhui{color:#e8710a;}
   .cs-lien-probleme{display:block;width:100%;text-align:left;border:1px solid var(--border);background:transparent;color:var(--red);
     border-radius:12px;padding:10px 14px;margin-bottom:10px;font:inherit;font-size:13px;cursor:pointer;}
+  .cs-label-equilibre{margin-top:14px;}
+  .cs-etiquette{display:block;font-size:11px;color:var(--text-secondary);}
   .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
   .depot-total.final .value{font-weight:600;}
@@ -2885,19 +2887,19 @@ function partagerCents(cents, pourcentageP1){
    le compte », au montant et à la fréquence que VOUS choisissez. Le moteur ne les change
    jamais : il suit le solde jour par jour et vérifie que ça tient.
 
-   1. Réalité. Les transactions du compte datées d'aujourd'hui ou avant donnent le SOLDE et la
-      PART de chacun : un dépôt compte pour la personne qui l'a fait (100 % = Gabriel,
-      0 % = Mélissa), une dépense ou un revenu selon son %. Part G + part M = solde.
+   1. Réalité. Les transactions du compte datées d'aujourd'hui ou avant donnent le SOLDE du
+      compte, et l'ÉQUILIBRE de chacun : ce qu'il a déposé moins sa part des dépenses (et
+      plus sa part des autres revenus). 0 = à jour, négatif = doit rattraper, positif =
+      avance. L'argent déjà dans le compte au point de départ est un coussin commun : il
+      n'appartient à personne, d'où des équilibres à 0 au départ (reference).
    2. Prévision. Les dépenses et revenus à venir, plus les dépôts prévus datés d'aujourd'hui
       ou après. Un dépôt prévu dont la date est passée et qui n'est pas confirmé n'est PAS
       compté : il est « à confirmer ».
    3. Vérification, chaque jour de la prochaine année (fin de journée) :
-      - le compte (total) ne descend pas sous le minimum, qui sert aux deux ;
-      - chaque part reste au-dessus de la portion du minimum de la personne. Un surplus de
-        Gabriel protège le compte, mais il reste à Gabriel : il ne remplit pas la part de
-        Mélissa, et il donne à Gabriel une avance (« marge »).
-   4. Correction, par personne : ajouter le montant qui manque au dernier dépôt prévu avant le
-      premier jour à problème, ou, s'il n'y en a pas, un dépôt unique ce jour-là (ou aujourd'hui).
+      - le compte (total) ne descend jamais sous le minimum : c'est la seule contrainte du
+        compte, le coussin servant aux deux.
+   4. Par personne, on regarde seulement l'équilibre : ce qu'il lui reste à déposer pour payer
+      sa part (sa part des dépenses à venir, moins ses dépôts prévus, moins son avance).
    Montants en cents entiers, dates en numéros de jour (voir numeroJour). */
 
 const MOTEUR_HORIZON_JOURS = 366;
@@ -2911,7 +2913,8 @@ function deposantDe(m){
   return null;
 }
 
-/* entree = { mouvements, prevus, aujourdhui, coussin, pctCoussinP1, horizon }
+/* entree = { mouvements, prevus, aujourdhui, coussin, horizon, reference }
+   reference  : point de remise à zéro des équilibres, { jour, p1, p2 } (facultatif)
    mouvements : transactions réelles du compte et prévisions ordinaires (dépenses et revenus
                 récurrents), dépôts confirmés compris : [{ id, jour, cents, estRevenu, pct, libelle }]
    prevus     : dépôts prévus non confirmés : [{ id, X, jour, cents, libelle }] */
@@ -2919,9 +2922,9 @@ function calculerMoteurCompte(entree){
   const auj = entree.aujourdhui;
   const fin = auj + (entree.horizon || MOTEUR_HORIZON_JOURS);
   const coussin = Math.max(0, entree.coussin || 0);
-  const pctC = entree.pctCoussinP1 != null ? entree.pctCoussinP1 : 50;
-  const cible = { p1: Math.round(coussin * pctC / 100) };
-  cible.p2 = coussin - cible.p1;
+  const ref = entree.reference || null;
+  const ouverture = { p1: ref ? (ref.p1 || 0) : 0, p2: ref ? (ref.p2 || 0) : 0 };
+  const compteDansEquilibre = m => !ref || m.jour > ref.jour;
 
   /* Mouvements du compte, avec la part de chacun. */
   const mvts = (entree.mouvements || []).map(m => {
@@ -2936,35 +2939,40 @@ function calculerMoteurCompte(entree){
   const aConfirmer = prevus.filter(q => q.jour < auj).sort((a, b) => a.jour - b.jour);
   const dusAujourdhui = prevus.filter(q => q.jour === auj);
 
-  /* 1) Réalité : solde et parts à la fin d'aujourd'hui (transactions réelles seulement). */
+  /* 1) Réalité : solde et équilibres à la fin d'aujourd'hui (transactions réelles seulement). */
   const tri = (a, b) => a.jour - b.jour || (b.estRevenu - a.estRevenu);
   const passes = mvts.filter(m => m.jour <= auj).sort(tri);
-  const parts = { p1: 0, p2: 0 };
-  passes.forEach(m => { parts.p1 += m.d.p1; parts.p2 += m.d.p2; });
-  const solde = parts.p1 + parts.p2;
+  let solde = 0;
+  const equilibres = { ...ouverture };
+  passes.forEach(m => {
+    solde += m.d.p1 + m.d.p2;
+    if(compteDansEquilibre(m)){ equilibres.p1 += m.d.p1; equilibres.p2 += m.d.p2; }
+  });
 
   /* 2) Journal jour par jour : historique réel, puis prévision (aujourd'hui compris). */
-  const grouper = (liste, depart) => {
-    const acc = { ...depart };
+  const grouper = (liste, soldeDepart, equilibreDepart) => {
+    let total = soldeDepart;
+    const acc = { ...equilibreDepart };
     const jours = [];
     liste.forEach(m => {
-      acc.p1 += m.d.p1; acc.p2 += m.d.p2;
+      total += m.d.p1 + m.d.p2;
+      if(compteDansEquilibre(m)){ acc.p1 += m.d.p1; acc.p2 += m.d.p2; }
       let j = jours[jours.length - 1];
       if(!j || j.jour !== m.jour){ j = { jour: m.jour, mouvements: [] }; jours.push(j); }
       j.mouvements.push({ id: m.id, libelle: m.libelle, cents: m.estRevenu ? m.cents : -m.cents,
         deposant: m.deposant, type: m.type, X: m.X || null });
-      j.solde = acc.p1 + acc.p2;
-      j.parts = { ...acc };
+      j.solde = total;
+      j.equilibres = { ...acc };
     });
     return jours;
   };
-  const historique = grouper(passes, { p1: 0, p2: 0 });
+  const historique = grouper(passes, 0, ouverture);
 
   const aVenir = [
     ...mvts.filter(m => m.jour > auj && m.jour <= fin),
     ...prevus.filter(q => q.jour >= auj && q.jour <= fin)
   ].sort(tri);
-  const projection = grouper(aVenir, parts);
+  const projection = grouper(aVenir, solde, equilibres);
   /* Aujourd'hui figure toujours en tête de la projection, avec ses mouvements réels (déjà
      dans le solde) suivis des dépôts prévus aujourd'hui. */
   const derniereJournee = historique[historique.length - 1];
@@ -2972,44 +2980,49 @@ function calculerMoteurCompte(entree){
   if(projection.length && projection[0].jour === auj){
     projection[0].mouvements = [...reelsDuJour, ...projection[0].mouvements];
   } else {
-    projection.unshift({ jour: auj, mouvements: [...reelsDuJour], solde, parts: { ...parts } });
+    projection.unshift({ jour: auj, mouvements: [...reelsDuJour], solde, equilibres: { ...equilibres } });
   }
 
   /* 3) Vérifications. */
   let minimum = projection[0];
   projection.forEach(j => { if(j.solde < minimum.solde) minimum = j; });
-  const sousMinimum = projection.find(j => j.solde < coussin) || null;
+  const premierSous = projection.find(j => j.solde < coussin) || null;
+  /* Ce qu'il faudrait déposer de plus (par n'importe qui) pour que le compte tienne. */
+  let manqueCompte = 0;
+  projection.forEach(j => { manqueCompte = Math.max(manqueCompte, coussin - j.solde); });
+  const sousMinimum = premierSous
+    ? { jour: premierSous.jour, solde: premierSous.solde, manque: arrondiDollarSup(manqueCompte) }
+    : null;
 
+  /* Par personne : où en est son équilibre, et ce qu'il lui reste à déposer d'ici la fin de
+     la prévision pour payer sa part (sans jamais toucher à l'équilibre de l'autre). */
   const personnes = {};
+  const derniereJ = projection[projection.length - 1];
   MOTEUR_PERSONNES.forEach(X => {
     const depotsX = prevus.filter(q => q.X === X && q.jour >= auj && q.jour <= fin).sort((a, b) => a.jour - b.jour);
-    const probleme = projection.find(j => j.parts[X] < cible[X]) || null;
+    const finalX = derniereJ ? derniereJ.equilibres[X] : equilibres[X];
     let plusBas = projection[0];
-    projection.forEach(j => { if(j.parts[X] < plusBas.parts[X]) plusBas = j; });
+    projection.forEach(j => { if(j.equilibres[X] < plusBas.equilibres[X]) plusBas = j; });
     const info = {
-      ok: !probleme,
-      marge: plusBas.parts[X] - cible[X],                     /* > 0 : avance ; < 0 : manque */
-      plusBas: { jour: plusBas.jour, part: plusBas.parts[X] },
-      probleme: probleme ? { jour: probleme.jour, part: probleme.parts[X] } : null,
+      equilibre: equilibres[X],
+      equilibreFin: finalX,
+      ok: finalX >= 0,
+      manque: Math.max(0, -finalX),
+      plusBas: { jour: plusBas.jour, equilibre: plusBas.equilibres[X] },
       prochainDepot: depotsX[0] || null,
       correction: null
     };
-    if(probleme){
-      /* Dernier dépôt prévu au plus tard le jour du problème ; sinon un dépôt unique. */
-      const avant = depotsX.filter(q => q.jour <= probleme.jour);
-      const q = avant.length ? avant[avant.length - 1] : null;
-      const depuis = q ? q.jour : probleme.jour;
-      let manque = 0;
-      projection.forEach(j => { if(j.jour >= depuis) manque = Math.max(manque, cible[X] - j.parts[X]); });
+    if(!info.ok){
+      const q = depotsX[0];
       info.correction = q
-        ? { type: 'ajout', depot: q, cents: arrondiDollarSup(manque) }
-        : { type: 'nouveau', jour: depuis, cents: arrondiDollarSup(manque) };
+        ? { type: 'ajout', depot: q, cents: arrondiDollarSup(info.manque) }
+        : { type: 'nouveau', jour: auj, cents: arrondiDollarSup(info.manque) };
     }
     personnes[X] = info;
   });
 
   return {
-    aujourdhui: auj, fin, coussin, cible, solde, parts,
+    aujourdhui: auj, fin, coussin, solde, equilibres, reference: ref,
     historique, projection, minimum, sousMinimum, personnes,
     aConfirmer, dusAujourdhui,
     prochains: prevus.filter(q => q.jour >= auj).sort((a, b) => a.jour - b.jour)
@@ -3035,7 +3048,11 @@ function lireEtatMoteur(){
 function reglagesDepuisEtat(c){
   return {
     coussin: c.COUSSIN_CENTS != null ? Math.max(0, c.COUSSIN_CENTS) : 0,
-    pctCoussinP1: c.COUSSIN_PCT_P1 != null ? Math.min(100, Math.max(0, c.COUSSIN_PCT_P1)) : 50
+    /* Remise à zéro des équilibres : à partir de ce jour, l'argent déjà au compte est un
+       coussin commun, et chacun repart de l'ouverture enregistrée (0 par défaut). */
+    reference: c.REFERENCE_JOUR != null
+      ? { jour: c.REFERENCE_JOUR, p1: c.OUVERTURE_P1 || 0, p2: c.OUVERTURE_P2 || 0 }
+      : null
   };
 }
 function sauvegarderEtatMoteur(valeurs){
@@ -3061,6 +3078,10 @@ function sauvegarderEtatMoteur(valeurs){
 }
 async function enregistrerReglagesCompte(coussinDollars){
   await sauvegarderEtatMoteur({ COUSSIN_CENTS: Math.max(0, Math.round((coussinDollars || 0) * 100)) });
+  rafraichirActif();
+}
+async function remettreEquilibresAZero(){
+  await sauvegarderEtatMoteur({ REFERENCE_JOUR: numeroJour(formaterDateISO(new Date())), OUVERTURE_P1: 0, OUVERTURE_P2: 0 });
   rafraichirActif();
 }
 
@@ -3092,7 +3113,7 @@ function executerMoteurCompte(jusquA){
   const mouvements = collecterMouvementsCompte(limite);
   const occ = occurrencesDepotsPrevus(limite);
   const prevus = occ.map(o => ({ id: o.id, X: o.depotPersonne, jour: numeroJour(o.date), cents: enCents(o.amount), libelle: o.note }));
-  const r = calculerMoteurCompte({ mouvements, prevus, aujourdhui: auj, horizon, coussin: reglages.coussin, pctCoussinP1: reglages.pctCoussinP1 });
+  const r = calculerMoteurCompte({ mouvements, prevus, aujourdhui: auj, horizon, coussin: reglages.coussin, reference: reglages.reference });
   r.reglages = reglages;
   r.occurrences = new Map(occ.map(o => [o.id, o]));
   r.aDesMouvements = mouvements.length > 0 || occ.length > 0 || recurrences.some(estSerieDepot);
@@ -3162,13 +3183,13 @@ function periodeCompte(){
   const { debut, fin } = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
   return { vue: etatCalendrierPeriode.vue, debut: numeroJour(formaterDateISO(debut)), fin: numeroJour(formaterDateISO(fin)) };
 }
-/* Solde et parts à la fin d'un jour, passé (réel) ou futur (prévu). */
+/* Solde et équilibres à la fin d'un jour, passé (réel) ou futur (prévu). */
 function soldeAuJour(r, n){
   const liste = n < r.aujourdhui ? r.historique : r.projection;
   let dernier = null;
   for(const j of liste){ if(j.jour <= n) dernier = j; else break; }
-  if(dernier) return { solde: dernier.solde, parts: dernier.parts };
-  return { solde: 0, parts: { p1: 0, p2: 0 } };
+  if(dernier) return { solde: dernier.solde, equilibres: dernier.equilibres };
+  return { solde: 0, equilibres: { p1: 0, p2: 0 } };
 }
 function allerALaDate(n){
   etatCalendrierPeriode.dateRef = dateLocaleDepuisISO(isoDuNumero(n));
@@ -3183,25 +3204,30 @@ function afficherBlocSoldeCompte(r, per){
   if(!r){ zone.innerHTML = ''; return; }
   const contientAuj = per.debut <= r.aujourdhui && r.aujourdhui <= per.fin;
   const reference = contientAuj ? r.aujourdhui : per.fin;
-  const etat = contientAuj ? { solde: r.solde, parts: r.parts } : soldeAuJour(r, reference);
+  const etat = contientAuj ? { solde: r.solde, equilibres: r.equilibres } : soldeAuJour(r, reference);
   const titre = contientAuj ? 'Solde du compte'
     : per.fin < r.aujourdhui ? `Solde au ${dateLongueNum(per.fin)}`
     : `Solde prévu au ${dateLongueNum(per.fin)}`;
   const depart = per.vue !== 'jour' && per.debut <= r.aujourdhui + 366 ? soldeAuJour(r, per.debut - 1) : null;
-  const part = X => {
-    const p = r.personnes[X];
-    const avance = contientAuj && p.ok && p.marge > 0 ? `<small class="cs-avance">avance ${argent(p.marge)}</small>` : '';
+  /* L'équilibre de chacun : ce qu'il a déposé moins sa part des dépenses. 0 = à jour. */
+  const equilibre = X => {
+    const v = etat.equilibres[X];
+    const etiquette = v === 0 ? 'à jour' : v > 0 ? 'avance' : 'à rattraper';
     return `<div class="cs-part">
       <span class="cs-nom"><span class="dot ${X}"></span>${echapperHTML(nomsPersonnes[X])}</span>
-      <strong class="${etat.parts[X] < 0 ? 'solde-negatif' : ''}">${argent(etat.parts[X])}</strong>${avance}
+      <strong class="${v < 0 ? 'solde-negatif' : v > 0 ? 'cs-plus' : ''}">${v > 0 ? '+' : ''}${argent(v)}</strong>
+      <small class="cs-etiquette">${etiquette}</small>
     </div>`;
   };
   zone.innerHTML = `
     <div class="cs-solde">
       <div class="cs-label">${titre}</div>
       <div class="cs-montant ${etat.solde < 0 ? 'solde-negatif' : ''}">${argent(etat.solde)}</div>
-      <div class="cs-parts">${part('p1')}${part('p2')}</div>
       ${depart ? `<div class="cs-texte cs-depart">Au début de la période (${dateCourte(per.debut)}) : ${argent(depart.solde)}</div>` : ''}
+      <div class="cs-label cs-label-equilibre">Équilibre de chacun${contientAuj ? '' : ` au ${dateCourte(per.fin)}`}</div>
+      <div class="cs-parts">${equilibre('p1')}${equilibre('p2')}</div>
+      <div class="cs-texte">Ce que la personne a déposé, moins sa part des dépenses. L'argent au compte au-delà de ça est le coussin commun.
+        <button class="solde-bloc-lien cs-lien" id="cs-remise-zero">Remettre à zéro</button></div>
     </div>
     <div class="cs-minimum">
       <label for="cs-min">Minimum du compte</label>
@@ -3221,15 +3247,27 @@ function afficherBlocSoldeCompte(r, per){
     await enregistrerReglagesCompte(c);
   }));
   champ.addEventListener('keydown', e => { if(e.key === 'Enter' && ok.style.display !== 'none'){ e.preventDefault(); ok.click(); } });
+  const remise = document.getElementById('cs-remise-zero');
+  remise.addEventListener('click', actionVerrouillee(remise, async () => {
+    if(!confirm("Remettre les deux équilibres à 0 à partir d'aujourd'hui ? L'argent au compte devient un coussin commun.")) return;
+    await remettreEquilibresAZero();
+  }));
 }
 
-/* Ligne d'une personne dont la part n'est pas remplie pendant la période. */
-function lignePartPersonne(r, X, jour){
+/* Ce qu'il reste à déposer à une personne pour payer sa part d'ici la fin de la période. */
+function ligneEquilibrePersonne(r, X, per){
   const nom = echapperHTML(nomsPersonnes[X]);
-  const part = soldeAuJour(r, jour).parts[X];
-  const portion = r.reglages.pctCoussinP1 === 50 ? 'sa moitié' : 'sa portion';
-  const quand = jour === r.aujourdhui ? `sa part est à ${argent(part)}` : `sa part descendrait à ${argent(part)} le ${dateCourte(jour)}`;
-  return `<div class="cs-correction"><span><strong>${nom}</strong> : ${quand}, sous ${portion} du minimum (${argent(r.cible[X])}).</span></div>`;
+  const jours = r.projection.filter(j => j.jour <= per.fin);
+  const fin = jours.length ? jours[jours.length - 1] : null;
+  const valeur = fin ? fin.equilibres[X] : r.equilibres[X];
+  const quand = per.fin >= r.fin ? "d'ici un an" : `d'ici le ${dateCourte(per.fin)}`;
+  if(valeur < 0){
+    return `<div class="cs-correction"><span><strong>${nom}</strong> : il lui manque ${argent(-valeur)} ${quand} pour payer sa part.</span></div>`;
+  }
+  if(valeur > 0){
+    return `<div class="cs-correction"><span><strong>${nom}</strong> : ${quand}, ses dépôts dépasseront sa part de ${argent(valeur)}.</span></div>`;
+  }
+  return `<div class="cs-correction"><span><strong>${nom}</strong> : sa part est payée ${quand}.</span></div>`;
 }
 
 function afficherAlerteSoldeCompte(r, per){
@@ -3249,7 +3287,6 @@ function afficherAlerteSoldeCompte(r, per){
   /* Vérification sur la partie à venir de la période. */
   const debutVerif = Math.max(per.debut, r.aujourdhui);
   const jours = r.projection.filter(j => j.jour >= debutVerif && j.jour <= per.fin);
-  const partSous = X => jours.find(j => j.parts[X] < r.cible[X]);
   if(per.fin < r.aujourdhui){
     const passes = r.historique.filter(j => j.jour >= per.debut && j.jour <= per.fin);
     const bas = passes.reduce((m, j) => (!m || j.solde < m.solde) ? j : m, null);
@@ -3257,28 +3294,29 @@ function afficherAlerteSoldeCompte(r, per){
       <div class="cs-texte">${bas ? `Plus bas : ${argent(bas.solde)} le ${dateLongueNum(bas.jour)}.` : 'Aucun mouvement pendant cette période.'}</div></div>`);
   } else if(jours.length){
     const sm = jours.find(j => j.solde < r.coussin);
-    const lignes = MOTEUR_PERSONNES.map(X => { const j = partSous(X); return j ? lignePartPersonne(r, X, j.jour) : ''; }).join('');
+    const lignes = MOTEUR_PERSONNES.map(X => ligneEquilibrePersonne(r, X, per)).join('');
+    const enRetard = MOTEUR_PERSONNES.some(X => {
+      const dernier = r.projection.filter(j => j.jour <= per.fin).slice(-1)[0];
+      return dernier && dernier.equilibres[X] < 0;
+    });
     if(sm){
       const titre = sm.jour === r.aujourdhui
         ? `⚠ Le compte est sous le minimum de ${argent(r.coussin)}`
         : `⚠ Le ${dateLongueNum(sm.jour)}, le compte descendrait à ${argent(sm.solde)}`;
       blocs.push(`<div class="cs-bloc cs-manque"><div class="cs-titre">${titre}</div>
         ${sm.jour === r.aujourdhui ? '' : `<div class="cs-texte">C'est sous le minimum de ${argent(r.coussin)}.</div>`}${lignes}</div>`);
-    } else if(lignes){
-      blocs.push(`<div class="cs-bloc cs-avert"><div class="cs-titre">⚠ Une part n'est pas remplie</div>
-        <div class="cs-texte">Le compte reste au-dessus de ${argent(r.coussin)}, mais chacun doit remplir sa part.</div>${lignes}</div>`);
     } else {
       const bas = jours.reduce((m, j) => j.solde < m.solde ? j : m, jours[0]);
-      blocs.push(`<div class="cs-bloc cs-ok"><div class="cs-titre">✓ Le compte reste au-dessus de ${argent(r.coussin)}${per.vue === 'jour' ? '' : ' pendant cette période'}</div>
-        <div class="cs-texte">Plus bas : ${argent(bas.solde)} le ${dateLongueNum(bas.jour)}. Chacun remplit sa part.</div></div>`);
+      blocs.push(`<div class="cs-bloc ${enRetard ? 'cs-avert' : 'cs-ok'}">
+        <div class="cs-titre">${enRetard ? '✓' : '✓'} Le compte reste au-dessus de ${argent(r.coussin)}${per.vue === 'jour' ? '' : ' pendant cette période'}</div>
+        <div class="cs-texte">Plus bas : ${argent(bas.solde)} le ${dateLongueNum(bas.jour)}.</div>${lignes}</div>`);
     }
   } else {
     blocs.push(`<div class="cs-bloc"><div class="cs-texte">Cette période dépasse la prévision (un an).</div></div>`);
   }
 
   /* Problème ailleurs dans l'année : un lien pour y aller. */
-  const problemes = [r.sousMinimum && r.sousMinimum.jour,
-    ...MOTEUR_PERSONNES.map(X => r.personnes[X].probleme && r.personnes[X].probleme.jour)]
+  const problemes = [r.sousMinimum && r.sousMinimum.jour]
     .filter(n => n != null && (n < per.debut || n > per.fin));
   if(problemes.length){
     const n = Math.min(...problemes);
@@ -3336,7 +3374,7 @@ function afficherSuivi(r, per){
         <span class="cs-jour-date">${j.jour === r.aujourdhui ? "Aujourd'hui" : jourSemaine(j.jour)}</span>
         <span class="cs-jour-solde ${sous ? 'solde-negatif' : ''}">${sous ? '⚠ ' : ''}${argent(j.solde)}</span>
       </div>
-      <div class="cs-jour-parts">${echapperHTML(nomsPersonnes.p1)} ${argent(j.parts.p1)} · ${echapperHTML(nomsPersonnes.p2)} ${argent(j.parts.p2)}</div>
+      <div class="cs-jour-parts">Équilibre : ${echapperHTML(nomsPersonnes.p1)} ${argent(j.equilibres.p1)} · ${echapperHTML(nomsPersonnes.p2)} ${argent(j.equilibres.p2)}</div>
       ${mvts || '<div class="cs-mvt"><span>Aucun mouvement</span><span></span></div>'}
     </div>`;
   };
