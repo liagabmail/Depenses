@@ -1398,6 +1398,17 @@ function afficherBlocSoldeCompte(r, per){
   }));
 }
 
+/* Proposition (purement informative) : à combien de dépôts espacés de JOURS_PROPOSITION jours
+   correspond le manque d'une personne, pour aider à décider combien créer soi-même la prochaine
+   fois. Ne crée jamais rien — c'est juste un calcul affiché en texte. */
+const JOURS_PROPOSITION = 14; /* aux deux semaines */
+function propositionDepot(manqueCents, joursRestants){
+  const nbPeriodes = Math.max(1, Math.ceil(Math.max(1, joursRestants) / JOURS_PROPOSITION));
+  if(nbPeriodes <= 1) return '';
+  const parPeriode = arrondiDollarSup(manqueCents / nbPeriodes);
+  return ` Soit environ ${argent(parPeriode)} aux 2 semaines (${nbPeriodes} dépôts d'ici là).`;
+}
+
 /* Ce qu'il reste à déposer à une personne pour payer sa part d'ici la fin de la période. */
 function ligneEquilibrePersonne(r, X, per){
   const nom = echapperHTML(nomsPersonnes[X]);
@@ -1406,7 +1417,8 @@ function ligneEquilibrePersonne(r, X, per){
   const valeur = fin ? fin.equilibres[X] : r.equilibres[X];
   const quand = per.fin >= r.fin ? "d'ici un an" : `d'ici le ${dateCourte(per.fin)}`;
   if(valeur < 0){
-    return `<div class="cs-correction"><span><strong>${nom}</strong> : il lui manque ${argent(-valeur)} ${quand} pour payer sa part.</span></div>`;
+    const suggestion = propositionDepot(-valeur, per.fin - r.aujourdhui);
+    return `<div class="cs-correction"><span><strong>${nom}</strong> : il lui manque ${argent(-valeur)} ${quand} pour payer sa part.${suggestion}</span></div>`;
   }
   if(valeur > 0){
     return `<div class="cs-correction"><span><strong>${nom}</strong> : ${quand}, ses dépôts dépasseront sa part de ${argent(valeur)}.</span></div>`;
