@@ -1425,6 +1425,17 @@ function propositionDepot(manqueCents, joursRestants){
   return ` Soit environ ${argent(parPeriode)} aux 2 semaines (${nbPeriodes} dépôts d'ici là).`;
 }
 
+/* Proposition (purement informative) : à combien de dépôts espacés de JOURS_PROPOSITION jours
+   correspond le manque d'une personne, pour aider à décider combien créer soi-même la prochaine
+   fois. Ne crée jamais rien — c'est juste un calcul affiché en texte. */
+const JOURS_PROPOSITION = 14; /* aux deux semaines */
+function propositionDepot(manqueCents, joursRestants){
+  const nbPeriodes = Math.max(1, Math.ceil(Math.max(1, joursRestants) / JOURS_PROPOSITION));
+  if(nbPeriodes <= 1) return '';
+  const parPeriode = arrondiDollarSup(manqueCents / nbPeriodes);
+  return ` Soit environ ${argent(parPeriode)} aux 2 semaines (${nbPeriodes} dépôts d'ici là).`;
+}
+
 /* Ce qu'il reste à déposer à une personne pour payer sa part d'ici la fin de la période. */
 function ligneEquilibrePersonne(r, X, per){
   const nom = echapperHTML(nomsPersonnes[X]);
