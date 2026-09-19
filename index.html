@@ -101,21 +101,27 @@
 <div class="app">
 
   <header class="top">
-    <div class="logo-mark">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M3 17L9 11L13 15L21 6" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <h1>Dépenses</h1>
+    <button class="menu-btn" id="open-menu" aria-label="Ouvrir le menu" title="Menu">&#9776;</button>
+    <h1 id="header-title">👥 Conjoint</h1>
     <div class="user-info">
       <div class="chip"><span class="dot" id="current-user-dot"></span><span id="current-user-name">...</span></div>
     </div>
-    <button class="settings-top-btn" id="open-settings" aria-label="Ouvrir les paramètres" title="Paramètres">&#9881;</button>
   </header>
 
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="conjoint">👥 Conjoint</button>
-    <button class="tab-btn" data-tab="personnel">👤 Personnel</button>
-    <button class="tab-btn" data-tab="comparer">Comparer</button>
-  </nav>
+  <!-- Menu latéral coulissant (façon Google Agenda) : regroupe la navigation entre sections
+       et l'accès aux paramètres, derrière l'icône ☰ du haut. Les boutons ci-dessous sont les
+       MÊMES éléments qu'avant (mêmes classes/ids), seulement déplacés ici : le JS qui les
+       pilote (changement d'onglet, ouverture des paramètres) n'a pas besoin de changer. -->
+  <div class="side-drawer-overlay" id="side-drawer-overlay"></div>
+  <aside class="side-drawer" id="side-drawer">
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="conjoint">👥 Conjoint</button>
+      <button class="tab-btn" data-tab="personnel">👤 Personnel</button>
+      <button class="tab-btn" data-tab="comparer">📊 Comparer</button>
+    </nav>
+    <div class="side-drawer-divider"></div>
+    <button class="settings-top-btn" id="open-settings" aria-label="Ouvrir les paramètres" title="Paramètres">&#9881; Paramètres</button>
+  </aside>
 
   <div class="period-nav" id="period-nav" style="display:none;">
     <div class="period-type-row">
@@ -239,7 +245,7 @@
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
           <div class="field toggle-field champ-bascule bascule-droite" id="f-est-depot-field-conjoint" style="display:none;">
-            <span class="toggle-field-label"><span aria-hidden="true">🏦&nbsp;</span>Dépôt pour payer le compte</span>
+            <span class="toggle-field-label"><span aria-hidden="true">🏦&nbsp;</span>Prévision à confirmer</span>
             <label class="switch"><input type="checkbox" id="f-est-depot-conjoint"><span class="switch-track"></span></label>
           </div>
           <div class="field" id="f-depot-qui-field-conjoint" style="display:none;">
@@ -853,7 +859,7 @@
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
       </div>
       <div class="field toggle-field champ-bascule bascule-droite" id="edit-rec-est-depot-field">
-        <span class="toggle-field-label"><span aria-hidden="true">🏦&nbsp;</span>Dépôt pour payer le compte</span>
+        <span class="toggle-field-label"><span aria-hidden="true">🏦&nbsp;</span>Prévision à confirmer</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-depot"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur apercu-recurrence" id="edit-rec-depot-info" style="display:none;"></div>
