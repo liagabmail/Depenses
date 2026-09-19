@@ -102,7 +102,7 @@
 
   <header class="top">
     <button class="menu-btn" id="open-menu" aria-label="Ouvrir le menu" title="Menu">&#9776;</button>
-    <h1 id="header-title">👥 Conjoint</h1>
+    <h1 id="header-title"><span class="tab-icon">🗓️</span> Transactions</h1>
     <div class="user-info">
       <div class="chip"><span class="dot" id="current-user-dot"></span><span id="current-user-name">...</span></div>
     </div>
@@ -115,11 +115,39 @@
   <div class="side-drawer-overlay" id="side-drawer-overlay"></div>
   <aside class="side-drawer" id="side-drawer">
     <nav class="tabs">
-      <button class="tab-btn active" data-tab="conjoint">👥 Conjoint</button>
-      <button class="tab-btn" data-tab="personnel">👤 Personnel</button>
-      <button class="tab-btn" data-tab="comparer">📊 Comparer</button>
+      <button class="tab-btn active" data-tab="transactions"><span class="tab-icon">🗓️</span> Transactions</button>
+      <button class="tab-btn" data-tab="resume"><span class="tab-icon">📈</span> Résumé</button>
+      <button class="tab-btn" data-tab="compte"><span class="tab-icon">🏦</span> Compte</button>
+      <button class="tab-btn" data-tab="budget"><span class="tab-icon">💰</span> Budget</button>
+      <button class="tab-btn" data-tab="comparer"><span class="tab-icon">📊</span> Comparer</button>
     </nav>
     <div class="side-drawer-divider"></div>
+
+    <!-- Filtres Personnel/Conjoint/Compte conjoint (façon Google Agenda) : remplacent les
+         anciens onglets Conjoint/Personnel. Pilotent à la fois Transactions (quelles
+         dépenses apparaissent dans le calendrier/liste) et Résumé/Budget (quel(s) bloc(s)
+         s'affiche(nt) — voir afficherResumePage/afficherBudgetPage dans app.js). Le reste
+         (catégories, revenus, montant, et le sous-filtre Gabriel/Mélissa) n'affecte que
+         Transactions et est rendu/branché dynamiquement par rendreFiltresTransactionsDrawer(). -->
+    <div class="side-drawer-section" id="tx-filtres-section">
+      <div class="cal-menu-section-title">Afficher</div>
+      <label class="cal-menu-check">
+        <input type="checkbox" id="tx-filtre-personnel" checked>
+        <span class="dot-cat" style="background:var(--purple)"></span> Personnel
+      </label>
+      <label class="cal-menu-check">
+        <input type="checkbox" id="tx-filtre-conjoint" checked>
+        <span class="dot-cat" style="background:var(--blue)"></span> Conjoint
+      </label>
+      <div id="tx-filtre-qui-conjoint" style="display:none;padding-left:24px;"></div>
+      <label class="cal-menu-check">
+        <input type="checkbox" id="tx-filtre-compte" checked>
+        <span class="dot-cat" style="background:var(--green)"></span> Compte conjoint
+      </label>
+      <div id="tx-filtres-plus"></div>
+    </div>
+    <div class="side-drawer-divider"></div>
+
     <button class="settings-top-btn" id="open-settings" aria-label="Ouvrir les paramètres" title="Paramètres">&#9881; Paramètres</button>
   </aside>
 
@@ -134,26 +162,29 @@
     </div>
   </div>
 
-  <!-- ===================== SECTION : CONJOINT ===================== -->
-  <section class="tab-panel active" id="tab-conjoint">
-    <nav class="subtabs">
-      <button class="subtab-btn active" data-scope="conjoint" data-sub="mois">Transactions</button>
-      <button class="subtab-btn" data-scope="conjoint" data-sub="resume">Résumé</button>
-      <button class="subtab-btn" data-scope="conjoint" data-sub="compte">Compte</button>
-      <button class="subtab-btn" data-scope="conjoint" data-sub="budget">Budget</button>
-    </nav>
-    <div id="period-nav-slot-conjoint"></div>
+  <!-- ===================== SECTION : TRANSACTIONS (fusion Conjoint + Personnel) =====================
+       Vue unique du calendrier/liste des dépenses, filtrée par les cases à cocher
+       Personnel / Conjoint / Compte conjoint du menu ☰ (voir filtresTransactions dans app.js).
+       Résumé, Compte et Budget restent des sections séparées : leurs calculs (budget partagé
+       vs privé, comparaison Gabriel/Mélissa) ne changent pas. -->
+  <section class="tab-panel active" id="tab-transactions">
+    <div id="period-nav-slot-transactions"></div>
+    <div class="card" id="calendrier-recurrent-card-transactions">
+      <div id="cal-corps-transactions"></div>
+    </div>
 
-    <!-- Sous-onglet : MOIS -->
-    <div class="subtab-panel active" data-scope="conjoint" data-sub="mois">
-      <div class="card" id="calendrier-recurrent-card-conjoint">
-        <div id="cal-corps-conjoint"></div>
-      </div>
+    <button class="add-fab" id="add-transactions-btn" aria-label="Ajouter une dépense">+</button>
+    <div class="add-choix-menu" id="add-transactions-choix">
+      <button type="button" data-choix="personnel">👤 Personnel</button>
+      <button type="button" data-choix="conjoint">👥 Conjoint</button>
+      <button type="button" data-choix="compte">🏦 Compte conjoint</button>
+    </div>
 
-      <div class="card form-card" id="form-card-conjoint">
+    <div class="edit-modal" id="form-modal-conjoint">
+      <div class="edit-card form-card" id="form-card-conjoint">
         <div class="modal-header">
           <h3>Ajouter une dépense conjointe</h3>
-          <button class="modal-close-btn mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
+          <button class="modal-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
         </div>
         <div class="modal-body">
         <div class="form-grid">
@@ -261,97 +292,13 @@
           <button class="btn-add" id="btn-add-conjoint">Ajouter</button>
         </div>
       </div>
-      <button class="mobile-add-btn" id="mobile-add-conjoint" aria-label="Ajouter une dépense conjointe">+</button>
     </div>
 
-    <!-- Sous-onglet : RÉSUMÉ (fusionne les anciens "Résumé" et "Année" ; le choix Mois/Année
-         se fait via le sélecteur de période commun, en haut de la page) -->
-    <div class="subtab-panel" data-scope="conjoint" data-sub="resume">
-      <div class="stats-row" id="mois-stats-conjoint"></div>
-      <div class="stats-row" id="annee-stats-conjoint" style="display:none;"></div>
-      <div class="grid-2" id="resume-mois-conjoint">
-        <div class="card">
-          <h3 id="month-evolution-title-conjoint">Évolution des dépenses</h3>
-          <div class="chart-wrap"><canvas id="chart-evolution-conjoint"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>Répartition par catégorie</h3>
-          <div class="chart-wrap"><canvas id="chart-categories-mois-conjoint"></canvas></div>
-        </div>
-      </div>
-      <div class="grid-2" id="resume-annee-conjoint" style="display:none;">
-        <div class="card">
-          <h3>Dépenses par mois</h3>
-          <div class="chart-wrap"><canvas id="chart-annee-mensuel-conjoint"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>Répartition par catégorie (année)</h3>
-          <div class="chart-wrap"><canvas id="chart-annee-categories-conjoint"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sous-onglet : COMPTE (solde, minimum, dépôts prévus, suivi jour par jour) -->
-    <div class="subtab-panel" data-scope="conjoint" data-sub="compte">
-      <div class="card" id="recurrent-compte-echeancier-card-conjoint">
-        <div id="solde-compte-bloc"></div>
-        <div id="solde-compte-alerte"></div>
-        <div id="recurrent-compte-echeancier-conjoint"></div>
-      </div>
-    </div>
-
-    <!-- Sous-onglet : BUDGET -->
-    <div class="subtab-panel" data-scope="conjoint" data-sub="budget">
-      <div class="stats-row" id="stats-conjoint"></div>
-      <div class="grid-2">
-        <div class="card">
-          <h3>Budget par catégorie</h3>
-          <div id="budget-list-conjoint"></div>
-        </div>
-        <div class="card">
-          <h3>Répartition des dépenses conjointes</h3>
-          <div class="chart-wrap"><canvas id="chart-categories-conjoint"></canvas></div>
-        </div>
-      </div>
-      <div class="card" id="budget-edit-card-conjoint">
-        <h3 style="margin-bottom:12px;">Gérer le budget conjoint de <span id="periode-label-conjoint"></span></h3>
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ce budget est partagé : vous et votre partenaire pouvez tous les deux le consulter et le modifier. Il concerne seulement les dépenses <em>conjointes</em>. Le budget est propre à chaque mois — ajustable seulement en vue "Paie".</p>
-
-        <div style="padding-top:14px;border-top:1px solid var(--border);">
-          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
-          <div id="budget-form-conjoint" class="settings-grid"></div>
-        </div>
-
-        <button class="btn-add" id="save-budgets-conjoint" style="margin-top:16px;">Sauvegarder le budget conjoint</button>
-        <p id="budget-save-status-conjoint" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;"></p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== SECTION : PERSONNEL ===================== -->
-  <section class="tab-panel" id="tab-personnel">
-    <nav class="subtabs">
-      <button class="subtab-btn active" data-scope="personnel" data-sub="mois">Transactions</button>
-      <button class="subtab-btn" data-scope="personnel" data-sub="resume">Résumé</button>
-      <button class="subtab-btn" data-scope="personnel" data-sub="budget">Budget</button>
-    </nav>
-    <div id="period-nav-slot-personnel"></div>
-
-    <!-- Sous-onglet : MOIS -->
-    <div class="subtab-panel active" data-scope="personnel" data-sub="mois">
-      <div class="compare-toggle toggle-perso-scope" style="margin-bottom:14px;">
-        <button data-include="non">Perso seulement</button>
-        <button data-include="oui">+ Conjoint</button>
-      </div>
-
-      <div class="card" id="calendrier-recurrent-card-personnel">
-        <div id="cal-corps-personnel"></div>
-      </div>
-
-      <div class="card form-card" id="form-card-personnel">
+    <div class="edit-modal" id="form-modal-personnel">
+      <div class="edit-card form-card" id="form-card-personnel">
         <div class="modal-header">
           <h3>Ajouter une dépense personnelle</h3>
-          <button class="modal-close-btn mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
+          <button class="modal-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
         </div>
         <div class="modal-body">
         <div class="form-grid">
@@ -440,15 +387,43 @@
           <button class="btn-add" id="btn-add-personnel">Ajouter</button>
         </div>
       </div>
-      <button class="mobile-add-btn" id="mobile-add-personnel" aria-label="Ajouter une dépense personnelle">+</button>
+    </div>
+  </section>
+
+  <!-- ===================== SECTION : RÉSUMÉ =====================
+       Plus d'onglets Conjoint/Personnel séparés : les deux blocs ci-dessous vivent sur la
+       même page et sont montrés/masqués selon les cases Personnel/Conjoint du menu ☰ (voir
+       afficherResumePage dans app.js). Si les deux sont cochées, les deux blocs s'affichent
+       ensemble (le bloc Personnel inclut déjà la part conjointe, comme l'ancien "+Conjoint"). -->
+  <section class="tab-panel" id="tab-resume">
+    <div id="period-nav-slot-resume"></div>
+
+    <div data-scope="conjoint" id="resume-bloc-conjoint">
+      <div class="stats-row" id="mois-stats-conjoint"></div>
+      <div class="stats-row" id="annee-stats-conjoint" style="display:none;"></div>
+      <div class="grid-2" id="resume-mois-conjoint">
+        <div class="card">
+          <h3 id="month-evolution-title-conjoint">Évolution des dépenses</h3>
+          <div class="chart-wrap"><canvas id="chart-evolution-conjoint"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Répartition par catégorie</h3>
+          <div class="chart-wrap"><canvas id="chart-categories-mois-conjoint"></canvas></div>
+        </div>
+      </div>
+      <div class="grid-2" id="resume-annee-conjoint" style="display:none;">
+        <div class="card">
+          <h3>Dépenses par mois</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-mensuel-conjoint"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Répartition par catégorie (année)</h3>
+          <div class="chart-wrap"><canvas id="chart-annee-categories-conjoint"></canvas></div>
+        </div>
+      </div>
     </div>
 
-    <!-- Sous-onglet : RÉSUMÉ (fusionne les anciens "Résumé" et "Année") -->
-    <div class="subtab-panel" data-scope="personnel" data-sub="resume">
-      <div class="compare-toggle toggle-perso-scope" style="margin-bottom:14px;">
-        <button data-include="non">Perso seulement</button>
-        <button data-include="oui">+ Conjoint</button>
-      </div>
+    <div data-scope="personnel" id="resume-bloc-personnel">
       <div class="stats-row" id="mois-stats-personnel"></div>
       <div class="stats-row" id="annee-stats-personnel" style="display:none;"></div>
       <div class="grid-2" id="resume-mois-personnel">
@@ -472,13 +447,51 @@
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Sous-onglet : BUDGET -->
-    <div class="subtab-panel" data-scope="personnel" data-sub="budget">
-      <div class="compare-toggle toggle-perso-scope" style="margin-bottom:14px;">
-        <button data-include="non">Perso seulement</button>
-        <button data-include="oui">+ Conjoint</button>
+  <!-- ===================== SECTION : COMPTE ===================== -->
+  <section class="tab-panel" id="tab-compte">
+    <div id="period-nav-slot-compte"></div>
+    <div class="card" id="recurrent-compte-echeancier-card-conjoint">
+      <div id="solde-compte-bloc"></div>
+      <div id="solde-compte-alerte"></div>
+      <div id="recurrent-compte-echeancier-conjoint"></div>
+    </div>
+  </section>
+
+  <!-- ===================== SECTION : BUDGET =====================
+       Même principe que Résumé : un bloc Conjoint et un bloc Personnel, montrés/masqués
+       selon les cases du menu ☰ (voir afficherBudgetPage dans app.js). -->
+  <section class="tab-panel" id="tab-budget">
+    <div id="period-nav-slot-budget"></div>
+
+    <div data-scope="conjoint" id="budget-bloc-conjoint">
+      <div class="stats-row" id="stats-conjoint"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Budget par catégorie</h3>
+          <div id="budget-list-conjoint"></div>
+        </div>
+        <div class="card">
+          <h3>Répartition des dépenses conjointes</h3>
+          <div class="chart-wrap"><canvas id="chart-categories-conjoint"></canvas></div>
+        </div>
       </div>
+      <div class="card" id="budget-edit-card-conjoint">
+        <h3 style="margin-bottom:12px;">Gérer le budget conjoint de <span id="periode-label-conjoint"></span></h3>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">Ce budget est partagé : vous et votre partenaire pouvez tous les deux le consulter et le modifier. Il concerne seulement les dépenses <em>conjointes</em>. Le budget est propre à chaque mois — ajustable seulement en vue "Paie".</p>
+
+        <div style="padding-top:14px;border-top:1px solid var(--border);">
+          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;">Répartissez ce budget par catégorie :</p>
+          <div id="budget-form-conjoint" class="settings-grid"></div>
+        </div>
+
+        <button class="btn-add" id="save-budgets-conjoint" style="margin-top:16px;">Sauvegarder le budget conjoint</button>
+        <p id="budget-save-status-conjoint" style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;"></p>
+      </div>
+    </div>
+
+    <div data-scope="personnel" id="budget-bloc-personnel">
       <div class="stats-row" id="stats-personnel"></div>
       <div class="card" id="budget-revenus-card-personnel" style="display:none;">
         <h3 style="margin-bottom:12px;">Revenus de <span id="budget-revenus-periode-personnel"></span></h3>
@@ -887,18 +900,6 @@
      demandé à chaque paie, pour pouvoir vérifier le calcul à la main. -->
 <div class="edit-modal" id="depot-modal"><div class="edit-card">
   <div id="depot-modal-content"></div>
-</div></div>
-
-<!-- Même squelette que les autres fenêtres : sans .modal-header, le bouton de fermeture
-     devenait un élément de la colonne flex et se retrouvait centré, sans marges. -->
-<div class="edit-modal" id="cal-filtres-modal"><div class="edit-card">
-  <div class="modal-header">
-    <h3>Filtres d'affichage<span class="modal-sous-titre">Ce qui apparaît dans le calendrier</span></h3>
-    <button class="modal-close-btn" id="close-cal-filtres-modal" aria-label="Fermer">&times;</button>
-  </div>
-  <div class="modal-body">
-    <div id="cal-filtres-modal-content"></div>
-  </div>
 </div></div>
 
 

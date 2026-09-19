@@ -377,7 +377,7 @@ function actionVerrouillee(bouton, action){
 let depensesReelles = [];
 let depenses = [];
 let exceptions = [];
-let etatTri = { conjoint:{key:"Date", dir:"desc"}, personnel:{key:"Date", dir:"desc"} };
+let etatTri = { conjoint:{key:"Date", dir:"desc"}, personnel:{key:"Date", dir:"desc"}, transactions:{key:"Date", dir:"desc"} };
 
 const formaterMonnaie = (n) => n.toLocaleString('fr-CA', {style:'currency', currency:'CAD'});
 const aujourdhui = new Date();
@@ -386,10 +386,12 @@ let anneeActive = aujourdhui.getFullYear();
 let modeComparaison = 'mois';
 let modeCompareScope = 'tout';
 
-/* Onglet Personnel : possibilité d'inclure 50% des dépenses conjointes (peu importe qui a
-   payé) dans le total et la répartition par catégorie, pour voir le vrai portrait de ce
-   qu'on dépense au quotidien. Le tableau des transactions reste toujours 100% personnel. */
-let inclureConjointDansPersonnel = localStorage.getItem('depenses_inclure_conjoint_perso') === 'oui';
+/* Résumé/Budget : possibilité d'inclure la part personnelle des dépenses conjointes dans le
+   total et la répartition par catégorie de la vue Personnel, pour voir le vrai portrait de ce
+   qu'on dépense au quotidien. Anciennement un bouton "Perso seulement / + Conjoint" ; ce choix
+   découle maintenant directement des cases Personnel/Conjoint du menu ☰ (voir
+   afficherResumePage/afficherBudgetPage) — actif seulement quand les DEUX sont cochées. */
+let inclureConjointDansPersonnel = false;
 
 /* Part de la personne connectée dans une dépense conjointe affichée dans Personnel :
    50/50 pour une dépense conjointe normale, mais le vrai % pour une dépense "compte"
@@ -410,23 +412,20 @@ function parCategorieConjointPourInclusion(filtrePeriode){
   });
   return parCat;
 }
-function appliquerToggleInclusionConjoint(){
-  document.querySelectorAll('.toggle-perso-scope button').forEach(b=>{
-    b.classList.toggle('active', b.dataset.include === (inclureConjointDansPersonnel ? 'oui' : 'non'));
-  });
-}
-document.querySelectorAll('.toggle-perso-scope button').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    inclureConjointDansPersonnel = b.dataset.include === 'oui';
-    localStorage.setItem('depenses_inclure_conjoint_perso', inclureConjointDansPersonnel ? 'oui' : 'non');
-    appliquerToggleInclusionConjoint();
-    rafraichirSousOnglet('personnel', activeSubtab.personnel);
-  });
-});
-appliquerToggleInclusionConjoint();
 let depenseEnEdition = null;
-let activeMainTab = 'conjoint';
-let activeSubtab = { conjoint:'mois', personnel:'mois' };
+/* Vrai quand le formulaire d'ajout conjoint a été ouvert via le choix "Conjoint" du menu +
+   (par opposition à "Compte conjoint") : "Compte conjoint" n'a alors plus de raison
+   d'apparaître dans "Qui", ce choix ayant déjà été fait séparément. */
+let ajoutConjointSansCompte = false;
+let activeMainTab = 'transactions';
+/* Chaque onglet principal (Transactions/Résumé/Compte/Budget) est maintenant une page à lui
+   seul, sans sous-onglets Conjoint/Personnel imbriqués : cette table associe simplement
+   chaque onglet à lui-même (Transactions gardant son entrée 'mois' historique), pour que le
+   sélecteur de période commun (voir afficherNavigationPeriode) traite les quatre pages de
+   façon identique, sans code séparé. */
+let activeSubtab = { transactions:'mois', resume:'resume', compte:'compte', budget:'budget' };
+/* Les 4 onglets qui partagent le sélecteur de période commun (tous sauf Comparer). */
+function estOngletAvecPeriode(tab){ return tab==='transactions' || tab==='resume' || tab==='compte' || tab==='budget'; }
 let charts = {};
 function detruireGraphique(cle){ if(charts[cle]){ charts[cle].destroy(); delete charts[cle]; } }
 
@@ -442,12 +441,37 @@ document.getElementById('f-date-personnel').value = formaterDateISO(debutJour(ne
 /* Le formulaire repart toujours des valeurs de base : on remet à zéro À L'OUVERTURE comme à
    la fermeture, pour qu'une saisie abandonnée ne réapparaisse jamais à la fois suivante. */
 ['conjoint','personnel'].forEach(scope=>{
-  document.getElementById(`mobile-add-${scope}`).addEventListener('click', ()=>{
-    reinitialiserFormulaireAjoutDepense(scope);
-    document.getElementById(`form-card-${scope}`).classList.add('mobile-add-open');
-  });
   document.getElementById(`close-add-${scope}`).addEventListener('click', ()=>{
     reinitialiserFormulaireAjoutDepense(scope);
+  });
+});
+
+/* Bouton (+) de Transactions : ouvre un choix Personnel / Conjoint / Compte conjoint (façon
+   Google Agenda) plutôt que d'ouvrir directement un formulaire — la vue étant fusionnée, il
+   faut d'abord savoir quel type de dépense créer. */
+document.getElementById('add-transactions-btn').addEventListener('click', ()=>{
+  document.getElementById('add-transactions-choix').classList.toggle('open');
+});
+document.querySelectorAll('#add-transactions-choix button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('add-transactions-choix').classList.remove('open');
+    const choix = btn.dataset.choix;
+    const scope = choix === 'personnel' ? 'personnel' : 'conjoint';
+    ajoutConjointSansCompte = choix === 'conjoint';
+    reinitialiserFormulaireAjoutDepense(scope);
+    if(choix === 'compte'){
+      /* Le choix "Compte conjoint" déjà fait dans le menu +, inutile de le redemander via
+         le champ Qui : on le préremplit et on masque le champ plutôt que de le laisser
+         modifiable. */
+      document.getElementById('f-who-conjoint').value = 'Compte conjoint';
+      document.getElementById('f-who-conjoint').dispatchEvent(new Event('change'));
+      document.getElementById('f-who-field-conjoint').style.display = 'none';
+    } else if(choix === 'conjoint'){
+      /* Ce choix a déjà tranché entre Conjoint et Compte conjoint : "Compte conjoint" n'a
+         plus sa place dans "Qui" (voir rafraichirOptionsFormulaires). */
+      document.getElementById('f-who-field-conjoint').style.display = '';
+    }
+    document.getElementById(`form-modal-${scope}`).style.display = 'flex';
   });
 });
 
@@ -1288,10 +1312,8 @@ function ouvrirDepotDepuisParametres(params){
   const X = params.get('depot');
   const iso = params.get('date');
   if(!MOTEUR_PERSONNES.includes(X) || !/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return false;
-  const bouton = document.querySelector('.tab-btn[data-tab="conjoint"]');
-  if(bouton && activeMainTab !== 'conjoint') bouton.click();
-  const sous = document.querySelector('.subtab-btn[data-scope="conjoint"][data-sub="compte"]');
-  if(sous && activeSubtab.conjoint !== 'compte') sous.click();
+  const bouton = document.querySelector('.tab-btn[data-tab="compte"]');
+  if(bouton && activeMainTab !== 'compte') bouton.click();
   const occ = occurrencesDepotsPrevus(dateLocaleDepuisISO(isoDuNumero(numeroJour(iso) + 400)))
     .find(o => o.depotPersonne === X && o.date === iso);
   if(occ){ ouvrirDepotPlanifie(occ.id); return true; }
@@ -2997,8 +3019,10 @@ function afficherRecurrencesScope(scope){
     `;
   }
 
-  /* Calendrier des dépenses (récurrentes ou non) façon Outlook, voir plus bas. */
-  afficherCalendrierRecurrent(scope);
+  /* Le calendrier des dépenses (récurrentes ou non) vit maintenant dans la vue Transactions
+     fusionnée, peu importe le scope ('conjoint' ou 'personnel') qui a déclenché ce
+     rafraîchissement (ajout, édition, confirmation de dépôt, etc.). */
+  afficherTransactions();
 
   const listEl = document.getElementById(`recurrent-list-${scope}`);
   if(!listEl) return;
@@ -3062,25 +3086,23 @@ let afficherGrilleMois = false;
 /* Filtres d'affichage (façon Google Agenda : cases à cocher pour montrer/cacher certains
    types d'entrées). Persistés localement par appareil - un filtre d'affichage est une
    préférence personnelle, pas une donnée à synchroniser. */
-function filtresParDefaut(){ return { categoriesCachees: [], masquerRevenus: false, quiCaches: [], montantMin: 0, montantMax: null }; }
-let filtresCalendrier = { conjoint: filtresParDefaut(), personnel: filtresParDefaut() };
-(function chargerFiltresCalendrier(){
-  ['conjoint','personnel'].forEach(scope=>{
-    try{
-      const brut = localStorage.getItem(`depenses_calendrier_filtres_${scope}`);
-      if(brut) filtresCalendrier[scope] = Object.assign(filtresParDefaut(), JSON.parse(brut));
-    } catch(e){ /* préférence locale seulement : on ignore silencieusement si corrompue */ }
-  });
+/* Un seul jeu de filtres pour la vue Transactions fusionnée (plus un par scope) : `typesCaches`
+   remplace l'ancien `quiCaches` avec trois catégories grossières (Personnel / Conjoint /
+   Compte conjoint), pilotées par les cases à cocher du menu ☰ plutôt que par les onglets. */
+function filtresParDefaut(){ return { categoriesCachees: [], masquerRevenus: false, typesCaches: [], quiConjointCaches: [], montantMin: 0, montantMax: null }; }
+let filtresTransactions = filtresParDefaut();
+(function chargerFiltresTransactions(){
+  try{
+    const brut = localStorage.getItem('depenses_transactions_filtres');
+    if(brut) filtresTransactions = Object.assign(filtresParDefaut(), JSON.parse(brut));
+  } catch(e){ /* préférence locale seulement : on ignore silencieusement si corrompue */ }
 })();
-function sauvegarderFiltresCalendrier(scope){
-  localStorage.setItem(`depenses_calendrier_filtres_${scope}`, JSON.stringify(filtresCalendrier[scope]));
+function sauvegarderFiltresTransactions(){
+  localStorage.setItem('depenses_transactions_filtres', JSON.stringify(filtresTransactions));
 }
 
 const JOURS_SEMAINE_DIM_SAM = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
 const MOIS_NOMS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-/* Icône "filtres" façon Material Design (3 barres, chacune avec un curseur à une hauteur
-   différente) plutôt qu'un simple ☰, pour bien la distinguer d'un menu de navigation. */
-const ICONE_FILTRE_SVG = `<svg viewBox="0 0 20 20" width="16" height="16" style="display:block;"><line x1="2" y1="5" x2="18" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="13" cy="5" r="2.1" fill="currentColor"/><line x1="2" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="7" cy="10" r="2.1" fill="currentColor"/><line x1="2" y1="15" x2="18" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="15" r="2.1" fill="currentColor"/></svg>`;
 
 const VUES_CALENDRIER = [ ['jour','Jour'], ['semaine','Semaine'], ['paie','Paie'], ['mois','Mois'], ['annee','Année'] ];
 
@@ -3124,187 +3146,190 @@ function libellePeriodeCalendrier(vue, debut, fin){
   if(vue==='annee') return String(debut.getFullYear());
   return `${formatCourtDate(debut)} – ${formatCourtDate(fin)} ${fin.getFullYear()}`;
 }
+/* Regroupement grossier utilisé par le filtre à cases à cocher de Transactions (Personnel /
+   Conjoint / Compte conjoint), et par les pastilles de couleur de la grille du mois. */
+function bucketDepense(e){
+  if(e.type==='personnelle') return 'personnel';
+  return e.who==='compte' ? 'compte' : 'conjoint';
+}
 function classeTypeDepense(e){
+  if(e.type==='personnelle') return 'cal-personnel';
   if(e.estCompte) return 'cal-compte';
   if(e.who==='p2') return 'cal-p2';
   return 'cal-p1';
 }
-function depensesPourCalendrier(scope, debut, fin){
-  const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
+function depensesPourTransactions(debut, fin){
   const debutStr = formaterDateISO(debut), finStr = formaterDateISO(fin);
-  const filtres = filtresCalendrier[scope];
-  const appliquerFiltres = e => !(filtres.masquerRevenus && e.estRevenu) && !filtres.categoriesCachees.includes(e.category) && !filtres.quiCaches.includes(e.who)
-    && e.amount >= filtres.montantMin && (filtres.montantMax == null || e.amount <= filtres.montantMax);
+  const f = filtresTransactions;
+  const appliquerFiltres = e => !f.typesCaches.includes(bucketDepense(e))
+    && !(e.type==='conjointe' && e.who!=='compte' && f.quiConjointCaches.includes(e.who))
+    && !(f.masquerRevenus && e.estRevenu) && !f.categoriesCachees.includes(e.category)
+    && e.amount >= f.montantMin && (f.montantMax == null || e.amount <= f.montantMax);
 
-  let liste = (type==='conjointe' ? depenses.concat(depotsAConfirmer) : depenses)
-    .filter(e => e.type===type && e.date>=debutStr && e.date<=finStr)
-    .filter(appliquerFiltres)
-    .map(e=>({...e, partagee:false}));
+  /* Personnel : jamais les dépenses de l'autre personne, même si elles étaient présentes en
+     mémoire — même garde que partout ailleurs dans l'app (vie privée). */
+  const conjointes = depenses.concat(depotsAConfirmer)
+    .filter(e => e.type==='conjointe' && e.date>=debutStr && e.date<=finStr);
+  const personnelles = depenses
+    .filter(e => e.type==='personnelle' && e.who===currentUser && e.date>=debutStr && e.date<=finStr);
 
-  /* "+ Conjoint" (Personnel uniquement) : on ajoute aussi les dépenses conjointes de la
-     période, à la part de l'utilisateur (voir partPersonnelle), comme le fait déjà le
-     tableau/mode Liste — pour que le calendrier reflète le même choix. */
-  if(scope==='personnel' && inclureConjointDansPersonnel){
-    const conjoints = depenses
-      .filter(e=>e.type==='conjointe' && !e.estRevenu && e.date>=debutStr && e.date<=finStr)
-      .filter(appliquerFiltres);
-    liste = liste.concat(conjoints.map(e=>({...e, amount:e.amount*partPersonnelle(e), partagee:true})));
-  }
-
-  return liste.sort((a,b)=> a.date.localeCompare(b.date));
+  return conjointes.concat(personnelles).filter(appliquerFiltres).sort((a,b)=> a.date.localeCompare(b.date));
 }
 
-function afficherCalendrierRecurrent(scope){
-  const corpsEl = document.getElementById(`cal-corps-${scope}`);
+function afficherTransactions(){
+  const corpsEl = document.getElementById('cal-corps-transactions');
   if(!corpsEl) return;
   const { vue, dateRef } = etatCalendrierPeriode;
   const { debut, fin } = bornePeriode(vue, dateRef);
-  const tri = etatTri[scope];
+  const tri = etatTri.transactions;
 
-  const barreOutils = rendreBarreOutilsHTML(scope, tri);
+  const barreOutils = rendreBarreOutilsTransactionsHTML(tri);
 
   if(vue === 'mois' && afficherGrilleMois){
-    corpsEl.innerHTML = barreOutils + rendreGrilleMoisCalendrier(scope, dateRef);
+    corpsEl.innerHTML = barreOutils + rendreGrilleMoisCalendrierTransactions(dateRef);
   } else {
     /* Jour / Semaine / Paie / Mois / Année partagent le même visuel : une liste triable
        (Date/Montant), façon agenda. */
-    corpsEl.innerHTML = barreOutils + rendreAgendaCorpsHTML(scope, debut, fin, tri);
-    wirerTriAgenda(scope);
+    corpsEl.innerHTML = barreOutils + rendreAgendaCorpsHTMLTransactions(debut, fin, tri);
+    wirerTriAgendaTransactions();
   }
-  wirerBarreOutils(scope);
-
-  /* Si la fenêtre de filtres est ouverte pour ce scope, on la re-rend pour refléter les
-     filtres actifs à jour. */
-  const modal = document.getElementById('cal-filtres-modal');
-  if(modal.style.display !== 'none' && scopeFiltresCourant === scope) rendreMenuCalendrier(scope);
+  wirerBarreOutilsTransactions();
+  rendreFiltresTransactionsDrawer();
 }
 
-/* Barre d'outils commune, en haut du calendrier/liste : icône de filtres (🎚) à gauche,
-   bascule grille/liste (📅) centrée — visible uniquement en vue "Mois" — et le contrôle de
-   tri (Date/Montant) à droite. Toujours sur la même ligne, pour rester compact et uniforme.
+/* Barre d'outils du calendrier/liste : bascule grille/liste (📅) centrée — visible
+   uniquement en vue "Mois" — et le contrôle de tri (Date/Montant) à droite. Les filtres
+   (catégories, qui, montant) vivent maintenant en permanence dans le menu ☰, plus besoin
+   d'une icône dédiée ici.
 
    Le tri n'est PAS produit quand la grille de calendrier est active : les dépenses y sont
    placées dans les cases des jours, l'ordre de tri n'a alors aucun effet visible. On retire
    le bloc du HTML plutôt que de le masquer, parce que `.cal-toolbar .mobile-sort` porte un
    `display:flex!important` qui l'emporterait sur un style en ligne. */
-function rendreBarreOutilsHTML(scope, tri){
+function rendreBarreOutilsTransactionsHTML(tri){
   const vue = etatCalendrierPeriode.vue;
   const triUtile = !(vue === 'mois' && afficherGrilleMois);
   return `
     <div class="cal-toolbar">
-      <button type="button" class="cal-hamburger-btn" id="cal-filtre-btn-${scope}" aria-label="Filtres d'affichage">${ICONE_FILTRE_SVG}</button>
-      ${vue==='mois' ? `<button type="button" class="cal-hamburger-btn cal-toolbar-centre" id="cal-grille-toggle-${scope}" aria-label="Basculer vue calendrier">📅</button>` : ''}
-      ${triUtile ? `<div class="mobile-sort" id="cal-toolbar-tri-${scope}">
-        <select id="agenda-tri-${scope}" aria-label="Trier les dépenses">
+      ${vue==='mois' ? `<button type="button" class="cal-hamburger-btn cal-toolbar-centre" id="cal-grille-toggle-transactions" aria-label="Basculer vue calendrier">📅</button>` : ''}
+      ${triUtile ? `<div class="mobile-sort" id="cal-toolbar-tri-transactions">
+        <select id="agenda-tri-transactions" aria-label="Trier les dépenses">
           <option value="Date">Date</option><option value="Montant">Montant</option>
         </select>
-        <button type="button" class="sort-direction" id="agenda-tri-dir-${scope}" aria-label="${tri.dir==='asc'?'Tri croissant':'Tri décroissant'}">${tri.dir==='asc'?'↑':'↓'}</button>
+        <button type="button" class="sort-direction" id="agenda-tri-dir-transactions" aria-label="${tri.dir==='asc'?'Tri croissant':'Tri décroissant'}">${tri.dir==='asc'?'↑':'↓'}</button>
       </div>` : ''}
     </div>`;
 }
-function wirerBarreOutils(scope){
-  const btnFiltre = document.getElementById(`cal-filtre-btn-${scope}`);
-  if(btnFiltre) btnFiltre.addEventListener('click', ()=> ouvrirFiltresModal(scope));
-  const btnGrille = document.getElementById(`cal-grille-toggle-${scope}`);
+function wirerBarreOutilsTransactions(){
+  const btnGrille = document.getElementById('cal-grille-toggle-transactions');
   if(btnGrille){
     btnGrille.classList.toggle('active', afficherGrilleMois);
     btnGrille.addEventListener('click', ()=>{
       afficherGrilleMois = !afficherGrilleMois;
-      afficherCalendrierRecurrent(scope);
+      afficherTransactions();
     });
   }
 }
 
-/* ===================== FENÊTRE DE FILTRES D'AFFICHAGE (façon Google Agenda) =====================
-   Le choix du type de période (Jour/Semaine/Paie/Mois) et le mode Calendrier/Liste vivent
-   dans le sélecteur commun en haut de la page (voir afficherNavigationPeriode) ; cette
-   fenêtre ne garde que les filtres "Qui" / catégories / revenus, et s'ouvre en pop-up
-   plutôt que de se dérouler en ligne — plus facile à repérer et à fermer sur mobile. */
-let scopeFiltresCourant = 'conjoint';
-function fermerFiltresModal(){ document.getElementById('cal-filtres-modal').style.display = 'none'; }
-document.getElementById('close-cal-filtres-modal').addEventListener('click', fermerFiltresModal);
-function ouvrirFiltresModal(scope){
-  scopeFiltresCourant = scope;
-  rendreMenuCalendrier(scope);
-  document.getElementById('cal-filtres-modal').style.display = 'flex';
+/* ===================== FILTRES D'AFFICHAGE DE TRANSACTIONS (façon Google Agenda) =====================
+   Rendus en permanence dans le menu ☰ (plus de fenêtre séparée à ouvrir/fermer) : les trois
+   cases Personnel/Conjoint/Compte conjoint remplacent les anciens onglets, et le reste
+   (catégories, revenus, montant) reprend exactement l'ancienne fenêtre de filtres. */
+/* Cases Personnel/Conjoint/Compte conjoint : branchées UNE SEULE FOIS (elles sont statiques
+   dans le HTML du menu, contrairement au reste des filtres régénéré à chaque rendu) — sinon
+   chaque rafraîchissement de Transactions empilerait un nouvel écouteur. */
+function majTypesCachesTransactions(){
+  const f = filtresTransactions;
+  f.typesCaches = [];
+  if(!document.getElementById('tx-filtre-personnel').checked) f.typesCaches.push('personnel');
+  if(!document.getElementById('tx-filtre-conjoint').checked) f.typesCaches.push('conjoint');
+  if(!document.getElementById('tx-filtre-compte').checked) f.typesCaches.push('compte');
+  sauvegarderFiltresTransactions();
+  rendreSousFiltreQuiConjoint();
+  /* Personnel/Conjoint changent ce que montrent Transactions ET Résumé/Budget (voir
+     afficherResumePage/afficherBudgetPage) : on rafraîchit la page réellement affichée,
+     pas seulement Transactions. */
+  if(estOngletAvecPeriode(activeMainTab)) rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
 }
+['tx-filtre-personnel','tx-filtre-conjoint','tx-filtre-compte'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', majTypesCachesTransactions);
+});
 
-function toutFiltresActifs(scope){
-  const f = filtresCalendrier[scope];
-  return f.quiCaches.length===0 && !f.masquerRevenus && f.categoriesCachees.length===0;
-}
-function basculerToutFiltres(scope){
-  const f = filtresCalendrier[scope];
-  if(toutFiltresActifs(scope)){
-    f.quiCaches = scope==='conjoint' ? ['p1','p2','compte'] : [];
-    f.masquerRevenus = true;
-    f.categoriesCachees = categories.filter(c=>c!=='Revenu');
-  } else {
-    f.quiCaches = [];
-    f.masquerRevenus = false;
-    f.categoriesCachees = [];
+/* Sous-filtre Gabriel/Mélissa, affiché seulement quand "Conjoint" est coché : n'affecte QUE
+   Transactions (quelles dépenses conjointes apparaissent dans le calendrier/liste) — Résumé
+   et Budget ne distinguent jamais les deux personnes dans leurs totaux. */
+function rendreSousFiltreQuiConjoint(){
+  const conteneur = document.getElementById('tx-filtre-qui-conjoint');
+  if(!conteneur) return;
+  const f = filtresTransactions;
+  if(!conjointCoche()){
+    conteneur.style.display = 'none';
+    conteneur.innerHTML = '';
+    return;
   }
-  sauvegarderFiltresCalendrier(scope);
-  rendreMenuCalendrier(scope);
-  afficherCalendrierRecurrent(scope);
+  conteneur.style.display = '';
+  conteneur.innerHTML = `
+    <label class="cal-menu-check">
+      <input type="checkbox" data-filtre-qui-conjoint="p1" ${f.quiConjointCaches.includes('p1')?'':'checked'}>
+      <span class="dot-cat" style="background:${couleursPersonnes.p1}"></span> ${echapperHTML(nomsPersonnes.p1)}
+    </label>
+    <label class="cal-menu-check">
+      <input type="checkbox" data-filtre-qui-conjoint="p2" ${f.quiConjointCaches.includes('p2')?'':'checked'}>
+      <span class="dot-cat" style="background:${couleursPersonnes.p2}"></span> ${echapperHTML(nomsPersonnes.p2)}
+    </label>
+  `;
+  conteneur.querySelectorAll('[data-filtre-qui-conjoint]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const qui = cb.dataset.filtreQuiConjoint;
+      f.quiConjointCaches = cb.checked
+        ? f.quiConjointCaches.filter(q=>q!==qui)
+        : [...f.quiConjointCaches, qui];
+      sauvegarderFiltresTransactions();
+      afficherTransactions();
+    });
+  });
 }
 
-function rendreMenuCalendrier(scope){
-  const panneau = document.getElementById('cal-filtres-modal-content');
-  const filtres = filtresCalendrier[scope];
+function rendreFiltresTransactionsDrawer(){
+  const conteneur = document.getElementById('tx-filtres-plus');
+  if(!conteneur) return;
+  const f = filtresTransactions;
   const catsPresentes = categories.filter(c => c!=='Revenu');
-  const toutActif = toutFiltresActifs(scope);
+
+  document.getElementById('tx-filtre-personnel').checked = !f.typesCaches.includes('personnel');
+  document.getElementById('tx-filtre-conjoint').checked = !f.typesCaches.includes('conjoint');
+  document.getElementById('tx-filtre-compte').checked = !f.typesCaches.includes('compte');
+  rendreSousFiltreQuiConjoint();
 
   /* Borne haute du curseur : le plus gros montant existant (arrondi vers le haut), avec un
      plancher raisonnable pour éviter un curseur dégénéré s'il y a peu de données. */
-  const type = scope==='conjoint' ? 'conjointe' : 'personnelle';
-  const plusGrosMontant = depenses.filter(e=>e.type===type).reduce((m,e)=>Math.max(m,e.amount),0);
+  const plusGrosMontant = depenses.reduce((m,e)=>Math.max(m,e.amount),0);
   const bordureMax = Math.max(100, Math.ceil(plusGrosMontant/50)*50);
-  const montantMaxActuel = filtres.montantMax == null ? bordureMax : Math.min(filtres.montantMax, bordureMax);
+  const montantMaxActuel = f.montantMax == null ? bordureMax : Math.min(f.montantMax, bordureMax);
 
-  panneau.innerHTML = `
-    <button type="button" class="btn-secondary" id="filtre-tout-toggle" style="width:100%;margin-bottom:12px;">
-      ${toutActif ? 'Tout désélectionner' : 'Tout sélectionner'}
-    </button>
-    ${scope==='conjoint' ? `
-    <div class="cal-menu-section-title">Qui</div>
-    <label class="cal-menu-check">
-      <input type="checkbox" data-filtre-qui="p1" ${filtres.quiCaches.includes('p1')?'':'checked'}>
-      <span class="dot-cat" style="background:${couleursPersonnes.p1}"></span> ${nomsPersonnes.p1}
-    </label>
-    <label class="cal-menu-check">
-      <input type="checkbox" data-filtre-qui="p2" ${filtres.quiCaches.includes('p2')?'':'checked'}>
-      <span class="dot-cat" style="background:${couleursPersonnes.p2}"></span> ${nomsPersonnes.p2}
-    </label>
-    <label class="cal-menu-check">
-      <input type="checkbox" data-filtre-qui="compte" ${filtres.quiCaches.includes('compte')?'':'checked'}>
-      <span class="dot-cat" style="background:${couleursPersonnes.compte}"></span> Compte conjoint
-    </label>
-    ` : ''}
+  conteneur.innerHTML = `
     <div class="cal-menu-section-title">Afficher</div>
     <label class="cal-menu-check">
-      <input type="checkbox" data-filtre-revenu ${filtres.masquerRevenus?'':'checked'}>
+      <input type="checkbox" data-filtre-revenu ${f.masquerRevenus?'':'checked'}>
       <span class="icone-revenu" aria-hidden="true">+</span> Revenus
     </label>
     ${catsPresentes.map(c=>`
       <label class="cal-menu-check">
-        <input type="checkbox" data-filtre-categorie="${c}" ${filtres.categoriesCachees.includes(c)?'':'checked'}>
+        <input type="checkbox" data-filtre-categorie="${c}" ${f.categoriesCachees.includes(c)?'':'checked'}>
         <span class="dot-cat" style="background:${COULEURS_CATEGORIES[c]||'#9aa0a6'}"></span> ${c}
       </label>
     `).join('')}
     <div class="cal-menu-section-title">Montant</div>
     <div class="cal-menu-montant-valeurs">
-      <span id="filtre-montant-min-val">${formaterMonnaie(filtres.montantMin)}</span>
+      <span id="filtre-montant-min-val">${formaterMonnaie(f.montantMin)}</span>
       <span>–</span>
-      <span id="filtre-montant-max-val">${filtres.montantMax == null ? `${formaterMonnaie(bordureMax)}+` : formaterMonnaie(filtres.montantMax)}</span>
+      <span id="filtre-montant-max-val">${f.montantMax == null ? `${formaterMonnaie(bordureMax)}+` : formaterMonnaie(f.montantMax)}</span>
     </div>
     <div class="cal-menu-montant-sliders">
-      <input type="range" id="filtre-montant-min" min="0" max="${bordureMax}" step="5" value="${filtres.montantMin}">
+      <input type="range" id="filtre-montant-min" min="0" max="${bordureMax}" step="5" value="${f.montantMin}">
       <input type="range" id="filtre-montant-max" min="0" max="${bordureMax}" step="5" value="${montantMaxActuel}">
     </div>
   `;
-
-  document.getElementById('filtre-tout-toggle').addEventListener('click', ()=> basculerToutFiltres(scope));
 
   const curseurMin = document.getElementById('filtre-montant-min');
   const curseurMax = document.getElementById('filtre-montant-max');
@@ -3321,47 +3346,37 @@ function rendreMenuCalendrier(scope){
     majAffichageMontant();
   });
   const appliquerMontant = ()=>{
-    filtres.montantMin = Number(curseurMin.value);
-    filtres.montantMax = Number(curseurMax.value) >= bordureMax ? null : Number(curseurMax.value);
-    sauvegarderFiltresCalendrier(scope);
-    afficherCalendrierRecurrent(scope);
+    f.montantMin = Number(curseurMin.value);
+    f.montantMax = Number(curseurMax.value) >= bordureMax ? null : Number(curseurMax.value);
+    sauvegarderFiltresTransactions();
+    afficherTransactions();
   };
   curseurMin.addEventListener('change', appliquerMontant);
   curseurMax.addEventListener('change', appliquerMontant);
 
-  const caseRevenu = panneau.querySelector('[data-filtre-revenu]');
+  const caseRevenu = conteneur.querySelector('[data-filtre-revenu]');
   if(caseRevenu) caseRevenu.addEventListener('change', (e)=>{
-    filtres.masquerRevenus = !e.target.checked;
-    sauvegarderFiltresCalendrier(scope);
-    afficherCalendrierRecurrent(scope);
+    f.masquerRevenus = !e.target.checked;
+    sauvegarderFiltresTransactions();
+    afficherTransactions();
   });
-  panneau.querySelectorAll('[data-filtre-categorie]').forEach(cb=>{
+  conteneur.querySelectorAll('[data-filtre-categorie]').forEach(cb=>{
     cb.addEventListener('change', ()=>{
       const cat = cb.dataset.filtreCategorie;
-      filtres.categoriesCachees = cb.checked
-        ? filtres.categoriesCachees.filter(c=>c!==cat)
-        : [...filtres.categoriesCachees, cat];
-      sauvegarderFiltresCalendrier(scope);
-      afficherCalendrierRecurrent(scope);
-    });
-  });
-  panneau.querySelectorAll('[data-filtre-qui]').forEach(cb=>{
-    cb.addEventListener('change', ()=>{
-      const qui = cb.dataset.filtreQui;
-      filtres.quiCaches = cb.checked
-        ? filtres.quiCaches.filter(q=>q!==qui)
-        : [...filtres.quiCaches, qui];
-      sauvegarderFiltresCalendrier(scope);
-      afficherCalendrierRecurrent(scope);
+      f.categoriesCachees = cb.checked
+        ? f.categoriesCachees.filter(c=>c!==cat)
+        : [...f.categoriesCachees, cat];
+      sauvegarderFiltresTransactions();
+      afficherTransactions();
     });
   });
 }
 
-function rendreGrilleMoisCalendrier(scope, dateRef){
+function rendreGrilleMoisCalendrierTransactions(dateRef){
   const { debut, fin } = borneMois(dateRef);
   const premierJourGrille = debutDeSemaine(debut);
   const dernierJourGrille = ajouterJours(debutDeSemaine(fin), 6);
-  const items = depensesPourCalendrier(scope, premierJourGrille, dernierJourGrille);
+  const items = depensesPourTransactions(premierJourGrille, dernierJourGrille);
   const parJour = {};
   items.forEach(e => { (parJour[e.date] = parJour[e.date] || []).push(e); });
   const aujourdhuiStr = formaterDateISO(debutJour(new Date()));
@@ -3381,7 +3396,7 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
     /* `today` va sur la CASE, pas sur le numéro : c'est la case qui porte la règle qui
        dessine la pastille bleue (façon Google Agenda) autour du chiffre. */
     const estAujourdhui = iso === aujourdhuiStr;
-    html += `<div class="cal-month-cell ${dansLeMois?'':'outside'} ${estAujourdhui?'today':''}" onclick="allerVueJour('${scope}','${iso}')">
+    html += `<div class="cal-month-cell ${dansLeMois?'':'outside'} ${estAujourdhui?'today':''}" onclick="allerVueJourTransactions('${iso}')">
       ${estJourDePaie(curseur) ? `<span class="cal-paie-marqueur" title="Jour de paie">✉</span>` : ''}
       <div class="cal-month-daynum ${estAujourdhui?'today':''}">${curseur.getDate()}</div>
       ${nb>0 ? `<div class="cal-month-dots">
@@ -3397,11 +3412,11 @@ function rendreGrilleMoisCalendrier(scope, dateRef){
 
 /* Cliquer une date dans la grille du mois bascule directement vers la vue "Jour" pour cette
    date, plutôt que d'ouvrir une fenêtre par-dessus. */
-function allerVueJour(scope, iso){
+function allerVueJourTransactions(iso){
   etatCalendrierPeriode.vue = 'jour';
   etatCalendrierPeriode.dateRef = dateLocaleDepuisISO(iso);
   synchroniserMoisActif();
-  rafraichirSousOnglet(scope, 'mois');
+  afficherTransactions();
   afficherNavigationPeriode();
 }
 
@@ -3412,16 +3427,16 @@ function allerVueJour(scope, iso){
 /* Carte à disposition FIXE en 2 lignes, identique peu importe le tri ou le type de dépense :
    Ligne 1 = Date, Qui, % (celui de la personne affichée comme "Qui"), puis Montant à droite.
    Ligne 2 = Note, puis Catégorie à droite. */
-function rendreCarteDepenseHTML(e, scope){
+function rendreCarteDepenseHTML(e){
   const dotClass = e.who;
   const quiLabel = e.estCompte ? 'Compte conjoint' : libellePersonne(e.who);
   const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
   const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
   /* Le % affiché correspond toujours à la part de la personne indiquée comme "Qui" (pas
-     toujours Gabriel) : pas besoin d'écrire son nom une deuxième fois, il est déjà juste à
-     côté. */
+     toujours Gabriel), et seulement pour une dépense conjointe (une dépense personnelle
+     n'a pas de partage à afficher). */
   let pourcentageAffiche = '';
-  if(scope==='conjoint' && e.pourcentageP1!=null){
+  if(e.type==='conjointe' && e.pourcentageP1!=null){
     const pct = e.who==='p2' ? (100 - e.pourcentageP1) : e.pourcentageP1;
     pourcentageAffiche = `<span class="cal-agenda-pct">${pct}%</span>`;
   }
@@ -3465,30 +3480,30 @@ function trierListeDepenses(items, tri){
   return triees;
 }
 
-function wirerTriAgenda(scope){
+function wirerTriAgendaTransactions(){
   /* Sécurité : si un tri par Qui/Catégorie/Note était actif avant leur retrait, on retombe
      sur Date plutôt que de laisser un état invalide. */
-  if(!['Date','Montant'].includes(etatTri[scope].key)) etatTri[scope].key = 'Date';
-  const sel = document.getElementById(`agenda-tri-${scope}`);
-  const dir = document.getElementById(`agenda-tri-dir-${scope}`);
+  if(!['Date','Montant'].includes(etatTri.transactions.key)) etatTri.transactions.key = 'Date';
+  const sel = document.getElementById('agenda-tri-transactions');
+  const dir = document.getElementById('agenda-tri-dir-transactions');
   if(sel){
-    sel.value = etatTri[scope].key;
-    sel.addEventListener('change', ()=>{ etatTri[scope].key = sel.value; afficherCalendrierRecurrent(scope); });
+    sel.value = etatTri.transactions.key;
+    sel.addEventListener('change', ()=>{ etatTri.transactions.key = sel.value; afficherTransactions(); });
   }
   if(dir) dir.addEventListener('click', ()=>{
-    etatTri[scope].dir = etatTri[scope].dir==='asc' ? 'desc' : 'asc';
-    afficherCalendrierRecurrent(scope);
+    etatTri.transactions.dir = etatTri.transactions.dir==='asc' ? 'desc' : 'asc';
+    afficherTransactions();
   });
 }
 
 /* Vue "agenda", utilisée pour Jour/Semaine/Paie/Mois/Année — même carte partout, TOUJOURS en
    liste à plat (aucun regroupement par jour) : le tri se comporte donc exactement pareil peu
    importe le critère choisi. Le contrôle de tri lui-même vit maintenant dans la barre
-   d'outils commune (voir rendreBarreOutilsHTML), pas ici. */
-function rendreAgendaCorpsHTML(scope, debut, fin, tri){
-  const items = trierListeDepenses(depensesPourCalendrier(scope, debut, fin), tri);
+   d'outils commune (voir rendreBarreOutilsTransactionsHTML), pas ici. */
+function rendreAgendaCorpsHTMLTransactions(debut, fin, tri){
+  const items = trierListeDepenses(depensesPourTransactions(debut, fin), tri);
   const corps = items.length
-    ? items.map(e=>rendreCarteDepenseHTML(e, scope)).join('')
+    ? items.map(e=>rendreCarteDepenseHTML(e)).join('')
     : '<div class="cal-agenda-empty">Aucune dépense pour cette période</div>';
   return corps;
 }
@@ -3764,8 +3779,10 @@ function rafraichirOptionsFormulaires(){
 
   const whoConjoint = document.getElementById('f-who-conjoint');
   const valeurActuelle = whoConjoint.value;
-  remplirOptionsQui('f-who-conjoint', true);
-  const optionsValides = [nomsPersonnes.p1, nomsPersonnes.p2, 'Compte conjoint'];
+  remplirOptionsQui('f-who-conjoint', !ajoutConjointSansCompte);
+  const optionsValides = ajoutConjointSansCompte
+    ? [nomsPersonnes.p1, nomsPersonnes.p2]
+    : [nomsPersonnes.p1, nomsPersonnes.p2, 'Compte conjoint'];
   whoConjoint.value = optionsValides.includes(valeurActuelle) ? valeurActuelle : (nomsPersonnes[currentUser] || nomsPersonnes.p1);
 }
 
@@ -3774,7 +3791,7 @@ function capitaliser(mot){
 }
 
 function afficherNavigationPeriode(){
-  const estSection = activeMainTab === 'conjoint' || activeMainTab === 'personnel';
+  const estSection = estOngletAvecPeriode(activeMainTab);
   const sub = estSection ? activeSubtab[activeMainTab] : null;
   const nav = document.getElementById('period-nav');
   const switchEl = document.getElementById('period-type-switch');
@@ -3871,31 +3888,67 @@ document.querySelectorAll('#compare-scope-toggle button').forEach(bouton=>{
   });
 });
 
+/* Personnel/Conjoint cochés dans le menu ☰ ("scope" au sens des DONNÉES : qui possède la
+   dépense — à ne pas confondre avec l'onglet PRINCIPAL affiché, qui est maintenant
+   Transactions/Résumé/Compte/Budget). Compte conjoint compte comme du Conjoint ici : Résumé
+   et Budget n'ont jamais distingué les dépenses payées par le compte des autres dépenses
+   conjointes, seule Transactions fait cette distinction visuelle. */
+function personnelCoche(){ return !filtresTransactions.typesCaches.includes('personnel'); }
+function conjointCoche(){ return !filtresTransactions.typesCaches.includes('conjoint'); }
+
+function afficherResumePage(){
+  const persoOn = personnelCoche(), conjointOn = conjointCoche();
+  /* "+ Conjoint" (l'ancien bouton) est maintenant simplement : les deux cases sont cochées
+     en même temps. Le bloc Personnel inclut alors la part personnelle des dépenses
+     conjointes, exactement comme avant. */
+  inclureConjointDansPersonnel = persoOn && conjointOn;
+  const blocConjoint = document.getElementById('resume-bloc-conjoint');
+  const blocPersonnel = document.getElementById('resume-bloc-personnel');
+  blocConjoint.style.display = conjointOn ? '' : 'none';
+  blocPersonnel.style.display = persoOn ? '' : 'none';
+  /* Les mêmes tableaux (stats + graphiques) s'affichent peu importe la période choisie —
+     seules les valeurs à l'intérieur changent, calculées pour la période sélectionnée
+     (resume-annee-* est un ancien bloc "Année" désormais fusionné dans "Mois", toujours
+     masqué). */
+  ['conjoint','personnel'].forEach(s=>{
+    const moisBlock = document.getElementById(`resume-mois-${s}`);
+    const anneeBlock = document.getElementById(`resume-annee-${s}`);
+    const anneeStats = document.getElementById(`annee-stats-${s}`);
+    if(moisBlock) moisBlock.style.display = '';
+    if(anneeBlock) anneeBlock.style.display = 'none';
+    if(anneeStats) anneeStats.style.display = 'none';
+  });
+  if(conjointOn) afficherResumeUnifie('conjoint');
+  if(persoOn) afficherResumeUnifie('personnel');
+}
+
+function afficherBudgetPage(){
+  const persoOn = personnelCoche(), conjointOn = conjointCoche();
+  inclureConjointDansPersonnel = persoOn && conjointOn;
+  const blocConjoint = document.getElementById('budget-bloc-conjoint');
+  const blocPersonnel = document.getElementById('budget-bloc-personnel');
+  blocConjoint.style.display = conjointOn ? '' : 'none';
+  blocPersonnel.style.display = persoOn ? '' : 'none';
+  if(conjointOn) afficherSectionBudget('conjoint');
+  if(persoOn) afficherSectionBudget('personnel');
+}
+
 function rafraichirSousOnglet(scope, sub){
   /* S'assure que les occurrences des récurrences couvrent bien la période consultée, même
      très loin dans le futur, AVANT de dessiner quoi que ce soit. */
   const borne = bornePeriode(etatCalendrierPeriode.vue, etatCalendrierPeriode.dateRef);
   assurerHorizon(borne.fin);
 
-  if(sub==='mois'){
-    /* Le calendrier, l'échéancier du compte conjoint et la liste (mode "Liste" du
-       calendrier) vivent maintenant tous dans "Transactions" (ex-"Mois"). Les tableaux de
-       chiffres (stats, graphiques) vivent dans "Résumé". */
-    afficherRecurrencesScope(scope);
+  if(scope==='transactions'){
+    /* Vue fusionnée (Personnel + Conjoint + Compte conjoint), filtrée par les cases à
+       cocher du menu ☰ — plus de scope à distinguer ici, `sub` vaut toujours 'mois'. */
+    afficherTransactions();
   } else if(sub==='resume'){
-    const moisBlock = document.getElementById(`resume-mois-${scope}`);
-    const anneeBlock = document.getElementById(`resume-annee-${scope}`);
-    const anneeStats = document.getElementById(`annee-stats-${scope}`);
-    /* Les mêmes tableaux (stats + graphiques) s'affichent peu importe la période choisie —
-       seules les valeurs à l'intérieur changent, calculées pour la période sélectionnée. */
-    if(moisBlock) moisBlock.style.display = '';
-    if(anneeBlock) anneeBlock.style.display = 'none';
-    if(anneeStats) anneeStats.style.display = 'none';
-    afficherResumeUnifie(scope);
+    afficherResumePage();
   } else if(sub==='compte'){
     afficherEcheancierCompteConjoint();
   } else if(sub==='budget'){
-    afficherSectionBudget(scope);
+    afficherBudgetPage();
   }
 }
 
@@ -3908,7 +3961,7 @@ function rafraichirActif(){
   if(currentSession && currentUser) synchroniserEcheancierNotifications(echeancierPourNotifications(executerMoteurCompte()));
   appliquerTheme();
   rafraichirOptionsFormulaires();
-  if(activeMainTab==='conjoint' || activeMainTab==='personnel'){
+  if(estOngletAvecPeriode(activeMainTab)){
     rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   } else if(activeMainTab==='comparer'){
     afficherComparaison();
@@ -3933,19 +3986,19 @@ function changerMois(amount){
   const date = new Date(moisActif.year, moisActif.month + amount, 1);
   etatCalendrierPeriode.dateRef = date;
   synchroniserMoisActif();
-  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
+  if(estOngletAvecPeriode(activeMainTab)) rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   afficherNavigationPeriode();
 }
 function allerAuMoisActuel(){
   etatCalendrierPeriode.dateRef = debutJour(new Date());
   synchroniserMoisActif();
-  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
+  if(estOngletAvecPeriode(activeMainTab)) rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   afficherNavigationPeriode();
 }
 function changerAnnee(amount){
   etatCalendrierPeriode.dateRef = new Date(anneeActive + amount, etatCalendrierPeriode.dateRef.getMonth(), 1);
   synchroniserMoisActif();
-  if(activeMainTab==='conjoint' || activeMainTab==='personnel') rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
+  if(estOngletAvecPeriode(activeMainTab)) rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
   afficherNavigationPeriode();
 }
 
@@ -3988,16 +4041,16 @@ document.querySelectorAll('.compare-toggle button[data-mode]').forEach(button=>b
 document.getElementById('compare-a').addEventListener('change',afficherComparaison);
 document.getElementById('compare-b').addEventListener('change',afficherComparaison);
 
-/* Gestion des onglets principaux (Conjoint / Personnel / Comparer) */
+/* Gestion des onglets principaux (Transactions / Résumé / Compte / Budget / Comparer) */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-    document.getElementById('header-title').textContent = btn.textContent;
+    document.getElementById('header-title').innerHTML = btn.innerHTML;
     activeMainTab = btn.dataset.tab;
-    if(activeMainTab==='conjoint' || activeMainTab==='personnel'){
+    if(estOngletAvecPeriode(activeMainTab)){
       rafraichirSousOnglet(activeMainTab, activeSubtab[activeMainTab]);
     } else if(activeMainTab==='comparer'){
       afficherComparaison();
@@ -4023,6 +4076,9 @@ document.getElementById('settings-modal').addEventListener('click', (e)=>{
 function ouvrirMenu(){
   document.getElementById('side-drawer').classList.add('open');
   document.getElementById('side-drawer-overlay').classList.add('open');
+  /* Les cases doivent refléter l'état actuel même si on ouvre le menu depuis Résumé/Compte/
+     Budget, où elles n'ont pas forcément été redessinées récemment. */
+  rendreFiltresTransactionsDrawer();
 }
 function fermerMenu(){
   document.getElementById('side-drawer').classList.remove('open');
@@ -4035,23 +4091,6 @@ document.getElementById('side-drawer').addEventListener('click', (e)=>{
 });
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') fermerMenu();
-});
-
-/* Gestion des sous-onglets (Mois / Année / Budget) à l'intérieur de chaque section */
-document.querySelectorAll('.subtab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const scope = btn.dataset.scope, sub = btn.dataset.sub;
-    document.querySelectorAll(`.subtab-btn[data-scope="${scope}"]`).forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll(`.subtab-panel[data-scope="${scope}"]`).forEach(p=>p.classList.remove('active'));
-    document.querySelector(`.subtab-panel[data-scope="${scope}"][data-sub="${sub}"]`).classList.add('active');
-    activeSubtab[scope] = sub;
-    /* Transactions, Résumé et Budget partagent maintenant directement le même état de
-       période (etatCalendrierPeriode) : rien à synchroniser, la sélection reste
-       automatiquement la même partout. */
-    rafraichirSousOnglet(scope, sub);
-    afficherNavigationPeriode();
-  });
 });
 
 /* Ajout d'une dépense (en envoyant les colonnes avec majuscules). Le type est désormais
@@ -4192,7 +4231,7 @@ function reinitialiserFormulaireAjoutDepense(scope){
   document.getElementById(`f-fin-date-${scope}`).value = '';
   appliquerAffichageFinRecurrence(`f-fin-type-${scope}`, `f-fin-nombre-field-${scope}`, `f-fin-date-field-${scope}`);
   document.getElementById(`f-fin-type-field-${scope}`).style.display = 'none';
-  document.getElementById(`form-card-${scope}`).classList.remove('mobile-add-open');
+  document.getElementById(`form-modal-${scope}`).style.display = 'none';
   /* Valeurs de base : date du jour, catégorie par défaut, et côté conjoint la personne qui
      utilise l'application avec un partage à parts égales. Sans ça, rouvrir le formulaire
      réaffichait la saisie précédente, ce qui fait facilement enregistrer une dépense avec la

@@ -95,6 +95,12 @@
     font-size:22px;
     font-weight:500;
     margin:0;
+    /* Sans ceci, l'émoji (dont la boîte de caractère naturelle est plus haute que le texte)
+       poussait la ligne et semblait "flotter" au-dessus du mot plutôt qu'à côté. */
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    line-height:1;
   }
   .user-info{
     margin-left:auto;
@@ -137,6 +143,31 @@
     background:none;
   }
   .side-drawer #open-settings:hover{background:var(--bg);color:var(--text);border-color:transparent;}
+  /* Filtres d'affichage de Transactions, rendus directement dans le menu (plus de fenêtre
+     séparée) : mêmes classes que l'ancienne fenêtre de filtres (.cal-menu-check, etc.). */
+  .side-drawer-section{padding:4px 10px;}
+  .side-drawer-section .cal-menu-section-title:first-child{margin-top:0;}
+
+  /* Bouton d'ajout de Transactions (+) : toujours visible façon Google Agenda, peu importe
+     la taille d'écran — plus de formulaire toujours affiché en bas de page. */
+  .add-fab{
+    position:fixed;right:20px;bottom:20px;width:56px;height:56px;border:0;border-radius:50%;
+    background:var(--blue);color:#fff;font-size:32px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:var(--shadow-2);z-index:700;cursor:pointer;
+  }
+  .add-fab:hover{background:var(--blue-dark);}
+  .add-choix-menu{
+    position:fixed;right:20px;bottom:86px;z-index:700;
+    background:var(--surface);border-radius:12px;box-shadow:var(--shadow-2);
+    padding:6px;display:none;flex-direction:column;gap:2px;min-width:180px;
+  }
+  .add-choix-menu.open{display:flex;}
+  .add-choix-menu button{
+    text-align:left;border:none;background:none;color:var(--text);font-family:inherit;
+    font-size:14px;padding:10px 14px;border-radius:8px;cursor:pointer;
+  }
+  .add-choix-menu button:hover{background:var(--bg);}
   .chip{
     display:flex;align-items:center;gap:6px;
     background:var(--surface);
@@ -190,6 +221,10 @@
     position:relative;
     transition:color .15s ease;
   }
+  /* La boîte de caractère naturelle d'un émoji est plus haute que le texte autour : sans
+     ceci, il se plaçait au-dessus du mot plutôt qu'à côté (visible surtout dans le titre
+     de l'en-tête, qui change de taille de police selon la section). */
+  .tab-icon{display:inline-flex;align-items:center;line-height:1;vertical-align:middle;}
   .tab-btn:hover{color:var(--text);}
   .tab-btn.active{color:var(--accent-menu);}
   .tab-btn.active::after{
@@ -205,14 +240,6 @@
   .section-header{margin-bottom:18px;}
   .section-header h2{margin:0 0 4px;font-size:19px;font-weight:500;display:flex;align-items:center;gap:8px;}
   .section-header p{margin:0;font-size:13px;color:var(--text-secondary);}
-  .subtabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;}
-  .subtab-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:var(--text-secondary);padding:10px 16px;position:relative;transition:color .15s ease;}
-  .subtab-btn:hover{color:var(--text);}
-  .subtab-btn.active{color:var(--accent-menu);}
-  .subtab-btn.active::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent-menu);}
-  .subtab-panel{display:none;}
-  .subtab-panel.active{display:block;}
-
   .recurrent-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
   .recurrent-row:last-child{border-bottom:none;}
   .recurrent-row.inactive{opacity:.5;}
@@ -268,15 +295,15 @@
   }
 
   /* ===================== Calendrier des dépenses (façon Google Agenda) ===================== */
-  #calendrier-recurrent-card-conjoint, #calendrier-recurrent-card-personnel{
+  #calendrier-recurrent-card-conjoint, #calendrier-recurrent-card-personnel, #calendrier-recurrent-card-transactions{
     padding:14px 0 16px;overflow:hidden;
     /* Déborde du padding horizontal de .app pour toucher les bords de l'écran, comme
        Google Agenda (qui n'a pas de marge autour de sa grille). */
     margin-left:-20px;margin-right:-20px;width:calc(100% + 40px);
     border-left:none;border-right:none;border-radius:0;
   }
-  #calendrier-recurrent-card-conjoint .cal-head, #calendrier-recurrent-card-personnel .cal-head,
-  #calendrier-recurrent-card-conjoint .cal-nav, #calendrier-recurrent-card-personnel .cal-nav{padding:0 14px;}
+  #calendrier-recurrent-card-conjoint .cal-head, #calendrier-recurrent-card-personnel .cal-head, #calendrier-recurrent-card-transactions .cal-head,
+  #calendrier-recurrent-card-conjoint .cal-nav, #calendrier-recurrent-card-personnel .cal-nav, #calendrier-recurrent-card-transactions .cal-nav{padding:0 14px;}
   .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
   .cal-mode-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-shrink:0;}
   body.dark .cal-mode-switch{background:#2c3136;}
@@ -284,10 +311,15 @@
   .cal-mode-switch button.active{background:var(--surface);box-shadow:var(--shadow-1);}
   .cal-hamburger-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
   .cal-hamburger-btn.active{border-color:var(--blue);color:var(--blue);}
-  /* Barre d'outils du calendrier/liste : filtres à gauche, bascule grille/liste centrée
-     (visible seulement en vue Mois), tri à droite — toujours sur une seule ligne. */
-  .cal-toolbar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 14px 10px;gap:8px;}
-  .cal-toolbar-centre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);}
+  /* Barre d'outils du calendrier/liste : bascule grille/liste VRAIMENT centrée (visible
+     seulement en vue Mois) et tri à droite, sur une seule ligne. Une grille à 3 colonnes
+     (plutôt qu'un flex + un élément en position absolute) : la colonne du milieu reste
+     centrée par rapport à toute la largeur peu importe si les colonnes de gauche/droite
+     sont vides (ex. tri absent en vue grille) — un flex space-between avec un seul élément
+     visible le poussait au bord au lieu de le garder au centre. */
+  .cal-toolbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 14px 10px;gap:8px;}
+  .cal-toolbar-centre{grid-column:2;justify-self:center;}
+  .cal-toolbar .mobile-sort{grid-column:3;justify-self:end;}
   .cal-toolbar .mobile-sort{display:flex!important;gap:6px;align-items:center;}
   .cal-menu-panel{margin:0 14px 12px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface);box-shadow:var(--shadow-1);}
   .cal-menu-section-title{font-size:11px;text-transform:uppercase;color:var(--text-secondary);font-weight:600;margin:10px 0 4px;}
@@ -314,7 +346,7 @@
      dépenses), plutôt que du texte qui alourdit la vue. */
   .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border);border-left:1px solid var(--border);}
   .cal-month-dow{font-size:10px;color:var(--text-secondary);text-align:center;padding:6px 0;text-transform:uppercase;}
-  .cal-month-cell{min-height:46px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden;cursor:pointer;position:relative;}
+  .cal-month-cell{min-height:68px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden;cursor:pointer;position:relative;}
   .cal-month-cell:active{background:color-mix(in srgb, var(--blue) 6%, transparent);}
   .cal-month-cell.outside{opacity:.35;}
   .cal-month-daynum{font-size:11px;color:var(--text-secondary);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
@@ -329,6 +361,7 @@
   .cal-dot-mini.cal-p1{background:var(--blue);}
   .cal-dot-mini.cal-p2{background:var(--red);}
   .cal-dot-mini.cal-compte{background:var(--green);}
+  .cal-dot-mini.cal-personnel{background:var(--purple);}
   .cal-month-count{font-size:9px;color:var(--text-secondary);font-weight:700;line-height:1;margin-left:1px;}
 
   .cal-agenda-day{margin-bottom:14px;padding:0 14px;}
@@ -392,7 +425,6 @@
   @media (max-width:760px){
     .app{width:100%;overflow-x:hidden;}
     .tabs{justify-content:center;}
-    .subtabs{justify-content:center;}
     .tab-btn[data-tab="comparer"]{display:none;}
     .grid-2{grid-template-columns:minmax(0,1fr);}
     .grid-2 .card{min-width:0;}
@@ -423,14 +455,11 @@
   }
 
   /* Formulaire */
-  /* La carte d'ajout partage le squelette des fenêtres d'édition (.modal-header /
-     .modal-body / .modal-footer) : mêmes marges, même séparateur, même alignement du titre.
-     Elle annule donc le padding de .card, que ces trois blocs fournissent eux-mêmes. */
-  .form-card{margin-bottom:24px;padding:0;overflow:hidden;}
+  /* La carte d'ajout (Transactions) est maintenant une fenêtre comme les autres — voir
+     .edit-modal/.edit-card, qu'elle partage — avec juste ce complément : le bouton Ajouter
+     occupe toute la largeur du pied, au lieu d'être aligné à droite comme Sauvegarder. */
   .form-card .modal-footer{justify-content:stretch;}
   .form-card .modal-footer .btn-add{width:100%;}
-  /* Le bouton de fermeture ne sert que sur mobile, où la carte s'ouvre en plein écran. */
-  .form-card .mobile-close-btn{display:none;}
   /* Les formulaires d'ajout utilisent EXACTEMENT la même grille que les fenêtres d'édition
      (.modal-grid) : deux colonnes, mêmes espacements, et la largeur pleine demandée
      explicitement via .pleine-largeur. Avant, cette grille avait 5 colonnes et forçait la
@@ -522,7 +551,6 @@
   body.dark .type-pill{background:#2c3136;}
   .type-pill.personnelle{background:#fff3cd;color:#8a6100;}
   body.dark .type-pill.personnelle{background:#4a3f1f;color:#f5d78a;}
-  .mobile-add-btn,.mobile-close-btn{display:none;}
   .modal-close-btn{
     display:block;
     float:right;
@@ -539,27 +567,10 @@
   .modal-close-btn:hover{color:var(--text);background:rgba(0,0,0,.06);}
   body.dark .modal-close-btn:hover{background:rgba(255,255,255,.08);}
   @media (max-width:760px){
-    /* Même correctif que les fenêtres d'édition : `inset:0` valait la hauteur de la fenêtre,
-       donc le bouton « Ajouter » passait sous le clavier. On borne sur la hauteur réellement
-       visible et on resserre les marges pour gagner des lignes. */
-    /* En plein écran, la carte d'ajout se comporte EXACTEMENT comme une fenêtre d'édition :
-       entête figé, corps défilant, pied figé, bornés sur la hauteur réellement visible. */
-    .form-card{display:none;position:fixed;left:0;top:0;right:0;margin:0;padding:0;z-index:800;
-      border-radius:0;
-      height:var(--hauteur-visible, 100dvh);max-height:var(--hauteur-visible, 100dvh);
-      flex-direction:column;}
-    .form-card.mobile-add-open{display:flex;}
-    .form-card .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-    .form-card .modal-header, .form-card .modal-footer{flex:0 0 auto;}
-    .form-card .mobile-close-btn{display:block;}
-
-    /* Clavier ouvert : mêmes règles que les fenêtres d'édition, l'entête et le pied
-       repassent dans le flux pour que tous les champs restent atteignables. */
-    body.clavier-ouvert .form-card{display:block;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-    body.clavier-ouvert .form-card .modal-body{overflow:visible;}
-    body.clavier-ouvert .form-card .modal-header{position:sticky;top:0;z-index:2;}
-
-    /* Champs resserrés pour tenir au-dessus du clavier — appliqué aussi aux fenêtres
+    /* Le formulaire d'ajout (.form-card) porte aussi la classe .edit-card : les règles
+       plein écran / clavier ouvert de .edit-card (voir plus bas) s'appliquent donc déjà
+       telles quelles, sans avoir besoin d'un jeu de règles séparé ici.
+       Champs resserrés pour tenir au-dessus du clavier — appliqué aussi aux fenêtres
        d'édition, pour que la densité soit la même partout. */
     .form-card .form-grid, .edit-card .modal-grid{gap:10px 12px;}
     .form-card .field label, .edit-card .field label{margin-bottom:4px;}
@@ -568,8 +579,6 @@
     .modal-header{padding:14px 16px;}
     .modal-body{padding:14px 16px;}
     .modal-footer{padding:12px 16px;}
-
-    .mobile-add-btn{display:flex;position:fixed;right:20px;bottom:20px;width:56px;height:56px;border:0;border-radius:50%;background:var(--blue);color:#fff;font-size:32px;line-height:1;align-items:center;justify-content:center;box-shadow:var(--shadow-2);z-index:700;cursor:pointer;}
   }
 
   /* Tableau */
@@ -686,7 +695,6 @@
   body.dark tbody tr:hover{background:#2b3035;} body.dark tbody td{border-bottom-color:#343a40;}
   body.dark .cat-pill{background:#303b4a;color:#b8d1f5;}
   .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
-  .toggle-perso-scope{display:flex;width:fit-content;margin-left:auto;margin-right:auto;}
   .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:20px;cursor:pointer;}
   .compare-toggle button.active{background:var(--blue);color:#fff;}
   .compare-selects{display:flex;gap:16px;align-items:center;margin-bottom:24px;flex-wrap:wrap;}
