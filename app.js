@@ -1068,7 +1068,11 @@ function calculerMoteurCompte(entree){
   const coussin = Math.max(0, entree.coussin || 0);
   const ref = entree.reference || null;
   const ouverture = { p1: ref ? (ref.p1 || 0) : 0, p2: ref ? (ref.p2 || 0) : 0 };
-  const compteDansEquilibre = m => !ref || m.jour > ref.jour;
+  /* Un dépôt ne bouge l'équilibre de personne que s'il est attribué à quelqu'un en propre
+     (pct 100 ou 0, ex. « Dépôt de Gabriel »). Un dépôt partagé (ex. 50/50) entre simplement
+     dans le solde commun : il n'appartient à personne en particulier, donc n'avance ni ne
+     retarde qui que ce soit. Les dépenses, elles, comptent toujours (chacun doit sa part). */
+  const compteDansEquilibre = m => (!ref || m.jour > ref.jour) && (!m.estRevenu || m.deposant != null);
 
   /* Mouvements du compte, avec la part de chacun. */
   const mvts = (entree.mouvements || []).map(m => {
@@ -1224,10 +1228,6 @@ async function enregistrerReglagesCompte(coussinDollars){
   await sauvegarderEtatMoteur({ COUSSIN_CENTS: Math.max(0, Math.round((coussinDollars || 0) * 100)) });
   rafraichirActif();
 }
-async function remettreEquilibresAZero(){
-  await sauvegarderEtatMoteur({ REFERENCE_JOUR: numeroJour(formaterDateISO(new Date())), OUVERTURE_P1: 0, OUVERTURE_P2: 0 });
-  rafraichirActif();
-}
 
 /* ===================== COMPTE CONJOINT : DONNÉES POUR LE MOTEUR ===================== */
 function estDepotPersonne(e){ return !!e.estRevenu && (e.pourcentageP1 === 100 || e.pourcentageP1 === 0); }
@@ -1370,8 +1370,7 @@ function afficherBlocSoldeCompte(r, per){
       ${depart ? `<div class="cs-texte cs-depart">Au début de la période (${dateCourte(per.debut)}) : ${argent(depart.solde)}</div>` : ''}
       <div class="cs-label cs-label-equilibre">Équilibre de chacun${contientAuj ? '' : ` au ${dateCourte(per.fin)}`}</div>
       <div class="cs-parts">${equilibre('p1')}${equilibre('p2')}</div>
-      <div class="cs-texte">Ce que la personne a déposé, moins sa part des dépenses. L'argent au compte au-delà de ça est le coussin commun.
-        <button class="solde-bloc-lien cs-lien" id="cs-remise-zero">Remettre à zéro</button></div>
+      <div class="cs-texte">Ce que la personne a déposé, moins sa part des dépenses. L'argent au compte au-delà de ça est le coussin commun.</div>
     </div>
     <div class="cs-minimum">
       <label for="cs-min">Minimum du compte</label>
@@ -1391,11 +1390,17 @@ function afficherBlocSoldeCompte(r, per){
     await enregistrerReglagesCompte(c);
   }));
   champ.addEventListener('keydown', e => { if(e.key === 'Enter' && ok.style.display !== 'none'){ e.preventDefault(); ok.click(); } });
-  const remise = document.getElementById('cs-remise-zero');
-  remise.addEventListener('click', actionVerrouillee(remise, async () => {
-    if(!confirm("Remettre les deux équilibres à 0 à partir d'aujourd'hui ? L'argent au compte devient un coussin commun.")) return;
-    await remettreEquilibresAZero();
-  }));
+}
+
+/* Proposition (purement informative) : à combien de dépôts espacés de JOURS_PROPOSITION jours
+   correspond le manque d'une personne, pour aider à décider combien créer soi-même la prochaine
+   fois. Ne crée jamais rien — c'est juste un calcul affiché en texte. */
+const JOURS_PROPOSITION = 14; /* aux deux semaines */
+function propositionDepot(manqueCents, joursRestants){
+  const nbPeriodes = Math.max(1, Math.ceil(Math.max(1, joursRestants) / JOURS_PROPOSITION));
+  if(nbPeriodes <= 1) return '';
+  const parPeriode = arrondiDollarSup(manqueCents / nbPeriodes);
+  return ` Soit environ ${argent(parPeriode)} aux 2 semaines (${nbPeriodes} dépôts d'ici là).`;
 }
 
 /* Ce qu'il reste à déposer à une personne pour payer sa part d'ici la fin de la période. */
@@ -1406,7 +1411,8 @@ function ligneEquilibrePersonne(r, X, per){
   const valeur = fin ? fin.equilibres[X] : r.equilibres[X];
   const quand = per.fin >= r.fin ? "d'ici un an" : `d'ici le ${dateCourte(per.fin)}`;
   if(valeur < 0){
-    return `<div class="cs-correction"><span><strong>${nom}</strong> : il lui manque ${argent(-valeur)} ${quand} pour payer sa part.</span></div>`;
+    const suggestion = propositionDepot(-valeur, per.fin - r.aujourdhui);
+    return `<div class="cs-correction"><span><strong>${nom}</strong> : il lui manque ${argent(-valeur)} ${quand} pour payer sa part.${suggestion}</span></div>`;
   }
   if(valeur > 0){
     return `<div class="cs-correction"><span><strong>${nom}</strong> : ${quand}, ses dépôts dépasseront sa part de ${argent(valeur)}.</span></div>`;
@@ -4179,8 +4185,10 @@ function reinitialiserFormulaireAjoutDepense(scope){
     appliquerChoixQuiConjoint('f-who-conjoint','f-compte-repartition-conjoint','f-est-revenu-field-conjoint');
     document.getElementById('f-est-depot-conjoint').checked = false;
     appliquerAffichageDepotAjout();
+    appliquerAffichageCategoriePourRevenu('f-est-revenu-conjoint','f-category-field-conjoint');
   } else {
     document.getElementById('f-est-revenu-personnel').checked = false;
+    appliquerAffichageCategoriePourRevenu('f-est-revenu-personnel','f-category-field-personnel');
   }
   rafraichirOptionsFormulaires();
   majLibellesRepartition();
