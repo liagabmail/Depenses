@@ -2327,7 +2327,6 @@ function rendreVueDepotPlanifie(){
   document.getElementById('occurrence-modal-content').innerHTML = `
     <div class="modal-header">
       <h3>${echapperHTML(d.note || d.category)} · ${montantAffiche}<span class="modal-sous-titre">${echapperHTML(sousTitre)}</span></h3>
-      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
     </div>
     <div class="modal-body">
       ${du ? `
@@ -2351,10 +2350,10 @@ function rendreVueDepotPlanifie(){
     </div>
     <div class="modal-footer">
       <button class="btn-secondary btn-danger" id="occ-depot-supprimer">Supprimer</button>
-      ${passe ? `<button class="btn-secondary" id="occ-depot-fermer">Fermer</button>` : `<button class="btn-secondary" id="occ-depot-modifier">Modifier</button>`}
+      ${passe ? '' : `<button class="btn-secondary" id="occ-depot-modifier">Modifier</button>`}
+      <button class="btn-secondary" id="occ-depot-fermer">Fermer</button>
     </div>`;
   const lier = (id, f) => { const el = document.getElementById(id); if(el) el.addEventListener('click', f); };
-  lier('occ-fermer', fermerOccurrenceModal);
   lier('occ-depot-fermer', fermerOccurrenceModal);
   lier('occ-depot-modifier', () => rendreChoixPorteeDepot('modifier'));
   lier('occ-depot-supprimer', () => passe
@@ -2388,7 +2387,6 @@ function rendreChoixPorteeDepot(action){
   document.getElementById('occurrence-modal-content').innerHTML = `
     <div class="modal-header">
       <h3>${verbe} une occurrence à confirmer<span class="modal-sous-titre">${echapperHTML(d.note || '')}</span></h3>
-      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
     </div>
     <div class="modal-body">
       <div class="portee-choix">
@@ -2407,7 +2405,6 @@ function rendreChoixPorteeDepot(action){
       </div>
     </div>
     <div class="modal-footer"><button class="btn-secondary" id="portee-annuler">Retour</button></div>`;
-  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
   document.getElementById('portee-annuler').addEventListener('click', rendreVueDepotPlanifie);
   document.querySelectorAll('#occurrence-modal-content [data-portee]').forEach(b => b.addEventListener('click', actionVerrouillee(b, async () => {
     const portee = b.dataset.portee;
@@ -2426,7 +2423,6 @@ function rendreFormulaireDepot(portee){
   document.getElementById('occurrence-modal-content').innerHTML = `
     <div class="modal-header">
       <h3>Modifier l'occurrence à confirmer<span class="modal-sous-titre">${titre}</span></h3>
-      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
     </div>
     <div class="modal-body">
       <div class="modal-grid">
@@ -2441,7 +2437,6 @@ function rendreFormulaireDepot(portee){
       <button class="btn-secondary" id="dep-mod-annuler">Retour</button>
       <button class="btn-add" id="dep-mod-enregistrer">Enregistrer</button>
     </div>`;
-  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
   document.getElementById('dep-mod-annuler').addEventListener('click', () => rendreChoixPorteeDepot('modifier'));
   const freq = document.getElementById('dep-mod-frequence');
   if(freq) freq.addEventListener('click', () => { fermerOccurrenceModal(); ouvrirEditionRecurrence(d.recurrenceId); });
@@ -2466,7 +2461,6 @@ function rendreVueDepotConfirme(){
   document.getElementById('occurrence-modal-content').innerHTML = `
     <div class="modal-header">
       <h3>${echapperHTML(d.note || d.category)} confirmée · ${montantAffiche}<span class="modal-sous-titre">${echapperHTML(quiLabel)} · ${echapperHTML(dateLongueISO(d.date))}</span></h3>
-      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
     </div>
     <div class="modal-body">
       <div style="color:var(--text-secondary);font-size:14px;">Une transaction confirmée ne se modifie pas. En cas d'erreur, annulez la confirmation : elle redevient à confirmer.</div>
@@ -2475,7 +2469,6 @@ function rendreVueDepotConfirme(){
       <button class="btn-secondary btn-danger" id="occ-annuler-confirmation">Annuler la confirmation</button>
       <button class="btn-secondary" id="occ-fermer-bas">Fermer</button>
     </div>`;
-  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
   document.getElementById('occ-fermer-bas').addEventListener('click', fermerOccurrenceModal);
   const bouton = document.getElementById('occ-annuler-confirmation');
   bouton.addEventListener('click', actionVerrouillee(bouton, async () => {
@@ -3478,7 +3471,6 @@ function demanderPortee(depense, { titre, sousTitre, boutons }){
     contenu.innerHTML = `
       <div class="modal-header">
         <h3>${echapperHTML(titre)}<span class="modal-sous-titre">${echapperHTML(sousTitre)}</span></h3>
-        <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
       </div>
       <div class="modal-body">
         <div class="portee-choix">
@@ -3494,7 +3486,6 @@ function demanderPortee(depense, { titre, sousTitre, boutons }){
       </div>
     `;
     const terminer = (valeur)=>{ document.getElementById('occurrence-modal').style.display='none'; occurrenceCourante = null; resolve(valeur); };
-    document.getElementById('occ-fermer').addEventListener('click', ()=>terminer(null));
     document.getElementById('portee-annuler').addEventListener('click', ()=>terminer(null));
     contenu.querySelectorAll('.portee-option').forEach(btn=>{
       btn.addEventListener('click', ()=>terminer(boutons[Number(btn.dataset.porteeIndex)].cle));
@@ -4128,7 +4119,7 @@ document.getElementById('edit-rec-qui').addEventListener('change', ()=>{
   if(!estCompte) document.getElementById('edit-rec-est-revenu').checked = false;
   appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
 });
-document.getElementById('close-edit-recurrent').addEventListener('click', ()=>document.getElementById('edit-recurrent-modal').style.display='none');
+document.getElementById('cancel-edit-recurrent').addEventListener('click', ()=>document.getElementById('edit-recurrent-modal').style.display='none');
 document.getElementById('delete-edit-recurrent').addEventListener('click', actionVerrouillee(document.getElementById('delete-edit-recurrent'), async ()=>{
   if(recurrenceEnEdition && estSerieAConfirmer(recurrenceEnEdition)){
     if(confirm("Supprimer les occurrences à confirmer de cette série (à venir et non confirmées) ? Les occurrences déjà confirmées restent.")){
@@ -5179,7 +5170,6 @@ function ouvrirEdition(id){
 function fermerEditModal(){
   document.getElementById('edit-modal').style.display='none';
 }
-document.getElementById('close-edit').addEventListener('click', fermerEditModal);
 document.getElementById('cancel-edit').addEventListener('click', fermerEditModal);
 
 const editMenuBtn = document.getElementById('edit-menu-btn');

@@ -174,7 +174,6 @@
       <div class="card form-card" id="form-card-conjoint">
         <div class="modal-header">
           <h3>Ajouter une dépense conjointe</h3>
-          <button class="modal-close-btn mobile-close-btn" id="close-add-conjoint" aria-label="Fermer">&times;</button>
         </div>
         <div class="modal-body">
         <div class="form-grid">
@@ -279,6 +278,7 @@
         </div>
         </div>
         <div class="modal-footer">
+          <button class="btn-secondary" id="close-add-conjoint">Annuler</button>
           <button class="btn-add" id="btn-add-conjoint">Ajouter</button>
         </div>
       </div>
@@ -373,7 +373,6 @@
       <div class="card form-card" id="form-card-personnel">
         <div class="modal-header">
           <h3>Ajouter une dépense personnelle</h3>
-          <button class="modal-close-btn mobile-close-btn" id="close-add-personnel" aria-label="Fermer">&times;</button>
         </div>
         <div class="modal-body">
         <div class="form-grid">
@@ -466,6 +465,7 @@
         </div>
         </div>
         <div class="modal-footer">
+          <button class="btn-secondary" id="close-add-personnel">Annuler</button>
           <button class="btn-add" id="btn-add-personnel">Ajouter</button>
         </div>
       </div>
@@ -570,7 +570,6 @@
 <div class="edit-modal" id="settings-modal"><div class="edit-card">
   <div class="modal-header">
     <h3>Paramètres<span class="modal-sous-titre">Compte, apparence, notifications et données</span></h3>
-    <button class="modal-close-btn" id="close-settings-modal" aria-label="Fermer">&times;</button>
   </div>
   <div class="modal-body">
       <div class="card settings-section"><h3>Compte</h3>
@@ -700,10 +699,12 @@
         </div>
       </div>
   </div>
+  <div class="modal-footer">
+    <button class="btn-secondary" id="close-settings-modal">Fermer</button>
+  </div>
 </div></div>
 
 <div class="edit-modal" id="export-modal"><div class="edit-card">
-  <button class="modal-close-btn" id="close-export" aria-label="Fermer">&times;</button>
   <h3 style="margin:0 0 14px;color:var(--text-secondary);font-size:14px;font-weight:500;">Exporter les dépenses</h3>
   <div class="compare-toggle" id="export-toggle" style="margin-bottom:16px;">
     <button class="active" data-mode="mois">Un mois</button>
@@ -718,6 +719,7 @@
     <select id="export-annee"></select>
   </div>
   <div class="edit-actions" style="margin-top:18px;">
+    <button class="btn-secondary" id="close-export">Fermer</button>
     <button class="btn-add" id="do-export">Télécharger</button>
   </div>
 </div></div>
@@ -738,7 +740,6 @@
         <button type="button" class="menu-dropdown-item menu-dropdown-item-danger" id="delete-edit">Supprimer</button>
       </div>
     </div>
-    <button class="modal-close-btn" id="close-edit" aria-label="Fermer">&times;</button>
   </div>
   <div class="modal-body">
     <div class="modal-grid">
@@ -819,7 +820,6 @@
 <div class="edit-modal" id="edit-recurrent-modal"><div class="edit-card">
   <div class="modal-header">
     <h3 id="edit-rec-titre">Modifier un paiement récurrent<span class="modal-sous-titre" id="edit-rec-sous-titre"></span></h3>
-    <button class="modal-close-btn" id="close-edit-recurrent" aria-label="Fermer">&times;</button>
   </div>
   <div class="modal-body">
     <div class="modal-grid">
@@ -899,6 +899,7 @@
   </div>
   <div class="modal-footer">
     <button class="btn-secondary btn-danger" id="delete-edit-recurrent">Supprimer</button>
+    <button class="btn-secondary" id="cancel-edit-recurrent">Annuler</button>
     <button class="btn-add" id="save-edit-recurrent">Sauvegarder</button>
   </div>
 </div></div>
@@ -908,8 +909,10 @@
 </div></div>
 
 <div class="edit-modal" id="jour-modal"><div class="edit-card" id="jour-modal-card">
-  <button class="modal-close-btn" id="close-jour-modal" aria-label="Fermer">&times;</button>
   <div id="jour-modal-content"></div>
+  <div class="modal-footer">
+    <button class="btn-secondary" id="close-jour-modal">Fermer</button>
+  </div>
 </div></div>
 
 <!-- Détail d'un dépôt au compte conjoint : montre ligne par ligne d'où vient le montant
@@ -923,10 +926,12 @@
 <div class="edit-modal" id="cal-filtres-modal"><div class="edit-card">
   <div class="modal-header">
     <h3>Filtres d'affichage<span class="modal-sous-titre">Ce qui apparaît dans le calendrier</span></h3>
-    <button class="modal-close-btn" id="close-cal-filtres-modal" aria-label="Fermer">&times;</button>
   </div>
   <div class="modal-body">
     <div id="cal-filtres-modal-content"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-secondary" id="close-cal-filtres-modal">Fermer</button>
   </div>
 </div></div>
 

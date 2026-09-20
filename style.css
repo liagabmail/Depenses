@@ -433,10 +433,6 @@
      .modal-body / .modal-footer) : mêmes marges, même séparateur, même alignement du titre.
      Elle annule donc le padding de .card, que ces trois blocs fournissent eux-mêmes. */
   .form-card{margin-bottom:24px;padding:0;overflow:hidden;}
-  .form-card .modal-footer{justify-content:stretch;}
-  .form-card .modal-footer .btn-add{width:100%;}
-  /* Le bouton de fermeture ne sert que sur mobile, où la carte s'ouvre en plein écran. */
-  .form-card .mobile-close-btn{display:none;}
   /* Les formulaires d'ajout utilisent EXACTEMENT la même grille que les fenêtres d'édition
      (.modal-grid) : deux colonnes, mêmes espacements, et la largeur pleine demandée
      explicitement via .pleine-largeur. Avant, cette grille avait 5 colonnes et forçait la
@@ -528,22 +524,7 @@
   body.dark .type-pill{background:#2c3136;}
   .type-pill.personnelle{background:#fff3cd;color:#8a6100;}
   body.dark .type-pill.personnelle{background:#4a3f1f;color:#f5d78a;}
-  .mobile-add-btn,.mobile-close-btn{display:none;}
-  .modal-close-btn{
-    display:block;
-    float:right;
-    border:0;
-    background:none;
-    color:var(--text-secondary);
-    font-size:24px;
-    line-height:1;
-    cursor:pointer;
-    padding:4px;
-    margin:-6px -6px 0 0;
-    border-radius:6px;
-  }
-  .modal-close-btn:hover{color:var(--text);background:rgba(0,0,0,.06);}
-  body.dark .modal-close-btn:hover{background:rgba(255,255,255,.08);}
+  .mobile-add-btn{display:none;}
   .menu-kebab{position:relative;}
   .modal-kebab-btn{
     display:block;border:0;background:none;color:var(--text-secondary);
@@ -557,6 +538,10 @@
     box-shadow:var(--shadow-2);min-width:160px;padding:6px;
     display:flex;flex-direction:column;gap:2px;
   }
+  /* `[hidden]` doit reprendre le dessus sur le display:flex ci-dessus : un sélecteur de
+     classe l'emporte sinon sur la règle UA `[hidden]{display:none}`, et le menu resterait
+     visible en permanence malgré l'attribut `hidden` posé/retiré en JS. */
+  .menu-dropdown[hidden]{ display:none; }
   .menu-dropdown-item{
     border:0;background:none;color:var(--text);text-align:left;
     font:500 14px inherit;padding:9px 10px;border-radius:6px;cursor:pointer;
@@ -577,7 +562,6 @@
     .form-card.mobile-add-open{display:flex;}
     .form-card .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
     .form-card .modal-header, .form-card .modal-footer{flex:0 0 auto;}
-    .form-card .mobile-close-btn{display:block;}
 
     /* Clavier ouvert : mêmes règles que les fenêtres d'édition, l'entête et le pied
        repassent dans le flux pour que tous les champs restent atteignables. */
