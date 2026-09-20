@@ -3232,30 +3232,47 @@ async function diviserRecurrenceAPartirDe(depense, nv){
     else jourPlafonne = false; /* aucune occurrence future sur le vrai jour : ancien comportement */
   }
 
-  let finType = queue.finType, finNombre = queue.finNombre, finDate = queue.finDate;
-  if(finType === 'nombre' && finNombre != null){
-    if(queue.id === recOriginale.id){
-      const dejaEcoulees = genererOccurrences(recOriginale, horizonMaximal())
-        .filter(d => formaterDateISO(d) < debutNouvelle).length;
-      finNombre = jourPlafonne ? finNombre - dejaEcoulees : Math.max(1, finNombre - dejaEcoulees);
-    } else {
-      /* On convertit en date de fin équivalente : recompter des occurrences à travers
-         plusieurs segments aux motifs possiblement différents n'aurait pas de sens. */
-      const dateFin = finDateEquivalente(queue);
-      if(dateFin){ finType = 'date'; finDate = dateFin; finNombre = null; }
-      else { finType = 'jamais'; finDate = null; finNombre = null; }
+  /* Si le formulaire a explicitement changé "Se termine" (par rapport au réglage actuel de
+     ce segment), on l'applique tel quel plutôt que de recalculer une continuation à partir de
+     la queue de la famille — l'utilisateur vient de le régler lui-même. */
+  const finChangeParUtilisateur = nv.finType != null && (
+    nv.finType !== (recOriginale.finType || 'jamais')
+    || (nv.finType === 'nombre' && nv.finNombre !== recOriginale.finNombre)
+    || (nv.finType === 'date' && nv.finDate !== recOriginale.finDate)
+  );
+  let finType, finNombre, finDate;
+  if(finChangeParUtilisateur){
+    finType = nv.finType; finNombre = nv.finNombre; finDate = nv.finDate;
+  } else {
+    finType = queue.finType; finNombre = queue.finNombre; finDate = queue.finDate;
+    if(finType === 'nombre' && finNombre != null){
+      if(queue.id === recOriginale.id){
+        const dejaEcoulees = genererOccurrences(recOriginale, horizonMaximal())
+          .filter(d => formaterDateISO(d) < debutNouvelle).length;
+        finNombre = jourPlafonne ? finNombre - dejaEcoulees : Math.max(1, finNombre - dejaEcoulees);
+      } else {
+        /* On convertit en date de fin équivalente : recompter des occurrences à travers
+           plusieurs segments aux motifs possiblement différents n'aurait pas de sens. */
+        const dateFin = finDateEquivalente(queue);
+        if(dateFin){ finType = 'date'; finDate = dateFin; finNombre = null; }
+        else { finType = 'jamais'; finDate = null; finNombre = null; }
+      }
     }
   }
   const creerNouvelle = !(finType === 'date' && finDate && finDate < debutNouvelle)
     && !(finType === 'nombre' && finNombre != null && finNombre <= 0);
 
-  /* 1) La nouvelle règle est créée EN PREMIER : si ça échoue, rien d'autre n'a bougé. */
+  /* 1) La nouvelle règle est créée EN PREMIER : si ça échoue, rien d'autre n'a bougé.
+     Fréquence : celle du formulaire si elle a été fournie (édition depuis le formulaire
+     d'occurrence), sinon celle héritée de l'ancien segment (autres appelants). */
   let nouvelId = null;
   if(creerNouvelle){
     nouvelId = await creerRecurrenceDepuisValeurs({
       type: recOriginale.type, nom: nv.note != null ? nv.note : recOriginale.nom, montant: nv.amount, categorie: nv.category,
-      unite: recOriginale.unite, intervalle: recOriginale.intervalle,
-      joursSemaine: recOriginale.joursSemaine, typeMensuel: recOriginale.typeMensuel,
+      unite: nv.unite != null ? nv.unite : recOriginale.unite,
+      intervalle: nv.intervalle != null ? nv.intervalle : recOriginale.intervalle,
+      joursSemaine: nv.joursSemaine !== undefined ? nv.joursSemaine : recOriginale.joursSemaine,
+      typeMensuel: nv.typeMensuel !== undefined ? nv.typeMensuel : recOriginale.typeMensuel,
       dateDebut: debutNouvelle, finType, finNombre, finDate,
       who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1,
       aConfirmer: !!nv.aConfirmer,
@@ -3310,10 +3327,127 @@ async function diviserRecurrenceAPartirDe(depense, nv){
   terminer();
 }
 
-/* ===================== MODAL DE DÉTAIL D'UNE OCCURRENCE (clic sur une dépense) =====================
-   Point d'entrée unique pour éditer/supprimer une dépense, que ce soit depuis le calendrier
-   récurrent ou une liste de dépenses. Affiche d'abord un résumé avec deux boutons ; si la
-   dépense fait partie d'une série récurrente, ces boutons ouvrent le choix de portée. */
+/* "Toute la série" (modification depuis le formulaire rapide) : applique directement les
+   valeurs saisies (montant, catégorie, note, qui, revenu, fréquence, intervalle, fin) à toute
+   la famille de récurrences, en un seul clic — mêmes fusions de segments que l'éditeur de
+   série dédié, mais sans y repasser. La date ne change que si l'utilisateur l'a vraiment
+   modifiée ; sinon la série garde sa date de début réelle. */
+async function appliquerModificationSurSerieComplete(depense, nv){
+  const rec = recurrences.find(r => r.id === depense.recurrenceId);
+  if(!rec) return;
+
+  /* Séries « à confirmer » (dépôts prévisionnels) : logique dédiée déjà couverte par
+     l'éditeur de série (bascule "À confirmer", 100 %/0 %...), pas dupliquée ici. */
+  if(estSerieAConfirmer(rec)){
+    ouvrirEditionRecurrence(rec.id);
+    document.getElementById('edit-rec-nom').value = nv.note;
+    document.getElementById('edit-rec-montant').value = nv.amount;
+    document.getElementById('edit-rec-est-revenu').checked = !!nv.estRevenu;
+    if(!nv.estRevenu) document.getElementById('edit-rec-categorie').value = nv.category;
+    if(rec.type === 'conjointe'){
+      document.getElementById('edit-rec-qui').value = nv.estCompte ? 'Compte conjoint' : libellePersonne(nv.who);
+      document.getElementById('edit-rec-compte-repartition').value = nv.pourcentageP1 != null ? nv.pourcentageP1 : 50;
+      document.getElementById('edit-rec-qui').dispatchEvent(new Event('change'));
+    }
+    appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
+    return;
+  }
+
+  const famille = familleDeRecurrence(rec);
+  const segmentsAbsorbes = famille.filter(r => r.id !== rec.id);
+  const dateChangee = nv.date && nv.date !== depense.dateOrigine;
+  const vraiDebut = dateChangee ? nv.date : famille.reduce((a,b) => b.dateDebut < a.dateDebut ? b : a).dateDebut;
+
+  const finChangeParUtilisateur = nv.finType != null && (
+    nv.finType !== (rec.finType || 'jamais')
+    || (nv.finType === 'nombre' && nv.finNombre !== rec.finNombre)
+    || (nv.finType === 'date' && nv.finDate !== rec.finDate)
+  );
+  let finTypeFinal, finNombreFinal, finDateFinal;
+  if(finChangeParUtilisateur){
+    finTypeFinal = nv.finType; finNombreFinal = nv.finNombre; finDateFinal = nv.finDate;
+  } else if(segmentsAbsorbes.length){
+    const queue = famille.reduce((a,b) => b.dateDebut > a.dateDebut ? b : a);
+    const dateFin = finDateEquivalente(queue);
+    if(dateFin == null){ finTypeFinal = 'jamais'; finNombreFinal = null; finDateFinal = null; }
+    else { finTypeFinal = 'date'; finDateFinal = dateFin; finNombreFinal = null; }
+  } else {
+    finTypeFinal = rec.finType; finNombreFinal = rec.finNombre; finDateFinal = rec.finDate;
+  }
+
+  const update = {
+    Nom: nv.note, Montant: nv.amount, Categorie: nv.category,
+    Frequence: frequenceHeritee(nv.unite, nv.intervalle),
+    Unite: nv.unite, Intervalle: nv.intervalle,
+    JoursSemaine: nv.joursSemaine && nv.joursSemaine.length ? nv.joursSemaine.join(',') : null,
+    TypeMensuel: nv.typeMensuel || null,
+    RacineId: rec.id,
+    DateDebut: vraiDebut, FinType: finTypeFinal, FinNombre: finNombreFinal, FinDate: finDateFinal,
+    Qui: nomPersonneSupabase(nv.who), Actif: rec.actif, EstCompte: nv.estCompte, EstRevenu: nv.estRevenu, PourcentageP1: nv.pourcentageP1,
+    AConfirmer: false
+  };
+
+  if(recurrencesSupabaseDisponible){
+    let res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(update).eq('id', rec.id));
+    if(!res.ok){
+      console.warn("Mise à jour avec certaines colonnes récentes impossible, nouvel essai sans elles.", res.error);
+      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, AConfirmer, ...sansColonnesRecentes } = update;
+      res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', rec.id));
+      if(!res.ok){ signalerEchecEnregistrement("La modification de la série", res.error); return; }
+    }
+  }
+
+  Object.assign(rec, {
+    nom: nv.note, montant: nv.amount, categorie: nv.category,
+    unite: nv.unite, intervalle: nv.intervalle, joursSemaine: nv.joursSemaine, typeMensuel: nv.typeMensuel,
+    racineId: rec.id,
+    dateDebut: vraiDebut, finType: finTypeFinal, finNombre: finNombreFinal, finDate: finDateFinal,
+    who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu,
+    aConfirmer: false,
+    pourcentageP1: nv.pourcentageP1 != null ? nv.pourcentageP1 : 50
+  });
+  sauvegarderRecurrencesLocal();
+
+  /* Les segments absorbés transmettent leurs suppressions individuelles à la règle unique,
+     puis disparaissent ; les modifications individuelles restantes sont effacées : la
+     nouvelle règle s'applique désormais à toutes les occurrences (comme un calendrier). */
+  for(const segment of segmentsAbsorbes){
+    if(!(await transfererSuppressions(segment.id, rec.id))) break;
+    if(!(await supprimerRecurrence(segment.id, true))) break;
+  }
+  await supprimerExceptions(rec.id, { garderSuppressions: true });
+
+  recalculerDepenses();
+  afficherRecurrencesScope(rec.type==='personnelle' ? 'personnel' : 'conjoint');
+  rafraichirActif();
+  if(rec.type==='conjointe') notifierActivitePartenaire('modification', `${nv.category} — ${formaterMonnaie(nv.amount)} (série)`);
+}
+
+/* Duplication d'une série entière : crée une nouvelle récurrence indépendante avec exactement
+   la même règle (fréquence, montant, dates, qui...). Les deux séries n'ont aucun lien ensuite
+   (racines différentes) : modifier ou supprimer l'une ne touche jamais l'autre. */
+async function dupliquerSerieComplete(recurrenceId){
+  const rec = recurrences.find(r => r.id === recurrenceId);
+  if(!rec) return;
+  const idCree = await creerRecurrenceDepuisValeurs({
+    type: rec.type, nom: rec.nom, montant: rec.montant, categorie: rec.categorie,
+    unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel,
+    dateDebut: rec.dateDebut, finType: rec.finType, finNombre: rec.finNombre, finDate: rec.finDate,
+    who: rec.who, estCompte: rec.estCompte, estRevenu: rec.estRevenu, pourcentageP1: rec.pourcentageP1,
+    aConfirmer: rec.aConfirmer
+  });
+  if(!idCree) return;
+  recalculerDepenses();
+  afficherRecurrencesScope(rec.type==='personnelle' ? 'personnel' : 'conjoint');
+  rafraichirActif();
+  if(rec.type==='conjointe') notifierActivitePartenaire('ajout', `${rec.categorie} — ${formaterMonnaie(rec.montant)} (série dupliquée)`);
+}
+
+/* ===================== POINT D'ENTRÉE : CLIC SUR UNE DÉPENSE =====================
+   Un clic ouvre directement le formulaire d'édition (plus d'écran de résumé intermédiaire) :
+   la portée (seulement / les suivantes / toute la série) ne se demande qu'au moment d'agir
+   (Sauvegarder, Supprimer ou Dupliquer depuis le menu ⋮), pas avant. Seuls les dépôts
+   planifiés/confirmés gardent leur propre écran, affiché dans #occurrence-modal. */
 let occurrenceCourante = null;
 
 function fermerOccurrenceModal(){
@@ -3324,90 +3458,49 @@ function fermerOccurrenceModal(){
 function ouvrirDetailOccurrence(id){
   const depense = depenses.find(e=>e.id===id) || depotsAConfirmer.find(e=>e.id===id);
   if(!depense) return;
-  occurrenceCourante = depense;
-  if(depense.depotPlanifie) rendreVueDepotPlanifie();
-  else if(estDepotConfirme(depense)) rendreVueDepotConfirme();
-  else rendreVueDetailOccurrence();
-  document.getElementById('occurrence-modal').style.display = 'flex';
+  if(depense.depotPlanifie || estDepotConfirme(depense)){
+    occurrenceCourante = depense;
+    if(depense.depotPlanifie) rendreVueDepotPlanifie(); else rendreVueDepotConfirme();
+    document.getElementById('occurrence-modal').style.display = 'flex';
+    return;
+  }
+  ouvrirEdition(depense.id);
 }
 
-function rendreVueDetailOccurrence(){
-  const d = occurrenceCourante;
-  if(!d) return;
-  const contenu = document.getElementById('occurrence-modal-content');
-  const qui = d.estCompte ? 'Compte conjoint' : (nomsPersonnes[d.who] || d.who);
-  const repartition = d.estCompte ? ` (${d.pourcentageP1!=null?d.pourcentageP1:50}% ${nomsPersonnes.p1})` : '';
-  const rec = d.recurrenceId ? recurrences.find(r=>r.id===d.recurrenceId) : null;
-  const sousTitre = rec ? `Série récurrente · ${libelleRecurrence(rec)}` : 'Dépense ponctuelle';
-  const dateLisible = dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
-  contenu.innerHTML = `
-    <div class="modal-header">
-      <h3>${echapperHTML(d.note || d.category)}<span class="modal-sous-titre">${sousTitre}</span></h3>
-      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div style="font-size:28px;font-weight:600;margin-bottom:10px;">${formaterMonnaie(d.amount)}</div>
-      <div style="color:var(--text-secondary);font-size:13px;margin-bottom:4px;text-transform:capitalize;">${dateLisible}</div>
-      <div style="color:var(--text-secondary);font-size:13px;">${echapperHTML(d.category)} · ${echapperHTML(qui)}${repartition}</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary btn-danger" id="occ-btn-supprimer">Supprimer</button>
-      <button class="btn-add" id="occ-btn-modifier">Modifier</button>
-    </div>
-  `;
-  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
-  document.getElementById('occ-btn-modifier').addEventListener('click', ()=>{
-    if(d.recurrenceId) rendreChoixPortee('modifier');
-    else { fermerOccurrenceModal(); ouvrirEdition(d.id); }
-  });
-  document.getElementById('occ-btn-supprimer').addEventListener('click', ()=>{
-    if(d.recurrenceId) rendreChoixPortee('supprimer');
-    else if(confirm('Supprimer cette dépense ?')){ fermerOccurrenceModal(); supprimerDepense(d.id); }
-  });
-}
-
-function rendreChoixPortee(action){
-  const d = occurrenceCourante;
-  const contenu = document.getElementById('occurrence-modal-content');
-  const verbe = action==='modifier' ? 'Modifier' : 'Supprimer';
-  contenu.innerHTML = `
-    <div class="modal-header">
-      <h3>${verbe} une occurrence<span class="modal-sous-titre">Cette dépense fait partie d'une série récurrente</span></h3>
-      <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="portee-choix">
-        <button class="portee-option" id="portee-seulement">
-          <span class="portee-titre">Cette dépense seulement</span>
-          <span class="portee-desc">N'affecte que l'occurrence du ${dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA',{day:'numeric',month:'long'})}</span>
-        </button>
-        <button class="portee-option" id="portee-suivantes">
-          <span class="portee-titre">Cette dépense et les suivantes</span>
-          <span class="portee-desc">Les occurrences précédentes restent inchangées</span>
-        </button>
-        <button class="portee-option" id="portee-serie">
-          <span class="portee-titre">Toute la série</span>
-          <span class="portee-desc">Toutes les occurrences, passées et futures</span>
-        </button>
+/* Choix de portée (façon Outlook), demandé à la volée depuis le formulaire d'édition, pas
+   avant de l'ouvrir. Réutilise #occurrence-modal comme simple boîte de dialogue générique :
+   `boutons` est la liste des portées pertinentes pour l'action en cours (dupliquer n'a par
+   exemple pas de sens pour "et les suivantes"). Résout avec la clé choisie, ou null si
+   l'utilisateur annule. */
+function demanderPortee(depense, { titre, sousTitre, boutons }){
+  return new Promise(resolve => {
+    const contenu = document.getElementById('occurrence-modal-content');
+    contenu.innerHTML = `
+      <div class="modal-header">
+        <h3>${echapperHTML(titre)}<span class="modal-sous-titre">${echapperHTML(sousTitre)}</span></h3>
+        <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" id="portee-annuler">Retour</button>
-    </div>
-  `;
-  document.getElementById('occ-fermer').addEventListener('click', fermerOccurrenceModal);
-  document.getElementById('portee-annuler').addEventListener('click', rendreVueDetailOccurrence);
-  document.getElementById('portee-seulement').addEventListener('click', ()=>{
-    if(action==='modifier'){ fermerOccurrenceModal(); ouvrirEdition(d.id); }
-    else if(confirm('Supprimer seulement cette occurrence ? Le reste de la série ne sera pas touché.')){ fermerOccurrenceModal(); supprimerOccurrenceSeule(d); }
-  });
-  document.getElementById('portee-suivantes').addEventListener('click', ()=>{
-    if(action==='modifier'){ fermerOccurrenceModal(); ouvrirEdition(d.id, 'suivantes'); }
-    else if(confirm('Supprimer cette dépense et toutes celles qui suivent dans la série ?')){ fermerOccurrenceModal(); supprimerDepuisOccurrence(d); }
-  });
-  document.getElementById('portee-serie').addEventListener('click', ()=>{
-    if(action==='modifier'){ fermerOccurrenceModal(); ouvrirEditionRecurrence(d.recurrenceId); }
-    else { fermerOccurrenceModal(); supprimerSerieComplete(d.recurrenceId); }
+      <div class="modal-body">
+        <div class="portee-choix">
+          ${boutons.map((b,i)=>`
+            <button class="portee-option" data-portee-index="${i}">
+              <span class="portee-titre">${echapperHTML(b.titre)}</span>
+              <span class="portee-desc">${echapperHTML(b.desc)}</span>
+            </button>`).join('')}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="portee-annuler">Annuler</button>
+      </div>
+    `;
+    const terminer = (valeur)=>{ document.getElementById('occurrence-modal').style.display='none'; occurrenceCourante = null; resolve(valeur); };
+    document.getElementById('occ-fermer').addEventListener('click', ()=>terminer(null));
+    document.getElementById('portee-annuler').addEventListener('click', ()=>terminer(null));
+    contenu.querySelectorAll('.portee-option').forEach(btn=>{
+      btn.addEventListener('click', ()=>terminer(boutons[Number(btn.dataset.porteeIndex)].cle));
+    });
+    occurrenceCourante = depense;
+    document.getElementById('occurrence-modal').style.display = 'flex';
   });
 }
 
@@ -4987,11 +5080,6 @@ document.getElementById('edit-toggle-type').addEventListener('click', ()=>{
   mettreAJourBoutonType();
 });
 
-/* Mode d'édition en cours pour le formulaire de dépense : 'normal' modifie juste cette
-   ligne (comportement historique) ; 'suivantes' déclenche un fractionnement de la série au
-   moment de la sauvegarde (voir diviserRecurrenceAPartirDe). */
-let modeEditionDepense = 'normal';
-
 /* ===================== PONCTUELLE → RÉCURRENTE =====================
    Une dépense ponctuelle vit dans `Depenses`, une série dans `Recurrences` — et les
    occurrences d'une série ne sont jamais stockées, elles sont calculées à partir de la
@@ -5030,16 +5118,30 @@ document.getElementById('edit-repete-toggle').addEventListener('change', functio
 document.getElementById('edit-nouv-fin-type').addEventListener('change', ()=>
   appliquerAffichageFinRecurrence('edit-nouv-fin-type','edit-nouv-fin-nombre-field','edit-nouv-fin-date-field'));
 
-function ouvrirEdition(id, mode){
+/* Occurrence d'une série : les mêmes champs que la conversion ponctuelle → récurrente,
+   mais préremplis avec la règle EXISTANTE (pas les valeurs par défaut d'une nouvelle série).
+   Modifiables directement ici ; la portée (seulement / suivantes / toute la série) se
+   choisit seulement au moment de Sauvegarder. */
+function afficherReglesRecurrenceOccurrence(rec){
+  document.querySelectorAll('#edit-modal .bloc-recurrence-edit').forEach(el=>{ el.style.display = ''; });
+  document.getElementById('edit-date-label').textContent = 'Date';
+  remplirControlesRecurrence(CONTROLES_RECURRENCE_NOUVELLE, {
+    unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel
+  });
+  document.getElementById('edit-nouv-fin-type').value = rec.finType || 'jamais';
+  document.getElementById('edit-nouv-fin-nombre').value = rec.finType==='nombre' && rec.finNombre != null ? String(rec.finNombre) : '';
+  document.getElementById('edit-nouv-fin-date').value = rec.finType==='date' && rec.finDate ? rec.finDate : '';
+  appliquerAffichageFinRecurrence('edit-nouv-fin-type','edit-nouv-fin-nombre-field','edit-nouv-fin-date-field');
+}
+
+function ouvrirEdition(id){
   const depense=depenses.find(e=>e.id===id); if(!depense) return;
-  modeEditionDepense = mode || 'normal';
   depenseEnEdition=depense;
   document.getElementById('edit-amount').value=depense.amount;
   remplirOptionsQui('edit-who', depense.type !== 'personnelle');
   document.getElementById('edit-who').value = depense.estCompte ? 'Compte conjoint' : libellePersonne(depense.who==='compte' ? currentUser : depense.who);
   document.getElementById('edit-date').value=depense.date;
-  activerChamp('edit-date-field', modeEditionDepense !== 'suivantes', 'edit-date');
-  document.getElementById('edit-date').disabled = modeEditionDepense === 'suivantes';
+  activerChamp('edit-date-field', true, 'edit-date');
   document.getElementById('edit-note').value=depense.note;
   document.getElementById('edit-category').innerHTML=categories.map(c=>`<option>${echapperHTML(c)}</option>`).join('');
   document.getElementById('edit-category').value=depense.category;
@@ -5047,42 +5149,18 @@ function ouvrirEdition(id, mode){
   document.getElementById('edit-compte-repartition').value = depense.pourcentageP1 != null ? depense.pourcentageP1 : 50;
   document.getElementById('edit-est-revenu').checked = !!depense.estRevenu;
 
-  /* Champs de contexte de la série : toujours présents pour que la disposition soit
-     identique à celle de la fenêtre "paiement récurrent", mais en lecture seule ici —
-     on modifie une occurrence, pas la règle de répétition. */
+  /* Occurrence d'une série : la règle est directement éditable ici (mêmes champs que la
+     conversion ponctuelle → récurrente), plutôt qu'affichée en lecture seule. La portée
+     (seulement / les suivantes / toute la série) se demande au moment de Sauvegarder. */
   const rec = depense.recurrenceId ? recurrences.find(r=>r.id===depense.recurrenceId) : null;
-  const selRepetition = document.getElementById('edit-repetition');
-  const selFinType = document.getElementById('edit-fin-type');
-  const inputFinNombre = document.getElementById('edit-fin-nombre');
-  const inputFinDate = document.getElementById('edit-fin-date');
-  /* « Se répète » n'a de sens à activer que pour une dépense qui n'appartient à aucune
-     série : une occurrence en fait déjà partie, et sa règle se modifie depuis l'éditeur de
-     série. Pour elle, on garde l'affichage en lecture seule de sa règle ; pour une dépense
-     ponctuelle, on montre plutôt la bascule qui permet de la transformer en série. */
-  const peutDevenirRecurrente = !rec && !depense.virtuelle;
   if(rec){
-    selRepetition.innerHTML = `<option>${libelleRecurrence(rec)}</option>`;
-    const libellesFin = { jamais:'Jamais', nombre:'Après un nombre de paiements', date:'À une date précise' };
-    selFinType.innerHTML = `<option>${libellesFin[rec.finType] || 'Jamais'}</option>`;
-    inputFinNombre.value = rec.finType==='nombre' && rec.finNombre != null ? String(rec.finNombre) : '';
-    inputFinDate.value = rec.finType==='date' && rec.finDate
-      ? dateLocaleDepuisISO(rec.finDate).toLocaleDateString('fr-CA',{day:'numeric',month:'long',year:'numeric'}) : '';
+    document.getElementById('edit-repete-toggle-field').style.display = 'none';
+    afficherReglesRecurrenceOccurrence(rec);
   } else {
-    selRepetition.innerHTML = '<option>Ne se répète pas</option>';
-    selFinType.innerHTML = '<option>—</option>';
-    inputFinNombre.value = '';
-    inputFinDate.value = '';
+    document.getElementById('edit-repete-toggle-field').style.display = '';
+    document.getElementById('edit-repete-toggle').checked = false;
+    appliquerAffichageRepetitionEdit(false);
   }
-  activerChamp('edit-repetition-field', false);
-  activerChamp('edit-fin-type-field', false);
-  activerChamp('edit-fin-nombre-field', false);
-  activerChamp('edit-fin-date-field', false);
-  ['edit-repetition-field','edit-fin-type-field','edit-fin-nombre-field','edit-fin-date-field'].forEach(id=>{
-    document.getElementById(id).style.display = peutDevenirRecurrente ? 'none' : '';
-  });
-  document.getElementById('edit-repete-toggle-field').style.display = peutDevenirRecurrente ? '' : 'none';
-  document.getElementById('edit-repete-toggle').checked = false;
-  appliquerAffichageRepetitionEdit(false);
 
   editTypeActuel = depense.type==='personnelle' ? 'personnelle' : 'conjointe';
   appliquerVerrouEditType(editTypeActuel);
@@ -5091,17 +5169,74 @@ function ouvrirEdition(id, mode){
      ça se change sur la série entière. */
   activerChamp('edit-toggle-type-field', !depense.virtuelle, 'edit-toggle-type');
 
-  document.getElementById('edit-modal-titre').firstChild.textContent = modeEditionDepense === 'suivantes'
-    ? 'Modifier cette dépense et les suivantes'
-    : (rec ? 'Modifier une occurrence' : 'Modifier une dépense');
+  document.getElementById('edit-modal-titre').firstChild.textContent = rec ? 'Modifier une occurrence' : 'Modifier une dépense';
   document.getElementById('edit-modal-sous-titre').textContent = rec
     ? `Série récurrente · ${libelleRecurrence(rec)}`
     : 'Dépense ponctuelle';
   document.getElementById('edit-modal').style.display='flex';
   majLibellesRepartition();
 }
-document.getElementById('close-edit').addEventListener('click',()=>{document.getElementById('edit-modal').style.display='none'; modeEditionDepense='normal'; document.getElementById('edit-date').disabled=false;});
-document.getElementById('delete-edit').addEventListener('click', actionVerrouillee(document.getElementById('delete-edit'), async()=>{if(depenseEnEdition && confirm('Supprimer cette dépense ?')){document.getElementById('edit-modal').style.display='none';await supprimerDepense(depenseEnEdition.id);}}));
+function fermerEditModal(){
+  document.getElementById('edit-modal').style.display='none';
+}
+document.getElementById('close-edit').addEventListener('click', fermerEditModal);
+document.getElementById('cancel-edit').addEventListener('click', fermerEditModal);
+
+const editMenuBtn = document.getElementById('edit-menu-btn');
+const editMenuDropdown = document.getElementById('edit-menu-dropdown');
+const fermerEditMenu = ()=>{ editMenuDropdown.hidden = true; editMenuBtn.setAttribute('aria-expanded','false'); };
+editMenuBtn.addEventListener('click', (ev)=>{
+  ev.stopPropagation();
+  const ouvert = !editMenuDropdown.hidden;
+  if(ouvert){ fermerEditMenu(); return; }
+  editMenuDropdown.hidden = false;
+  editMenuBtn.setAttribute('aria-expanded','true');
+  document.addEventListener('click', fermerEditMenu, { once:true });
+});
+
+document.getElementById('duplicate-edit').addEventListener('click', actionVerrouillee(document.getElementById('duplicate-edit'), async(ev)=>{
+  ev.stopPropagation();
+  fermerEditMenu();
+  const d = depenseEnEdition; if(!d) return;
+  if(d.recurrenceId){
+    const portee = await demanderPortee(d, {
+      titre: 'Dupliquer une occurrence',
+      sousTitre: "Cette dépense fait partie d'une série récurrente",
+      boutons: [
+        { cle:'seule', titre:'Cette dépense seulement', desc:`Crée une dépense ponctuelle, copie de l'occurrence du ${dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA',{day:'numeric',month:'long'})}` },
+        { cle:'serie', titre:'Toute la série', desc:'Crée une nouvelle série récurrente identique, indépendante de celle-ci' }
+      ]
+    });
+    if(portee === 'seule'){ fermerEditModal(); await dupliquerDepense(d); }
+    else if(portee === 'serie'){ fermerEditModal(); await dupliquerSerieComplete(d.recurrenceId); }
+    return;
+  }
+  fermerEditModal();
+  await dupliquerDepense(d);
+}));
+
+document.getElementById('delete-edit').addEventListener('click', actionVerrouillee(document.getElementById('delete-edit'), async(ev)=>{
+  ev.stopPropagation();
+  fermerEditMenu();
+  const d = depenseEnEdition; if(!d) return;
+  if(d.recurrenceId){
+    const portee = await demanderPortee(d, {
+      titre: 'Supprimer une occurrence',
+      sousTitre: "Cette dépense fait partie d'une série récurrente",
+      boutons: [
+        { cle:'seule', titre:'Cette dépense seulement', desc:`N'affecte que l'occurrence du ${dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA',{day:'numeric',month:'long'})}` },
+        { cle:'suivantes', titre:'Cette dépense et les suivantes', desc:'Les occurrences précédentes restent inchangées' },
+        { cle:'serie', titre:'Toute la série', desc:'Toutes les occurrences, passées et futures' }
+      ]
+    });
+    if(portee === 'seule' && confirm('Supprimer seulement cette occurrence ? Le reste de la série ne sera pas touché.')){ fermerEditModal(); await supprimerOccurrenceSeule(d); }
+    else if(portee === 'suivantes' && confirm('Supprimer cette dépense et toutes celles qui suivent dans la série ?')){ fermerEditModal(); await supprimerDepuisOccurrence(d); }
+    else if(portee === 'serie'){ fermerEditModal(); await supprimerSerieComplete(d.recurrenceId); }
+    return;
+  }
+  if(confirm('Supprimer cette dépense ?')){ fermerEditModal(); await supprimerDepense(d.id); }
+}));
+
 document.getElementById('save-edit').addEventListener('click', actionVerrouillee(document.getElementById('save-edit'), async()=>{
   const amount=parseFloat(document.getElementById('edit-amount').value),date=document.getElementById('edit-date').value;
   if(!depenseEnEdition||!amount||amount<=0||!date){afficherAlerte('Merci d’entrer un montant et une date valides.');return;}
@@ -5114,18 +5249,43 @@ document.getElementById('save-edit').addEventListener('click', actionVerrouillee
   const noteFinale = document.getElementById('edit-note').value.trim();
   const nouvellesValeurs = { amount, date, category: categorieFinale, note: noteFinale, who, estCompte, estRevenu, pourcentageP1 };
 
-  const fermer = ()=>{
-    modeEditionDepense = 'normal';
-    document.getElementById('edit-date').disabled = false;
-    document.getElementById('edit-modal').style.display='none';
-  };
+  const fermer = fermerEditModal;
 
-  /* Occurrence d'une récurrence : selon la portée choisie, on fractionne la série
-     ("les suivantes") ou on enregistre une exception pour cette seule date. Aucune ligne
-     n'est écrite dans Depenses : les occurrences sont calculées à l'affichage. */
+  /* Occurrence d'une récurrence : la fréquence est directement éditable dans ce même
+     formulaire (voir afficherReglesRecurrenceOccurrence) ; la portée (seulement / et les
+     suivantes / toute la série) se demande ici, au moment de sauvegarder. */
   if(depenseEnEdition.virtuelle){
-    if(modeEditionDepense === 'suivantes'){
-      await diviserRecurrenceAPartirDe(depenseEnEdition, nouvellesValeurs);
+    const cfgFrequenceEdit = lireControlesRecurrence(CONTROLES_RECURRENCE_NOUVELLE);
+    const finTypeEdit = document.getElementById('edit-nouv-fin-type').value;
+    const finNombreEditRaw = document.getElementById('edit-nouv-fin-nombre').value;
+    const finNombreEdit = finTypeEdit==='nombre' ? (parseInt(finNombreEditRaw,10) || null) : null;
+    const finDateEditRaw = document.getElementById('edit-nouv-fin-date').value;
+    const finDateEdit = finTypeEdit==='date' ? (finDateEditRaw || null) : null;
+    if(finTypeEdit==='nombre' && !finNombreEdit){ afficherAlerte("Merci d'entrer un nombre de paiements valide."); return; }
+    if(finTypeEdit==='date' && !finDateEdit){ afficherAlerte("Merci d'entrer une date de fin."); return; }
+    const valeursAvecFrequence = { ...nouvellesValeurs,
+      unite: cfgFrequenceEdit.unite, intervalle: cfgFrequenceEdit.intervalle,
+      joursSemaine: cfgFrequenceEdit.joursSemaine, typeMensuel: cfgFrequenceEdit.typeMensuel,
+      finType: finTypeEdit, finNombre: finNombreEdit, finDate: finDateEdit
+    };
+
+    const portee = await demanderPortee(depenseEnEdition, {
+      titre: 'Modifier une occurrence',
+      sousTitre: "Cette dépense fait partie d'une série récurrente",
+      boutons: [
+        { cle:'seule', titre:'Cette dépense seulement', desc:`N'affecte que l'occurrence du ${dateLocaleDepuisISO(depenseEnEdition.date).toLocaleDateString('fr-CA',{day:'numeric',month:'long'})}` },
+        { cle:'suivantes', titre:'Cette dépense et les suivantes', desc:'Les occurrences précédentes restent inchangées' },
+        { cle:'serie', titre:'Toute la série', desc:'Toutes les occurrences, passées et futures' }
+      ]
+    });
+    if(!portee) return; /* annulé : la fenêtre reste ouverte avec la saisie */
+    if(portee === 'serie'){
+      fermer();
+      await appliquerModificationSurSerieComplete(depenseEnEdition, valeursAvecFrequence);
+      return;
+    }
+    if(portee === 'suivantes'){
+      await diviserRecurrenceAPartirDe(depenseEnEdition, valeursAvecFrequence);
     } else if(!(await modifierOccurrenceSeule(depenseEnEdition, nouvellesValeurs))){
       return; /* échec signalé : la fenêtre reste ouverte avec la saisie */
     }
@@ -5468,6 +5628,55 @@ async function supprimerDepense(id){
   await libererDepotConfirme(id);
   recalculerDepenses();
   rafraichirActif();
+}
+
+/* Duplication d'une dépense : crée une nouvelle dépense ponctuelle indépendante avec les
+   mêmes valeurs (même une occurrence de série se duplique en dépense ponctuelle — la copie
+   n'a aucune raison de faire partie de la série d'origine). */
+async function dupliquerDepense(d){
+  const nouvelleDepenseDB = {
+    id: uid(),
+    Qui: nomPersonneSupabase(d.who),
+    Montant: d.amount,
+    Date: d.date,
+    Categorie: d.category,
+    Note: d.note,
+    Type: d.type,
+    EstCompte: d.estCompte,
+    EstRevenu: d.estRevenu,
+    PourcentageP1: d.pourcentageP1,
+    user_id: d.type === 'personnelle' ? (currentSession?.user?.id || null) : null
+  };
+
+  let { error } = await supabaseClient.from('Depenses').insert([nouvelleDepenseDB]);
+  if(error){
+    console.warn("Insertion avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
+    const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleDepenseDB;
+    const retry = await supabaseClient.from('Depenses').insert([sansColonnesRecentes]);
+    if(retry.error){
+      afficherAlerte("Erreur lors de la duplication de la dépense.");
+      console.error(retry.error);
+      return;
+    }
+  }
+
+  depensesReelles.push({
+    ajout: formaterDateISO(new Date()),
+    id: nouvelleDepenseDB.id,
+    who: clePersonne(d.who),
+    amount: nouvelleDepenseDB.Montant,
+    date: nouvelleDepenseDB.Date,
+    category: nouvelleDepenseDB.Categorie,
+    note: nouvelleDepenseDB.Note,
+    type: nouvelleDepenseDB.Type,
+    recurrenceId: null,
+    estCompte: nouvelleDepenseDB.EstCompte,
+    estRevenu: nouvelleDepenseDB.EstRevenu,
+    pourcentageP1: nouvelleDepenseDB.PourcentageP1 != null ? nouvelleDepenseDB.PourcentageP1 : 50
+  });
+  recalculerDepenses();
+  rafraichirActif();
+  if(d.type==='conjointe') notifierActivitePartenaire('ajout', `${d.category} — ${formaterMonnaie(d.amount)}`);
 }
 
 document.getElementById('save-budgets-personnel').addEventListener('click', ()=>sauvegarderBudget('personnel'));
@@ -6231,6 +6440,20 @@ document.getElementById('alerte-ok').addEventListener('click', ()=>{
 let dpInputCible = null;
 let dpDateSelectionnee = null; /* Date locale (minuit) actuellement choisie dans le calendrier */
 let dpMoisAffiche = null; /* Date locale (1er du mois affiché) */
+let dpIdsMultiples = null; /* Non nul quand le calendrier est ouvert en mode multi-sélection
+                               (champ "Ajouter une date" d'une récurrence à dates précises) */
+let dpCodesSelectionnes = null; /* Set de codes AAAAMMJJ choisis, en mode multi-sélection */
+
+/* Associe un champ « Ajouter une date » de récurrence à dates précises à l'objet `ids` qui
+   décrit son groupe de contrôles (mêmes objets que brancherDatesMultiples). Permet d'ouvrir
+   le calendrier en mode multi-sélection pour ces champs précis, et en mode simple ailleurs. */
+function idsDatesMultiplesPour(inputId){
+  if(inputId === 'f-rec-conjoint-dates-ajout') return controlesRecurrenceAjout('conjoint');
+  if(inputId === 'f-rec-personnel-dates-ajout') return controlesRecurrenceAjout('personnel');
+  if(inputId === 'edit-rec-dates-ajout') return CONTROLES_RECURRENCE_EDITION;
+  if(inputId === 'edit-nouv-rec-dates-ajout') return CONTROLES_RECURRENCE_NOUVELLE;
+  return null;
+}
 
 function formatDateLongueDP(d){
   return `${d.getDate()} ${MOIS_NOMS[d.getMonth()].slice(0,3)}. ${d.getFullYear()}`;
@@ -6247,7 +6470,10 @@ function dpBornesInput(input){
 
 function rendreSelecteurDate(){
   const { min, max } = dpBornesInput(dpInputCible);
-  document.getElementById('dp-header-date').textContent = formatDateLongueDP(dpDateSelectionnee);
+  document.getElementById('dp-header-label').textContent = dpIdsMultiples ? 'Sélectionnez les dates' : 'Sélectionnez la date';
+  document.getElementById('dp-header-date').textContent = dpIdsMultiples
+    ? (dpCodesSelectionnes.size ? `${dpCodesSelectionnes.size} date${dpCodesSelectionnes.size>1?'s':''} choisie${dpCodesSelectionnes.size>1?'s':''}` : 'Aucune date choisie')
+    : formatDateLongueDP(dpDateSelectionnee);
   document.getElementById('dp-month-label').textContent = `${capitaliser(MOIS_NOMS[dpMoisAffiche.getMonth()])} ${dpMoisAffiche.getFullYear()}`;
 
   const conteneurJoursSemaine = document.getElementById('dp-weekdays');
@@ -6260,7 +6486,7 @@ function rendreSelecteurDate(){
   const debutGrille = debutDeSemaine(premierJourMois);
   const finGrille = debutDeSemaine(dernierJourMois);
   const aujourdhuiIso = formaterDateISO(debutJour(new Date()));
-  const selectionIso = formaterDateISO(dpDateSelectionnee);
+  const selectionIso = dpDateSelectionnee ? formaterDateISO(dpDateSelectionnee) : null;
 
   let html = '';
   for(let d = new Date(debutGrille); d <= finGrille; d = ajouterJours(d, 7)){
@@ -6270,16 +6496,23 @@ function rendreSelecteurDate(){
       if(horsMois){ html += '<div></div>'; continue; }
       const iso = formaterDateISO(jour);
       const desactive = (min && jour < min) || (max && jour > max);
+      const estSelectionne = dpIdsMultiples ? dpCodesSelectionnes.has(codeDateMultiple(iso)) : iso === selectionIso;
       const classes = ['dp-day-btn'];
       if(iso === aujourdhuiIso) classes.push('dp-today');
-      if(iso === selectionIso) classes.push('dp-selected');
+      if(estSelectionne) classes.push('dp-selected');
       html += `<div><button type="button" class="${classes.join(' ')}" data-iso="${iso}" ${desactive?'disabled':''}>${jour.getDate()}</button></div>`;
     }
   }
   document.getElementById('dp-days').innerHTML = html;
   document.getElementById('dp-days').querySelectorAll('button[data-iso]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      dpDateSelectionnee = dateLocaleDepuisISO(btn.dataset.iso);
+      if(dpIdsMultiples){
+        const code = codeDateMultiple(btn.dataset.iso);
+        if(dpCodesSelectionnes.has(code)) dpCodesSelectionnes.delete(code);
+        else dpCodesSelectionnes.add(code);
+      } else {
+        dpDateSelectionnee = dateLocaleDepuisISO(btn.dataset.iso);
+      }
       rendreSelecteurDate();
     });
   });
@@ -6287,9 +6520,17 @@ function rendreSelecteurDate(){
 
 function ouvrirSelecteurDate(input){
   dpInputCible = input;
-  const valeurInitiale = input.value ? dateLocaleDepuisISO(input.value) : debutJour(new Date());
-  dpDateSelectionnee = valeurInitiale;
-  dpMoisAffiche = new Date(valeurInitiale.getFullYear(), valeurInitiale.getMonth(), 1);
+  dpIdsMultiples = idsDatesMultiplesPour(input.id);
+  if(dpIdsMultiples){
+    dpCodesSelectionnes = new Set(lireDatesMultiples(dpIdsMultiples));
+    const dernierCode = [...dpCodesSelectionnes].sort((a,b)=>b-a)[0];
+    const valeurInitiale = dernierCode ? dateLocaleDepuisISO(isoDeCodeDate(dernierCode)) : debutJour(new Date());
+    dpMoisAffiche = new Date(valeurInitiale.getFullYear(), valeurInitiale.getMonth(), 1);
+  } else {
+    const valeurInitiale = input.value ? dateLocaleDepuisISO(input.value) : debutJour(new Date());
+    dpDateSelectionnee = valeurInitiale;
+    dpMoisAffiche = new Date(valeurInitiale.getFullYear(), valeurInitiale.getMonth(), 1);
+  }
   rendreSelecteurDate();
   document.getElementById('date-picker-modal').classList.add('visible');
 }
@@ -6297,6 +6538,8 @@ function ouvrirSelecteurDate(input){
 function fermerSelecteurDate(){
   document.getElementById('date-picker-modal').classList.remove('visible');
   dpInputCible = null;
+  dpIdsMultiples = null;
+  dpCodesSelectionnes = null;
 }
 
 document.getElementById('dp-prev').addEventListener('click', ()=>{
@@ -6312,7 +6555,12 @@ document.getElementById('date-picker-modal').addEventListener('click', (e)=>{
   if(e.target.id === 'date-picker-modal') fermerSelecteurDate();
 });
 document.getElementById('dp-ok').addEventListener('click', ()=>{
-  if(dpInputCible){
+  if(dpIdsMultiples){
+    if(!dpCodesSelectionnes.size){ afficherAlerte('Choisissez au moins une date.'); return; }
+    ecrireDatesMultiples(dpIdsMultiples, [...dpCodesSelectionnes]);
+    document.getElementById(dpIdsMultiples.dates).dispatchEvent(new Event('change'));
+    if(dpInputCible) dpInputCible.value = '';
+  } else if(dpInputCible){
     dpInputCible.value = formaterDateISO(dpDateSelectionnee);
     dpInputCible.dispatchEvent(new Event('input', {bubbles:true}));
     dpInputCible.dispatchEvent(new Event('change', {bubbles:true}));

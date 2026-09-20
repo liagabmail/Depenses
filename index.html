@@ -47,7 +47,7 @@
   <div id="date-picker-modal">
     <div class="dp-card">
       <div class="dp-header">
-        <div class="dp-header-label">Sélectionnez la date</div>
+        <div class="dp-header-label" id="dp-header-label">Sélectionnez la date</div>
         <div class="dp-header-date" id="dp-header-date"></div>
       </div>
       <div class="dp-body">
@@ -731,6 +731,13 @@
 <div class="edit-modal" id="edit-modal"><div class="edit-card">
   <div class="modal-header">
     <h3 id="edit-modal-titre">Modifier une dépense<span class="modal-sous-titre" id="edit-modal-sous-titre"></span></h3>
+    <div class="menu-kebab">
+      <button class="modal-kebab-btn" id="edit-menu-btn" aria-label="Plus d'options" aria-haspopup="true" aria-expanded="false">⋮</button>
+      <div class="menu-dropdown" id="edit-menu-dropdown" hidden>
+        <button type="button" class="menu-dropdown-item" id="duplicate-edit">Dupliquer</button>
+        <button type="button" class="menu-dropdown-item menu-dropdown-item-danger" id="delete-edit">Supprimer</button>
+      </div>
+    </div>
     <button class="modal-close-btn" id="close-edit" aria-label="Fermer">&times;</button>
   </div>
   <div class="modal-body">
@@ -744,23 +751,6 @@
 <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
 <div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note" maxlength="30" autocomplete="off"></div>
 <div class="field" id="edit-date-field"><label id="edit-date-label">Date</label><input type="date" id="edit-date" autocomplete="off"></div>
-      <!-- Occurrence appartenant déjà à une série : affichage en lecture seule de sa règle. -->
-      <div class="field" id="edit-repetition-field">
-        <label>Se répète</label>
-        <select id="edit-repetition" disabled></select>
-      </div>
-      <div class="field" id="edit-fin-type-field">
-        <label>Se termine</label>
-        <select id="edit-fin-type" disabled></select>
-      </div>
-      <div class="field" id="edit-fin-nombre-field">
-        <label>Nombre</label>
-        <input type="text" id="edit-fin-nombre" disabled autocomplete="off">
-      </div>
-      <div class="field" id="edit-fin-date-field">
-        <label>Date de fin</label>
-        <input type="text" id="edit-fin-date" disabled autocomplete="off">
-      </div>
       <!-- Dépense ponctuelle qui n'appartient à aucune série : la bascule permet de la
            transformer directement en série, sans passer par une fenêtre séparée.
            Demi-largeur, donc posée à côté de la date, exactement comme dans le formulaire
@@ -821,7 +811,7 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button class="btn-secondary btn-danger" id="delete-edit">Supprimer</button>
+    <button class="btn-secondary" id="cancel-edit">Annuler</button>
     <button class="btn-add" id="save-edit">Sauvegarder</button>
   </div>
 </div></div>
