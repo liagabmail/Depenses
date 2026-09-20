@@ -41,6 +41,33 @@
     </div>
   </div>
 
+  <!-- Sélecteur de date personnalisé (remplace le picker natif du navigateur, dont l'apparence
+       n'est pas stylable, par un calendrier façon Material Design). Une seule instance, réutilisée
+       pour tous les champs date de la page. -->
+  <div id="date-picker-modal">
+    <div class="dp-card">
+      <div class="dp-header">
+        <div class="dp-header-label">Sélectionnez la date</div>
+        <div class="dp-header-date" id="dp-header-date"></div>
+      </div>
+      <div class="dp-body">
+        <div class="dp-nav">
+          <div class="dp-month-label" id="dp-month-label"></div>
+          <div class="dp-nav-btns">
+            <button type="button" id="dp-prev" aria-label="Mois précédent">‹</button>
+            <button type="button" id="dp-next" aria-label="Mois suivant">›</button>
+          </div>
+        </div>
+        <div class="dp-weekdays" id="dp-weekdays"></div>
+        <div class="dp-days" id="dp-days"></div>
+      </div>
+      <div class="dp-actions">
+        <button type="button" class="link-btn" id="dp-cancel">Annuler</button>
+        <button type="button" class="link-btn" id="dp-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL DE CONNEXION (authentification réelle Supabase) -->
   <div id="auth-modal" style="display:none;">
     <div class="auth-card">
@@ -238,8 +265,8 @@
             <span class="toggle-field-label"><span class="icone-revenu" aria-hidden="true">+</span>Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-conjoint"><span class="switch-track"></span></label>
           </div>
-          <div class="field toggle-field champ-bascule bascule-droite" id="f-est-depot-field-conjoint" style="display:none;">
-            <span class="toggle-field-label"><span aria-hidden="true">🏦&nbsp;</span>Prévision à confirmer</span>
+          <div class="field toggle-field champ-bascule bascule-droite" id="f-est-depot-field-conjoint">
+            <span class="toggle-field-label"><span aria-hidden="true">🕓&nbsp;</span>À confirmer</span>
             <label class="switch"><input type="checkbox" id="f-est-depot-conjoint"><span class="switch-track"></span></label>
           </div>
           <div class="field" id="f-depot-qui-field-conjoint" style="display:none;">
@@ -285,7 +312,7 @@
       </div>
     </div>
 
-    <!-- Sous-onglet : COMPTE (solde, minimum, dépôts prévus, suivi jour par jour) -->
+    <!-- Sous-onglet : COMPTE (solde, minimum, transactions à confirmer, suivi jour par jour) -->
     <div class="subtab-panel" data-scope="conjoint" data-sub="compte">
       <div class="card" id="recurrent-compte-echeancier-card-conjoint">
         <div id="solde-compte-bloc"></div>
@@ -327,6 +354,7 @@
     <nav class="subtabs">
       <button class="subtab-btn active" data-scope="personnel" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="resume">Résumé</button>
+      <button class="subtab-btn" data-scope="personnel" data-sub="compte">Compte</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="budget">Budget</button>
     </nav>
     <div id="period-nav-slot-personnel"></div>
@@ -428,6 +456,13 @@
             <span class="toggle-field-label"><span class="icone-revenu" aria-hidden="true">+</span>Revenu</span>
             <label class="switch"><input type="checkbox" id="f-est-revenu-personnel"><span class="switch-track"></span></label>
           </div>
+          <div class="field toggle-field champ-bascule bascule-droite" id="f-est-depot-field-personnel">
+            <span class="toggle-field-label"><span aria-hidden="true">🕓&nbsp;</span>À confirmer</span>
+            <label class="switch"><input type="checkbox" id="f-est-depot-personnel"><span class="switch-track"></span></label>
+          </div>
+          <div class="field pleine-largeur apercu-recurrence" id="f-depot-info-personnel" style="display:none;">
+            <span id="f-depot-info-texte-personnel"></span>
+          </div>
         </div>
         </div>
         <div class="modal-footer">
@@ -464,6 +499,16 @@
           <h3>Répartition par catégorie (année)</h3>
           <div class="chart-wrap"><canvas id="chart-annee-categories-personnel"></canvas></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Sous-onglet : COMPTE (solde personnel, minimum, suivi jour par jour — pour voir si le
+         compte personnel tombe en souffrance) -->
+    <div class="subtab-panel" data-scope="personnel" data-sub="compte">
+      <div class="card" id="recurrent-compte-echeancier-card-personnel">
+        <div id="solde-compte-bloc-personnel"></div>
+        <div id="solde-compte-alerte-personnel"></div>
+        <div id="recurrent-compte-echeancier-personnel"></div>
       </div>
     </div>
 
@@ -563,7 +608,7 @@
       <div class="card settings-section" id="notifications-section">
         <h3>Notifications</h3>
         <div class="theme-toggle">
-          <span>Mes dépôts prévus au compte conjoint</span>
+          <span>Mes transactions à confirmer au compte conjoint</span>
           <label class="switch" for="notif-toggle"><input type="checkbox" id="notif-toggle"><span class="switch-track"></span></label>
         </div>
         <div id="notif-reglages" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
@@ -571,9 +616,9 @@
             <div class="field">
               <label>Quand</label>
               <select id="notif-quand">
-                <option value="avant">Jour(s) avant le dépôt</option>
-                <option value="le-jour">Le jour du dépôt</option>
-                <option value="apres">Jour(s) après le dépôt</option>
+                <option value="avant">Jour(s) avant la date</option>
+                <option value="le-jour">Le jour même</option>
+                <option value="apres">Jour(s) après la date</option>
               </select>
             </div>
             <div class="field" id="notif-jours-field">
@@ -589,7 +634,7 @@
               </div>
             </div>
           </div>
-          <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;">Une notification pour chacun de vos dépôts prévus : touchez-la pour le confirmer ou le modifier. S'il n'est pas confirmé, un rappel suit le lendemain du dépôt.</p>
+          <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;">Une notification pour chacune de vos transactions à confirmer (compte conjoint) : touchez-la pour la confirmer ou la modifier. Si elle n'est pas confirmée, un rappel suit le lendemain.</p>
           <p style="font-size:12px;color:var(--text-secondary);margin:10px 0 0;" id="notif-statut"></p>
         </div>
         <div class="theme-toggle" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
@@ -853,7 +898,7 @@
         <label class="switch"><input type="checkbox" id="edit-rec-est-revenu"><span class="switch-track"></span></label>
       </div>
       <div class="field toggle-field champ-bascule bascule-droite" id="edit-rec-est-depot-field">
-        <span class="toggle-field-label"><span aria-hidden="true">🏦&nbsp;</span>Prévision à confirmer</span>
+        <span class="toggle-field-label"><span aria-hidden="true">🕓&nbsp;</span>À confirmer</span>
         <label class="switch"><input type="checkbox" id="edit-rec-est-depot"><span class="switch-track"></span></label>
       </div>
       <div class="field pleine-largeur apercu-recurrence" id="edit-rec-depot-info" style="display:none;"></div>

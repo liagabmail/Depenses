@@ -718,6 +718,7 @@ async function chargerRecurrencesSupabase(){
         type: r.Type === 'personnelle' ? 'personnelle' : 'conjointe',
         estCompte: r.EstCompte === true,
         estRevenu: r.EstRevenu === true,
+        aConfirmer: r.AConfirmer === true,
         /* Identifie la "famille" de récurrences issues d'une même série d'origine (voir
            diviserRecurrenceAPartirDe) : quand une récurrence n'a pas encore de RacineId
            (donnée créée avant l'ajout de ce champ, ou récurrence jamais scindée), elle est
@@ -1057,19 +1058,23 @@ function deposantDe(m){
   return null;
 }
 
-/* entree = { mouvements, prevus, aujourdhui, coussin, horizon, reference }
+/* entree = { mouvements, aujourdhui, coussin, horizon, reference }
    reference  : point de remise à zéro des équilibres, { jour, p1, p2 } (facultatif)
-   mouvements : transactions réelles du compte et prévisions ordinaires (dépenses et revenus
-                récurrents), dépôts confirmés compris : [{ id, jour, cents, estRevenu, pct, libelle }]
-   prevus     : dépôts prévus non confirmés : [{ id, X, jour, cents, libelle }] */
+   mouvements : transactions réelles du compte, prévisions ordinaires ET occurrences « à
+                confirmer » (dépenses et revenus récurrents ou uniques) :
+                [{ id, jour, cents, estRevenu, pct, libelle, enAttente }].
+                `enAttente` marque une occurrence « à confirmer » : elle n'entre dans la
+                réalité (solde, équilibres) que si elle est confirmée — tant que sa date n'est
+                pas atteinte, ou qu'elle est passée sans être confirmée, elle reste à part
+                (voir aConfirmer / dusAujourdhui) et compte seulement dans la prévision. */
 function calculerMoteurCompte(entree){
   const auj = entree.aujourdhui;
   const fin = auj + (entree.horizon || MOTEUR_HORIZON_JOURS);
   const coussin = Math.max(0, entree.coussin || 0);
   const ref = entree.reference || null;
   const ouverture = { p1: ref ? (ref.p1 || 0) : 0, p2: ref ? (ref.p2 || 0) : 0 };
-  /* Un dépôt ne bouge l'équilibre de personne que s'il est attribué à quelqu'un en propre
-     (pct 100 ou 0, ex. « Dépôt de Gabriel »). Un dépôt partagé (ex. 50/50) entre simplement
+  /* Un revenu ne bouge l'équilibre de personne que s'il est attribué à quelqu'un en propre
+     (pct 100 ou 0, ex. « Dépôt de Gabriel »). Un revenu partagé (ex. 50/50) entre simplement
      dans le solde commun : il n'appartient à personne en particulier, donc n'avance ni ne
      retarde qui que ce soit. Les dépenses, elles, comptent toujours (chacun doit sa part). */
   const compteDansEquilibre = m => (!ref || m.jour > ref.jour) && (!m.estRevenu || m.deposant != null);
@@ -1078,18 +1083,14 @@ function calculerMoteurCompte(entree){
   const mvts = (entree.mouvements || []).map(m => {
     const s = partagerCents(m.cents, m.pct);
     const signe = m.estRevenu ? 1 : -1;
-    return { ...m, type: 'reel', deposant: deposantDe(m), d: { p1: signe * s.p1, p2: signe * s.p2 } };
+    return { ...m, type: m.enAttente ? 'prevu' : 'reel', deposant: deposantDe(m), d: { p1: signe * s.p1, p2: signe * s.p2 } };
   });
-  const prevus = (entree.prevus || []).map(q => {
-    const d = { p1: 0, p2: 0 }; d[q.X] = q.cents;
-    return { ...q, type: 'prevu', estRevenu: true, deposant: q.X, d };
-  });
-  const aConfirmer = prevus.filter(q => q.jour < auj).sort((a, b) => a.jour - b.jour);
-  const dusAujourdhui = prevus.filter(q => q.jour === auj);
-
-  /* 1) Réalité : solde et équilibres à la fin d'aujourd'hui (transactions réelles seulement). */
   const tri = (a, b) => a.jour - b.jour || (b.estRevenu - a.estRevenu);
-  const passes = mvts.filter(m => m.jour <= auj).sort(tri);
+
+  /* 1) Réalité : solde et équilibres à la fin d'aujourd'hui (transactions confirmées
+     seulement — une occurrence « à confirmer » n'y entre jamais tant qu'elle n'a pas été
+     confirmée, même si sa date est passée). */
+  const passes = mvts.filter(m => m.jour <= auj && !m.enAttente).sort(tri);
   let solde = 0;
   const equilibres = { ...ouverture };
   passes.forEach(m => {
@@ -1108,7 +1109,7 @@ function calculerMoteurCompte(entree){
       let j = jours[jours.length - 1];
       if(!j || j.jour !== m.jour){ j = { jour: m.jour, mouvements: [] }; jours.push(j); }
       j.mouvements.push({ id: m.id, libelle: m.libelle, cents: m.estRevenu ? m.cents : -m.cents,
-        deposant: m.deposant, type: m.type, X: m.X || null });
+        deposant: m.deposant, type: m.type, X: m.deposant || null });
       j.solde = total;
       j.equilibres = { ...acc };
     });
@@ -1116,13 +1117,10 @@ function calculerMoteurCompte(entree){
   };
   const historique = grouper(passes, 0, ouverture);
 
-  const aVenir = [
-    ...mvts.filter(m => m.jour > auj && m.jour <= fin),
-    ...prevus.filter(q => q.jour >= auj && q.jour <= fin)
-  ].sort(tri);
+  const aVenir = mvts.filter(m => (m.jour > auj || (m.jour === auj && m.enAttente)) && m.jour <= fin).sort(tri);
   const projection = grouper(aVenir, solde, equilibres);
   /* Aujourd'hui figure toujours en tête de la projection, avec ses mouvements réels (déjà
-     dans le solde) suivis des dépôts prévus aujourd'hui. */
+     dans le solde) suivis des occurrences « à confirmer » dues aujourd'hui. */
   const derniereJournee = historique[historique.length - 1];
   const reelsDuJour = derniereJournee && derniereJournee.jour === auj ? derniereJournee.mouvements : [];
   if(projection.length && projection[0].jour === auj){
@@ -1142,12 +1140,18 @@ function calculerMoteurCompte(entree){
     ? { jour: premierSous.jour, solde: premierSous.solde, manque: arrondiDollarSup(manqueCompte) }
     : null;
 
+  /* À confirmer : occurrences en attente dont la date est passée ou aujourd'hui. */
+  const aConfirmer = mvts.filter(m => m.enAttente && m.jour < auj).sort(tri);
+  const dusAujourdhui = mvts.filter(m => m.enAttente && m.jour === auj);
+
   /* Par personne : où en est son équilibre, et ce qu'il lui reste à déposer d'ici la fin de
-     la prévision pour payer sa part (sans jamais toucher à l'équilibre de l'autre). */
+     la prévision pour payer sa part (sans jamais toucher à l'équilibre de l'autre). Seules
+     les occurrences « à confirmer » attribuées en propre (deposant résolu) comptent comme
+     dépôts à venir de cette personne. */
   const personnes = {};
   const derniereJ = projection[projection.length - 1];
   MOTEUR_PERSONNES.forEach(X => {
-    const depotsX = prevus.filter(q => q.X === X && q.jour >= auj && q.jour <= fin).sort((a, b) => a.jour - b.jour);
+    const depotsX = mvts.filter(m => m.enAttente && m.deposant === X && m.jour >= auj && m.jour <= fin).sort(tri);
     const finalX = derniereJ ? derniereJ.equilibres[X] : equilibres[X];
     let plusBas = projection[0];
     projection.forEach(j => { if(j.equilibres[X] < plusBas.equilibres[X]) plusBas = j; });
@@ -1157,11 +1161,11 @@ function calculerMoteurCompte(entree){
       ok: finalX >= 0,
       manque: Math.max(0, -finalX),
       plusBas: { jour: plusBas.jour, equilibre: plusBas.equilibres[X] },
-      prochainDepot: depotsX[0] || null,
+      prochainDepot: depotsX[0] ? { id: depotsX[0].id, X, jour: depotsX[0].jour, cents: depotsX[0].cents, libelle: depotsX[0].libelle } : null,
       correction: null
     };
     if(!info.ok){
-      const q = depotsX[0];
+      const q = info.prochainDepot;
       info.correction = q
         ? { type: 'ajout', depot: q, cents: arrondiDollarSup(info.manque) }
         : { type: 'nouveau', jour: auj, cents: arrondiDollarSup(info.manque) };
@@ -1173,7 +1177,7 @@ function calculerMoteurCompte(entree){
     aujourdhui: auj, fin, coussin, solde, equilibres, reference: ref,
     historique, projection, minimum, sousMinimum, personnes,
     aConfirmer, dusAujourdhui,
-    prochains: prevus.filter(q => q.jour >= auj).sort((a, b) => a.jour - b.jour)
+    prochains: mvts.filter(m => m.enAttente && m.jour >= auj).sort(tri)
   };
 }
 
@@ -1232,18 +1236,20 @@ async function enregistrerReglagesCompte(coussinDollars){
 /* ===================== COMPTE CONJOINT : DONNÉES POUR LE MOTEUR ===================== */
 function estDepotPersonne(e){ return !!e.estRevenu && (e.pourcentageP1 === 100 || e.pourcentageP1 === 0); }
 
-/* Transactions réelles du compte et prévisions ordinaires (séries qui ne sont pas des
-   dépôts prévus). */
+/* Transactions réelles du compte et prévisions du compte (récurrentes ou uniques), « à
+   confirmer » comprises (voir enAttente, lu par calculerMoteurCompte). */
 function collecterMouvementsCompte(limite){
   const liste = [];
-  const ajouter = (e, id) => liste.push({
+  const ajouter = (e, id, enAttente) => liste.push({
     id, jour: numeroJour(e.date), cents: enCents(e.amount), estRevenu: !!e.estRevenu,
     pct: e.pourcentageP1 != null ? e.pourcentageP1 : 50,
-    libelle: estDepotPersonne(e) ? `Dépôt de ${nomsPersonnes[e.pourcentageP1 === 100 ? 'p1' : 'p2']}` : (e.note || e.category)
+    libelle: estDepotPersonne(e) ? `Dépôt de ${nomsPersonnes[e.pourcentageP1 === 100 ? 'p1' : 'p2']}` : (e.note || e.category),
+    enAttente: !!enAttente
   });
-  depensesReelles.filter(e => e.type === 'conjointe' && e.estCompte && !e.recurrenceId).forEach(e => ajouter(e, e.id));
-  recurrences.filter(r => r.actif && r.type === 'conjointe' && !estSerieDepot(r)).forEach(rec => {
-    occurrencesEffectives(rec, limite).forEach(o => { if(o.estCompte) ajouter(o, o.id); });
+  depensesReelles.filter(e => e.type === 'conjointe' && e.estCompte && !e.recurrenceId).forEach(e => ajouter(e, e.id, false));
+  recurrences.filter(r => r.actif && r.type === 'conjointe').forEach(rec => {
+    const enAttente = estSerieAConfirmer(rec);
+    occurrencesEffectives(rec, limite).forEach(o => { if(o.estCompte && o.amount > 0) ajouter(o, o.id, enAttente); });
   });
   return liste;
 }
@@ -1255,28 +1261,30 @@ function executerMoteurCompte(jusquA){
   const horizon = Math.min(MOTEUR_HORIZON_JOURS * 5, Math.max(MOTEUR_HORIZON_JOURS, (jusquA || 0) - auj));
   const limite = dateLocaleDepuisISO(isoDuNumero(auj + horizon));
   const mouvements = collecterMouvementsCompte(limite);
-  const occ = occurrencesDepotsPrevus(limite);
-  const prevus = occ.map(o => ({ id: o.id, X: o.depotPersonne, jour: numeroJour(o.date), cents: enCents(o.amount), libelle: o.note }));
-  const r = calculerMoteurCompte({ mouvements, prevus, aujourdhui: auj, horizon, coussin: reglages.coussin, reference: reglages.reference });
+  const occ = occurrencesDepotsPrevus(limite).filter(o => o.estCompte);
+  const r = calculerMoteurCompte({ mouvements, aujourdhui: auj, horizon, coussin: reglages.coussin, reference: reglages.reference });
   r.reglages = reglages;
   r.occurrences = new Map(occ.map(o => [o.id, o]));
-  r.aDesMouvements = mouvements.length > 0 || occ.length > 0 || recurrences.some(estSerieDepot);
+  r.aDesMouvements = mouvements.length > 0 || recurrences.some(rec => rec.type === 'conjointe' && estSerieAConfirmer(rec));
   dernierResultatMoteur = r;
   return r;
 }
 
 /* Ce que lit la fonction planifiée des notifications (table depots_echeancier) : une ligne
-   par date où un dépôt prévu n'est pas encore confirmé, avec le total de chacun ce jour-là.
-   On garde les 3 derniers jours (pour le rappel du lendemain) et les 60 prochains. */
+   par date où une occurrence « à confirmer » (dépôt classique ou non) attribuable à Gabriel
+   ou Mélissa n'est pas encore confirmée, avec le total de chacun ce jour-là (les occurrences
+   non attribuables en propre, ex. une dépense « à confirmer » 50/50, n'ont pas leur place
+   dans cet échéancier par personne). On garde les 3 derniers jours (pour le rappel du
+   lendemain) et les 60 prochains. */
 function echeancierPourNotifications(r){
   if(!r || !donneesCompteChargees) return null;
   const debut = r.aujourdhui - 3, fin = r.aujourdhui + 60;
   const parDate = new Map();
   [...r.aConfirmer, ...r.prochains].forEach(q => {
-    if(q.jour < debut || q.jour > fin) return;
+    if(q.jour < debut || q.jour > fin || !q.deposant) return;
     const iso = isoDuNumero(q.jour);
     const l = parDate.get(iso) || { iso, p1: 0, p2: 0 };
-    l[q.X] += q.cents / 100;
+    l[q.deposant] += (q.estRevenu ? q.cents : -q.cents) / 100;
     parDate.set(iso, l);
   });
   return [...parDate.values()].sort((a, b) => a.iso.localeCompare(b.iso));
@@ -1429,9 +1437,12 @@ function afficherAlerteSoldeCompte(r, per){
   /* À confirmer : toujours affiché, peu importe la période (c'est à faire maintenant). */
   const dus = [...r.aConfirmer, ...r.dusAujourdhui];
   if(dus.length){
-    blocs.push(`<div class="cs-bloc cs-attente"><div class="cs-titre">À confirmer</div>${dus.map(q =>
-      `<button class="cs-bouton" data-ouvrir-depot="${q.id}">${echapperHTML(nomsPersonnes[q.X])} · ${argent(q.cents)} · ${q.jour === r.aujourdhui ? "aujourd'hui" : dateCourte(q.jour)}</button>`).join('')}
-      ${r.aConfirmer.length ? `<div class="cs-texte">Un dépôt non confirmé ne compte pas dans le solde ni dans la vérification.</div>` : ''}</div>`);
+    blocs.push(`<div class="cs-bloc cs-attente"><div class="cs-titre">À confirmer</div>${dus.map(q => {
+      const qui = echapperHTML(q.deposant ? nomsPersonnes[q.deposant] : (q.libelle || (q.estRevenu ? 'Revenu' : 'Dépense')));
+      const montant = `${q.estRevenu ? '+' : '-'}${argent(q.cents)}`;
+      return `<button class="cs-bouton" data-ouvrir-depot="${q.id}">${qui} · ${montant} · ${q.jour === r.aujourdhui ? "aujourd'hui" : dateCourte(q.jour)}</button>`;
+    }).join('')}
+      ${r.aConfirmer.length ? `<div class="cs-texte">Une transaction non confirmée ne compte pas dans le solde ni dans la vérification.</div>` : ''}</div>`);
   }
 
   /* Vérification sur la partie à venir de la période. */
@@ -1486,8 +1497,11 @@ function afficherDepotsPeriode(r, per){
   r.historique.filter(j => j.jour >= per.debut && j.jour <= per.fin).forEach(j => j.mouvements.forEach(m => {
     if(m.type === 'reel' && m.deposant) confirmes.push({ id: m.id, X: m.deposant, jour: j.jour, cents: m.cents, statut: 'fait' });
   }));
-  const prevus = [...r.aConfirmer, ...r.prochains].filter(q => q.jour >= per.debut && q.jour <= per.fin)
-    .map(q => ({ id: q.id, X: q.X, jour: q.jour, cents: q.cents, statut: q.jour < r.aujourdhui ? 'a_confirmer' : q.jour === r.aujourdhui ? 'aujourdhui' : 'prevu' }));
+  /* Cette liste reste spécifiquement les dépôts (revenus attribués en propre à Gabriel ou
+     Mélissa) : les autres transactions « à confirmer » (dépenses, revenus partagés) vivent
+     dans le bloc « À confirmer » et le calendrier habituel. */
+  const prevus = [...r.aConfirmer, ...r.prochains].filter(q => q.deposant && q.jour >= per.debut && q.jour <= per.fin)
+    .map(q => ({ id: q.id, X: q.deposant, jour: q.jour, cents: q.cents, statut: q.jour < r.aujourdhui ? 'a_confirmer' : q.jour === r.aujourdhui ? 'aujourdhui' : 'prevu' }));
   const tous = [...confirmes, ...prevus].sort((a, b) => a.jour - b.jour || a.X.localeCompare(b.X));
   const liste = depotsEtendus ? tous : tous.slice(0, 12);
   const sous = { fait: '✓ confirmé', a_confirmer: 'à confirmer', aujourdhui: 'à confirmer', prevu: 'prévu' };
@@ -1500,7 +1514,7 @@ function afficherDepotsPeriode(r, per){
   return `
     <div class="cs-titre cs-titre-section">Dépôts</div>
     ${liste.length ? `<div class="cs-liste">${lignes}</div>`
-      : `<div class="cs-texte">Aucun dépôt pendant cette période.${r.prochains.length ? '' : " Pour en prévoir, ajoutez un revenu du compte avec l'option « Dépôt pour payer le compte »."}</div>`}
+      : `<div class="cs-texte">Aucun dépôt pendant cette période.${r.prochains.some(q => q.deposant) ? '' : " Pour en prévoir, ajoutez un revenu du compte avec l'option « À confirmer », déposé par Gabriel ou Mélissa."}</div>`}
     ${tous.length > 12 ? `<button class="solde-bloc-lien cs-lien" id="depots-bascule">${depotsEtendus ? 'Voir moins' : `Voir les ${tous.length} dépôts`}</button>` : ''}`;
 }
 
@@ -1516,9 +1530,12 @@ function afficherSuivi(r, per){
   const ligneJour = j => {
     const prevision = j.jour >= r.aujourdhui;
     const sous = prevision && j.solde < r.coussin;
-    const mvts = j.mouvements.map(m => `<div class="cs-mvt ${m.type === 'prevu' ? 'prevu' : ''}">
-        <span>${echapperHTML(m.type === 'prevu' ? `Dépôt prévu de ${nomsPersonnes[m.X]}` : (m.libelle || ''))}</span>
-        <span class="${m.cents > 0 ? 'cs-plus' : ''}">${argentSigne(m.cents)}</span></div>`).join('');
+    const mvts = j.mouvements.map(m => {
+      const libelleAConfirmer = m.X ? `Dépôt prévu de ${nomsPersonnes[m.X]}` : `${m.libelle || (m.cents >= 0 ? 'Revenu' : 'Dépense')} (à confirmer)`;
+      return `<div class="cs-mvt ${m.type === 'prevu' ? 'prevu' : ''}">
+        <span>${echapperHTML(m.type === 'prevu' ? libelleAConfirmer : (m.libelle || ''))}</span>
+        <span class="${m.cents > 0 ? 'cs-plus' : ''}">${argentSigne(m.cents)}</span></div>`;
+    }).join('');
     return `<div class="cs-jour ${j.jour === r.aujourdhui ? 'aujourdhui' : ''}">
       <div class="cs-jour-haut">
         <span class="cs-jour-date">${j.jour === r.aujourdhui ? "Aujourd'hui" : jourSemaine(j.jour)}</span>
@@ -1627,21 +1644,388 @@ function afficherEcheancierCompteConjoint(){
   try{ dessinerGraphiqueSuivi(r, per); } catch(e){ console.warn('Graphique du solde indisponible.', e); }
 }
 
+/* ===================== COMPTE PERSONNEL : AFFICHAGE (onglet Personnel > Compte) =====================
+   Même principe que le compte conjoint (solde, minimum, suivi jour par jour, transactions
+   « à confirmer »), mais en plus simple : un seul compte, une seule personne (l'utilisateur
+   courant), donc aucun équilibre à répartir entre deux personnes — juste le solde cumulé des
+   revenus et dépenses personnels de l'utilisateur, réels puis prévus, pour voir si le compte
+   personnel tombe en souffrance. */
+
+/* entree = { mouvements, aujourdhui, coussin, horizon }
+   mouvements : [{ id, jour, cents, estRevenu, libelle, enAttente }] — dépenses et revenus
+                personnels, réels et prévus (récurrences) de l'utilisateur courant seulement ;
+                `enAttente` marque une occurrence « à confirmer » (voir calculerMoteurCompte). */
+function calculerMoteurComptePersonnel(entree){
+  const auj = entree.aujourdhui;
+  const fin = auj + (entree.horizon || MOTEUR_HORIZON_JOURS);
+  const coussin = Math.max(0, entree.coussin || 0);
+  const mvts = (entree.mouvements || []).map(m => ({ ...m, signe: m.estRevenu ? 1 : -1 }));
+  const tri = (a, b) => a.jour - b.jour || (b.estRevenu - a.estRevenu);
+
+  const passes = mvts.filter(m => m.jour <= auj && !m.enAttente).sort(tri);
+  let solde = 0;
+  passes.forEach(m => { solde += m.signe * m.cents; });
+
+  const grouper = (liste, soldeDepart) => {
+    let total = soldeDepart;
+    const jours = [];
+    liste.forEach(m => {
+      total += m.signe * m.cents;
+      let j = jours[jours.length - 1];
+      if(!j || j.jour !== m.jour){ j = { jour: m.jour, mouvements: [] }; jours.push(j); }
+      j.mouvements.push({ id: m.id, libelle: m.libelle, cents: m.signe * m.cents, enAttente: !!m.enAttente });
+      j.solde = total;
+    });
+    return jours;
+  };
+  const historique = grouper(passes, 0);
+
+  const aVenir = mvts.filter(m => (m.jour > auj || (m.jour === auj && m.enAttente)) && m.jour <= fin).sort(tri);
+  const projection = grouper(aVenir, solde);
+  const derniereJournee = historique[historique.length - 1];
+  const reelsDuJour = derniereJournee && derniereJournee.jour === auj ? derniereJournee.mouvements : [];
+  if(projection.length && projection[0].jour === auj){
+    projection[0].mouvements = [...reelsDuJour, ...projection[0].mouvements];
+  } else {
+    projection.unshift({ jour: auj, mouvements: [...reelsDuJour], solde });
+  }
+
+  const premierSous = projection.find(j => j.solde < coussin) || null;
+  let manque = 0;
+  projection.forEach(j => { manque = Math.max(manque, coussin - j.solde); });
+  const sousMinimum = premierSous
+    ? { jour: premierSous.jour, solde: premierSous.solde, manque: arrondiDollarSup(manque) }
+    : null;
+
+  /* À confirmer : occurrences en attente dont la date est passée ou aujourd'hui (voir
+     calculerMoteurCompte, même logique). */
+  const aConfirmer = mvts.filter(m => m.enAttente && m.jour < auj).sort(tri);
+  const dusAujourdhui = mvts.filter(m => m.enAttente && m.jour === auj);
+
+  return { aujourdhui: auj, fin, coussin, solde, historique, projection, sousMinimum, aConfirmer, dusAujourdhui };
+}
+
+/* Réglages : le minimum du compte personnel, gardé dans Budgets (Personne = Gabriel/Mélissa,
+   Périodes « moteur-compte-perso »), un par utilisateur. */
+const PERIODE_MOTEUR_PERSO = 'moteur-compte-perso';
+const CLE_LOCALE_MOTEUR_PERSO = 'depenses_moteur_compte_perso_';
+let fileSauvegardeMoteurPersonnel = Promise.resolve();
+
+function lireEtatMoteurPersonnel(){
+  const carte = budgets[currentUser] && budgets[currentUser][PERIODE_MOTEUR_PERSO];
+  if(carte && Object.keys(carte).length) return carte;
+  try{ return JSON.parse(localStorage.getItem(CLE_LOCALE_MOTEUR_PERSO + currentUser) || 'null') || {}; }
+  catch(e){ return {}; }
+}
+function reglagesComptePersonnelDepuisEtat(c){
+  return { coussin: c.COUSSIN_CENTS != null ? Math.max(0, c.COUSSIN_CENTS) : 0 };
+}
+function sauvegarderEtatMoteurPersonnel(valeurs){
+  const ancien = lireEtatMoteurPersonnel();
+  const modifies = Object.keys(valeurs).filter(cle => ancien[cle] !== valeurs[cle]);
+  if(!modifies.length) return fileSauvegardeMoteurPersonnel;
+  if(!budgets[currentUser]) budgets[currentUser] = {};
+  budgets[currentUser][PERIODE_MOTEUR_PERSO] = { ...ancien, ...valeurs };
+  const lignes = modifies.map(cle => ({
+    id: `moteur-perso-${currentUser}-${cle}`, Personne: nomPersonneSupabase(currentUser),
+    Categorie: cle, Periode: PERIODE_MOTEUR_PERSO, Montant: valeurs[cle]
+  }));
+  fileSauvegardeMoteurPersonnel = fileSauvegardeMoteurPersonnel.then(async () => {
+    try{
+      if(!budgetsSupabaseDisponible) throw new Error('Budgets indisponible');
+      const { error } = await supabaseClient.from('Budgets').upsert(lignes, { onConflict: 'id' });
+      if(error) throw error;
+    } catch(err){
+      console.warn("Minimum du compte personnel gardé sur cet appareil seulement.", err);
+      localStorage.setItem(CLE_LOCALE_MOTEUR_PERSO + currentUser, JSON.stringify(budgets[currentUser][PERIODE_MOTEUR_PERSO]));
+    }
+  });
+  return fileSauvegardeMoteurPersonnel;
+}
+async function enregistrerReglagesComptePersonnel(coussinDollars){
+  await sauvegarderEtatMoteurPersonnel({ COUSSIN_CENTS: Math.max(0, Math.round((coussinDollars || 0) * 100)) });
+  rafraichirActif();
+}
+
+/* Dépenses et revenus personnels réels et prévus (récurrences) de l'utilisateur courant, « à
+   confirmer » comprises. */
+function collecterMouvementsComptePersonnel(limite){
+  const liste = [];
+  const ajouter = (e, id, enAttente) => liste.push({
+    id, jour: numeroJour(e.date), cents: enCents(e.amount), estRevenu: !!e.estRevenu,
+    libelle: e.note || e.category, enAttente: !!enAttente
+  });
+  depensesReelles.filter(e => e.type === 'personnelle' && e.who === currentUser && !e.recurrenceId).forEach(e => ajouter(e, e.id, false));
+  recurrences.filter(r => r.actif && r.type === 'personnelle' && r.who === currentUser).forEach(rec => {
+    const enAttente = estSerieAConfirmer(rec);
+    occurrencesEffectives(rec, limite).forEach(o => { if(o.amount > 0) ajouter(o, o.id, enAttente); });
+  });
+  return liste;
+}
+
+function executerMoteurComptePersonnel(jusquA){
+  if(!currentUser) return null;
+  const reglages = reglagesComptePersonnelDepuisEtat(lireEtatMoteurPersonnel());
+  const auj = numeroJour(formaterDateISO(new Date()));
+  const horizon = Math.min(MOTEUR_HORIZON_JOURS * 5, Math.max(MOTEUR_HORIZON_JOURS, (jusquA || 0) - auj));
+  const limite = dateLocaleDepuisISO(isoDuNumero(auj + horizon));
+  const mouvements = collecterMouvementsComptePersonnel(limite);
+  const r = calculerMoteurComptePersonnel({ mouvements, aujourdhui: auj, horizon, coussin: reglages.coussin });
+  r.reglages = reglages;
+  r.aDesMouvements = mouvements.length > 0;
+  return r;
+}
+
+function soldeAuJourPersonnel(r, n){
+  const liste = n < r.aujourdhui ? r.historique : r.projection;
+  let dernier = null;
+  for(const j of liste){ if(j.jour <= n) dernier = j; else break; }
+  return dernier ? { solde: dernier.solde } : { solde: 0 };
+}
+function allerALaDatePersonnel(n){
+  etatCalendrierPeriode.dateRef = dateLocaleDepuisISO(isoDuNumero(n));
+  synchroniserMoisActif();
+  rafraichirSousOnglet('personnel', 'compte');
+  afficherNavigationPeriode();
+}
+
+function afficherBlocSoldeComptePersonnel(r, per){
+  const zone = document.getElementById('solde-compte-bloc-personnel');
+  if(!zone) return;
+  if(!r){ zone.innerHTML = ''; return; }
+  const contientAuj = per.debut <= r.aujourdhui && r.aujourdhui <= per.fin;
+  const reference = contientAuj ? r.aujourdhui : per.fin;
+  const etat = contientAuj ? { solde: r.solde } : soldeAuJourPersonnel(r, reference);
+  const titre = contientAuj ? 'Solde du compte'
+    : per.fin < r.aujourdhui ? `Solde au ${dateLongueNum(per.fin)}`
+    : `Solde prévu au ${dateLongueNum(per.fin)}`;
+  const depart = per.vue !== 'jour' && per.debut <= r.aujourdhui + 366 ? soldeAuJourPersonnel(r, per.debut - 1) : null;
+  zone.innerHTML = `
+    <div class="cs-solde">
+      <div class="cs-label">${titre}</div>
+      <div class="cs-montant ${etat.solde < 0 ? 'solde-negatif' : ''}">${argent(etat.solde)}</div>
+      ${depart ? `<div class="cs-texte cs-depart">Au début de la période (${dateCourte(per.debut)}) : ${argent(depart.solde)}</div>` : ''}
+    </div>
+    <div class="cs-minimum">
+      <label for="cs-min-personnel">Minimum du compte</label>
+      <div class="cs-min-champ">
+        <input type="number" id="cs-min-personnel" min="0" step="1" inputmode="decimal" value="${enDollars(r.reglages.coussin)}">
+        <span>$</span>
+        <button class="btn-add" id="cs-min-ok-personnel" style="display:none;">OK</button>
+      </div>
+    </div>`;
+  const champ = document.getElementById('cs-min-personnel');
+  const ok = document.getElementById('cs-min-ok-personnel');
+  const initial = champ.value;
+  champ.addEventListener('input', () => { ok.style.display = champ.value !== initial ? '' : 'none'; });
+  ok.addEventListener('click', actionVerrouillee(ok, async () => {
+    const c = parseFloat(champ.value);
+    if(isNaN(c) || c < 0){ afficherAlerte('Le minimum doit être un montant positif.'); return; }
+    await enregistrerReglagesComptePersonnel(c);
+  }));
+  champ.addEventListener('keydown', e => { if(e.key === 'Enter' && ok.style.display !== 'none'){ e.preventDefault(); ok.click(); } });
+}
+
+function afficherAlerteSoldeComptePersonnel(r, per){
+  const zone = document.getElementById('solde-compte-alerte-personnel');
+  if(!zone) return;
+  if(!r){ zone.innerHTML = ''; return; }
+  const blocs = [];
+
+  /* À confirmer : toujours affiché, peu importe la période (c'est à faire maintenant). */
+  const dus = [...r.aConfirmer, ...r.dusAujourdhui];
+  if(dus.length){
+    blocs.push(`<div class="cs-bloc cs-attente"><div class="cs-titre">À confirmer</div>${dus.map(q => {
+      const montant = `${q.estRevenu ? '+' : '-'}${argent(q.cents)}`;
+      return `<button class="cs-bouton" data-ouvrir-depot="${q.id}">${echapperHTML(q.libelle || (q.estRevenu ? 'Revenu' : 'Dépense'))} · ${montant} · ${q.jour === r.aujourdhui ? "aujourd'hui" : dateCourte(q.jour)}</button>`;
+    }).join('')}
+      ${r.aConfirmer.length ? `<div class="cs-texte">Une transaction non confirmée ne compte pas dans le solde ni dans la vérification.</div>` : ''}</div>`);
+  }
+
+  const debutVerif = Math.max(per.debut, r.aujourdhui);
+  const jours = r.projection.filter(j => j.jour >= debutVerif && j.jour <= per.fin);
+  if(per.fin < r.aujourdhui){
+    const passes = r.historique.filter(j => j.jour >= per.debut && j.jour <= per.fin);
+    const bas = passes.reduce((m, j) => (!m || j.solde < m.solde) ? j : m, null);
+    blocs.push(`<div class="cs-bloc"><div class="cs-titre">Période passée</div>
+      <div class="cs-texte">${bas ? `Plus bas : ${argent(bas.solde)} le ${dateLongueNum(bas.jour)}.` : 'Aucun mouvement pendant cette période.'}</div></div>`);
+  } else if(jours.length){
+    const sm = jours.find(j => j.solde < r.coussin);
+    if(sm){
+      const titre = sm.jour === r.aujourdhui
+        ? `⚠ Le compte est sous le minimum de ${argent(r.coussin)}`
+        : `⚠ Le ${dateLongueNum(sm.jour)}, le compte descendrait à ${argent(sm.solde)}`;
+      blocs.push(`<div class="cs-bloc cs-manque"><div class="cs-titre">${titre}</div>
+        ${sm.jour === r.aujourdhui ? '' : `<div class="cs-texte">C'est sous le minimum de ${argent(r.coussin)}.</div>`}</div>`);
+    } else {
+      const bas = jours.reduce((m, j) => j.solde < m.solde ? j : m, jours[0]);
+      blocs.push(`<div class="cs-bloc cs-ok">
+        <div class="cs-titre">✓ Le compte reste au-dessus de ${argent(r.coussin)}${per.vue === 'jour' ? '' : ' pendant cette période'}</div>
+        <div class="cs-texte">Plus bas : ${argent(bas.solde)} le ${dateLongueNum(bas.jour)}.</div></div>`);
+    }
+  } else {
+    blocs.push(`<div class="cs-bloc"><div class="cs-texte">Cette période dépasse la prévision (un an).</div></div>`);
+  }
+
+  const problemes = [r.sousMinimum && r.sousMinimum.jour].filter(n => n != null && (n < per.debut || n > per.fin));
+  if(problemes.length){
+    const n = Math.min(...problemes);
+    blocs.push(`<button class="cs-lien-probleme" data-aller-personnel="${n}">${n === r.aujourdhui
+      ? "⚠ Le compte a un problème aujourd'hui — voir"
+      : `⚠ Problème prévu le ${dateLongueNum(n)} — voir`}</button>`);
+  }
+
+  zone.innerHTML = blocs.join('');
+  zone.querySelectorAll('[data-aller-personnel]').forEach(b => b.addEventListener('click', () => allerALaDatePersonnel(Number(b.dataset.allerPersonnel))));
+  zone.querySelectorAll('[data-ouvrir-depot]').forEach(b => b.addEventListener('click', () => ouvrirDepotPlanifie(b.dataset.ouvrirDepot)));
+}
+
+let journalOuvertPersonnel = null;
+let graphiqueSuiviPersonnel = null;
+
+function journeesPeriodePersonnel(r, per){
+  const passes = r.historique.filter(j => j.jour >= per.debut && j.jour <= per.fin && j.jour < r.aujourdhui);
+  const futurs = r.projection.filter(j => j.jour >= per.debut && j.jour <= per.fin);
+  return [...passes, ...futurs];
+}
+function afficherSuiviPersonnel(r, per){
+  const jours = journeesPeriodePersonnel(r, per);
+  const ouvert = journalOuvertPersonnel == null ? per.vue !== 'annee' : journalOuvertPersonnel;
+  const ligneJour = j => {
+    const prevision = j.jour >= r.aujourdhui;
+    const sous = prevision && j.solde < r.coussin;
+    const mvts = j.mouvements.map(m => `<div class="cs-mvt ${m.enAttente ? 'prevu' : ''}">
+        <span>${echapperHTML(m.libelle || '')}${m.enAttente ? ' (à confirmer)' : ''}</span>
+        <span class="${m.cents > 0 ? 'cs-plus' : ''}">${argentSigne(m.cents)}</span></div>`).join('');
+    return `<div class="cs-jour ${j.jour === r.aujourdhui ? 'aujourdhui' : ''}">
+      <div class="cs-jour-haut">
+        <span class="cs-jour-date">${j.jour === r.aujourdhui ? "Aujourd'hui" : jourSemaine(j.jour)}</span>
+        <span class="cs-jour-solde ${sous ? 'solde-negatif' : ''}">${sous ? '⚠ ' : ''}${argent(j.solde)}</span>
+      </div>
+      ${mvts || '<div class="cs-mvt"><span>Aucun mouvement</span><span></span></div>'}
+    </div>`;
+  };
+  const graphique = per.vue !== 'jour' ? `<div class="cs-graphique"><canvas id="suivi-graphique-personnel" height="170"></canvas></div>` : '';
+  return `
+    <div class="cs-titre cs-titre-section">Solde jour par jour</div>
+    ${graphique}
+    <button class="solde-bloc-lien cs-lien" id="journal-bascule-personnel">${ouvert ? 'Masquer le détail des jours' : `Voir le détail des jours (${jours.length})`}</button>
+    ${ouvert ? `<div class="cs-journal">${jours.length ? jours.map(ligneJour).join('') : '<div class="cs-texte">Aucun mouvement pendant cette période.</div>'}</div>` : ''}`;
+}
+function dessinerGraphiqueSuiviPersonnel(r, per){
+  const canvas = document.getElementById('suivi-graphique-personnel');
+  if(!canvas || typeof Chart === 'undefined') return;
+  if(graphiqueSuiviPersonnel && graphiqueSuiviPersonnel.destroy) graphiqueSuiviPersonnel.destroy();
+  const jours = [], passe = [], prevu = [];
+  const parJour = new Map();
+  r.historique.forEach(j => parJour.set(j.jour, j.solde));
+  r.projection.forEach(j => parJour.set(j.jour, j.solde));
+  let courant = soldeAuJourPersonnel(r, per.debut - 1).solde;
+  const fin = Math.min(per.fin, r.fin);
+  for(let n = per.debut; n <= fin; n++){
+    if(parJour.has(n)) courant = parJour.get(n);
+    jours.push(n);
+    passe.push(n <= r.aujourdhui ? enDollars(courant) : null);
+    prevu.push(n >= r.aujourdhui ? enDollars(courant) : null);
+  }
+  const indexAuj = jours.indexOf(r.aujourdhui);
+  const sombre = document.body.classList.contains('dark');
+  const couleurTexte = sombre ? '#bdc1c6' : '#5f6368';
+  graphiqueSuiviPersonnel = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: jours.map(n => dateCourte(n)),
+      datasets: [
+        { label: 'Solde', data: passe, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, stepped: true, fill: false },
+        { label: 'Prévu', data: prevu, borderColor: '#8ab4f8', backgroundColor: 'rgba(138,180,248,.12)',
+          borderWidth: 2, pointRadius: 0, stepped: true, fill: 'origin' },
+        { label: 'Minimum', data: jours.map(() => enDollars(r.coussin)), borderColor: '#ea4335', borderWidth: 1,
+          borderDash: [2, 3], pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          filter: (item, i, items) => !(item.datasetIndex === 1 && items.some(x => x.datasetIndex === 0)),
+          callbacks: {
+            title: items => {
+              const n = jours[items[0].dataIndex];
+              return `${n === r.aujourdhui ? "Aujourd'hui" : dateLongueNum(n)}${n > r.aujourdhui ? ' (prévu)' : ''}`;
+            },
+            label: item => item.datasetIndex === 2 ? `Minimum : ${formaterMonnaie(item.parsed.y)}` : `Solde : ${formaterMonnaie(item.parsed.y)}`
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: couleurTexte, maxTicksLimit: 6, maxRotation: 0 }, grid: { display: false } },
+        y: { ticks: { color: couleurTexte, maxTicksLimit: 5, callback: v => formaterMonnaie(v).replace(/,00\s?\$/, ' $') },
+             grid: { color: sombre ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.06)' } }
+      }
+    },
+    plugins: [{
+      id: 'ligneAujourdhuiPersonnel',
+      afterDraw(chart){
+        if(indexAuj < 0) return;
+        const x = chart.scales.x.getPixelForValue(indexAuj);
+        const { top, bottom } = chart.chartArea;
+        const c = chart.ctx;
+        c.save(); c.strokeStyle = couleurTexte; c.setLineDash([3, 3]); c.beginPath();
+        c.moveTo(x, top); c.lineTo(x, bottom); c.stroke(); c.restore();
+      }
+    }]
+  });
+}
+
+function afficherEcheancierComptePersonnel(){
+  const carte = document.getElementById('recurrent-compte-echeancier-card-personnel');
+  const conteneur = document.getElementById('recurrent-compte-echeancier-personnel');
+  if(!carte || !conteneur) return;
+  const per = periodeCompte();
+  const r = executerMoteurComptePersonnel(per.fin);
+  if(!r || !r.aDesMouvements){
+    afficherBlocSoldeComptePersonnel(null); afficherAlerteSoldeComptePersonnel(null);
+    conteneur.innerHTML = `<div class="cs-texte">Aucune transaction personnelle pour l'instant.</div>`;
+    return;
+  }
+  afficherBlocSoldeComptePersonnel(r, per);
+  afficherAlerteSoldeComptePersonnel(r, per);
+  conteneur.innerHTML = afficherSuiviPersonnel(r, per);
+  const lier = (id, f) => { const el = document.getElementById(id); if(el) el.addEventListener('click', f); };
+  lier('journal-bascule-personnel', () => {
+    journalOuvertPersonnel = !(journalOuvertPersonnel == null ? per.vue !== 'annee' : journalOuvertPersonnel);
+    afficherEcheancierComptePersonnel();
+  });
+  try{ dessinerGraphiqueSuiviPersonnel(r, per); } catch(e){ console.warn('Graphique du solde personnel indisponible.', e); }
+}
+
 function fermerDepotModal(){ const m = document.getElementById('depot-modal'); if(m) m.style.display = 'none'; }
 
-/* ===================== DÉPÔTS PRÉVUS AU COMPTE CONJOINT =====================
-   Un dépôt prévu est un revenu du compte (récurrent ou unique) avec l'option « Dépôt pour
-   payer le compte ». On en crée autant qu'on veut, à la fréquence voulue, et on les modifie
-   comme les autres dépenses. Reconnu par sa catégorie (CATEGORIE_DEPOT) et sa part
-   (100 % = Gabriel, 0 % = Mélissa) : aucune colonne à ajouter.
+/* ===================== TRANSACTIONS « À CONFIRMER » =====================
+   N'importe quelle transaction (dépense ou revenu, compte conjoint ou personnel, Gabriel ou
+   Mélissa) peut être marquée « à confirmer » à l'ajout ou dans sa série récurrente. On en
+   crée autant qu'on veut, à la fréquence voulue, et on les modifie comme les autres
+   dépenses. Une transaction unique « à confirmer » est créée comme une série d'une seule
+   occurrence (même mécanisme qu'une récurrence), pour profiter du même flux de confirmation.
 
-   - C'est une prévision : le moteur s'en sert pour vérifier le compte, jamais pour le solde.
-   - À sa date, on le confirme (montant et date réels) : un vrai dépôt est créé dans Depenses
-     et l'occurrence prévue est retirée par une exception « supprimée » dont la note garde le
-     lien (« confirme:<id du dépôt> »), pour pouvoir annuler la confirmation.
+   - C'est une prévision : le moteur s'en sert pour vérifier le compte, jamais pour le solde
+     réel, tant qu'elle n'est pas confirmée.
+   - À sa date, on la confirme (montant et date réels) : une vraie transaction est créée dans
+     Depenses et l'occurrence prévue est retirée par une exception « supprimée » dont la note
+     garde le lien (« confirme:<id> »), pour pouvoir annuler la confirmation.
    - Le passé ne se modifie pas : une occurrence passée non confirmée se confirme, se
      reporte (à aujourd'hui ou plus tard) ou se supprime. « Toute la série » ne change que les
-     dépôts à venir. */
+     occurrences à venir.
+
+   Reconnue par la colonne AConfirmer (rec.aConfirmer) ; à défaut (base plus ancienne, ou
+   série créée avant l'ajout de cette colonne), un dépôt au compte conjoint reste reconnu à
+   sa forme historique (catégorie CATEGORIE_DEPOT, revenu, part 100 %/0 %) — voir
+   estSerieDepot ci-dessous. Les noms de fonctions « dépôt » qui suivent gardent leur nom
+   historique même si elles couvrent maintenant n'importe quel type de transaction : le
+   mécanisme (série à confirmer, confirmation, report) est resté identique, seule sa portée a
+   changé. */
 const CATEGORIE_DEPOT = 'Dépôt compte';
 const PREFIXE_CONFIRMATION = 'confirme:';
 let depotsAConfirmer = [];
@@ -1651,9 +2035,24 @@ function lendemainISO(iso){ return formaterDateISO(ajouterJours(dateLocaleDepuis
 function personneSerieDepot(rec){
   return rec && rec.pourcentageP1 === 100 ? 'p1' : rec && rec.pourcentageP1 === 0 ? 'p2' : null;
 }
+/* Ancienne forme (avant la colonne AConfirmer) : un dépôt au compte conjoint reconnu par sa
+   catégorie et sa part 100 %/0 %. Toujours vérifiée en plus du drapeau, pour que les séries
+   créées avant cette mise à jour continuent de fonctionner. */
 function estSerieDepot(rec){
   return !!rec && rec.type === 'conjointe' && !!rec.estCompte && !!rec.estRevenu
     && rec.categorie === CATEGORIE_DEPOT && personneSerieDepot(rec) != null;
+}
+/* Une série « à confirmer », peu importe son type (dépense/revenu), son compte (conjoint/
+   personnel) ou la personne. */
+function estSerieAConfirmer(rec){
+  return !!rec && (rec.aConfirmer === true || estSerieDepot(rec));
+}
+/* Personne à qui attribuer une occurrence « à confirmer » (équilibre du compte conjoint,
+   notifications) : la part encodée (100/0) pour un dépôt classique, sinon qui paie/reçoit. */
+function personneResponsable(rec){
+  const p = personneSerieDepot(rec);
+  if(p != null) return p;
+  return rec && (rec.who === 'p1' || rec.who === 'p2') ? rec.who : null;
 }
 function serieTerminee(rec){
   if(rec.finType !== 'date' && rec.finType !== 'nombre') return false;
@@ -1664,7 +2063,7 @@ function serieTerminee(rec){
 function dateLongueISO(iso){
   return dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', { day:'numeric', month:'long', year:'numeric' });
 }
-const STATUT_DEPOT_TEXTE = { prevu: 'Dépôt prévu', aujourdhui: 'À confirmer', a_confirmer: 'Non confirmé' };
+const STATUT_DEPOT_TEXTE = { prevu: 'Prévu', aujourdhui: 'À confirmer', a_confirmer: 'Non confirmé' };
 
 /* Anciennes versions : un dépôt confirmé était relié par sa note « paie du AAAA-MM-JJ ». */
 function lienAncienDepot(X, dateOrigine){
@@ -1672,16 +2071,18 @@ function lienAncienDepot(X, dateOrigine){
     && (e.pourcentageP1 === 100 ? 'p1' : 'p2') === X && (e.note || '').includes(`paie du ${dateOrigine}`));
 }
 
-/* Occurrences prévues (non confirmées) de toutes les séries de dépôt. */
+/* Occurrences prévues (non confirmées) de toutes les séries « à confirmer », compte
+   conjoint et personnel confondus. */
 function occurrencesDepotsPrevus(limiteDate){
   const auj = aujourdhuiISO();
   const res = [];
-  recurrences.filter(r => r.actif && estSerieDepot(r)).forEach(rec => {
-    const X = personneSerieDepot(rec);
+  recurrences.filter(r => r.actif && estSerieAConfirmer(r)).forEach(rec => {
+    const X = personneResponsable(rec);
+    const estDepotClassique = estSerieDepot(rec);
     occurrencesEffectives(rec, limiteDate).forEach(o => {
-      if(!(o.amount > 0) || lienAncienDepot(X, o.dateOrigine)) return;
+      if(!(o.amount > 0) || (estDepotClassique && lienAncienDepot(X, o.dateOrigine))) return;
       res.push({ ...o,
-        note: o.note || rec.nom || `Dépôt de ${nomsPersonnes[X]}`,
+        note: o.note || rec.nom || (estDepotClassique ? `Dépôt de ${nomsPersonnes[X]}` : o.category),
         depotPlanifie: true, depotPersonne: X,
         depotStatut: o.date > auj ? 'prevu' : o.date === auj ? 'aujourdhui' : 'a_confirmer'
       });
@@ -1713,32 +2114,37 @@ function premiereOccurrenceAVenir(rec){
 async function confirmerDepot(occ, montant, dateIso){
   const aujIso = aujourdhuiISO();
   if(!(montant > 0) || !dateIso){ afficherAlerte("Merci d'entrer un montant et une date valides."); return false; }
-  if(dateIso > aujIso){ afficherAlerte('La date du transfert ne peut pas être dans le futur.'); return false; }
+  if(dateIso > aujIso){ afficherAlerte('La date ne peut pas être dans le futur.'); return false; }
   const rec = recurrences.find(r => r.id === occ.recurrenceId);
   if(!rec) return false;
-  const X = occ.depotPersonne;
-  const note = `Dépôt de ${nomsPersonnes[X]}`;
+  /* Un dépôt classique (ancienne forme, catégorie CATEGORIE_DEPOT) se confirme sous la
+     catégorie « Revenu » comme avant ; toute autre transaction « à confirmer » garde sa
+     propre catégorie. */
+  const categorie = estSerieDepot(rec) ? 'Revenu' : occ.category;
+  const note = occ.note || rec.nom || categorie;
   const ligne = {
-    id: uid(), Qui: nomPersonneSupabase('compte'), Montant: Math.round(montant * 100) / 100, Date: dateIso,
-    Categorie: 'Revenu', Note: note, Type: 'conjointe', EstCompte: true, EstRevenu: true,
-    PourcentageP1: X === 'p1' ? 100 : 0, user_id: null
+    id: uid(), Qui: nomPersonneSupabase(occ.who), Montant: Math.round(montant * 100) / 100, Date: dateIso,
+    Categorie: categorie, Note: note, Type: occ.type, EstCompte: !!occ.estCompte, EstRevenu: !!occ.estRevenu,
+    PourcentageP1: occ.pourcentageP1 != null ? occ.pourcentageP1 : null,
+    user_id: occ.type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
   const { error } = await supabaseClient.from('Depenses').insert([ligne]);
-  if(error){ signalerEchecEnregistrement('Le dépôt', error); return false; }
-  /* L'occurrence prévue est retirée ; si ça échoue, on annule le dépôt pour ne rien compter deux fois. */
+  if(error){ signalerEchecEnregistrement('La confirmation', error); return false; }
+  /* L'occurrence prévue est retirée ; si ça échoue, on annule la transaction pour ne rien
+     compter deux fois. */
   const exc = await enregistrerException(rec, occ.dateOrigine, { supprimee: true, note: PREFIXE_CONFIRMATION + ligne.id });
   if(!exc){
     await supabaseClient.from('Depenses').delete().eq('id', ligne.id);
     return false;
   }
   depensesReelles.push({
-    id: ligne.id, who: 'compte', amount: ligne.Montant, date: dateIso, category: 'Revenu', note,
-    type: 'conjointe', recurrenceId: null, estCompte: true, estRevenu: true,
+    id: ligne.id, who: occ.who, amount: ligne.Montant, date: dateIso, category: categorie, note,
+    type: occ.type, recurrenceId: null, estCompte: !!occ.estCompte, estRevenu: !!occ.estRevenu,
     pourcentageP1: ligne.PourcentageP1, ajout: aujIso
   });
   recalculerDepenses();
   rafraichirActif();
-  notifierActivitePartenaire('ajout', `${note} confirmé — ${formaterMonnaie(ligne.Montant)}`);
+  if(occ.type === 'conjointe') notifierActivitePartenaire('ajout', `${note} confirmé — ${formaterMonnaie(ligne.Montant)}`);
   return true;
 }
 /* Appelé quand un dépôt réel est supprimé : l'occurrence prévue qu'il remplaçait revient. */
@@ -1785,27 +2191,39 @@ async function appliquerCorrection(X){
 }
 
 /* ----- Modifier ----- */
-/* Remplace les dépôts À VENIR d'une série par une nouvelle règle ; le passé ne bouge pas.
-   `v` = { nom, montant, X, cfg, dateDebut (voulue), finType, finNombre, finDate } */
+/* Remplace les occurrences À VENIR d'une série « à confirmer » par une nouvelle règle ; le
+   passé ne bouge pas.
+   `v` = { nom, montant, X, cfg, dateDebut (voulue), finType, finNombre, finDate,
+           categorie, who, estCompte, estRevenu, pourcentageP1 } */
 async function remplacerAvenirSerieDepot(rec, v){
   const famille = familleDeRecurrence(rec);
   const idsFamille = new Set(famille.map(r => r.id));
   const auj = aujourdhuiISO();
-  /* Un dépôt déjà confirmé aujourd'hui reste dans l'ancienne règle. */
+  const scope = rec.type === 'personnelle' ? 'personnel' : 'conjoint';
+  /* Une occurrence déjà confirmée aujourd'hui reste dans l'ancienne règle. */
   const coupe = exceptions.some(x => idsFamille.has(x.recurrenceId) && x.supprimee && x.dateOrigine === auj) ? lendemainISO(auj) : auj;
   let debut = v.dateDebut;
   if(debut < coupe){
     const suivante = genererOccurrences({ ...v.cfg, dateDebut: v.dateDebut, finType: 'jamais' }, horizonMaximal())
       .map(formaterDateISO).find(d => d >= coupe);
-    if(!suivante){ afficherAlerte('Aucun dépôt à venir avec cette fréquence.'); return false; }
+    if(!suivante){ afficherAlerte('Aucune occurrence à venir avec cette fréquence.'); return false; }
     debut = suivante;
   }
-  const nouvelId = await creerRecurrenceDepuisValeurs(valeursSerieDepot(v.X, {
+  const estDepotClassique = estSerieDepot(rec);
+  const champsSerie = estDepotClassique
+    ? valeursSerieDepot(v.X, {})
+    : { type: rec.type, categorie: v.categorie != null ? v.categorie : rec.categorie,
+        who: v.who != null ? v.who : rec.who, estCompte: !!(v.estCompte != null ? v.estCompte : rec.estCompte),
+        estRevenu: !!(v.estRevenu != null ? v.estRevenu : rec.estRevenu),
+        pourcentageP1: v.pourcentageP1 != null ? v.pourcentageP1 : rec.pourcentageP1 };
+  const nouvelId = await creerRecurrenceDepuisValeurs({
+    ...champsSerie,
     nom: v.nom, montant: v.montant,
     unite: v.cfg.unite, intervalle: v.cfg.intervalle, joursSemaine: v.cfg.joursSemaine, typeMensuel: v.cfg.typeMensuel,
     dateDebut: debut, finType: v.finType || 'jamais', finNombre: v.finNombre || null, finDate: v.finDate || null,
+    aConfirmer: true,
     racineId: rec.racineId || rec.id
-  }));
+  });
   if(!nouvelId) return false;
   for(const seg of famille){
     if(!(await transfererSuppressions(seg.id, nouvelId, coupe))) break;
@@ -1817,9 +2235,9 @@ async function remplacerAvenirSerieDepot(rec, v){
     }
   }
   recalculerDepenses();
-  afficherRecurrencesScope('conjoint');
+  afficherRecurrencesScope(scope);
   rafraichirActif();
-  notifierActivitePartenaire('modification', `Dépôts prévus de ${nomsPersonnes[v.X]} : ${formaterMonnaie(v.montant)} à partir du ${dateLongueISO(debut)}`);
+  if(rec.type === 'conjointe') notifierActivitePartenaire('modification', `${v.nom} : ${formaterMonnaie(v.montant)} à partir du ${dateLongueISO(debut)}`);
   return true;
 }
 function serieTermineeAvant(rec, iso){
@@ -1834,7 +2252,7 @@ function cfgDe(rec){
   return { unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel };
 }
 
-/* portee : 'seule' | 'suivantes' | 'serie' (= tous les dépôts à venir) */
+/* portee : 'seule' | 'suivantes' | 'serie' (= toutes les occurrences à venir) */
 async function modifierDepot(occ, portee, montant, dateIso, nom){
   const rec = recurrences.find(r => r.id === occ.recurrenceId);
   if(!rec) return false;
@@ -1842,32 +2260,35 @@ async function modifierDepot(occ, portee, montant, dateIso, nom){
   const auj = aujourdhuiISO();
   montant = Math.round(montant * 100) / 100;
   const X = occ.depotPersonne;
+  const scope = occ.type === 'personnelle' ? 'personnel' : 'conjoint';
+  const libelle = nom || occ.note || occ.category;
   if(portee === 'seule'){
     if(!dateIso || dateIso < auj){ afficherAlerte("La date doit être aujourd'hui ou plus tard."); return false; }
     const ok = await enregistrerException(rec, occ.dateOrigine, {
       supprimee: false, nouvelleDate: dateIso !== occ.dateOrigine ? dateIso : null, montant,
-      categorie: CATEGORIE_DEPOT, note: nom || occ.note, who: 'compte', estCompte: true, estRevenu: true,
-      pourcentageP1: rec.pourcentageP1
+      categorie: occ.category, note: libelle, who: occ.who, estCompte: !!occ.estCompte, estRevenu: !!occ.estRevenu,
+      pourcentageP1: occ.pourcentageP1
     });
     recalculerDepenses();
     rafraichirActif();
-    if(ok) notifierActivitePartenaire('modification', `Dépôt prévu de ${nomsPersonnes[X]} : ${formaterMonnaie(montant)} le ${dateLongueISO(dateIso)}`);
+    if(ok && occ.type === 'conjointe') notifierActivitePartenaire('modification', `${libelle} : ${formaterMonnaie(montant)} le ${dateLongueISO(dateIso)}`);
     return !!ok;
   }
   if(portee === 'suivantes'){
-    if(occ.dateOrigine < auj){ afficherAlerte('Les dépôts passés ne se modifient pas.'); return false; }
-    await diviserRecurrenceAPartirDe(occ, { note: nom || rec.nom, amount: montant, category: CATEGORIE_DEPOT,
-      who: 'compte', estCompte: true, estRevenu: true, pourcentageP1: rec.pourcentageP1 });
-    afficherRecurrencesScope('conjoint');
-    notifierActivitePartenaire('modification', `Dépôts prévus de ${nomsPersonnes[X]} : ${formaterMonnaie(montant)} à partir du ${dateLongueISO(occ.dateOrigine)}`);
+    if(occ.dateOrigine < auj){ afficherAlerte('Les occurrences passées ne se modifient pas.'); return false; }
+    await diviserRecurrenceAPartirDe(occ, { note: libelle, amount: montant, category: occ.category,
+      who: occ.who, estCompte: !!occ.estCompte, estRevenu: !!occ.estRevenu, pourcentageP1: occ.pourcentageP1, aConfirmer: true });
+    afficherRecurrencesScope(scope);
+    if(occ.type === 'conjointe') notifierActivitePartenaire('modification', `${libelle} : ${formaterMonnaie(montant)} à partir du ${dateLongueISO(occ.dateOrigine)}`);
     return true;
   }
   const famille = familleDeRecurrence(rec);
   const queue = famille.reduce((a, b) => b.dateDebut > a.dateDebut ? b : a);
   const tete = famille.reduce((a, b) => b.dateDebut < a.dateDebut ? b : a);
   return remplacerAvenirSerieDepot(rec, {
-    nom: nom || rec.nom, montant, X, cfg: cfgDe(queue), dateDebut: tete.dateDebut,
-    finType: queue.finType, finNombre: queue.finNombre, finDate: queue.finDate
+    nom: libelle, montant, X, cfg: cfgDe(queue), dateDebut: tete.dateDebut,
+    finType: queue.finType, finNombre: queue.finNombre, finDate: queue.finDate,
+    categorie: occ.category, who: occ.who, estCompte: !!occ.estCompte, estRevenu: !!occ.estRevenu, pourcentageP1: occ.pourcentageP1
   });
 }
 
@@ -1875,17 +2296,18 @@ async function modifierDepot(occ, portee, montant, dateIso, nom){
 async function supprimerDepot(occ, portee){
   const rec = recurrences.find(r => r.id === occ.recurrenceId);
   if(!rec) return;
+  const scope = occ.type === 'personnelle' ? 'personnel' : 'conjoint';
   if(portee === 'seule'){ await supprimerOccurrenceSeule(occ); return; }
   const depart = portee === 'serie' ? premiereOccurrenceAVenir(rec) : occ;
-  if(!depart){ afficherAlerte('Aucun dépôt à venir dans cette série.'); return; }
+  if(!depart){ afficherAlerte('Aucune occurrence à venir dans cette série.'); return; }
   await supprimerDepuisOccurrence(depart);
-  afficherRecurrencesScope('conjoint');
+  afficherRecurrencesScope(scope);
 }
 
-/* ----- Fenêtre d'un dépôt prévu ----- */
+/* ----- Fenêtre d'une occurrence « à confirmer » ----- */
 function ouvrirDepotPlanifie(id){
   const occ = trouverDepotPlanifie(id);
-  if(!occ){ afficherAlerte('Ce dépôt prévu est introuvable : il a peut-être déjà été confirmé.'); return; }
+  if(!occ){ afficherAlerte('Cette transaction à confirmer est introuvable : elle a peut-être déjà été confirmée.'); return; }
   occurrenceCourante = occ;
   rendreVueDepotPlanifie();
   document.getElementById('occurrence-modal').style.display = 'flex';
@@ -1894,19 +2316,22 @@ function ouvrirDepotPlanifie(id){
 function rendreVueDepotPlanifie(){
   const d = occurrenceCourante;
   if(!d) return;
-  const X = d.depotPersonne;
   const aujIso = aujourdhuiISO();
   const du = d.date <= aujIso;
   const passe = d.date < aujIso;
-  const sousTitre = d.date === aujIso ? "Aujourd'hui" : passe ? `${dateLongueISO(d.date)} · pas encore confirmé` : dateLongueISO(d.date);
+  const quiLabel = d.estCompte ? 'Compte conjoint' : libellePersonne(d.who);
+  const verbeFait = d.estRevenu ? 'reçu' : 'payé';
+  const sousTitre = (d.date === aujIso ? "Aujourd'hui" : passe ? `${dateLongueISO(d.date)} · pas encore confirmée` : dateLongueISO(d.date))
+    + ` · ${quiLabel}`;
+  const montantAffiche = d.estRevenu ? `+${formaterMonnaie(d.amount)}` : formaterMonnaie(d.amount);
   document.getElementById('occurrence-modal-content').innerHTML = `
     <div class="modal-header">
-      <h3>Dépôt de ${echapperHTML(nomsPersonnes[X])} · ${formaterMonnaie(d.amount)}<span class="modal-sous-titre">${echapperHTML(sousTitre)}</span></h3>
+      <h3>${echapperHTML(d.note || d.category)} · ${montantAffiche}<span class="modal-sous-titre">${echapperHTML(sousTitre)}</span></h3>
       <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
     </div>
     <div class="modal-body">
       ${du ? `
-      <div class="depot-section-titre">As-tu transféré ${formaterMonnaie(d.amount)} ?</div>
+      <div class="depot-section-titre">As-tu ${verbeFait} ${formaterMonnaie(d.amount)} ?</div>
       <div class="depot-formulaire">
         <div class="field"><label for="occ-depot-montant">Montant ($)</label>
           <input type="number" id="occ-depot-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
@@ -1922,7 +2347,7 @@ function rendreVueDepotPlanifie(){
           <input type="date" id="occ-report-date" min="${aujIso}" value="${lendemainISO(aujIso)}"></div>
         <button class="btn-secondary" id="occ-report-enregistrer">Reporter</button>
       </div>` : `
-      <div style="color:var(--text-secondary);font-size:14px;">Prévision. Vous pourrez le confirmer à partir du ${echapperHTML(dateLongueISO(d.date))}.</div>`}
+      <div style="color:var(--text-secondary);font-size:14px;">Prévision. Vous pourrez la confirmer à partir du ${echapperHTML(dateLongueISO(d.date))}.</div>`}
     </div>
     <div class="modal-footer">
       <button class="btn-secondary btn-danger" id="occ-depot-supprimer">Supprimer</button>
@@ -1933,7 +2358,7 @@ function rendreVueDepotPlanifie(){
   lier('occ-depot-fermer', fermerOccurrenceModal);
   lier('occ-depot-modifier', () => rendreChoixPorteeDepot('modifier'));
   lier('occ-depot-supprimer', () => passe
-    ? (confirm('Supprimer ce dépôt prévu ?') && (fermerOccurrenceModal(), supprimerDepot(d, 'seule')))
+    ? (confirm('Supprimer cette transaction à confirmer ?') && (fermerOccurrenceModal(), supprimerDepot(d, 'seule')))
     : rendreChoixPorteeDepot('supprimer'));
   const confirmer = document.getElementById('occ-depot-confirmer');
   if(confirmer) confirmer.addEventListener('click', actionVerrouillee(confirmer, async () => {
@@ -1955,29 +2380,29 @@ function rendreChoixPorteeDepot(action){
   const unique = rec && rec.finType === 'nombre' && rec.finNombre === 1 && familleDeRecurrence(rec).length === 1;
   if(unique){
     if(action === 'modifier'){ rendreFormulaireDepot('seule'); return; }
-    if(confirm('Supprimer ce dépôt prévu ?')){ fermerOccurrenceModal(); supprimerDepot(d, 'seule'); }
+    if(confirm('Supprimer cette transaction à confirmer ?')){ fermerOccurrenceModal(); supprimerDepot(d, 'seule'); }
     return;
   }
   const verbe = action === 'modifier' ? 'Modifier' : 'Supprimer';
   const jour = dateLocaleDepuisISO(d.date).toLocaleDateString('fr-CA', { day:'numeric', month:'long' });
   document.getElementById('occurrence-modal-content').innerHTML = `
     <div class="modal-header">
-      <h3>${verbe} un dépôt prévu<span class="modal-sous-titre">${echapperHTML(d.note || '')}</span></h3>
+      <h3>${verbe} une occurrence à confirmer<span class="modal-sous-titre">${echapperHTML(d.note || '')}</span></h3>
       <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
     </div>
     <div class="modal-body">
       <div class="portee-choix">
         <button class="portee-option" data-portee="seule">
-          <span class="portee-titre">Ce dépôt seulement</span>
-          <span class="portee-desc">Celui du ${jour}</span>
+          <span class="portee-titre">Cette occurrence seulement</span>
+          <span class="portee-desc">Celle du ${jour}</span>
         </button>
         <button class="portee-option" data-portee="suivantes">
-          <span class="portee-titre">Ce dépôt et les suivants</span>
-          <span class="portee-desc">Les précédents restent inchangés</span>
+          <span class="portee-titre">Cette occurrence et les suivantes</span>
+          <span class="portee-desc">Les précédentes restent inchangées</span>
         </button>
         <button class="portee-option" data-portee="serie">
           <span class="portee-titre">Toute la série</span>
-          <span class="portee-desc">Tous les dépôts à venir ; le passé ne change pas</span>
+          <span class="portee-desc">Toutes les occurrences à venir ; le passé ne change pas</span>
         </button>
       </div>
     </div>
@@ -1987,8 +2412,8 @@ function rendreChoixPorteeDepot(action){
   document.querySelectorAll('#occurrence-modal-content [data-portee]').forEach(b => b.addEventListener('click', actionVerrouillee(b, async () => {
     const portee = b.dataset.portee;
     if(action === 'modifier'){ rendreFormulaireDepot(portee); return; }
-    const texte = { seule: 'Supprimer ce dépôt prévu ?', suivantes: 'Supprimer ce dépôt et tous les suivants ?',
-      serie: 'Supprimer tous les dépôts à venir de cette série ? Les dépôts confirmés restent.' }[portee];
+    const texte = { seule: 'Supprimer cette occurrence à confirmer ?', suivantes: 'Supprimer cette occurrence et toutes les suivantes ?',
+      serie: 'Supprimer toutes les occurrences à venir de cette série ? Les occurrences déjà confirmées restent.' }[portee];
     if(!confirm(texte)) return;
     fermerOccurrenceModal();
     await supprimerDepot(d, portee);
@@ -1997,10 +2422,10 @@ function rendreChoixPorteeDepot(action){
 
 function rendreFormulaireDepot(portee){
   const d = occurrenceCourante;
-  const titre = { seule: 'Ce dépôt seulement', suivantes: 'Ce dépôt et les suivants', serie: 'Toute la série' }[portee];
+  const titre = { seule: 'Cette occurrence seulement', suivantes: 'Cette occurrence et les suivantes', serie: 'Toute la série' }[portee];
   document.getElementById('occurrence-modal-content').innerHTML = `
     <div class="modal-header">
-      <h3>Modifier le dépôt prévu<span class="modal-sous-titre">${titre}</span></h3>
+      <h3>Modifier l'occurrence à confirmer<span class="modal-sous-titre">${titre}</span></h3>
       <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
     </div>
     <div class="modal-body">
@@ -2028,21 +2453,23 @@ function rendreFormulaireDepot(portee){
   }));
 }
 
-/* ----- Dépôt confirmé : lecture seule, on peut annuler la confirmation ----- */
+/* ----- Transaction confirmée depuis une occurrence « à confirmer » : lecture seule, on
+   peut annuler la confirmation. Reconnue par le lien gardé dans l'exception associée (voir
+   confirmerDepot / libererDepotConfirme), peu importe le type de transaction. */
 function estDepotConfirme(d){
-  return !!d && !d.virtuelle && d.type === 'conjointe' && !!d.estCompte && !!d.estRevenu
-    && (d.pourcentageP1 === 100 || d.pourcentageP1 === 0);
+  return !!d && !d.virtuelle && exceptions.some(x => x.supprimee && x.note === PREFIXE_CONFIRMATION + d.id);
 }
 function rendreVueDepotConfirme(){
   const d = occurrenceCourante;
-  const X = d.pourcentageP1 === 100 ? 'p1' : 'p2';
+  const quiLabel = d.estCompte ? 'Compte conjoint' : libellePersonne(d.who);
+  const montantAffiche = d.estRevenu ? `+${formaterMonnaie(d.amount)}` : formaterMonnaie(d.amount);
   document.getElementById('occurrence-modal-content').innerHTML = `
     <div class="modal-header">
-      <h3>Dépôt confirmé · ${formaterMonnaie(d.amount)}<span class="modal-sous-titre">${echapperHTML(nomsPersonnes[X])} · ${echapperHTML(dateLongueISO(d.date))}</span></h3>
+      <h3>${echapperHTML(d.note || d.category)} confirmée · ${montantAffiche}<span class="modal-sous-titre">${echapperHTML(quiLabel)} · ${echapperHTML(dateLongueISO(d.date))}</span></h3>
       <button class="modal-close-btn" id="occ-fermer" aria-label="Fermer">&times;</button>
     </div>
     <div class="modal-body">
-      <div style="color:var(--text-secondary);font-size:14px;">Un dépôt confirmé ne se modifie pas. En cas d'erreur, annulez la confirmation : le dépôt redevient prévu.</div>
+      <div style="color:var(--text-secondary);font-size:14px;">Une transaction confirmée ne se modifie pas. En cas d'erreur, annulez la confirmation : elle redevient à confirmer.</div>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary btn-danger" id="occ-annuler-confirmation">Annuler la confirmation</button>
@@ -2052,73 +2479,84 @@ function rendreVueDepotConfirme(){
   document.getElementById('occ-fermer-bas').addEventListener('click', fermerOccurrenceModal);
   const bouton = document.getElementById('occ-annuler-confirmation');
   bouton.addEventListener('click', actionVerrouillee(bouton, async () => {
-    if(!confirm('Annuler la confirmation de ce dépôt ?')) return;
+    if(!confirm('Annuler la confirmation de cette transaction ?')) return;
     fermerOccurrenceModal();
     await supprimerDepense(d.id);
-    notifierActivitePartenaire('suppression', `Confirmation annulée : dépôt de ${nomsPersonnes[X]} du ${dateLongueISO(d.date)}`);
+    if(d.type === 'conjointe') notifierActivitePartenaire('suppression', `Confirmation annulée : ${d.note || d.category} du ${dateLongueISO(d.date)}`);
   }));
 }
 
 /* ----- Formulaire d'ajout : option « Dépôt pour payer le compte » ----- */
+/* La case « À confirmer » est offerte pour n'importe quelle transaction (conjointe ou
+   personnelle, dépense ou revenu, Gabriel ou Mélissa). Un cas particulier reste : compte
+   conjoint + revenu + « Compte conjoint » comme Qui = un dépôt au compte, avec en plus le
+   sélecteur « Déposé par » pour l'équilibre de chacun (comme avant cette généralisation). */
+function aConfirmerAjoutActif(scope){
+  const bascule = document.getElementById(`f-est-depot-${scope}`);
+  return !!bascule && bascule.checked;
+}
 function depotAjoutActif(){
-  const bascule = document.getElementById('f-est-depot-conjoint');
-  return !!bascule && bascule.checked
+  return aConfirmerAjoutActif('conjoint')
     && document.getElementById('f-who-conjoint').value === 'Compte conjoint'
     && document.getElementById('f-est-revenu-conjoint').checked;
 }
-function appliquerAffichageDepotAjout(){
-  const champ = document.getElementById('f-est-depot-field-conjoint');
-  if(!champ) return;
-  const bascule = document.getElementById('f-est-depot-conjoint');
-  const possible = document.getElementById('f-who-conjoint').value === 'Compte conjoint'
-    && document.getElementById('f-est-revenu-conjoint').checked;
-  champ.style.display = possible ? '' : 'none';
-  if(!possible) bascule.checked = false;
-  const actif = depotAjoutActif();
+function appliquerAffichageDepotAjout(scope){
+  const actifGeneral = aConfirmerAjoutActif(scope);
+  const infoBloc = document.getElementById(`f-depot-info-${scope}`);
+  const infoTexte = document.getElementById(`f-depot-info-texte-${scope}`);
+  if(infoTexte) infoTexte.textContent = "Prévision : sert à vérifier le compte. Chaque transaction se confirme à sa date.";
+  if(scope !== 'conjoint'){
+    if(infoBloc) infoBloc.style.display = actifGeneral ? '' : 'none';
+    return;
+  }
+  const actifDepot = depotAjoutActif();
   const selectQui = document.getElementById('f-depot-qui-conjoint');
   if(!selectQui.options.length){
     selectQui.innerHTML = MOTEUR_PERSONNES.map(X => `<option value="${X}">${echapperHTML(nomsPersonnes[X])}</option>`).join('');
   }
-  if(actif && !selectQui.dataset.choisi) selectQui.value = currentUser === 'p2' ? 'p2' : 'p1';
-  document.getElementById('f-depot-qui-field-conjoint').style.display = actif ? '' : 'none';
-  document.getElementById('f-depot-info-conjoint').style.display = actif ? '' : 'none';
-  activerChamp('f-compte-repartition-field-conjoint', !actif);
-  if(actif){
-    document.getElementById('f-depot-info-texte-conjoint').textContent =
-      "Prévision : sert à vérifier le compte. Chaque dépôt se confirme à sa date.";
-  }
+  if(actifDepot && !selectQui.dataset.choisi) selectQui.value = currentUser === 'p2' ? 'p2' : 'p1';
+  document.getElementById('f-depot-qui-field-conjoint').style.display = actifDepot ? '' : 'none';
+  if(infoBloc) infoBloc.style.display = actifGeneral ? '' : 'none';
+  activerChamp('f-compte-repartition-field-conjoint', !actifDepot);
 }
-function brancherOptionDepotAjout(){
-  if(!document.getElementById('f-est-depot-conjoint')) return;
-  ['f-who-conjoint', 'f-est-revenu-conjoint', 'f-est-depot-conjoint'].forEach(id =>
-    document.getElementById(id).addEventListener('change', appliquerAffichageDepotAjout));
-  document.getElementById('f-depot-qui-conjoint').addEventListener('change', e => { e.target.dataset.choisi = '1'; });
+function brancherOptionDepotAjout(scope){
+  const bascule = document.getElementById(`f-est-depot-${scope}`);
+  if(!bascule) return;
+  const idsAEcouter = scope === 'conjoint' ? ['f-who-conjoint', 'f-est-revenu-conjoint', `f-est-depot-${scope}`] : [`f-est-depot-${scope}`];
+  idsAEcouter.forEach(id => document.getElementById(id).addEventListener('change', () => appliquerAffichageDepotAjout(scope)));
+  if(scope === 'conjoint') document.getElementById('f-depot-qui-conjoint').addEventListener('change', e => { e.target.dataset.choisi = '1'; });
 }
-/* Valeurs imposées par l'option dans ajouterDepense. */
+/* Valeurs imposées par l'option « Déposé par » (dépôt classique au compte conjoint) dans
+   ajouterDepense. */
 function valeursDepotAjout(){
   const X = document.getElementById('f-depot-qui-conjoint').value;
   return { X, pourcentageP1: X === 'p1' ? 100 : 0, categorie: CATEGORIE_DEPOT, nom: `Dépôt de ${nomsPersonnes[X]}` };
 }
 
 /* ----- Fenêtre d'édition d'une série (liste des paiements récurrents) ----- */
+/* La case « À confirmer » est offerte pour n'importe quelle série (conjointe ou
+   personnelle, dépense ou revenu). Le cas particulier du dépôt classique au compte conjoint
+   (revenu du compte, « Compte conjoint » comme Qui) garde en plus son sélecteur de part
+   100 %/0 % pour l'équilibre de chacun. */
 function depotEditionActif(){
-  return document.getElementById('edit-rec-est-depot').checked
-    && document.getElementById('edit-rec-qui').value === 'Compte conjoint'
+  const bascule = document.getElementById('edit-rec-est-depot');
+  return !!bascule && bascule.checked;
+}
+function depotEditionClassiqueActif(){
+  return depotEditionActif() && document.getElementById('edit-rec-qui').value === 'Compte conjoint'
     && document.getElementById('edit-rec-est-revenu').checked;
 }
 function appliquerAffichageDepotEdition(){
   const rec = recurrenceEnEdition;
-  const possible = !!rec && rec.type === 'conjointe'
-    && document.getElementById('edit-rec-qui').value === 'Compte conjoint'
-    && document.getElementById('edit-rec-est-revenu').checked;
-  activerChamp('edit-rec-est-depot-field', possible);
-  if(!possible) document.getElementById('edit-rec-est-depot').checked = false;
   const actif = depotEditionActif();
   const info = document.getElementById('edit-rec-depot-info');
   info.style.display = actif ? '' : 'none';
   if(actif){
-    info.textContent = `Part de ${nomsPersonnes.p1} : 100 % = dépôt de ${nomsPersonnes.p1}, 0 % = dépôt de ${nomsPersonnes.p2}.`
-      + (estSerieDepot(rec) && rec.dateDebut < aujourdhuiISO() ? ' Les changements s\'appliquent aux dépôts à venir seulement.' : '');
+    const changementsAVenirSeulement = !!rec && estSerieAConfirmer(rec) && rec.dateDebut < aujourdhuiISO()
+      ? ' Les changements s\'appliquent aux occurrences à venir seulement.' : '';
+    info.textContent = depotEditionClassiqueActif()
+      ? `Part de ${nomsPersonnes.p1} : 100 % = dépôt de ${nomsPersonnes.p1}, 0 % = dépôt de ${nomsPersonnes.p2}.${changementsAVenirSeulement}`
+      : `Prévision : sert à vérifier le compte. Chaque occurrence se confirme à sa date.${changementsAVenirSeulement}`;
   }
 }
 function brancherOptionDepotEdition(){
@@ -2126,26 +2564,32 @@ function brancherOptionDepotEdition(){
   ['edit-rec-qui', 'edit-rec-est-revenu', 'edit-rec-est-depot'].forEach(id =>
     document.getElementById(id).addEventListener('change', appliquerAffichageDepotEdition));
 }
-/* Enregistrement d'une série de dépôt depuis la fenêtre d'édition : les dépôts à venir
-   seulement. Renvoie true si c'est pris en charge ici. */
+/* Enregistrement d'une série « à confirmer » depuis la fenêtre d'édition : les occurrences à
+   venir seulement. Renvoie true si c'est pris en charge ici. */
 async function enregistrerSerieDepotEdition(rec, v){
-  const X = v.pourcentageP1 === 100 ? 'p1' : v.pourcentageP1 === 0 ? 'p2' : null;
-  if(!X){
-    afficherAlerte(`Pour un dépôt, la part de ${nomsPersonnes.p1} doit être 100 % (dépôt de ${nomsPersonnes.p1}) ou 0 % (dépôt de ${nomsPersonnes.p2}).`);
-    return false;
+  if(depotEditionClassiqueActif()){
+    const X = v.pourcentageP1 === 100 ? 'p1' : v.pourcentageP1 === 0 ? 'p2' : null;
+    if(!X){
+      afficherAlerte(`Pour un dépôt, la part de ${nomsPersonnes.p1} doit être 100 % (dépôt de ${nomsPersonnes.p1}) ou 0 % (dépôt de ${nomsPersonnes.p2}).`);
+      return false;
+    }
+    return remplacerAvenirSerieDepot(rec, { nom: v.nom, montant: v.montant, X, cfg: v.cfg, dateDebut: v.dateDebut,
+      finType: v.finType, finNombre: v.finNombre, finDate: v.finDate });
   }
-  return remplacerAvenirSerieDepot(rec, { nom: v.nom, montant: v.montant, X, cfg: v.cfg, dateDebut: v.dateDebut,
-    finType: v.finType, finNombre: v.finNombre, finDate: v.finDate });
+  return remplacerAvenirSerieDepot(rec, { nom: v.nom, montant: v.montant, cfg: v.cfg, dateDebut: v.dateDebut,
+    finType: v.finType, finNombre: v.finNombre, finDate: v.finDate,
+    categorie: v.categorie, who: v.who, estCompte: v.estCompte, estRevenu: v.estRevenu, pourcentageP1: v.pourcentageP1 });
 }
 
-brancherOptionDepotAjout();
+brancherOptionDepotAjout('conjoint');
+brancherOptionDepotAjout('personnel');
 brancherOptionDepotEdition();
 
 async function supprimerSerieDepotEdition(rec){
   const occ = occurrencesDeLaFamille(rec)[0];
-  if(!occ){ afficherAlerte('Aucun dépôt prévu dans cette série.'); return; }
+  if(!occ){ afficherAlerte('Aucune occurrence à venir dans cette série.'); return; }
   await supprimerDepuisOccurrence(occ);
-  afficherRecurrencesScope('conjoint');
+  afficherRecurrencesScope(rec.type === 'personnelle' ? 'personnel' : 'conjoint');
 }
 
 /* ===================== RÉCURRENCE « DATES PRÉCISES » =====================
@@ -2367,10 +2811,10 @@ function occurrencesEffectives(rec, limiteDate){
 
 function recalculerDepenses(){
   const liste = depensesReelles.slice();
-  recurrences.filter(r => r.actif && !estSerieDepot(r)).forEach(rec => {
+  recurrences.filter(r => r.actif && !estSerieAConfirmer(r)).forEach(rec => {
     liste.push(...occurrencesEffectives(rec, horizonAffichage));
   });
-  /* Dépôts récurrents : rien pour une paie déjà confirmée ; les dates passées non
+  /* Transactions « à confirmer » (compte conjoint et personnel) : les dates passées non
      confirmées sont à part (affichées, jamais comptées). */
   const depots = occurrencesDepots(horizonAffichage);
   liste.push(...depots.futures);
@@ -2652,6 +3096,7 @@ async function creerRecurrenceDepuisValeurs(champs){
     DateDebut: champs.dateDebut, FinType: champs.finType, FinNombre: champs.finNombre, FinDate: champs.finDate,
     Qui: nomPersonneSupabase(champs.who), Type: champs.type, Actif: true,
     EstCompte: champs.estCompte, EstRevenu: champs.estRevenu, PourcentageP1: champs.pourcentageP1,
+    AConfirmer: !!champs.aConfirmer,
     user_id: champs.type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
   /* Renvoie null si l'enregistrement échoue : l'appelant doit alors s'arrêter (avant, la
@@ -2661,12 +3106,12 @@ async function creerRecurrenceDepuisValeurs(champs){
   if(recurrencesSupabaseDisponible){
     const { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
     if(error){
-      /* Les colonnes Unite/Intervalle/JoursSemaine/TypeMensuel/RacineId (ou EstCompte/
-         EstRevenu/PourcentageP1 pour une base plus ancienne) n'existent peut-être pas
-         encore : on réessaie sans elles pour que la récurrence soit tout de même créée
+      /* Les colonnes Unite/Intervalle/JoursSemaine/TypeMensuel/RacineId/AConfirmer (ou
+         EstCompte/EstRevenu/PourcentageP1 pour une base plus ancienne) n'existent peut-être
+         pas encore : on réessaie sans elles pour que la récurrence soit tout de même créée
          (voir les instructions pour ajouter ces colonnes à Supabase). */
       console.warn("Insertion complète de la récurrence impossible, nouvel essai sans les colonnes récentes.", error);
-      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
+      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, AConfirmer, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
       const retry = await supabaseClient.from('Recurrences').insert([sansColonnesRecentes]);
       if(retry.error){ signalerEchecEnregistrement("Le paiement récurrent", retry.error); return null; }
     }
@@ -2677,6 +3122,7 @@ async function creerRecurrenceDepuisValeurs(champs){
     racineId,
     dateDebut:champs.dateDebut, finType:champs.finType, finNombre:champs.finNombre, finDate:champs.finDate,
     who:champs.who, type:champs.type, estCompte:champs.estCompte, estRevenu:champs.estRevenu,
+    aConfirmer: !!champs.aConfirmer,
     pourcentageP1: champs.pourcentageP1 != null ? champs.pourcentageP1 : 50, actif:true, datesExclues: [],
     /* Même valeur que created_at en base : la répartition sur les paies part d'aujourd'hui,
        sans attendre un rechargement. */
@@ -2812,6 +3258,7 @@ async function diviserRecurrenceAPartirDe(depense, nv){
       joursSemaine: recOriginale.joursSemaine, typeMensuel: recOriginale.typeMensuel,
       dateDebut: debutNouvelle, finType, finNombre, finDate,
       who: nv.who, estCompte: nv.estCompte, estRevenu: nv.estRevenu, pourcentageP1: nv.pourcentageP1,
+      aConfirmer: !!nv.aConfirmer,
       racineId: racine
     });
     if(!nouvelId){ terminer(); return; }
@@ -2972,10 +3419,10 @@ function partPersonnelleRecurrence(r){
 }
 
 function afficherRecurrencesScope(scope){
-  /* Les segments terminés d'une série de dépôt (après « ce dépôt et les suivants ») ne sont
-     que l'historique : on n'affiche que la série en cours. */
+  /* Les segments terminés d'une série « à confirmer » (après « cette occurrence et les
+     suivantes ») ne sont que l'historique : on n'affiche que la série en cours. */
   const liste = recurrences.filter(r => (scope==='conjoint' ? r.type==='conjointe' : (r.type==='personnelle' && r.who===currentUser))
-    && !(estSerieDepot(r) && serieTerminee(r)));
+    && !(estSerieAConfirmer(r) && serieTerminee(r)));
   const listeSansRevenu = liste.filter(r=>!r.estRevenu);
   const actifs = listeSansRevenu.filter(r=>r.actif);
   const totalMensuel = actifs.reduce((s,r)=>s+r.montant*multiplicateurMensuel(r),0);
@@ -3012,6 +3459,8 @@ function afficherRecurrencesScope(scope){
     const partPct = Math.round(partPersonnelleRecurrence(r)*100);
     const badgeType = estSerieDepot(r)
       ? `<span class="freq-pill badge-revenu" title="Dépôt pour payer le compte ; chaque dépôt se confirme à la main">🏦 Dépôt au compte</span>`
+      : estSerieAConfirmer(r)
+      ? `<span class="freq-pill badge-revenu" title="À confirmer ; chaque occurrence se confirme à la main">🕓 À confirmer</span>`
       : r.estRevenu
       ? `<span class="freq-pill badge-revenu">Revenu</span>`
       : (r.estCompte
@@ -3024,7 +3473,7 @@ function afficherRecurrencesScope(scope){
     return `
     <div class="recurrent-row ${r.actif?'':'inactive'} ${r.estRevenu?'row-revenu-item':(r.estCompte?'row-compte-item':(r.estConjoint?'row-conjoint-share':''))}" onclick="ouvrirEditionRecurrence('${r.id}')" style="cursor:pointer;">
       <div class="recurrent-info">
-        <div class="recurrent-nom">${echapperHTML(r.nom || r.categorie)}${(scope==='conjoint' || r.estConjoint) ? ` <span class="who-badge"><span class="dot ${estSerieDepot(r) ? personneSerieDepot(r) : r.who}"></span>${echapperHTML(libellePersonne(estSerieDepot(r) ? personneSerieDepot(r) : r.who))}</span>` : ''}</div>
+        <div class="recurrent-nom">${echapperHTML(r.nom || r.categorie)}${(scope==='conjoint' || r.estConjoint) ? ` <span class="who-badge"><span class="dot ${personneResponsable(r) || r.who}"></span>${echapperHTML(libellePersonne(personneResponsable(r) || r.who))}</span>` : ''}</div>
         <div class="recurrent-meta">
           ${badgeType}
           ${r.estRevenu ? '' : `<span class="cat-pill" style="background:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}22;color:${COULEURS_CATEGORIES[r.categorie]||'#9aa0a6'}">${echapperHTML(r.categorie)}</span>`}
@@ -3426,8 +3875,10 @@ function rendreCarteDepenseHTML(e, scope){
     pourcentageAffiche = `<span class="cal-agenda-pct">${pct}%</span>`;
   }
   const dateCourte = dateLocaleDepuisISO(e.date).toLocaleDateString('fr-CA',{day:'numeric', month:'short'});
-  const categorieAffichee = e.depotPlanifie ? (STATUT_DEPOT_TEXTE[e.depotStatut] || 'Dépôt prévu')
-    : estDepotConfirme(e) ? 'Dépôt confirmé' : (e.estRevenu ? 'Revenu' : e.category);
+  const estDepotClassique = e.category === CATEGORIE_DEPOT;
+  const statutAConfirmer = STATUT_DEPOT_TEXTE[e.depotStatut] || 'À confirmer';
+  const categorieAffichee = e.depotPlanifie ? (estDepotClassique ? statutAConfirmer : `${statutAConfirmer} · ${e.category}`)
+    : estDepotConfirme(e) ? (estDepotPersonne(e) ? 'Dépôt confirmé' : `${e.category} · confirmé`) : (e.estRevenu ? 'Revenu' : e.category);
   const couleurCategorie = e.depotPlanifie && e.depotStatut !== 'prevu' ? '#e8710a'
     : e.estRevenu ? 'var(--green)' : (COULEURS_CATEGORIES[e.category]||'#9aa0a6');
 
@@ -3567,10 +4018,10 @@ function ouvrirEditionRecurrence(id){
 
   appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
 
-  document.getElementById('edit-rec-est-depot').checked = estSerieDepot(rec);
+  document.getElementById('edit-rec-est-depot').checked = estSerieAConfirmer(rec);
   appliquerAffichageDepotEdition();
-  document.getElementById('edit-rec-sous-titre').textContent = estSerieDepot(rec) && rec.dateDebut < formaterDateISO(new Date())
-    ? `Dépôts à venir · ${libelleRecurrence(rec)}`
+  document.getElementById('edit-rec-sous-titre').textContent = estSerieAConfirmer(rec) && rec.dateDebut < formaterDateISO(new Date())
+    ? `Occurrences à venir · ${libelleRecurrence(rec)}`
     : `Toute la série · ${libelleRecurrence(rec)}`;
   document.getElementById('edit-recurrent-modal').style.display = 'flex';
   majLibellesRepartition();
@@ -3586,8 +4037,8 @@ document.getElementById('edit-rec-qui').addEventListener('change', ()=>{
 });
 document.getElementById('close-edit-recurrent').addEventListener('click', ()=>document.getElementById('edit-recurrent-modal').style.display='none');
 document.getElementById('delete-edit-recurrent').addEventListener('click', actionVerrouillee(document.getElementById('delete-edit-recurrent'), async ()=>{
-  if(recurrenceEnEdition && estSerieDepot(recurrenceEnEdition)){
-    if(confirm("Supprimer les dépôts prévus de cette série (à venir et à confirmer) ? Les dépôts confirmés restent.")){
+  if(recurrenceEnEdition && estSerieAConfirmer(recurrenceEnEdition)){
+    if(confirm("Supprimer les occurrences à confirmer de cette série (à venir et non confirmées) ? Les occurrences déjà confirmées restent.")){
       document.getElementById('edit-recurrent-modal').style.display='none';
       await supprimerSerieDepotEdition(recurrenceEnEdition);
     }
@@ -3668,12 +4119,14 @@ document.getElementById('save-edit-recurrent').addEventListener('click', actionV
     else { finTypeFinal = 'date'; finDateFinal = dateFin; finNombreFinal = null; }
   }
 
-  /* Série de dépôt : seuls les dépôts à venir changent (voir remplacerAvenirSerieDepot). */
-  if(depotEditionActif() && estRevenu){
+  /* Série « à confirmer » : seules les occurrences à venir changent (voir
+     remplacerAvenirSerieDepot). */
+  if(depotEditionActif()){
     const recDepot = recurrenceEnEdition;
     document.getElementById('edit-recurrent-modal').style.display = 'none';
     const okDepot = await enregistrerSerieDepotEdition(recDepot, { nom, montant, pourcentageP1, cfg: cfgRepetition,
-      dateDebut, finType: finTypeFinal, finNombre: finNombreFinal, finDate: finDateFinal });
+      dateDebut, finType: finTypeFinal, finNombre: finNombreFinal, finDate: finDateFinal,
+      categorie: categorieFinale, who, estCompte, estRevenu });
     if(!okDepot) document.getElementById('edit-recurrent-modal').style.display = 'flex';
     return;
   }
@@ -3686,7 +4139,8 @@ document.getElementById('save-edit-recurrent').addEventListener('click', actionV
     TypeMensuel: cfgRepetition.typeMensuel || null,
     RacineId: recurrenceEnEdition.id,
     DateDebut: dateDebut, FinType: finTypeFinal, FinNombre: finNombreFinal, FinDate: finDateFinal,
-    Qui: nomPersonneSupabase(who), Actif: actif, EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1
+    Qui: nomPersonneSupabase(who), Actif: actif, EstCompte: estCompte, EstRevenu: estRevenu, PourcentageP1: pourcentageP1,
+    AConfirmer: false
   };
 
   if(recurrencesSupabaseDisponible){
@@ -3695,7 +4149,7 @@ document.getElementById('save-edit-recurrent').addEventListener('click', actionV
       /* Colonnes récentes peut-être absentes sur une base plus ancienne : on réessaie sans
          elles pour que la mise à jour ne soit pas totalement bloquée. */
       console.warn("Mise à jour avec certaines colonnes récentes impossible, nouvel essai sans elles.", res.error);
-      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, ...sansColonnesRecentes } = update;
+      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, AConfirmer, ...sansColonnesRecentes } = update;
       res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', recurrenceEnEdition.id));
       if(!res.ok){
         /* La fenêtre reste ouverte avec la saisie : on peut réessayer sans tout retaper. */
@@ -3709,7 +4163,9 @@ document.getElementById('save-edit-recurrent').addEventListener('click', actionV
     nom, montant, categorie: categorieFinale,
     unite: cfgRepetition.unite, intervalle: cfgRepetition.intervalle, joursSemaine: cfgRepetition.joursSemaine, typeMensuel: cfgRepetition.typeMensuel,
     racineId: recurrenceEnEdition.id,
-    dateDebut, finType: finTypeFinal, finNombre: finNombreFinal, finDate: finDateFinal, who, actif, estCompte, estRevenu, pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50
+    dateDebut, finType: finTypeFinal, finNombre: finNombreFinal, finDate: finDateFinal, who, actif, estCompte, estRevenu,
+    aConfirmer: false,
+    pourcentageP1: pourcentageP1 != null ? pourcentageP1 : 50
   });
   sauvegarderRecurrencesLocal();
   document.getElementById('edit-recurrent-modal').style.display = 'none';
@@ -3893,7 +4349,8 @@ function rafraichirSousOnglet(scope, sub){
     if(anneeStats) anneeStats.style.display = 'none';
     afficherResumeUnifie(scope);
   } else if(sub==='compte'){
-    afficherEcheancierCompteConjoint();
+    if(scope==='conjoint') afficherEcheancierCompteConjoint();
+    else afficherEcheancierComptePersonnel();
   } else if(sub==='budget'){
     afficherSectionBudget(scope);
   }
@@ -4054,15 +4511,20 @@ async function ajouterDepense(scope){
   let cfgRepetition = document.getElementById(`f-repete-${scope}`).checked
     ? lireControlesRecurrence(controlesRecurrenceAjout(scope))
     : null;
-  /* Dépôt pour payer le compte : toujours une prévision (récurrente, ou unique). */
+  /* « À confirmer » : toujours une prévision (récurrente, ou unique — voir plus bas). Le cas
+     particulier du dépôt classique au compte conjoint (Qui = Compte conjoint, Revenu) force
+     en plus la catégorie et la part (100 %/0 %) pour l'équilibre de chacun. */
+  const aConfirmer = aConfirmerAjoutActif(scope);
   const depotPrevu = scope==='conjoint' && depotAjoutActif();
   let depotUnique = false;
-  if(depotPrevu){
-    if(date && date < formaterDateISO(new Date())){ afficherAlerte("Un dépôt prévu doit être daté d'aujourd'hui ou plus tard."); return; }
-    const v = valeursDepotAjout();
-    pourcentageP1 = v.pourcentageP1;
-    category = v.categorie;
-    if(!note) note = v.nom;
+  if(aConfirmer){
+    if(date && date < formaterDateISO(new Date())){ afficherAlerte("Une transaction à confirmer doit être datée d'aujourd'hui ou plus tard."); return; }
+    if(depotPrevu){
+      const v = valeursDepotAjout();
+      pourcentageP1 = v.pourcentageP1;
+      category = v.categorie;
+      if(!note) note = v.nom;
+    }
     if(!cfgRepetition){
       depotUnique = true;
       cfgRepetition = { unite: 'mois', intervalle: 1, joursSemaine: null, typeMensuel: 'jour_mois' };
@@ -4089,19 +4551,15 @@ async function ajouterDepense(scope){
     const idCree = await creerRecurrenceDepuisValeurs({
       type, nom: note, montant: amount, categorie: category,
       unite: cfgRepetition.unite, intervalle: cfgRepetition.intervalle, joursSemaine: cfgRepetition.joursSemaine, typeMensuel: cfgRepetition.typeMensuel,
-      dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1
+      dateDebut: date, finType, finNombre, finDate, who, estCompte, estRevenu, pourcentageP1, aConfirmer
     });
     if(!idCree) return; /* saisie conservée dans le formulaire pour réessayer */
     recalculerDepenses();
     reinitialiserFormulaireAjoutDepense(scope);
     afficherRecurrencesScope(scope);
     rafraichirActif();
-    if(type==='conjointe') notifierActivitePartenaire('ajout', depotPrevu ? `${note} prévu — ${formaterMonnaie(amount)}` : `${category} — ${formaterMonnaie(amount)}`);
-    if(depotPrevu){
-      document.getElementById('f-est-depot-conjoint').checked = false;
-      delete document.getElementById('f-depot-qui-conjoint').dataset.choisi;
-      appliquerAffichageDepotAjout();
-    }
+    if(type==='conjointe') notifierActivitePartenaire('ajout', aConfirmer ? `${note} à confirmer — ${formaterMonnaie(amount)}` : `${category} — ${formaterMonnaie(amount)}`);
+    if(depotPrevu) delete document.getElementById('f-depot-qui-conjoint').dataset.choisi;
     return;
   }
 
@@ -4183,13 +4641,13 @@ function reinitialiserFormulaireAjoutDepense(scope){
     document.getElementById('f-compte-repartition-conjoint').value = 50;
     document.getElementById('f-who-conjoint').value = nomsPersonnes[currentUser] || nomsPersonnes.p1;
     appliquerChoixQuiConjoint('f-who-conjoint','f-compte-repartition-conjoint','f-est-revenu-field-conjoint');
-    document.getElementById('f-est-depot-conjoint').checked = false;
-    appliquerAffichageDepotAjout();
     appliquerAffichageCategoriePourRevenu('f-est-revenu-conjoint','f-category-field-conjoint');
   } else {
     document.getElementById('f-est-revenu-personnel').checked = false;
     appliquerAffichageCategoriePourRevenu('f-est-revenu-personnel','f-category-field-personnel');
   }
+  const basculeAConfirmer = document.getElementById(`f-est-depot-${scope}`);
+  if(basculeAConfirmer){ basculeAConfirmer.checked = false; appliquerAffichageDepotAjout(scope); }
   rafraichirOptionsFormulaires();
   majLibellesRepartition();
 }
@@ -5761,6 +6219,124 @@ function afficherAlerte(message){
 document.getElementById('alerte-ok').addEventListener('click', ()=>{
   document.getElementById('alerte-modal').classList.remove('visible');
 });
+
+/* ===================== Sélecteur de date personnalisé =====================
+   Remplace le picker natif des <input type="date"> (dont l'apparence dépend du
+   navigateur/OS et n'est pas stylable) par un calendrier maison façon Material
+   Design (grand bandeau de date, grille du mois, boutons Annuler/OK), cohérent
+   avec le thème clair/sombre de l'app. Les inputs restent des type="date"
+   normaux (mêmes lectures/écritures de .value ailleurs dans le code) : on les
+   passe juste en readonly pour empêcher le picker natif de s'ouvrir, et on
+   intercepte le clic pour ouvrir notre calendrier à la place. */
+let dpInputCible = null;
+let dpDateSelectionnee = null; /* Date locale (minuit) actuellement choisie dans le calendrier */
+let dpMoisAffiche = null; /* Date locale (1er du mois affiché) */
+
+function formatDateLongueDP(d){
+  return `${d.getDate()} ${MOIS_NOMS[d.getMonth()].slice(0,3)}. ${d.getFullYear()}`;
+}
+
+function dpBornesInput(input){
+  const min = input.getAttribute('min');
+  const max = input.getAttribute('max');
+  return {
+    min: min ? debutJour(dateLocaleDepuisISO(min)) : null,
+    max: max ? debutJour(dateLocaleDepuisISO(max)) : null,
+  };
+}
+
+function rendreSelecteurDate(){
+  const { min, max } = dpBornesInput(dpInputCible);
+  document.getElementById('dp-header-date').textContent = formatDateLongueDP(dpDateSelectionnee);
+  document.getElementById('dp-month-label').textContent = `${capitaliser(MOIS_NOMS[dpMoisAffiche.getMonth()])} ${dpMoisAffiche.getFullYear()}`;
+
+  const conteneurJoursSemaine = document.getElementById('dp-weekdays');
+  if(!conteneurJoursSemaine.childElementCount){
+    conteneurJoursSemaine.innerHTML = JOURS_SEMAINE_DIM_SAM.map(j=>`<div>${j.slice(0,1)}</div>`).join('');
+  }
+
+  const { debut: premierJourMois } = borneMois(dpMoisAffiche);
+  const dernierJourMois = new Date(dpMoisAffiche.getFullYear(), dpMoisAffiche.getMonth()+1, 0);
+  const debutGrille = debutDeSemaine(premierJourMois);
+  const finGrille = debutDeSemaine(dernierJourMois);
+  const aujourdhuiIso = formaterDateISO(debutJour(new Date()));
+  const selectionIso = formaterDateISO(dpDateSelectionnee);
+
+  let html = '';
+  for(let d = new Date(debutGrille); d <= finGrille; d = ajouterJours(d, 7)){
+    for(let i=0; i<7; i++){
+      const jour = ajouterJours(d, i);
+      const horsMois = jour.getMonth() !== dpMoisAffiche.getMonth();
+      if(horsMois){ html += '<div></div>'; continue; }
+      const iso = formaterDateISO(jour);
+      const desactive = (min && jour < min) || (max && jour > max);
+      const classes = ['dp-day-btn'];
+      if(iso === aujourdhuiIso) classes.push('dp-today');
+      if(iso === selectionIso) classes.push('dp-selected');
+      html += `<div><button type="button" class="${classes.join(' ')}" data-iso="${iso}" ${desactive?'disabled':''}>${jour.getDate()}</button></div>`;
+    }
+  }
+  document.getElementById('dp-days').innerHTML = html;
+  document.getElementById('dp-days').querySelectorAll('button[data-iso]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      dpDateSelectionnee = dateLocaleDepuisISO(btn.dataset.iso);
+      rendreSelecteurDate();
+    });
+  });
+}
+
+function ouvrirSelecteurDate(input){
+  dpInputCible = input;
+  const valeurInitiale = input.value ? dateLocaleDepuisISO(input.value) : debutJour(new Date());
+  dpDateSelectionnee = valeurInitiale;
+  dpMoisAffiche = new Date(valeurInitiale.getFullYear(), valeurInitiale.getMonth(), 1);
+  rendreSelecteurDate();
+  document.getElementById('date-picker-modal').classList.add('visible');
+}
+
+function fermerSelecteurDate(){
+  document.getElementById('date-picker-modal').classList.remove('visible');
+  dpInputCible = null;
+}
+
+document.getElementById('dp-prev').addEventListener('click', ()=>{
+  dpMoisAffiche.setMonth(dpMoisAffiche.getMonth()-1);
+  rendreSelecteurDate();
+});
+document.getElementById('dp-next').addEventListener('click', ()=>{
+  dpMoisAffiche.setMonth(dpMoisAffiche.getMonth()+1);
+  rendreSelecteurDate();
+});
+document.getElementById('dp-cancel').addEventListener('click', fermerSelecteurDate);
+document.getElementById('date-picker-modal').addEventListener('click', (e)=>{
+  if(e.target.id === 'date-picker-modal') fermerSelecteurDate();
+});
+document.getElementById('dp-ok').addEventListener('click', ()=>{
+  if(dpInputCible){
+    dpInputCible.value = formaterDateISO(dpDateSelectionnee);
+    dpInputCible.dispatchEvent(new Event('input', {bubbles:true}));
+    dpInputCible.dispatchEvent(new Event('change', {bubbles:true}));
+  }
+  fermerSelecteurDate();
+});
+
+function activerSelecteurDatePerso(racine){
+  racine.querySelectorAll('input[type="date"]:not([data-dp-init])').forEach(input=>{
+    input.setAttribute('readonly','');
+    input.setAttribute('data-dp-init','1');
+    input.addEventListener('click', ()=>ouvrirSelecteurDate(input));
+  });
+}
+activerSelecteurDatePerso(document);
+new MutationObserver(mutations=>{
+  for(const mutation of mutations){
+    mutation.addedNodes.forEach(node=>{
+      if(node.nodeType !== 1) return;
+      if(node.matches && node.matches('input[type="date"]')) activerSelecteurDatePerso(node.parentNode || document);
+      if(node.querySelectorAll) activerSelecteurDatePerso(node);
+    });
+  }
+}).observe(document.body, { childList:true, subtree:true });
 
 /* Lancement au démarrage */
 initAuth();

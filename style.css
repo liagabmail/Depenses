@@ -84,6 +84,38 @@
   .account-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .account-row .email{font-size:14px;font-weight:500;word-break:break-all;}
 
+  /* Sélecteur de date personnalisé, façon Material Design (calendrier de l'app Google Agenda). */
+  #date-picker-modal{
+    position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);
+    display:none;align-items:center;justify-content:center;z-index:2100;padding:20px;
+  }
+  #date-picker-modal.visible{display:flex;}
+  .dp-card{
+    background:var(--surface);border-radius:28px;box-shadow:var(--shadow-2);
+    width:100%;max-width:328px;overflow:hidden;
+  }
+  .dp-header{background:var(--blue);color:#fff;padding:20px 24px;}
+  .dp-header-label{font-size:12px;letter-spacing:.3px;opacity:.85;margin-bottom:12px;}
+  .dp-header-date{font-size:26px;font-weight:500;line-height:1.2;}
+  .dp-body{padding:12px 12px 0;}
+  .dp-nav{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 8px;}
+  .dp-month-label{font-size:14px;font-weight:500;color:var(--text);}
+  .dp-nav-btns{display:flex;gap:4px;}
+  .dp-nav-btns button{width:36px;height:36px;border:none;background:none;border-radius:50%;color:var(--text-secondary);font-size:18px;cursor:pointer;}
+  .dp-nav-btns button:hover{background:rgba(128,128,128,.15);}
+  .dp-weekdays,.dp-days{display:grid;grid-template-columns:repeat(7,1fr);}
+  .dp-weekdays div{text-align:center;font-size:12px;color:var(--text-secondary);padding:4px 0 8px;}
+  .dp-days div{position:relative;display:flex;align-items:center;justify-content:center;padding:2px 0;}
+  .dp-day-btn{width:36px;height:36px;border:none;background:none;border-radius:50%;color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;}
+  .dp-day-btn:hover{background:rgba(128,128,128,.15);}
+  .dp-day-btn.dp-today{color:var(--blue-dark);font-weight:600;}
+  .dp-day-btn.dp-selected{background:var(--blue);color:#fff;}
+  .dp-day-btn:disabled{color:var(--border);cursor:default;pointer-events:none;}
+  .dp-actions{display:flex;justify-content:flex-end;gap:8px;padding:8px 12px 12px;}
+  .dp-actions .link-btn{padding:10px 14px;border-radius:8px;font-weight:500;text-decoration:none;font-size:14px;}
+  .dp-actions .link-btn:hover{background:rgba(128,128,128,.12);}
+  body.dark .dp-day-btn.dp-today{color:var(--accent-menu);}
+
   /* En-tête */
   header.top{
     display:flex;
