@@ -341,6 +341,16 @@ function signalerEchecEnregistrement(quoi, err){
   afficherAlerte(`${quoi} n'a pas pu être enregistré dans Supabase. Rien n'a été modifié. Vérifiez votre connexion, puis réessayez.`);
 }
 
+/* Un enregistrement reparti "sans les colonnes récentes" réussit, mais il laisse en base une
+   ligne incomplète (drapeau Compte conjoint, répartition %, fréquence détaillée) alors que
+   l'écran affiche les valeurs saisies : la divergence n'apparaissait qu'au rechargement
+   suivant, sous la forme d'une dépense du compte recomptée comme une dépense de Gabriel.
+   Ce repli ne doit donc jamais rester silencieux. */
+function signalerEnregistrementIncomplet(quoi, err){
+  console.error(`Enregistrement incomplet : ${quoi}`, err);
+  afficherAlerte(`${quoi} a bien été enregistré, mais votre base Supabase refuse certaines colonnes : le drapeau « Compte conjoint », la répartition en % et la fréquence détaillée n'ont PAS été sauvegardés. Ajoutez les colonnes manquantes dans Supabase, puis rouvrez cette fiche pour la corriger.`);
+}
+
 /* Empêche un double tap de lancer deux fois la même action (et de créer des doublons) :
    le bouton reste désactivé jusqu'à la fin de l'enregistrement. */
 function actionVerrouillee(bouton, action){
@@ -470,7 +480,7 @@ async function chargerDepensesSupabase() {
     note: e.Note || '',
     type: e.Type === 'personnelle' ? 'personnelle' : 'conjointe',
     recurrenceId: e.RecurrenceId || null,
-    estCompte: e.EstCompte === true,
+    estCompte: estCompteDeLigne(e.Qui, e.EstCompte),
     estRevenu: e.EstRevenu === true,
     pourcentageP1: e.PourcentageP1 != null ? Number(e.PourcentageP1) : 50,
     /* Date d'ajout (début de la répartition sur les paies), en date locale. */
@@ -512,7 +522,9 @@ async function chargerExceptionsSupabase(){
       categorie: x.Categorie || null,
       note: x.Note != null ? x.Note : null,
       who: x.Qui ? clePersonne(x.Qui) : null,
-      estCompte: x.EstCompte,
+      /* null = "rien de changé, on hérite de la série" : on ne redérive le drapeau que si
+         l'exception porte vraiment un Qui (voir estCompteDeLigne). */
+      estCompte: x.EstCompte != null ? x.EstCompte : (x.Qui && clePersonne(x.Qui) === 'compte' ? true : null),
       estRevenu: x.EstRevenu,
       pourcentageP1: x.PourcentageP1 != null ? Number(x.PourcentageP1) : null,
       type: x.Type === 'personnelle' ? 'personnelle' : 'conjointe'
@@ -716,7 +728,7 @@ async function chargerRecurrencesSupabase(){
         finDate: r.FinDate || null,
         who: r.Qui ? clePersonne(r.Qui) : null,
         type: r.Type === 'personnelle' ? 'personnelle' : 'conjointe',
-        estCompte: r.EstCompte === true,
+        estCompte: estCompteDeLigne(r.Qui, r.EstCompte),
         estRevenu: r.EstRevenu === true,
         aConfirmer: r.AConfirmer === true,
         /* Identifie la "famille" de récurrences issues d'une même série d'origine (voir
@@ -1021,10 +1033,21 @@ function morceauxEgaux(cents, n){
   const reste = cents - base * n;
   return Array.from({ length:n }, (_, i) => base + (i < reste ? 1 : 0));
 }
-function partagerCents(cents, pourcentageP1){
+/* Partage `cents` selon `pourcentageP1`. Quand le partage tombe pile entre deux cents (ex. 50 %
+   d'un montant qui finit par un cent impair, comme 100,01 $), il n'y a pas de bonne réponse
+   unique : le cent en trop doit donc alterner d'une occurrence à l'autre plutôt que d'aller
+   toujours à la même personne, sinon il s'accumule uniquement du côté de Gabriel au fil des
+   dépenses récurrentes même si c'est « divisé 50/50 ». `versP1SiEgalite` dit qui reçoit ce
+   cent CETTE fois s'il y a égalité ; l'appelant l'inverse ensuite en lisant `egalite` en
+   retour, pour que l'alternance soit garantie (jamais plus d'un cent d'écart, quel que soit
+   le temps écoulé) plutôt que seulement probable. */
+function partagerCents(cents, pourcentageP1, versP1SiEgalite){
   const pct = pourcentageP1 != null ? pourcentageP1 : 50;
-  const p1 = Math.round(cents * pct / 100);
-  return { p1, p2: cents - p1, pct };
+  const brut = cents * pct / 100;
+  const base = Math.floor(brut);
+  const egalite = Math.abs(brut - base - 0.5) < 1e-9;
+  const p1 = egalite ? base + (versP1SiEgalite ? 1 : 0) : Math.round(brut);
+  return { p1, p2: cents - p1, pct, egalite };
 }
 
 /* ===================== MOTEUR DU COMPTE CONJOINT : SUIVI JOUR PAR JOUR =====================
@@ -1079,9 +1102,15 @@ function calculerMoteurCompte(entree){
      retarde qui que ce soit. Les dépenses, elles, comptent toujours (chacun doit sa part). */
   const compteDansEquilibre = m => (!ref || m.jour > ref.jour) && (!m.estRevenu || m.deposant != null);
 
-  /* Mouvements du compte, avec la part de chacun. */
-  const mvts = (entree.mouvements || []).map(m => {
-    const s = partagerCents(m.cents, m.pct);
+  /* Mouvements du compte, avec la part de chacun. Quand le partage d'un montant tombe pile
+     entre deux cents (ex. 50 % de 100,01 $), le cent en trop alterne strictement d'une
+     égalité à l'autre plutôt que d'aller toujours à la même personne (voir partagerCents) :
+     on trie donc d'abord par jour pour que l'alternance suive l'ordre chronologique réel,
+     sans quoi le cent pourrait s'accumuler du même côté pendant des mois avant de tourner. */
+  let versP1SiEgalite = true;
+  const mvts = (entree.mouvements || []).slice().sort((a, b) => a.jour - b.jour).map(m => {
+    const s = partagerCents(m.cents, m.pct, versP1SiEgalite);
+    if(s.egalite) versP1SiEgalite = !versP1SiEgalite;
     const signe = m.estRevenu ? 1 : -1;
     return { ...m, type: m.enAttente ? 'prevu' : 'reel', deposant: deposantDe(m), d: { p1: signe * s.p1, p2: signe * s.p2 } };
   });
@@ -3107,6 +3136,7 @@ async function creerRecurrenceDepuisValeurs(champs){
       const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, AConfirmer, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
       const retry = await supabaseClient.from('Recurrences').insert([sansColonnesRecentes]);
       if(retry.error){ signalerEchecEnregistrement("Le paiement récurrent", retry.error); return null; }
+      signalerEnregistrementIncomplet("Le paiement récurrent", error);
     }
   }
   recurrences.push({
@@ -3385,8 +3415,10 @@ async function appliquerModificationSurSerieComplete(depense, nv){
     if(!res.ok){
       console.warn("Mise à jour avec certaines colonnes récentes impossible, nouvel essai sans elles.", res.error);
       const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, AConfirmer, ...sansColonnesRecentes } = update;
+      const erreurComplete = res.error;
       res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', rec.id));
       if(!res.ok){ signalerEchecEnregistrement("La modification de la série", res.error); return; }
+      signalerEnregistrementIncomplet("La modification de la série", erreurComplete);
     }
   }
 
@@ -4088,10 +4120,14 @@ function ouvrirEditionRecurrence(id){
 
   if(rec.type==='conjointe'){
     remplirOptionsQui('edit-rec-qui', true);
-    document.getElementById('edit-rec-qui').value = rec.estCompte ? 'Compte conjoint' : libellePersonne(rec.who==='compte' ? 'p1' : rec.who);
+    /* Une série dont le Qui est le compte reste sur "Compte conjoint" même si le drapeau
+       EstCompte manque : sinon la fenêtre proposait Gabriel, et la sauvegarde suivante
+       transformait pour de bon la dépense du compte en dépense de Gabriel. */
+    const recEstCompte = !!rec.estCompte || rec.who === 'compte';
+    document.getElementById('edit-rec-qui').value = recEstCompte ? 'Compte conjoint' : libellePersonne(rec.who);
     activerChamp('edit-rec-qui-field', true);
     activerChamp('edit-rec-compte-repartition-field', true);
-    activerChamp('edit-rec-est-revenu-field', !!rec.estCompte);
+    activerChamp('edit-rec-est-revenu-field', recEstCompte);
   } else {
     activerChamp('edit-rec-qui-field', false);
     activerChamp('edit-rec-compte-repartition-field', false);
@@ -4234,12 +4270,14 @@ document.getElementById('save-edit-recurrent').addEventListener('click', actionV
          elles pour que la mise à jour ne soit pas totalement bloquée. */
       console.warn("Mise à jour avec certaines colonnes récentes impossible, nouvel essai sans elles.", res.error);
       const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, AConfirmer, ...sansColonnesRecentes } = update;
+      const erreurComplete = res.error;
       res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', recurrenceEnEdition.id));
       if(!res.ok){
         /* La fenêtre reste ouverte avec la saisie : on peut réessayer sans tout retaper. */
         signalerEchecEnregistrement("La modification de la série", res.error);
         return;
       }
+      signalerEnregistrementIncomplet("La modification de la série", erreurComplete);
     }
   }
 
@@ -4271,8 +4309,19 @@ document.getElementById('save-edit-recurrent').addEventListener('click', actionV
 
 function libellePersonne(who){ return nomsPersonnes[who] || who; }
 function clePersonne(who){
-  if(who === 'compte' || who === 'Compte') return 'compte';
+  if(who === 'compte' || who === 'Compte' || who === nomsPersonnes.compte) return 'compte';
   return who === 'Mélissa' || who === 'p2' ? 'p2' : 'p1';
+}
+
+/* "Compte conjoint" est porté par DEUX champs en base : Qui = 'Compte' ET EstCompte = true.
+   Quand un enregistrement repart sans les colonnes récentes (voir les replis
+   "sansColonnesRecentes" plus bas), Qui est écrit mais EstCompte reste à sa valeur
+   précédente : la ligne s'affichait encore "Compte conjoint" dans les listes (le libellé
+   vient de Qui) alors que tous les calculs, eux, lisent EstCompte et la traitaient donc
+   comme une dépense conjointe ordinaire — attribuée à Gabriel dès la réouverture de la
+   fenêtre de modification. Qui fait foi : on redérive le drapeau à partir de lui. */
+function estCompteDeLigne(qui, estCompte){
+  return estCompte === true || clePersonne(qui) === 'compte';
 }
 function nomPersonneSupabase(who){
   const cle = clePersonne(who);
@@ -4675,6 +4724,7 @@ async function ajouterDepense(scope){
       console.error(retry.error);
       return;
     }
+    signalerEnregistrementIncomplet("La dépense", error);
   }
 
   depensesReelles.push({
@@ -5130,7 +5180,11 @@ function ouvrirEdition(id){
   depenseEnEdition=depense;
   document.getElementById('edit-amount').value=depense.amount;
   remplirOptionsQui('edit-who', depense.type !== 'personnelle');
-  document.getElementById('edit-who').value = depense.estCompte ? 'Compte conjoint' : libellePersonne(depense.who==='compte' ? currentUser : depense.who);
+  /* Même garde-fou que pour une série : tant que le Qui est le compte, la fenêtre reste sur
+     "Compte conjoint" plutôt que de retomber sur la personne connectée. */
+  const depenseEstCompte = depense.type !== 'personnelle' && (!!depense.estCompte || depense.who === 'compte');
+  document.getElementById('edit-who').value = depenseEstCompte ? 'Compte conjoint'
+    : libellePersonne(depense.who==='compte' ? currentUser : depense.who);
   document.getElementById('edit-date').value=depense.date;
   activerChamp('edit-date-field', true, 'edit-date');
   document.getElementById('edit-note').value=depense.note;
@@ -5340,6 +5394,7 @@ document.getElementById('save-edit').addEventListener('click', actionVerrouillee
     const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = update;
     const retry = await ecritureVerifiee(supabaseClient.from('Depenses').update(sansColonnesRecentes).eq('id',depenseEnEdition.id));
     if(!retry.ok){ signalerEchecEnregistrement("La modification de la dépense", retry.error); return; }
+    signalerEnregistrementIncomplet("La modification de la dépense", resultat.error);
   }
   /* On met à jour la dépense réelle elle-même (et non une copie qui aurait pu être
      remplacée par un rechargement entre-temps). */
@@ -5648,6 +5703,7 @@ async function dupliquerDepense(d){
       console.error(retry.error);
       return;
     }
+    signalerEnregistrementIncomplet("La copie de la dépense", error);
   }
 
   depensesReelles.push({
