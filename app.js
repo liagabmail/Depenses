@@ -111,6 +111,7 @@ async function gererSession(session){
   await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerExceptionsSupabase() ]);
   /* Le moteur du compte n'enregistre un nouveau plan qu'une fois toutes les données en main. */
   donneesCompteChargees = depensesChargeesOk;
+  await purgerTransactionsUniquesEpuisees();
   recalculerDepenses();
   setTimeout(ouvrirDepotDepuisURL, 0);
   rafraichirActif();
@@ -1033,10 +1034,21 @@ function morceauxEgaux(cents, n){
   const reste = cents - base * n;
   return Array.from({ length:n }, (_, i) => base + (i < reste ? 1 : 0));
 }
-function partagerCents(cents, pourcentageP1){
+/* Partage `cents` selon `pourcentageP1`. Quand le partage tombe pile entre deux cents (ex. 50 %
+   d'un montant qui finit par un cent impair, comme 100,01 $), il n'y a pas de bonne réponse
+   unique : le cent en trop doit donc alterner d'une occurrence à l'autre plutôt que d'aller
+   toujours à la même personne, sinon il s'accumule uniquement du côté de Gabriel au fil des
+   dépenses récurrentes même si c'est « divisé 50/50 ». `versP1SiEgalite` dit qui reçoit ce
+   cent CETTE fois s'il y a égalité ; l'appelant l'inverse ensuite en lisant `egalite` en
+   retour, pour que l'alternance soit garantie (jamais plus d'un cent d'écart, quel que soit
+   le temps écoulé) plutôt que seulement probable. */
+function partagerCents(cents, pourcentageP1, versP1SiEgalite){
   const pct = pourcentageP1 != null ? pourcentageP1 : 50;
-  const p1 = Math.round(cents * pct / 100);
-  return { p1, p2: cents - p1, pct };
+  const brut = cents * pct / 100;
+  const base = Math.floor(brut);
+  const egalite = Math.abs(brut - base - 0.5) < 1e-9;
+  const p1 = egalite ? base + (versP1SiEgalite ? 1 : 0) : Math.round(brut);
+  return { p1, p2: cents - p1, pct, egalite };
 }
 
 /* ===================== MOTEUR DU COMPTE CONJOINT : SUIVI JOUR PAR JOUR =====================
@@ -1091,9 +1103,15 @@ function calculerMoteurCompte(entree){
      retarde qui que ce soit. Les dépenses, elles, comptent toujours (chacun doit sa part). */
   const compteDansEquilibre = m => (!ref || m.jour > ref.jour) && (!m.estRevenu || m.deposant != null);
 
-  /* Mouvements du compte, avec la part de chacun. */
-  const mvts = (entree.mouvements || []).map(m => {
-    const s = partagerCents(m.cents, m.pct);
+  /* Mouvements du compte, avec la part de chacun. Quand le partage d'un montant tombe pile
+     entre deux cents (ex. 50 % de 100,01 $), le cent en trop alterne strictement d'une
+     égalité à l'autre plutôt que d'aller toujours à la même personne (voir partagerCents) :
+     on trie donc d'abord par jour pour que l'alternance suive l'ordre chronologique réel,
+     sans quoi le cent pourrait s'accumuler du même côté pendant des mois avant de tourner. */
+  let versP1SiEgalite = true;
+  const mvts = (entree.mouvements || []).slice().sort((a, b) => a.jour - b.jour).map(m => {
+    const s = partagerCents(m.cents, m.pct, versP1SiEgalite);
+    if(s.egalite) versP1SiEgalite = !versP1SiEgalite;
     const signe = m.estRevenu ? 1 : -1;
     return { ...m, type: m.enAttente ? 'prevu' : 'reel', deposant: deposantDe(m), d: { p1: signe * s.p1, p2: signe * s.p2 } };
   });
@@ -1395,7 +1413,7 @@ function afficherBlocSoldeCompte(r, per){
     <div class="cs-minimum">
       <label for="cs-min">Minimum du compte</label>
       <div class="cs-min-champ">
-        <input type="number" id="cs-min" min="0" step="1" inputmode="decimal" value="${enDollars(r.reglages.coussin)}">
+        <input type="number" id="cs-min" min="0" step="1" inputmode="decimal" autocomplete="off" value="${enDollars(r.reglages.coussin)}">
         <span>$</span>
         <button class="btn-add" id="cs-min-ok" style="display:none;">OK</button>
       </div>
@@ -1821,7 +1839,7 @@ function afficherBlocSoldeComptePersonnel(r, per){
     <div class="cs-minimum">
       <label for="cs-min-personnel">Minimum du compte</label>
       <div class="cs-min-champ">
-        <input type="number" id="cs-min-personnel" min="0" step="1" inputmode="decimal" value="${enDollars(r.reglages.coussin)}">
+        <input type="number" id="cs-min-personnel" min="0" step="1" inputmode="decimal" autocomplete="off" value="${enDollars(r.reglages.coussin)}">
         <span>$</span>
         <button class="btn-add" id="cs-min-ok-personnel" style="display:none;">OK</button>
       </div>
@@ -2071,6 +2089,37 @@ function serieTerminee(rec){
   const limite = rec.finType === 'date' && rec.finDate ? dateLocaleDepuisISO(rec.finDate) : horizonMaximal();
   const occ = genererOccurrences(rec, limite);
   return !occ.length || formaterDateISO(occ[occ.length - 1]) < aujourdhuiISO();
+}
+
+/* ===================== TRANSACTION UNIQUE =====================
+   Une transaction « à confirmer » ajoutée sans activer « Se répète » est quand même stockée
+   comme une série d'UNE seule occurrence (voir ajouterDepense : `depotUnique` force
+   finType='nombre', finNombre=1), parce que tout le mécanisme des transactions en attente
+   est bâti sur les récurrences. C'est un détail de stockage : pour l'utilisateur ce n'est
+   PAS une récurrence. L'interface ne doit donc jamais lui montrer l'icône ↻, le libellé
+   « série récurrente », ni lui demander une portée (« et les suivantes » / « toute la
+   série » n'ont aucun sens quand il n'existe qu'une occurrence, et n'en existera jamais
+   d'autre).
+
+   La condition inclut `familleDeRecurrence(...).length === 1` : un segment isolé d'une
+   série fractionnée par un « et les suivantes » garde, lui, sa nature de récurrence. */
+function estTransactionUnique(rec){
+  return !!rec && rec.finType === 'nombre' && rec.finNombre === 1 && familleDeRecurrence(rec).length === 1;
+}
+
+/* Même question, à partir d'une occurrence/dépense affichée plutôt que de la règle. */
+function estOccurrenceUnique(e){
+  return !!e && !!e.recurrenceId && estTransactionUnique(recurrences.find(r => r.id === e.recurrenceId));
+}
+
+/* Une occurrence CONFIRMÉE laisse derrière elle une exception « supprimée » dont la note
+   contient `confirme:<id de la dépense>` : c'est le seul lien qui permet à estDepotConfirme()
+   de reconnaître la dépense comme issue d'une confirmation, et donc d'offrir « annuler la
+   confirmation ». Cette exception n'est PAS un déchet : on ne nettoie jamais une règle qui en
+   porte une, sous peine de casser l'annulation de confirmation. */
+function sansLienDeConfirmation(recurrenceId){
+  return !exceptions.some(x => x.recurrenceId === recurrenceId
+    && typeof x.note === 'string' && x.note.startsWith(PREFIXE_CONFIRMATION));
 }
 function dateLongueISO(iso){
   return dateLocaleDepuisISO(iso).toLocaleDateString('fr-CA', { day:'numeric', month:'long', year:'numeric' });
@@ -2345,17 +2394,17 @@ function rendreVueDepotPlanifie(){
       <div class="depot-section-titre">As-tu ${verbeFait} ${formaterMonnaie(d.amount)} ?</div>
       <div class="depot-formulaire">
         <div class="field"><label for="occ-depot-montant">Montant ($)</label>
-          <input type="number" id="occ-depot-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
+          <input type="number" id="occ-depot-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" autocomplete="new-password" value="${d.amount}"></div>
         <div class="field"><label for="occ-depot-date">Date</label>
-          <input type="date" id="occ-depot-date" max="${aujIso}" value="${d.date}"></div>
+          <input type="date" id="occ-depot-date" max="${aujIso}" autocomplete="new-password" value="${d.date}"></div>
         <button class="btn-add" id="occ-depot-confirmer">Oui, confirmer</button>
       </div>
       <div class="depot-section-titre">Pas encore fait ?</div>
       <div class="depot-formulaire">
         <div class="field"><label for="occ-report-montant">Montant ($)</label>
-          <input type="number" id="occ-report-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
+          <input type="number" id="occ-report-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" autocomplete="new-password" value="${d.amount}"></div>
         <div class="field"><label for="occ-report-date">Nouvelle date</label>
-          <input type="date" id="occ-report-date" min="${aujIso}" value="${lendemainISO(aujIso)}"></div>
+          <input type="date" id="occ-report-date" min="${aujIso}" autocomplete="new-password" value="${lendemainISO(aujIso)}"></div>
         <button class="btn-secondary" id="occ-report-enregistrer">Reporter</button>
       </div>` : `
       <div style="color:var(--text-secondary);font-size:14px;">Prévision. Vous pourrez la confirmer à partir du ${echapperHTML(dateLongueISO(d.date))}.</div>`}
@@ -2388,7 +2437,7 @@ function rendreVueDepotPlanifie(){
 function rendreChoixPorteeDepot(action){
   const d = occurrenceCourante;
   const rec = recurrences.find(r => r.id === d.recurrenceId);
-  const unique = rec && rec.finType === 'nombre' && rec.finNombre === 1 && familleDeRecurrence(rec).length === 1;
+  const unique = estTransactionUnique(rec);
   if(unique){
     if(action === 'modifier'){ rendreFormulaireDepot('seule'); return; }
     if(confirm('Supprimer cette transaction à confirmer ?')){ fermerOccurrenceModal(); supprimerDepot(d, 'seule'); }
@@ -2431,17 +2480,21 @@ function rendreChoixPorteeDepot(action){
 
 function rendreFormulaireDepot(portee){
   const d = occurrenceCourante;
-  const titre = { seule: 'Cette occurrence seulement', suivantes: 'Cette occurrence et les suivantes', serie: 'Toute la série' }[portee];
+  /* Transaction unique : parler d'« occurrence » ou de « cette occurrence SEULEMENT »
+     sous-entendrait qu'il en existe d'autres. Il n'y en a qu'une, et il n'y en aura
+     jamais d'autre : on la nomme simplement « la transaction ». */
+  const unique = estTransactionUnique(recurrences.find(r => r.id === d.recurrenceId));
+  const titre = unique ? '' : { seule: 'Cette occurrence seulement', suivantes: 'Cette occurrence et les suivantes', serie: 'Toute la série' }[portee];
   document.getElementById('occurrence-modal-content').innerHTML = `
     <div class="modal-header">
-      <h3>Modifier l'occurrence à confirmer<span class="modal-sous-titre">${titre}</span></h3>
+      <h3>${unique ? 'Modifier la transaction à confirmer' : "Modifier l'occurrence à confirmer"}<span class="modal-sous-titre">${titre}</span></h3>
     </div>
     <div class="modal-body">
       <div class="modal-grid">
         <div class="field"><label for="dep-mod-montant">Montant ($)</label>
-          <input type="number" id="dep-mod-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
+          <input type="number" id="dep-mod-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" autocomplete="new-password" value="${d.amount}"></div>
         ${portee === 'seule' ? `<div class="field"><label for="dep-mod-date">Date</label>
-          <input type="date" id="dep-mod-date" min="${aujourdhuiISO()}" value="${d.date}"></div>` : ''}
+          <input type="date" id="dep-mod-date" min="${aujourdhuiISO()}" autocomplete="new-password" value="${d.date}"></div>` : ''}
       </div>
       ${portee === 'seule' ? '' : `<button class="solde-bloc-lien" id="dep-mod-frequence" style="margin-top:10px;">Changer la fréquence ou la date de début</button>`}
     </div>
@@ -3138,6 +3191,33 @@ async function creerRecurrenceDepuisValeurs(champs){
   return id;
 }
 
+/* ===================== PURGE DES TRANSACTIONS UNIQUES ÉPUISÉES =====================
+   Avant que supprimerOccurrenceSeule ne fasse le ménage lui-même, rejeter l'unique
+   occurrence d'une transaction unique laissait en base une règle `Recurrences` + son
+   exception, définitivement invisibles dans l'app (la règle ne produit plus aucune
+   occurrence) mais jamais supprimées. Ce passage unique au chargement efface cet héritage.
+
+   Quatre garde-fous, volontairement stricts — dans le doute, on ne touche à rien :
+   - uniquement des transactions uniques (estTransactionUnique) ;
+   - uniquement si leur seule occurrence est bel et bien supprimée ;
+   - jamais si une exception porte un lien de confirmation (voir sansLienDeConfirmation),
+     car cette exception fait vivre « annuler la confirmation » ;
+   - jamais si une vraie ligne de la table Depenses s'y rattache : supprimerRecurrence()
+     efface aussi les dépenses portant ce RecurrenceId (lignes matérialisées par d'anciennes
+     versions), et une purge silencieuse ne doit jamais pouvoir toucher une dépense réelle. */
+async function purgerTransactionsUniquesEpuisees(){
+  if(!recurrencesSupabaseDisponible) return;
+  const candidates = recurrences.filter(rec =>
+    estTransactionUnique(rec)
+    && sansLienDeConfirmation(rec.id)
+    && !depensesReelles.some(e => e.recurrenceId === rec.id)
+    && occurrencesEffectives(rec, horizonMaximal()).length === 0);
+  for(const rec of candidates){
+    try { await supprimerRecurrence(rec.id, true); }
+    catch(err){ console.warn("Purge d'une transaction unique épuisée impossible.", err); }
+  }
+}
+
 /* "Cette dépense seulement" (suppression) : enregistre une exception "supprimée" pour cette
    date. Définitif : l'occurrence ne réapparaîtra jamais, même après un "toute la série" ou
    un "cette dépense et les suivantes". */
@@ -3145,6 +3225,18 @@ async function supprimerOccurrenceSeule(depense){
   if(!depense.virtuelle){ await supprimerDepense(depense.id); return; }
   const rec = recurrences.find(r => r.id === depense.recurrenceId);
   if(!rec) return;
+  /* Transaction unique : supprimer sa seule occurrence vide la règle de toute substance.
+     On efface donc la règle elle-même (et ses exceptions) au lieu de laisser en base une
+     récurrence fantôme qui ne produira plus jamais rien — invisible dans l'app, mais
+     éternelle dans Supabase. Pour une vraie série, on garde le comportement d'origine :
+     l'exception seule, la série continue. */
+  if(estTransactionUnique(rec) && sansLienDeConfirmation(rec.id)
+     && !depensesReelles.some(e => e.recurrenceId === rec.id)){
+    await supprimerRecurrence(rec.id, true);
+    recalculerDepenses();
+    rafraichirActif();
+    return;
+  }
   if(!(await enregistrerException(rec, depense.dateOrigine, { supprimee: true }))) return;
   recalculerDepenses();
   rafraichirActif();
@@ -3963,7 +4055,9 @@ function allerVueJour(scope, iso){
 function rendreCarteDepenseHTML(e, scope){
   const dotClass = e.who;
   const quiLabel = e.estCompte ? 'Compte conjoint' : libellePersonne(e.who);
-  const iconeRecurrente = e.recurrenceId ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
+  /* Une transaction unique à confirmer est stockée comme une série d'une occurrence : elle a
+     donc un recurrenceId sans être une récurrence. Pas d'icône ↻ dans ce cas. */
+  const iconeRecurrente = e.recurrenceId && !estOccurrenceUnique(e) ? '<span class="recurring-icon" title="Dépense récurrente">↻</span>' : '';
   const montantAffiche = e.estRevenu ? `+${formaterMonnaie(e.amount)}` : formaterMonnaie(e.amount);
   /* Le % affiché correspond toujours à la part de la personne indiquée comme "Qui" (pas
      toujours Gabriel) : pas besoin d'écrire son nom une deuxième fois, il est déjà juste à
@@ -4116,16 +4210,25 @@ function ouvrirEditionRecurrence(id){
     activerChamp('edit-rec-compte-repartition-field', false);
     activerChamp('edit-rec-est-revenu-field', true);
   }
-  document.getElementById('edit-rec-toggle-type').textContent =
-    rec.type === 'personnelle' ? 'Série personnelle' : 'Série conjointe';
+  document.getElementById('edit-rec-toggle-type').textContent = estTransactionUnique(rec)
+    ? (rec.type === 'personnelle' ? 'Personnelle' : 'Conjointe')
+    : (rec.type === 'personnelle' ? 'Série personnelle' : 'Série conjointe');
 
   appliquerAffichageCategoriePourRevenu('edit-rec-est-revenu','edit-rec-categorie-field');
 
   document.getElementById('edit-rec-est-depot').checked = estSerieAConfirmer(rec);
   appliquerAffichageDepotEdition();
-  document.getElementById('edit-rec-sous-titre').textContent = estSerieAConfirmer(rec) && rec.dateDebut < formaterDateISO(new Date())
-    ? `Occurrences à venir · ${libelleRecurrence(rec)}`
-    : `Toute la série · ${libelleRecurrence(rec)}`;
+  /* Une transaction unique n'est pas une série : ni le titre ni le sous-titre ne doivent
+     parler de « paiement récurrent », de « série » ou de fréquence. */
+  const recUnique = estTransactionUnique(rec);
+  document.getElementById('edit-rec-titre').firstChild.textContent = recUnique
+    ? 'Modifier la transaction'
+    : 'Modifier un paiement récurrent';
+  document.getElementById('edit-rec-sous-titre').textContent = recUnique
+    ? (estSerieAConfirmer(rec) ? 'Transaction unique à confirmer' : 'Transaction unique')
+    : (estSerieAConfirmer(rec) && rec.dateDebut < formaterDateISO(new Date())
+      ? `Occurrences à venir · ${libelleRecurrence(rec)}`
+      : `Toute la série · ${libelleRecurrence(rec)}`);
   document.getElementById('edit-recurrent-modal').style.display = 'flex';
   majLibellesRepartition();
 }
@@ -5181,11 +5284,14 @@ function ouvrirEdition(id){
      conversion ponctuelle → récurrente), plutôt qu'affichée en lecture seule. La portée
      (seulement / les suivantes / toute la série) se demande au moment de Sauvegarder. */
   const rec = depense.recurrenceId ? recurrences.find(r=>r.id===depense.recurrenceId) : null;
-  if(rec){
+  const transactionUnique = estTransactionUnique(rec);
+  if(rec && !transactionUnique){
     document.getElementById('edit-repete-toggle-field').style.display = 'none';
     afficherReglesRecurrenceOccurrence(rec);
   } else {
-    document.getElementById('edit-repete-toggle-field').style.display = '';
+    /* Transaction unique : aucun réglage de fréquence à montrer — il n'y a qu'une
+       occurrence. On masque le bloc récurrence comme pour une dépense ponctuelle. */
+    document.getElementById('edit-repete-toggle-field').style.display = rec ? 'none' : '';
     document.getElementById('edit-repete-toggle').checked = false;
     appliquerAffichageRepetitionEdit(false);
   }
@@ -5197,10 +5303,12 @@ function ouvrirEdition(id){
      ça se change sur la série entière. */
   activerChamp('edit-toggle-type-field', !depense.virtuelle, 'edit-toggle-type');
 
-  document.getElementById('edit-modal-titre').firstChild.textContent = rec ? 'Modifier une occurrence' : 'Modifier une dépense';
-  document.getElementById('edit-modal-sous-titre').textContent = rec
+  document.getElementById('edit-modal-titre').firstChild.textContent = (rec && !transactionUnique)
+    ? 'Modifier une occurrence'
+    : 'Modifier une dépense';
+  document.getElementById('edit-modal-sous-titre').textContent = (rec && !transactionUnique)
     ? `Série récurrente · ${libelleRecurrence(rec)}`
-    : 'Dépense ponctuelle';
+    : (transactionUnique && estSerieAConfirmer(rec) ? 'Transaction unique à confirmer' : 'Dépense ponctuelle');
   document.getElementById('edit-modal').style.display='flex';
   majLibellesRepartition();
 }
@@ -5225,7 +5333,8 @@ document.getElementById('duplicate-edit').addEventListener('click', actionVerrou
   ev.stopPropagation();
   fermerEditMenu();
   const d = depenseEnEdition; if(!d) return;
-  if(d.recurrenceId){
+  /* Transaction unique : rien à choisir, « toute la série » se confond avec « celle-ci ». */
+  if(d.recurrenceId && !estOccurrenceUnique(d)){
     const portee = await demanderPortee(d, {
       titre: 'Dupliquer une occurrence',
       sousTitre: "Cette dépense fait partie d'une série récurrente",
@@ -5246,6 +5355,12 @@ document.getElementById('delete-edit').addEventListener('click', actionVerrouill
   ev.stopPropagation();
   fermerEditMenu();
   const d = depenseEnEdition; if(!d) return;
+  /* Transaction unique : une seule occurrence existe, la question de la portée ne se pose
+     pas. On supprime directement, comme pour une dépense ponctuelle. */
+  if(d.recurrenceId && estOccurrenceUnique(d)){
+    if(confirm('Supprimer cette transaction ?')){ fermerEditModal(); await supprimerOccurrenceSeule(d); }
+    return;
+  }
   if(d.recurrenceId){
     const portee = await demanderPortee(d, {
       titre: 'Supprimer une occurrence',
@@ -5281,6 +5396,17 @@ document.getElementById('save-edit').addEventListener('click', actionVerrouillee
   /* Occurrence d'une récurrence : la fréquence est directement éditable dans ce même
      formulaire (voir afficherReglesRecurrenceOccurrence) ; la portée (seulement / et les
      suivantes / toute la série) se demande ici, au moment de sauvegarder. */
+  /* Transaction unique : le bloc fréquence n'est pas affiché (voir ouvrirEditModal), donc ses
+     contrôles contiennent des valeurs périmées qu'il ne faut PAS lire. Il n'y a par ailleurs
+     qu'une occurrence : aucune portée à demander, on applique simplement les nouvelles
+     valeurs à cette occurrence. */
+  if(depenseEnEdition.virtuelle && estOccurrenceUnique(depenseEnEdition)){
+    if(!(await modifierOccurrenceSeule(depenseEnEdition, nouvellesValeurs))) return;
+    fermer();
+    if(depenseEnEdition.type==='conjointe') notifierActivitePartenaire('modification', `${categorieFinale} — ${formaterMonnaie(amount)}`);
+    return;
+  }
+
   if(depenseEnEdition.virtuelle){
     const cfgFrequenceEdit = lireControlesRecurrence(CONTROLES_RECURRENCE_NOUVELLE);
     const finTypeEdit = document.getElementById('edit-nouv-fin-type').value;
@@ -6403,6 +6529,22 @@ function activerContraintesNumeriques(){
   });
 }
 activerContraintesNumeriques();
+
+/* ===================== ANTI-AUTOFILL : CE QU'IL NE FAUT PAS REFAIRE =====================
+   Le service de saisie automatique d'Android propose des suggestions sur les champs Montant
+   et Note. Les attributs autocomplete="off" puis "new-password" n'y changent rien : ce
+   service les ignore délibérément (Android empêche une page de neutraliser seule le
+   gestionnaire de mots de passe du téléphone).
+
+   Une tentative a consisté à poser `readonly` sur ces champs et à le retirer au focus, pour
+   que les moteurs d'auto-remplissage ignorent le champ lors de leur scan. NE PAS REFAIRE :
+   sur Android, Chrome décide d'afficher le clavier virtuel AU MOMENT DU TAP, donc avant que
+   le gestionnaire ne retire l'attribut. Résultat : champ modifiable en théorie, mais clavier
+   qui ne remonte jamais — saisie totalement bloquée.
+
+   Les attributs autocomplete="new-password" restent en place (sans effet néfaste), et la
+   barre d'auto-remplissage se désactive côté téléphone : Paramètres Android → Système →
+   Langues et saisie → Saisie automatique. */
 
 /* ===================== CLAVIER VIRTUEL SUR MOBILE =====================
    Sur mobile, les fenêtres d'édition occupent tout l'écran. Tant qu'elles se dimensionnaient
