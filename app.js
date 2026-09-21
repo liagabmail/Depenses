@@ -1412,7 +1412,7 @@ function afficherBlocSoldeCompte(r, per){
     <div class="cs-minimum">
       <label for="cs-min">Minimum du compte</label>
       <div class="cs-min-champ">
-        <input type="number" id="cs-min" min="0" step="1" inputmode="decimal" value="${enDollars(r.reglages.coussin)}">
+        <input type="number" id="cs-min" min="0" step="1" inputmode="decimal" autocomplete="off" value="${enDollars(r.reglages.coussin)}">
         <span>$</span>
         <button class="btn-add" id="cs-min-ok" style="display:none;">OK</button>
       </div>
@@ -1838,7 +1838,7 @@ function afficherBlocSoldeComptePersonnel(r, per){
     <div class="cs-minimum">
       <label for="cs-min-personnel">Minimum du compte</label>
       <div class="cs-min-champ">
-        <input type="number" id="cs-min-personnel" min="0" step="1" inputmode="decimal" value="${enDollars(r.reglages.coussin)}">
+        <input type="number" id="cs-min-personnel" min="0" step="1" inputmode="decimal" autocomplete="off" value="${enDollars(r.reglages.coussin)}">
         <span>$</span>
         <button class="btn-add" id="cs-min-ok-personnel" style="display:none;">OK</button>
       </div>
@@ -2362,17 +2362,17 @@ function rendreVueDepotPlanifie(){
       <div class="depot-section-titre">As-tu ${verbeFait} ${formaterMonnaie(d.amount)} ?</div>
       <div class="depot-formulaire">
         <div class="field"><label for="occ-depot-montant">Montant ($)</label>
-          <input type="number" id="occ-depot-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
+          <input type="number" id="occ-depot-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" autocomplete="new-password" value="${d.amount}"></div>
         <div class="field"><label for="occ-depot-date">Date</label>
-          <input type="date" id="occ-depot-date" max="${aujIso}" value="${d.date}"></div>
+          <input type="date" id="occ-depot-date" max="${aujIso}" autocomplete="new-password" value="${d.date}"></div>
         <button class="btn-add" id="occ-depot-confirmer">Oui, confirmer</button>
       </div>
       <div class="depot-section-titre">Pas encore fait ?</div>
       <div class="depot-formulaire">
         <div class="field"><label for="occ-report-montant">Montant ($)</label>
-          <input type="number" id="occ-report-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
+          <input type="number" id="occ-report-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" autocomplete="new-password" value="${d.amount}"></div>
         <div class="field"><label for="occ-report-date">Nouvelle date</label>
-          <input type="date" id="occ-report-date" min="${aujIso}" value="${lendemainISO(aujIso)}"></div>
+          <input type="date" id="occ-report-date" min="${aujIso}" autocomplete="new-password" value="${lendemainISO(aujIso)}"></div>
         <button class="btn-secondary" id="occ-report-enregistrer">Reporter</button>
       </div>` : `
       <div style="color:var(--text-secondary);font-size:14px;">Prévision. Vous pourrez la confirmer à partir du ${echapperHTML(dateLongueISO(d.date))}.</div>`}
@@ -2456,9 +2456,9 @@ function rendreFormulaireDepot(portee){
     <div class="modal-body">
       <div class="modal-grid">
         <div class="field"><label for="dep-mod-montant">Montant ($)</label>
-          <input type="number" id="dep-mod-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" value="${d.amount}"></div>
+          <input type="number" id="dep-mod-montant" data-num="montant" min="0" step="0.01" inputmode="decimal" autocomplete="new-password" value="${d.amount}"></div>
         ${portee === 'seule' ? `<div class="field"><label for="dep-mod-date">Date</label>
-          <input type="date" id="dep-mod-date" min="${aujourdhuiISO()}" value="${d.date}"></div>` : ''}
+          <input type="date" id="dep-mod-date" min="${aujourdhuiISO()}" autocomplete="new-password" value="${d.date}"></div>` : ''}
       </div>
       ${portee === 'seule' ? '' : `<button class="solde-bloc-lien" id="dep-mod-frequence" style="margin-top:10px;">Changer la fréquence ou la date de début</button>`}
     </div>

@@ -183,11 +183,11 @@
           </div>
           <div class="field">
             <label>Montant</label>
-            <input type="number" id="f-amount-conjoint" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
+            <input type="number" id="f-amount-conjoint" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="new-password" inputmode="decimal">
           </div>
           <div class="field" id="f-compte-repartition-field-conjoint">
             <label>Part de <span id="f-compte-nom-p1-conjoint"></span> (%)</label>
-            <input type="number" id="f-compte-repartition-conjoint" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
+            <input type="number" id="f-compte-repartition-conjoint" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="new-password">
           </div>
           <div class="field" id="f-category-field-conjoint">
             <label>Catégorie</label>
@@ -199,13 +199,13 @@
           </div>
           <div class="field pleine-largeur">
             <label>Note</label>
-            <input type="text" id="f-note-conjoint" placeholder="Optionnel" maxlength="30" autocomplete="off">
+            <input type="text" id="f-note-conjoint" placeholder="Optionnel" maxlength="30" autocomplete="new-password" autocorrect="off" autocapitalize="sentences" spellcheck="false">
           </div>
           <div class="field">
             <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
                  est un point de départ, pas forcément la première occurrence. -->
             <label id="f-date-label-conjoint">Date</label>
-            <input type="date" id="f-date-conjoint" autocomplete="off">
+            <input type="date" id="f-date-conjoint" autocomplete="new-password">
           </div>
           <div class="field toggle-field champ-bascule" id="f-repete-field-conjoint">
             <span class="toggle-field-label"><span class="recurring-icon">↻</span> Se répète</span>
@@ -378,7 +378,7 @@
         <div class="form-grid">
           <div class="field">
             <label>Montant</label>
-            <input type="number" id="f-amount-personnel" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="off" inputmode="decimal">
+            <input type="number" id="f-amount-personnel" data-num="montant" step="0.01" min="0" placeholder="0,00 $" autocomplete="new-password" inputmode="decimal">
           </div>
           <div class="field" id="f-category-field-personnel">
             <label>Catégorie</label>
@@ -390,13 +390,13 @@
           </div>
           <div class="field pleine-largeur">
             <label>Note</label>
-            <input type="text" id="f-note-personnel" placeholder="Optionnel" maxlength="30" autocomplete="off">
+            <input type="text" id="f-note-personnel" placeholder="Optionnel" maxlength="30" autocomplete="new-password" autocorrect="off" autocapitalize="sentences" spellcheck="false">
           </div>
           <div class="field">
             <!-- Devient « À partir de » quand la bascule est à ON : pour une série, cette date
                  est un point de départ, pas forcément la première occurrence. -->
             <label id="f-date-label-personnel">Date</label>
-            <input type="date" id="f-date-personnel" autocomplete="off">
+            <input type="date" id="f-date-personnel" autocomplete="new-password">
           </div>
           <div class="field toggle-field champ-bascule" id="f-repete-field-personnel">
             <span class="toggle-field-label"><span class="recurring-icon">↻</span> Se répète</span>
@@ -744,14 +744,14 @@
   <div class="modal-body">
     <div class="modal-grid">
 <div class="field" id="edit-who-field"><label>Qui</label><select id="edit-who"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select></div>
-<div class="field"><label>Montant</label><input type="number" id="edit-amount" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
+<div class="field"><label>Montant</label><input type="number" id="edit-amount" data-num="montant" step="0.01" min="0" autocomplete="new-password" inputmode="decimal"></div>
       <div class="field" id="edit-compte-repartition-field">
         <label>Part de <span id="edit-compte-nom-p1"></span> (%)</label>
-        <input type="number" id="edit-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
+        <input type="number" id="edit-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="new-password">
       </div>
 <div class="field" id="edit-category-field"><label>Catégorie</label><select id="edit-category"></select></div>
-<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note" maxlength="30" autocomplete="off"></div>
-<div class="field" id="edit-date-field"><label id="edit-date-label">Date</label><input type="date" id="edit-date" autocomplete="off"></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-note" maxlength="30" autocomplete="new-password" autocorrect="off" autocapitalize="sentences" spellcheck="false"></div>
+<div class="field" id="edit-date-field"><label id="edit-date-label">Date</label><input type="date" id="edit-date" autocomplete="new-password"></div>
       <!-- Dépense ponctuelle qui n'appartient à aucune série : la bascule permet de la
            transformer directement en série, sans passer par une fenêtre séparée.
            Demi-largeur, donc posée à côté de la date, exactement comme dans le formulaire
@@ -827,19 +827,19 @@
         <label>Qui</label>
         <select id="edit-rec-qui"><option value="Gabriel">Gabriel</option><option value="Mélissa">Mélissa</option><option value="Compte conjoint">Compte conjoint</option></select>
       </div>
-<div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" data-num="montant" step="0.01" min="0" autocomplete="off" inputmode="decimal"></div>
+<div class="field"><label>Montant</label><input type="number" id="edit-rec-montant" data-num="montant" step="0.01" min="0" autocomplete="new-password" inputmode="decimal"></div>
       <div class="field" id="edit-rec-compte-repartition-field">
         <label>Part de <span id="edit-rec-compte-nom-p1"></span> (%)</label>
-        <input type="number" id="edit-rec-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="off">
+        <input type="number" id="edit-rec-compte-repartition" data-num="pourcentage" min="0" max="100" step="1" value="50" inputmode="numeric" autocomplete="new-password">
       </div>
 <div class="field" id="edit-rec-categorie-field"><label>Catégorie</label><select id="edit-rec-categorie"></select></div>
-<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom" maxlength="30" autocomplete="off"></div>
+<div class="field pleine-largeur"><label>Note</label><input type="text" id="edit-rec-nom" maxlength="30" autocomplete="new-password" autocorrect="off" autocapitalize="sentences" spellcheck="false"></div>
 <div class="field">
         <!-- Une récurrence part toujours d'une date d'ancrage, jamais d'une date unique :
              le libellé est donc « À partir de » en permanence, comme dans le formulaire
              d'ajout quand la bascule est active. -->
         <label>À partir de</label>
-        <input type="date" id="edit-rec-date-debut" autocomplete="off">
+        <input type="date" id="edit-rec-date-debut" autocomplete="new-password">
       </div>
       <div class="field pleine-largeur" id="edit-rec-intervalle-field">
         <label>Se répète tous les</label>
