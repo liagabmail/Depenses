@@ -339,7 +339,8 @@ async function ecritureVerifiee(requete, nbAttendu){
    rechargement. */
 function signalerEchecEnregistrement(quoi, err){
   console.error(`Échec : ${quoi}`, err);
-  afficherAlerte(`${quoi} n'a pas pu être enregistré dans Supabase. Rien n'a été modifié. Vérifiez votre connexion, puis réessayez.`);
+  const detail = err && err.message ? ` (détail : ${err.message})` : '';
+  afficherAlerte(`${quoi} n'a pas pu être enregistré dans Supabase. Rien n'a été modifié. Vérifiez votre connexion, puis réessayez.${detail}`);
 }
 
 /* Un enregistrement reparti "sans les colonnes récentes" réussit, mais il laisse en base une
@@ -350,6 +351,74 @@ function signalerEchecEnregistrement(quoi, err){
 function signalerEnregistrementIncomplet(quoi, err){
   console.error(`Enregistrement incomplet : ${quoi}`, err);
   afficherAlerte(`${quoi} a bien été enregistré, mais votre base Supabase refuse certaines colonnes : le drapeau « Compte conjoint », la répartition en % et la fréquence détaillée n'ont PAS été sauvegardés. Ajoutez les colonnes manquantes dans Supabase, puis rouvrez cette fiche pour la corriger.`);
+}
+
+/* ===================== ÉCRITURES AVEC REPLI =====================
+   Avant, N'IMPORTE QUELLE erreur (coupure réseau passagère au réveil de la PWA, jeton en
+   cours de rafraîchissement...) était prise pour « colonnes manquantes » : l'app renvoyait
+   alors l'enregistrement SANS Compte conjoint / % / fréquence et affichait une alerte
+   trompeuse, alors que toutes les colonnes existent. Désormais :
+   - une erreur ordinaire → on réessaie une fois la version COMPLÈTE après une courte pause ;
+   - seule une vraie erreur « colonne inconnue » (PGRST204 / 42703) déclenche le repli. */
+const COLONNES_RECENTES_DEPENSES = ['EstCompte','EstRevenu','PourcentageP1'];
+const COLONNES_RECENTES_RECURRENCES = ['EstCompte','EstRevenu','PourcentageP1','Unite','Intervalle','JoursSemaine','TypeMensuel','RacineId','AConfirmer'];
+
+function estErreurColonneManquante(err){
+  if(!err) return false;
+  if(err.code === 'PGRST204' || err.code === '42703') return true;
+  return /could not find the '.*' column|column .* does not exist/i.test(err.message || '');
+}
+const pause = (ms) => new Promise(r => setTimeout(r, ms));
+function sansColonnes(valeurs, colonnes){
+  const copie = { ...valeurs };
+  colonnes.forEach(c => delete copie[c]);
+  return copie;
+}
+
+/* Mise à jour d'une ligne par id. Renvoie true si elle est enregistrée (complète ou, en
+   dernier recours, sans les colonnes récentes), false sinon (l'échec est déjà signalé). */
+async function mettreAJourAvecRepli(table, id, valeurs, colonnesRecentes, quoi){
+  const essai = (v) => ecritureVerifiee(supabaseClient.from(table).update(v).eq('id', id));
+  let res = await essai(valeurs);
+  if(!res.ok && !estErreurColonneManquante(res.error)){
+    console.warn(`${quoi} : premier essai échoué, nouvel essai complet.`, res.error);
+    await pause(800);
+    res = await essai(valeurs);
+  }
+  if(res.ok) return true;
+  if(estErreurColonneManquante(res.error)){
+    const res2 = await essai(sansColonnes(valeurs, colonnesRecentes));
+    if(res2.ok){ signalerEnregistrementIncomplet(quoi, res.error); return true; }
+    signalerEchecEnregistrement(quoi, res2.error);
+    return false;
+  }
+  signalerEchecEnregistrement(quoi, res.error);
+  return false;
+}
+
+/* Insertion d'une ligne. L'id est généré par l'app et c'est la clé primaire : si le premier
+   essai avait en fait abouti (réponse perdue), le second renvoie « doublon » (23505), ce qui
+   veut dire que la ligne est bien là — on le traite comme un succès, sans créer de doublon. */
+async function insererAvecRepli(table, ligne, colonnesRecentes, quoi){
+  const essai = async (v) => {
+    const { error } = await supabaseClient.from(table).insert([v]);
+    return error && error.code !== '23505' ? error : null;
+  };
+  let err = await essai(ligne);
+  if(err && !estErreurColonneManquante(err)){
+    console.warn(`${quoi} : premier essai échoué, nouvel essai complet.`, err);
+    await pause(800);
+    err = await essai(ligne);
+  }
+  if(!err) return true;
+  if(estErreurColonneManquante(err)){
+    const err2 = await essai(sansColonnes(ligne, colonnesRecentes));
+    if(!err2){ signalerEnregistrementIncomplet(quoi, err); return true; }
+    signalerEchecEnregistrement(quoi, err2);
+    return false;
+  }
+  signalerEchecEnregistrement(quoi, err);
+  return false;
 }
 
 /* Empêche un double tap de lancer deux fois la même action (et de créer des doublons) :
@@ -2729,8 +2798,12 @@ function ecrireDatesMultiples(ids, codes){
   el.innerHTML = liste.length
     ? liste.map(c => `<span class="date-puce">${libelleDateMultiple(c)}<button type="button" data-retirer="${c}" aria-label="Retirer le ${libelleDateMultiple(c)}">×</button></span>`).join('')
     : `<span class="dates-vide">Aucune date : ajoutez-en une ci-dessous.</span>`;
-  /* La date de début de la série est toujours la première date choisie. */
-  if(liste.length && document.getElementById(ids.unite).value === 'dates'){
+  /* La date de début de la série est toujours la première date choisie — SAUF quand le
+     formulaire modifie une occurrence : là, le champ date est la date de CETTE occurrence.
+     Avant, il était écrasé par la première date de la série ; « cette dépense seulement »
+     déplaçait alors l'occurrence (ex. juin 2027) sur la première date (oct. 2026) : elle
+     disparaissait de son mois. */
+  if(liste.length && document.getElementById(ids.unite).value === 'dates' && !ids.modeOccurrence){
     document.getElementById(ids.date).value = isoDeCodeDate(liste[0]);
   }
 }
@@ -2760,7 +2833,8 @@ function appliquerAffichageDatesMultiples(ids){
     }
   }
   const libDate = libelleDateDe(ids);
-  if(libDate && estDates) libDate.textContent = 'Première date';
+  if(ids.modeOccurrence){ if(libDate) libDate.textContent = 'Date'; }
+  else if(libDate && estDates) libDate.textContent = 'Première date';
   else if(libDate && etaitDates) libDate.textContent = 'À partir de';
   if(estDates && !lireDatesMultiples(ids).length){
     const iso = document.getElementById(ids.date).value;
@@ -2791,7 +2865,7 @@ function brancherDatesMultiples(ids){
   champ.addEventListener('change', ajouter);
   /* Changer la « Première date » l'ajoute à la liste. */
   document.getElementById(ids.date).addEventListener('change', () => {
-    if(document.getElementById(ids.unite).value !== 'dates') return;
+    if(document.getElementById(ids.unite).value !== 'dates' || ids.modeOccurrence) return;
     const iso = document.getElementById(ids.date).value;
     if(!iso) return;
     ecrireDatesMultiples(ids, [...lireDatesMultiples(ids), codeDateMultiple(iso)]);
@@ -3161,18 +3235,8 @@ async function creerRecurrenceDepuisValeurs(champs){
      l'originale). En mode local (table absente au chargement), on garde l'ancien
      comportement : la série vit dans le stockage de l'appareil. */
   if(recurrencesSupabaseDisponible){
-    const { error } = await supabaseClient.from('Recurrences').insert([nouvelleRecurrenceDB]);
-    if(error){
-      /* Les colonnes Unite/Intervalle/JoursSemaine/TypeMensuel/RacineId/AConfirmer (ou
-         EstCompte/EstRevenu/PourcentageP1 pour une base plus ancienne) n'existent peut-être
-         pas encore : on réessaie sans elles pour que la récurrence soit tout de même créée
-         (voir les instructions pour ajouter ces colonnes à Supabase). */
-      console.warn("Insertion complète de la récurrence impossible, nouvel essai sans les colonnes récentes.", error);
-      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, AConfirmer, ...sansColonnesRecentes } = nouvelleRecurrenceDB;
-      const retry = await supabaseClient.from('Recurrences').insert([sansColonnesRecentes]);
-      if(retry.error){ signalerEchecEnregistrement("Le paiement récurrent", retry.error); return null; }
-      signalerEnregistrementIncomplet("Le paiement récurrent", error);
-    }
+    const ok = await insererAvecRepli('Recurrences', nouvelleRecurrenceDB, COLONNES_RECENTES_RECURRENCES, "Le paiement récurrent");
+    if(!ok) return null;
   }
   recurrences.push({
     id, nom:champs.nom, montant:champs.montant, categorie:champs.categorie,
@@ -3453,7 +3517,12 @@ async function appliquerModificationSurSerieComplete(depense, nv){
   const famille = familleDeRecurrence(rec);
   const segmentsAbsorbes = famille.filter(r => r.id !== rec.id);
   const dateChangee = nv.date && nv.date !== depense.dateOrigine;
-  const vraiDebut = dateChangee ? nv.date : famille.reduce((a,b) => b.dateDebut < a.dateDebut ? b : a).dateDebut;
+  /* Dates précises : le début de la série est toujours la première date de la liste (le
+     champ « Date » du formulaire est celui de l'occurrence cliquée, pas celui de la série). */
+  const listeDates = nv.unite === 'dates' && nv.joursSemaine && nv.joursSemaine.length
+    ? datesMultiplesTriees(nv.joursSemaine) : null;
+  const vraiDebut = listeDates ? isoDeCodeDate(listeDates[0])
+    : dateChangee ? nv.date : famille.reduce((a,b) => b.dateDebut < a.dateDebut ? b : a).dateDebut;
 
   const finChangeParUtilisateur = nv.finType != null && (
     nv.finType !== (rec.finType || 'jamais')
@@ -3485,15 +3554,8 @@ async function appliquerModificationSurSerieComplete(depense, nv){
   };
 
   if(recurrencesSupabaseDisponible){
-    let res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(update).eq('id', rec.id));
-    if(!res.ok){
-      console.warn("Mise à jour avec certaines colonnes récentes impossible, nouvel essai sans elles.", res.error);
-      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, AConfirmer, ...sansColonnesRecentes } = update;
-      const erreurComplete = res.error;
-      res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', rec.id));
-      if(!res.ok){ signalerEchecEnregistrement("La modification de la série", res.error); return; }
-      signalerEnregistrementIncomplet("La modification de la série", erreurComplete);
-    }
+    const ok = await mettreAJourAvecRepli('Recurrences', rec.id, update, COLONNES_RECENTES_RECURRENCES, "La modification de la série");
+    if(!ok) return;
   }
 
   Object.assign(rec, {
@@ -3528,14 +3590,25 @@ async function appliquerModificationSurSerieComplete(depense, nv){
 async function dupliquerSerieComplete(recurrenceId){
   const rec = recurrences.find(r => r.id === recurrenceId);
   if(!rec) return;
-  const idCree = await creerRecurrenceDepuisValeurs({
-    type: rec.type, nom: rec.nom, montant: rec.montant, categorie: rec.categorie,
-    unite: rec.unite, intervalle: rec.intervalle, joursSemaine: rec.joursSemaine, typeMensuel: rec.typeMensuel,
-    dateDebut: rec.dateDebut, finType: rec.finType, finNombre: rec.finNombre, finDate: rec.finDate,
-    who: rec.who, estCompte: rec.estCompte, estRevenu: rec.estRevenu, pourcentageP1: rec.pourcentageP1,
-    aConfirmer: rec.aConfirmer
-  });
-  if(!idCree) return;
+  /* Une série déjà fractionnée (« cette dépense et les suivantes ») est répartie sur plusieurs
+     segments d'une même famille. Avant, seul le segment cliqué était copié : la copie
+     s'arrêtait à la fin de ce segment. On copie maintenant tous les segments, dans l'ordre,
+     sous une nouvelle racine commune. */
+  const segments = familleDeRecurrence(rec).slice().sort((a,b) => a.dateDebut < b.dateDebut ? -1 : a.dateDebut > b.dateDebut ? 1 : 0);
+  let nouvelleRacine = null;
+  for(const seg of segments){
+    const idCree = await creerRecurrenceDepuisValeurs({
+      type: seg.type, nom: seg.nom, montant: seg.montant, categorie: seg.categorie,
+      unite: seg.unite, intervalle: seg.intervalle, joursSemaine: seg.joursSemaine, typeMensuel: seg.typeMensuel,
+      dateDebut: seg.dateDebut, finType: seg.finType, finNombre: seg.finNombre, finDate: seg.finDate,
+      who: seg.who, estCompte: seg.estCompte, estRevenu: seg.estRevenu, pourcentageP1: seg.pourcentageP1,
+      aConfirmer: seg.aConfirmer,
+      racineId: nouvelleRacine
+    });
+    if(!idCree) break;
+    if(!nouvelleRacine) nouvelleRacine = idCree;
+  }
+  if(!nouvelleRacine) return;
   recalculerDepenses();
   afficherRecurrencesScope(rec.type==='personnelle' ? 'personnel' : 'conjoint');
   rafraichirActif();
@@ -4347,21 +4420,9 @@ document.getElementById('save-edit-recurrent').addEventListener('click', actionV
   };
 
   if(recurrencesSupabaseDisponible){
-    let res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(update).eq('id', recurrenceEnEdition.id));
-    if(!res.ok){
-      /* Colonnes récentes peut-être absentes sur une base plus ancienne : on réessaie sans
-         elles pour que la mise à jour ne soit pas totalement bloquée. */
-      console.warn("Mise à jour avec certaines colonnes récentes impossible, nouvel essai sans elles.", res.error);
-      const { EstCompte, EstRevenu, PourcentageP1, Unite, Intervalle, JoursSemaine, TypeMensuel, RacineId, AConfirmer, ...sansColonnesRecentes } = update;
-      const erreurComplete = res.error;
-      res = await ecritureVerifiee(supabaseClient.from('Recurrences').update(sansColonnesRecentes).eq('id', recurrenceEnEdition.id));
-      if(!res.ok){
-        /* La fenêtre reste ouverte avec la saisie : on peut réessayer sans tout retaper. */
-        signalerEchecEnregistrement("La modification de la série", res.error);
-        return;
-      }
-      signalerEnregistrementIncomplet("La modification de la série", erreurComplete);
-    }
+    /* En cas d'échec, la fenêtre reste ouverte avec la saisie : on peut réessayer sans tout retaper. */
+    const ok = await mettreAJourAvecRepli('Recurrences', recurrenceEnEdition.id, update, COLONNES_RECENTES_RECURRENCES, "La modification de la série");
+    if(!ok) return;
   }
 
   Object.assign(recurrenceEnEdition, {
@@ -4795,20 +4856,7 @@ async function ajouterDepense(scope){
     user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
 
-  let { error } = await supabaseClient.from('Depenses').insert([nouvelleDepenseDB]);
-  if(error){
-    /* Les colonnes EstCompte/EstRevenu/PourcentageP1 n'existent peut-être pas encore : on
-       réessaie sans elles pour que la dépense soit tout de même enregistrée. */
-    console.warn("Insertion avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
-    const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleDepenseDB;
-    const retry = await supabaseClient.from('Depenses').insert([sansColonnesRecentes]);
-    if(retry.error){
-      afficherAlerte("Erreur lors de l'enregistrement sur Supabase.");
-      console.error(retry.error);
-      return;
-    }
-    signalerEnregistrementIncomplet("La dépense", error);
-  }
+  if(!(await insererAvecRepli('Depenses', nouvelleDepenseDB, COLONNES_RECENTES_DEPENSES, "La dépense"))) return;
 
   depensesReelles.push({
     ajout: formaterDateISO(new Date()),
@@ -5282,6 +5330,8 @@ function ouvrirEdition(id){
      (seulement / les suivantes / toute la série) se demande au moment de Sauvegarder. */
   const rec = depense.recurrenceId ? recurrences.find(r=>r.id===depense.recurrenceId) : null;
   const transactionUnique = estTransactionUnique(rec);
+  /* Le champ « Date » est ici celui de l'occurrence, pas le début de la série. */
+  CONTROLES_RECURRENCE_NOUVELLE.modeOccurrence = !!(rec && !transactionUnique);
   if(rec && !transactionUnique){
     document.getElementById('edit-repete-toggle-field').style.display = 'none';
     afficherReglesRecurrenceOccurrence(rec);
@@ -5494,14 +5544,7 @@ document.getElementById('save-edit').addEventListener('click', actionVerrouillee
     PourcentageP1: pourcentageP1,
     user_id: type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
-  const resultat = await ecritureVerifiee(supabaseClient.from('Depenses').update(update).eq('id',depenseEnEdition.id));
-  if(!resultat.ok){
-    console.warn("Mise à jour avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", resultat.error);
-    const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = update;
-    const retry = await ecritureVerifiee(supabaseClient.from('Depenses').update(sansColonnesRecentes).eq('id',depenseEnEdition.id));
-    if(!retry.ok){ signalerEchecEnregistrement("La modification de la dépense", retry.error); return; }
-    signalerEnregistrementIncomplet("La modification de la dépense", resultat.error);
-  }
+  if(!(await mettreAJourAvecRepli('Depenses', depenseEnEdition.id, update, COLONNES_RECENTES_DEPENSES, "La modification de la dépense"))) return;
   /* On met à jour la dépense réelle elle-même (et non une copie qui aurait pu être
      remplacée par un rechargement entre-temps). */
   const reelle = depensesReelles.find(e => e.id === depenseEnEdition.id) || depenseEnEdition;
@@ -5799,18 +5842,7 @@ async function dupliquerDepense(d){
     user_id: d.type === 'personnelle' ? (currentSession?.user?.id || null) : null
   };
 
-  let { error } = await supabaseClient.from('Depenses').insert([nouvelleDepenseDB]);
-  if(error){
-    console.warn("Insertion avec EstCompte/EstRevenu/PourcentageP1 impossible, nouvel essai sans ces colonnes.", error);
-    const { EstCompte, EstRevenu, PourcentageP1, ...sansColonnesRecentes } = nouvelleDepenseDB;
-    const retry = await supabaseClient.from('Depenses').insert([sansColonnesRecentes]);
-    if(retry.error){
-      afficherAlerte("Erreur lors de la duplication de la dépense.");
-      console.error(retry.error);
-      return;
-    }
-    signalerEnregistrementIncomplet("La copie de la dépense", error);
-  }
+  if(!(await insererAvecRepli('Depenses', nouvelleDepenseDB, COLONNES_RECENTES_DEPENSES, "La copie de la dépense"))) return;
 
   depensesReelles.push({
     ajout: formaterDateISO(new Date()),
