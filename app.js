@@ -3607,6 +3607,16 @@ async function dupliquerSerieComplete(recurrenceId){
     });
     if(!idCree) break;
     if(!nouvelleRacine) nouvelleRacine = idCree;
+    /* Les retouches individuelles (« cette dépense seulement » : montant différent, date
+       déplacée, occurrence supprimée...) font partie de la série telle qu'on la voit : on
+       les recopie aussi, sinon la copie affichait le montant habituel à ces dates. Les liens
+       de confirmation de dépôt restent propres à la série d'origine. */
+    const nouveauSeg = recurrences.find(r => r.id === idCree);
+    const retouches = exceptions.filter(x => x.recurrenceId === seg.id
+      && !(typeof x.note === 'string' && x.note.startsWith(PREFIXE_CONFIRMATION)));
+    for(const x of retouches){
+      await enregistrerException(nouveauSeg, x.dateOrigine, { ...x });
+    }
   }
   if(!nouvelleRacine) return;
   recalculerDepenses();
