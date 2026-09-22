@@ -770,9 +770,8 @@
      affiché — avec « À une date précise », la date a besoin de sa demi-largeur. */
   .field.fin-type-large{grid-column:span 3;}
   .field.fin-nombre-etroit{grid-column:span 1;}
-  /* Un champ grisé garde sa place : seul son aspect change */
-  .field.est-desactive label{opacity:.55;}
-  .field select:disabled, .field input:disabled{opacity:.5;cursor:not-allowed;}
+  /* Un champ désactivé garde sa place (mise en page identique) mais devient invisible */
+  .field.est-desactive{visibility:hidden;}
   .edit-card h2{margin:0 0 18px;font-size:20px;font-weight:500;}
   .edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
   .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
