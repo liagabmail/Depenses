@@ -5917,12 +5917,12 @@ document.getElementById('save-edit').addEventListener('click', actionVerrouillee
 }));
 
 document.getElementById('dark-mode').addEventListener('change',e=>{localStorage.setItem('depenses_theme',e.target.checked?'dark':'light');appliquerTheme();});
-document.getElementById('saison-toggle').addEventListener('change',e=>{localStorage.setItem('depenses_saison_actif',e.target.checked?'1':'0');rafraichirApresChangementSaison();});
-document.getElementById('saison-choix').addEventListener('change',e=>{localStorage.setItem('depenses_saison_choix',e.target.value);rafraichirApresChangementSaison();});
-document.getElementById('saison-dates-btn').addEventListener('click', ouvrirDatesSaison);
-document.getElementById('close-saison-dates').addEventListener('click',()=>{ document.getElementById('saison-dates-modal').style.display = 'none'; });
-document.getElementById('saison-particules').addEventListener('change',e=>{localStorage.setItem('depenses_saison_particules',e.target.checked?'1':'0');appliquerThemeSaison();});
-document.getElementById('saison-surprise').addEventListener('change',e=>{
+document.getElementById('saison-toggle')?.addEventListener('change',e=>{localStorage.setItem('depenses_saison_actif',e.target.checked?'1':'0');rafraichirApresChangementSaison();});
+document.getElementById('saison-choix')?.addEventListener('change',e=>{localStorage.setItem('depenses_saison_choix',e.target.value);rafraichirApresChangementSaison();});
+document.getElementById('saison-dates-btn')?.addEventListener('click', ouvrirDatesSaison);
+document.getElementById('close-saison-dates')?.addEventListener('click',()=>{ document.getElementById('saison-dates-modal').style.display = 'none'; });
+document.getElementById('saison-particules')?.addEventListener('change',e=>{localStorage.setItem('depenses_saison_particules',e.target.checked?'1':'0');appliquerThemeSaison();});
+document.getElementById('saison-surprise')?.addEventListener('change',e=>{
   localStorage.setItem('depenses_saison_surprise',e.target.checked?'1':'0');
   if(e.target.checked) celebrerAjoutSaison();   // aperçu immédiat
 });
