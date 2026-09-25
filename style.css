@@ -947,11 +947,31 @@
     body.saison .logo-mark::after,body.saison::before,body.saison::after{animation:none !important;}
   }
 
-  /* Particules : conteneur fixe qui ne capte aucun clic, sous les fenêtres (z-index 700+). */
-  #saison-deco{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:5;}
-  .saison-particule{position:absolute;top:-40px;line-height:1;opacity:.75;will-change:transform;
+  /* Avec les animations, les cartes laissent deviner les particules qui passent dessous. Le
+     formulaire d'ajout reste opaque : sur mobile, il devient une fenêtre plein écran. */
+  body.saison-anime .card:not(.form-card),body.saison-anime .stat-card{background:color-mix(in srgb, var(--surface) 80%, transparent);}
+
+  /* Petits détails posés sur le rebord du dessus des cartes. Chaque carte reçoit de
+     distribuerTouffes (app.js) son dessin (--touffe-img, parmi --saison-touffe-1 à 5) et sa
+     position (--touffe-x). Ils restent dans l'espace entre les cartes et ne cachent rien. */
+  body.avec-touffes .card[data-touffe]{position:relative;}
+  body.avec-touffes .card[data-touffe]::after{content:"";position:absolute;bottom:calc(100% - 1px);left:var(--touffe-x, 18px);
+    width:72px;height:28px;pointer-events:none;background:var(--touffe-img) no-repeat center bottom / contain;}
+  /* La carte du calendrier coupe ce qui déborde (elle touche les bords de l'écran) : on ne
+     coupe plus qu'à l'horizontale, pour que le détail et la neige restent visibles au-dessus. */
+  body.avec-touffes #calendrier-recurrent-card-conjoint,body.avec-touffes #calendrier-recurrent-card-personnel{overflow:visible;overflow-x:clip;}
+  /* Hiver et Noël : couche de neige sur le dessus des cartes, avec des glaçons qui pendent un
+     peu dans la marge du haut, sans atteindre le texte. */
+  body.saison-hiver .card[data-touffe]::before,body.saison-noel .card[data-touffe]::before{content:"";position:absolute;
+    top:-6px;left:9px;right:9px;height:22px;pointer-events:none;filter:drop-shadow(0 1px 0 rgba(116,192,252,.6));
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='22'><path d='M0 5 Q5 0 11 3.5 Q15 1 20 3 Q27 -1 34 3.5 Q39 1.5 44 3 Q52 0 58 4 Q63 1 69 3 Q77 -.5 83 3.5 Q87 2 90 5 V9.5 H0 Z' fill='white'/><path d='M3 8.5 L7 8.5 L5 13.5 Z M11.6 8.5 L16.4 8.5 L14 18.5 Z M19.4 8.5 L22.6 8.5 L21 12.5 Z M29.8 8.5 L34.2 8.5 L32 15.5 Z M43.4 8.5 L48.6 8.5 L46 20.5 Z M53.2 8.5 L56.8 8.5 L55 12.5 Z M64.7 8.5 L69.3 8.5 L67 16.5 Z M79 8.5 L83 8.5 L81 13.5 Z' fill='%23d0ebff'/><path d='M14.6 9 L14.1 16 M46.7 9 L46.1 18 M67.5 9 L67.1 14' stroke='white' stroke-width='.8'/></svg>") repeat-x 0 0 / 90px 22px;}
+
+  /* Particules : conteneur fixe DERRIÈRE le contenu (z-index:-1, comme la guirlande) et qui ne
+     capte aucun clic. Elles passent sous les cartes, rendues un peu translucides plus haut. */
+  #saison-deco{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:-1;}
+  .saison-particule{position:absolute;top:-40px;line-height:1;opacity:.6;will-change:transform;
     animation-name:saison-chute;animation-timing-function:linear;animation-iteration-count:infinite;}
-  .saison-particule.teinte{color:#8ab4f8;opacity:.8;}
+  .saison-particule.teinte{color:#8ab4f8;opacity:.7;}
   body.dark .saison-particule.teinte{color:#e8f0fe;}
   .saison-particule.confetti{width:7px;height:11px;border-radius:2px;opacity:.85;}
   .saison-particule.montee{top:auto;bottom:-40px;animation-name:saison-montee;opacity:.6;}

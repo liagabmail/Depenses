@@ -608,6 +608,259 @@ function svgGuirlande({ type, couleurs = [], fil = '#868e96' }){
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="28">${corps}</svg>`;
 }
+
+/* Petits détails posés sur le rebord du dessus des cartes (voir body.avec-touffes .card::after
+   dans style.css) : une touffe de gazon et sa marguerite, un tas de feuilles, une citrouille…
+   Plusieurs variantes par thème, distribuées d'une carte à l'autre. Chaque détail est un dessin de
+   60 × 23 dont le bas touche le rebord de la carte ; il reste dans l'espace entre les cartes
+   et ne cache rien. Le hasard est « semé » : les dessins sont toujours les mêmes. */
+function hasardSeme(graine){
+  return () => {
+    graine = (graine + 0x6D2B79F5) | 0;
+    let t = Math.imul(graine ^ (graine >>> 15), 1 | graine);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const TOUFFE_L = 60, TOUFFE_H = 23, SOL_Y = 22;   // SOL_Y : ligne du rebord de la carte
+const DESSINS_TOUFFE = {
+  /* Touffe d'herbe centrée en x, plus haute au milieu. */
+  herbe(r, x, largeur, couleurs, hauteur = 9){
+    let s = '';
+    for(let dx = -largeur / 2; dx <= largeur / 2; dx += 2.6){
+      const h = 3 + hauteur * (1 - (2 * dx / largeur) ** 2) * (.6 + r() * .4), penche = dx * .15 + (r() - .5) * 2;
+      s += `<path d="M${x + dx - 1.6} ${SOL_Y + 1} L${x + dx + penche} ${SOL_Y - h} L${x + dx + 1.6} ${SOL_Y + 1} Z" fill="${couleurs[Math.floor(r() * couleurs.length)]}"/>`;
+    }
+    return s;
+  },
+  marguerite(x, h){
+    const cy = SOL_Y - h;
+    const petales = [0, 60, 120, 180, 240, 300].map(a => `<circle cx="${x + 3 * Math.cos(a * Math.PI / 180)}" cy="${cy + 3 * Math.sin(a * Math.PI / 180)}" r="2.2" fill="#fff" stroke="#e9ecef" stroke-width=".3"/>`).join('');
+    return `<path d="M${x} ${SOL_Y} V${cy}" stroke="#2f9e44" stroke-width="1.1"/>${petales}<circle cx="${x}" cy="${cy}" r="1.7" fill="#fcc419"/>`;
+  },
+  tulipe(x, h, couleur){
+    const y = SOL_Y - h;
+    return `<path d="M${x} ${SOL_Y} V${y + 3}" stroke="#2f9e44" stroke-width="1.2"/><path d="M${x - 3.5} ${y} L${x - 3.5} ${y - 4.5} L${x - 1.7} ${y - 2.7} L${x} ${y - 5.4} L${x + 1.7} ${y - 2.7} L${x + 3.5} ${y - 4.5} L${x + 3.5} ${y} Q${x} ${y + 4.4} ${x - 3.5} ${y} Z" fill="${couleur}"/>`;
+  },
+  coeurFleur(x, h, couleur){
+    const y = SOL_Y - h;
+    return `<path d="M${x} ${SOL_Y} V${y + 4}" stroke="#2f9e44" stroke-width="1.1"/><path d="M${x} ${y + 4.5} C${x - 7} ${y} ${x - 4.5} ${y - 5.5} ${x} ${y - 2} C${x + 4.5} ${y - 5.5} ${x + 7} ${y} ${x} ${y + 4.5} Z" fill="${couleur}"/>`;
+  },
+  trefle(x, h){
+    const y = SOL_Y - h;
+    return `<path d="M${x} ${SOL_Y} V${y}" stroke="#2b8a3e" stroke-width="1.1"/><g fill="#2f9e44"><circle cx="${x}" cy="${y - 2.6}" r="2.7"/><circle cx="${x - 2.7}" cy="${y + .9}" r="2.7"/><circle cx="${x + 2.7}" cy="${y + .9}" r="2.7"/></g>`;
+  },
+  citrouille(x, rayon){
+    const cy = SOL_Y - rayon * .8;
+    return `<rect x="${x - 1.1}" y="${cy - rayon * .8 - 3.5}" width="2.2" height="4.5" rx="1" fill="#2b8a3e"/>` +
+      [-.42, .42, 0].map(d => `<ellipse cx="${x + d * rayon}" cy="${cy}" rx="${rayon * .55}" ry="${rayon * .8}" fill="#f76707" stroke="#d9480f" stroke-width=".7"/>`).join('');
+  },
+  tasFeuilles(r, x, largeur, hauteur, couleurs){
+    let s = '';
+    for(let i = 0; i < largeur * 1.5; i++){
+      const dx = (r() - .5) * largeur, bord = 1 - (2 * dx / largeur) ** 2;
+      const y = SOL_Y - 1 - r() * hauteur * bord;
+      s += `<ellipse cx="${x + dx}" cy="${y}" rx="2.8" ry="1.4" fill="${couleurs[Math.floor(r() * couleurs.length)]}" transform="rotate(${Math.round(r() * 180)} ${x + dx} ${y})"/>`;
+    }
+    return s;
+  },
+  /* Petits morceaux éparpillés sur le rebord (feuilles, confettis). */
+  eparpilles(r, x, largeur, n, couleurs, rx = 2.6, ry = 1.3){
+    let s = '';
+    for(let i = 0; i < n; i++){
+      const cx = x + (r() - .5) * largeur, cy = SOL_Y - .5 - r() * 2;
+      s += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${couleurs[i % couleurs.length]}" transform="rotate(${Math.round(r() * 180)} ${cx} ${cy})"/>`;
+    }
+    return s;
+  },
+  sapin(x, h){
+    const base = SOL_Y;
+    return `<rect x="${x - 1.5}" y="${base - 4}" width="3" height="4" fill="#8a5a22"/>` +
+      [0, 1, 2].map(i => { const w = h * (.42 - i * .1), y = base - 3 - i * h * .25; return `<path d="M${x - w} ${y} L${x} ${y - h * .4} L${x + w} ${y} Z" fill="#2b8a3e"/>`; }).join('');
+  },
+  cadeau(x, w, h, couleur, ruban, base = SOL_Y){
+    const y = base - h;
+    return `<rect x="${x - w / 2}" y="${y}" width="${w}" height="${h}" rx="1.3" fill="${couleur}"/><rect x="${x - 1.2}" y="${y}" width="2.4" height="${h}" fill="${ruban}"/><rect x="${x - w / 2}" y="${y + h / 2 - 1.2}" width="${w}" height="2.4" fill="${ruban}"/><ellipse cx="${x - 2.5}" cy="${y - 1.6}" rx="2.6" ry="1.8" fill="${ruban}"/><ellipse cx="${x + 2.5}" cy="${y - 1.6}" rx="2.6" ry="1.8" fill="${ruban}"/>`;
+  },
+  oeuf(x, couleur){
+    const cy = SOL_Y - 4.5;
+    return `<ellipse cx="${x}" cy="${cy}" rx="4" ry="5.4" fill="${couleur}"/><path d="M${x - 3.8} ${cy} l1.9 -1.6 l1.9 1.6 l1.9 -1.6 l1.9 1.6" stroke="#fff" stroke-width=".9" fill="none"/>`;
+  },
+  pierreTombale(x, h){
+    const y = SOL_Y - h;
+    return `<path d="M${x - 6} ${SOL_Y} V${y + 6} Q${x - 6} ${y} ${x} ${y} Q${x + 6} ${y} ${x + 6} ${y + 6} V${SOL_Y} Z" fill="#adb5bd" stroke="#868e96" stroke-width=".7"/><text x="${x}" y="${y + 9}" font-size="4" font-family="sans-serif" font-weight="700" text-anchor="middle" fill="#495057">RIP</text>`;
+  },
+  drapeauQuebec(x, mat){
+    const y = SOL_Y - mat;
+    return `<path d="M${x} ${SOL_Y} V${y}" stroke="#868e96" stroke-width="1"/><rect x="${x}" y="${y}" width="14" height="9.5" fill="#0b3d91"/><path d="M${x + 7} ${y} V${y + 9.5} M${x} ${y + 4.75} H${x + 14}" stroke="#fff" stroke-width="1.6"/>` +
+      [[3.5, 2.4], [10.5, 2.4], [3.5, 7.1], [10.5, 7.1]].map(([dx, dy]) => `<circle cx="${x + dx}" cy="${y + dy}" r=".8" fill="#fff"/>`).join('');
+  },
+  flute(x){
+    const b = SOL_Y;
+    return `<path d="M${x - 3} ${b - 17} L${x + 3} ${b - 17} L${x + .9} ${b - 8} L${x - .9} ${b - 8} Z" fill="#fff3bf" stroke="#adb5bd" stroke-width=".5"/><path d="M${x} ${b - 8} V${b - 1.5} M${x - 2.6} ${b - .5} H${x + 2.6}" stroke="#adb5bd" stroke-width=".9"/>`;
+  },
+  bloc(x, lettre, couleur, taille = 12){
+    return `<rect x="${x - taille / 2}" y="${SOL_Y - taille}" width="${taille}" height="${taille}" rx="1.8" fill="${couleur}"/><text x="${x}" y="${SOL_Y - taille * .27}" font-size="${taille * .62}" font-family="sans-serif" font-weight="700" text-anchor="middle" fill="#fff">${lettre}</text>`;
+  },
+  canard(x){
+    const b = SOL_Y;
+    return `<ellipse cx="${x}" cy="${b - 4.2}" rx="6.5" ry="4.2" fill="#fcc419"/><circle cx="${x + 4}" cy="${b - 10}" r="3.5" fill="#fcc419"/><path d="M${x + 7} ${b - 10} l3.4 .8 l-3.4 1.4 Z" fill="#f76707"/><circle cx="${x + 4.8}" cy="${b - 10.8}" r=".7" fill="#212529"/>`;
+  },
+  bol(x){
+    const b = SOL_Y;
+    return `<path d="M${x - 8} ${b - 6} H${x + 8} L${x + 6.2} ${b} H${x - 6.2} Z" fill="#1864ab"/><path d="M${x - 7} ${b - 6} Q${x - 3.5} ${b - 9.5} ${x} ${b - 7} Q${x + 3.5} ${b - 9.5} ${x + 7} ${b - 6} Z" fill="#8a5a22"/>`;
+  },
+  os(x, y = SOL_Y - 2.6){
+    return `<g fill="#f1f3f5" stroke="#adb5bd" stroke-width=".5"><rect x="${x - 5.5}" y="${y - 1.4}" width="11" height="2.8"/><circle cx="${x - 5.5}" cy="${y - 1.6}" r="2"/><circle cx="${x - 5.5}" cy="${y + 1.6}" r="2"/><circle cx="${x + 5.5}" cy="${y - 1.6}" r="2"/><circle cx="${x + 5.5}" cy="${y + 1.6}" r="2"/></g>`;
+  },
+  /* Abeille en vol, avec son trajet en pointillé. */
+  abeille(x, y){
+    return `<path d="M${x - 16} ${y + 5} q5 -8 10 -2 t8 -1" stroke="#adb5bd" stroke-width=".7" stroke-dasharray="1.4 1.6" fill="none"/><ellipse cx="${x - 1}" cy="${y - 3.6}" rx="2.6" ry="1.7" fill="#e7f5ff" opacity=".9" transform="rotate(-25 ${x - 1} ${y - 3.6})"/><ellipse cx="${x + 1.6}" cy="${y - 3.4}" rx="2.4" ry="1.6" fill="#e7f5ff" opacity=".9" transform="rotate(20 ${x + 1.6} ${y - 3.4})"/><ellipse cx="${x}" cy="${y}" rx="4.2" ry="3" fill="#fcc419"/><path d="M${x - 1.4} ${y - 2.8} V${y + 2.8} M${x + 1.2} ${y - 2.9} V${y + 2.9}" stroke="#212529" stroke-width="1.1"/><circle cx="${x + 4.2}" cy="${y - .4}" r="1.6" fill="#212529"/>`;
+  },
+  papillon(x, y, couleur){
+    return `<ellipse cx="${x - 3}" cy="${y - 2}" rx="3.2" ry="2.6" fill="${couleur}" transform="rotate(-20 ${x - 3} ${y - 2})"/><ellipse cx="${x + 3}" cy="${y - 2}" rx="3.2" ry="2.6" fill="${couleur}" transform="rotate(20 ${x + 3} ${y - 2})"/><ellipse cx="${x - 2.2}" cy="${y + 2}" rx="2" ry="1.6" fill="${couleur}" opacity=".85"/><ellipse cx="${x + 2.2}" cy="${y + 2}" rx="2" ry="1.6" fill="${couleur}" opacity=".85"/><rect x="${x - .5}" y="${y - 3.5}" width="1" height="7" rx=".5" fill="#343a40"/>`;
+  },
+  coccinelle(x){
+    const y = SOL_Y - 2.4;
+    return `<ellipse cx="${x}" cy="${y}" rx="3.4" ry="2.6" fill="#e03131"/><path d="M${x} ${y - 2.6} V${y + 2.6}" stroke="#212529" stroke-width=".6"/><circle cx="${x - 1.5}" cy="${y - .6}" r=".6" fill="#212529"/><circle cx="${x + 1.5}" cy="${y + .6}" r=".6" fill="#212529"/><circle cx="${x + 3.4}" cy="${y - .4}" r="1.3" fill="#212529"/>`;
+  },
+  /* Banc de neige arrondi, posé sur le rebord. */
+  bancNeige(x, largeur, hauteur){
+    const l = largeur / 2;
+    return `<path d="M${x - l} ${SOL_Y + 1} Q${x - l * .7} ${SOL_Y - hauteur * .9} ${x - l * .2} ${SOL_Y - hauteur} Q${x + l * .3} ${SOL_Y - hauteur * 1.1} ${x + l * .6} ${SOL_Y - hauteur * .6} Q${x + l * .85} ${SOL_Y - hauteur * .3} ${x + l} ${SOL_Y + 1} Z" fill="#fff" stroke="#a5d8ff" stroke-width=".8"/><path d="M${x - l * .5} ${SOL_Y - hauteur * .45} q${l * .3} -${hauteur * .25} ${l * .6} 0" stroke="#d0ebff" stroke-width=".8" fill="none"/>`;
+  },
+  /* Sapin aux branches blanchies. */
+  sapinEnneige(x, h){
+    const base = SOL_Y;
+    return `<rect x="${x - 1.5}" y="${base - 4}" width="3" height="4" fill="#8a5a22"/>` +
+      [0, 1, 2].map(i => { const w = h * (.42 - i * .1), y = base - 3 - i * h * .25; return `<path d="M${x - w} ${y} L${x} ${y - h * .4} L${x + w} ${y} Z" fill="#2b8a3e"/><path d="M${x - w} ${y} Q${x - w / 2} ${y - 2.2} ${x} ${y - 1} Q${x + w / 2} ${y - 2.2} ${x + w} ${y} Z" fill="#fff"/>`; }).join('') +
+      `<path d="M${x - 2.4} ${base - 3 - h * .9} L${x} ${base - 3 - h * .9 - 3.5} L${x + 2.4} ${base - 3 - h * .9} Z" fill="#fff"/>`;
+  },
+  miniBonhomme(x){
+    const b = SOL_Y;
+    return `<circle cx="${x}" cy="${b - 5}" r="5.5" fill="#fff" stroke="#ced4da" stroke-width=".7"/><circle cx="${x}" cy="${b - 13.5}" r="4" fill="#fff" stroke="#ced4da" stroke-width=".7"/><rect x="${x - 3.6}" y="${b - 10.6}" width="7.2" height="1.8" rx=".8" fill="#e03131"/><circle cx="${x - 1.3}" cy="${b - 14.4}" r=".55" fill="#212529"/><circle cx="${x + 1.3}" cy="${b - 14.4}" r=".55" fill="#212529"/><path d="M${x} ${b - 13.2} l3 .6 l-3 .6 Z" fill="#f76707"/><path d="M${x - 3.8} ${b - 17} h7.6 v-1.2 h-1.6 v-3.4 h-4.4 v3.4 h-1.6 Z" fill="#212529"/>`;
+  },
+  gland(x){
+    const b = SOL_Y;
+    return `<ellipse cx="${x}" cy="${b - 3.6}" rx="2.8" ry="3.6" fill="#b5651d"/><path d="M${x - 3.4} ${b - 5.6} Q${x} ${b - 9.6} ${x + 3.4} ${b - 5.6} Z" fill="#6b4210"/><path d="M${x} ${b - 8.4} v-1.8" stroke="#6b4210" stroke-width="1"/>`;
+  },
+  champignon(x){
+    const b = SOL_Y;
+    return `<rect x="${x - 1.6}" y="${b - 6}" width="3.2" height="6" rx="1" fill="#f8f9fa" stroke="#dee2e6" stroke-width=".5"/><path d="M${x - 6} ${b - 5.5} Q${x} ${b - 15} ${x + 6} ${b - 5.5} Z" fill="#e03131"/><circle cx="${x - 2.4}" cy="${b - 8.6}" r="1" fill="#fff"/><circle cx="${x + 2}" cy="${b - 10}" r=".9" fill="#fff"/><circle cx="${x + 3.2}" cy="${b - 7}" r=".7" fill="#fff"/>`;
+  },
+  etoile(x, y, r, couleur){
+    const p = Array.from({length: 10}, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; return `${(x + rr * Math.cos(a)).toFixed(2)},${(y + rr * Math.sin(a)).toFixed(2)}`; }).join(' ');
+    return `<polygon points="${p}" fill="${couleur}"/>`;
+  },
+  chauveSouris(x, y){
+    return `<path d="M${x} ${y} q-3 -3 -6 -2 q-1 2 -3 2 q1 -3 -1 -5 q4 0 7 2 q1 -2 3 -2 q2 0 3 2 q3 -2 7 -2 q-2 2 -1 5 q-2 0 -3 -2 q-3 -1 -6 2 Z" fill="#343a40"/>`;
+  },
+  canneMini(x){
+    const d = `M${x} ${SOL_Y} V${SOL_Y - 12} Q${x} ${SOL_Y - 16} ${x + 3} ${SOL_Y - 16} Q${x + 6} ${SOL_Y - 16} ${x + 6} ${SOL_Y - 13}`;
+    return `<path d="${d}" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="${d}" stroke="#e03131" stroke-width="2.4" fill="none" stroke-dasharray="2 2" stroke-linecap="round"/>`;
+  }
+};
+const HERBE = ['#51cf66','#40c057','#2f9e44','#69db7c'];
+const HERBE_TENDRE = ['#8ce99a','#69db7c','#51cf66'];
+const FEUILLES_TOMBEES = ['#e8590c','#c92a2a','#f59f00','#d9480f','#8a3a0e'];
+const CONFETTIS_SOL = ['#c9a227','#e64980','#4dabf7','#51cf66','#f3d27a'];
+/* Variantes par thème (r = hasard semé, d = DESSINS_TOUFFE ; centre de la touffe : x = 30).
+   Elles sont distribuées d'une carte à l'autre par distribuerTouffes. */
+const TOUFFES_SAISON = {
+  ete:           [(r, d) => d.herbe(r, 30, 30, HERBE) + d.marguerite(33, 14),
+                  (r, d) => d.herbe(r, 30, 26, HERBE, 7) + d.abeille(44, 7),
+                  (r, d) => d.herbe(r, 30, 34, HERBE) + d.marguerite(24, 12) + d.marguerite(36, 16),
+                  (r, d) => d.herbe(r, 26, 24, HERBE, 7) + d.papillon(44, 8, '#ff922b'),
+                  (r, d) => d.herbe(r, 30, 28, HERBE, 6) + d.coccinelle(36)],
+  printemps:     [(r, d) => d.herbe(r, 30, 26, HERBE_TENDRE, 6) + d.tulipe(30, 13, '#e03131'),
+                  (r, d) => d.herbe(r, 30, 30, HERBE_TENDRE, 6) + d.tulipe(25, 12, '#fcc419') + d.tulipe(35, 15, '#f783ac'),
+                  (r, d) => d.herbe(r, 24, 20, HERBE_TENDRE, 6) + d.papillon(42, 8, '#b197fc'),
+                  (r, d) => d.herbe(r, 30, 22, HERBE_TENDRE, 6) + d.marguerite(30, 11),
+                  (r, d) => d.herbe(r, 30, 26, HERBE_TENDRE, 5) + d.abeille(40, 6)],
+  automne:       [(r, d) => d.tasFeuilles(r, 30, 40, 9, FEUILLES_TOMBEES),
+                  (r, d) => d.eparpilles(r, 30, 44, 7, FEUILLES_TOMBEES) + d.gland(40),
+                  (r, d) => d.tasFeuilles(r, 28, 28, 6, FEUILLES_TOMBEES) + d.champignon(42),
+                  (r, d) => d.gland(26) + d.gland(33) + d.eparpilles(r, 30, 30, 4, FEUILLES_TOMBEES),
+                  (r, d) => d.tasFeuilles(r, 30, 34, 8, FEUILLES_TOMBEES) + d.citrouille(44, 4.5)],
+  hiver:         [(r, d) => d.bancNeige(30, 44, 9),
+                  (r, d) => d.sapinEnneige(30, 17),
+                  (r, d) => d.bancNeige(30, 40, 7) + d.miniBonhomme(34),
+                  (r, d) => d.sapinEnneige(24, 15) + d.sapinEnneige(37, 12),
+                  (r, d) => d.bancNeige(24, 30, 6) + d.bancNeige(40, 22, 4)],
+  noel:          [(r, d) => d.cadeau(24, 10, 8, '#c92a2a', '#fcc419') + d.cadeau(35, 8, 6, '#2f9e44', '#f8f9fa'),
+                  (r, d) => d.sapinEnneige(28, 17) + d.cadeau(40, 7, 6, '#c92a2a', '#fcc419'),
+                  (r, d) => d.canneMini(24) + d.cadeau(38, 9, 7, '#1864ab', '#f8f9fa'),
+                  (r, d) => d.miniBonhomme(30) + d.etoile(42, 6, 3.2, '#fcc419'),
+                  (r, d) => d.sapinEnneige(22, 14) + d.sapinEnneige(34, 17) + d.cadeau(44, 6, 5, '#c92a2a', '#fcc419')],
+  halloween:     [(r, d) => d.citrouille(30, 7),
+                  (r, d) => d.pierreTombale(28, 14) + d.chauveSouris(44, 6),
+                  (r, d) => d.citrouille(26, 6.5) + d.citrouille(38, 4.5),
+                  (r, d) => d.champignon(28) + d.chauveSouris(40, 8),
+                  (r, d) => d.pierreTombale(24, 12) + d.citrouille(38, 5)],
+  nouvelan:      [(r, d) => d.eparpilles(r, 30, 44, 12, CONFETTIS_SOL, 1.6, .8),
+                  (r, d) => d.flute(26) + d.flute(34) + d.eparpilles(r, 30, 40, 6, CONFETTIS_SOL, 1.6, .8),
+                  (r, d) => d.etoile(24, 10, 4, '#c9a227') + d.etoile(36, 6, 2.6, '#f3d27a') + d.eparpilles(r, 30, 30, 5, CONFETTIS_SOL, 1.6, .8)],
+  valentin:      [(r, d) => d.herbe(r, 30, 24, HERBE_TENDRE, 5) + d.coeurFleur(30, 13, '#e64980'),
+                  (r, d) => d.coeurFleur(26, 11, '#f783ac') + d.coeurFleur(35, 14, '#c2185b'),
+                  (r, d) => d.herbe(r, 26, 20, HERBE_TENDRE, 5) + d.papillon(42, 8, '#f783ac')],
+  stpatrick:     [(r, d) => d.herbe(r, 30, 26, HERBE, 6) + d.trefle(28, 9) + d.trefle(35, 6),
+                  (r, d) => d.trefle(30, 8) + d.coccinelle(40),
+                  (r, d) => d.herbe(r, 30, 30, HERBE, 7) + d.trefle(33, 10)],
+  paques:        [(r, d) => d.herbe(r, 30, 30, HERBE_TENDRE, 7) + d.oeuf(30, '#ffd43b'),
+                  (r, d) => d.herbe(r, 30, 34, HERBE_TENDRE, 7) + d.oeuf(24, '#b197fc') + d.oeuf(35, '#74c0fc'),
+                  (r, d) => d.herbe(r, 26, 22, HERBE_TENDRE, 6) + d.papillon(42, 8, '#fcc419'),
+                  (r, d) => d.oeuf(30, '#f783ac') + d.tulipe(40, 12, '#ffd43b')],
+  fetenationale: [(r, d) => d.herbe(r, 30, 26, HERBE, 6) + d.drapeauQuebec(26, 19),
+                  (r, d) => d.herbe(r, 30, 26, HERBE, 7) + d.marguerite(30, 12),
+                  (r, d) => d.herbe(r, 26, 22, HERBE, 6) + d.abeille(42, 7)],
+  meres:         [(r, d) => d.herbe(r, 30, 28, HERBE_TENDRE, 6) + d.tulipe(26, 12, '#f06595') + d.tulipe(35, 15, '#e599f7'),
+                  (r, d) => d.coeurFleur(30, 13, '#f06595'),
+                  (r, d) => d.herbe(r, 26, 22, HERBE_TENDRE, 6) + d.papillon(42, 8, '#f06595')],
+  peres:         [(r, d) => d.herbe(r, 30, 28, HERBE, 8),
+                  (r, d) => d.herbe(r, 30, 26, HERBE, 7) + d.marguerite(31, 12),
+                  (r, d) => d.herbe(r, 26, 22, HERBE, 6) + d.abeille(42, 7)],
+  actiongrace:   [(r, d) => d.tasFeuilles(r, 26, 32, 7, FEUILLES_TOMBEES) + d.citrouille(40, 5),
+                  (r, d) => d.citrouille(30, 7),
+                  (r, d) => d.eparpilles(r, 30, 40, 6, FEUILLES_TOMBEES) + d.gland(36)],
+  gabriel:       [(r, d) => d.cadeau(25, 11, 9, '#1f4e79', '#f08c00') + d.cadeau(37, 8, 6, '#f08c00', '#1f4e79'),
+                  (r, d) => d.cadeau(30, 9, 8, '#4dabf7', '#fff'),
+                  (r, d) => d.eparpilles(r, 30, 40, 9, ['#1f4e79','#f08c00','#4dabf7'], 1.6, .8) + d.etoile(34, 8, 3, '#f08c00')],
+  melissa:       [(r, d) => d.herbe(r, 30, 28, HERBE_TENDRE, 6) + d.tulipe(26, 13, '#f783ac') + d.tulipe(35, 15, '#cc5de8'),
+                  (r, d) => d.herbe(r, 30, 24, HERBE_TENDRE, 6) + d.marguerite(30, 12),
+                  (r, d) => d.tulipe(26, 14, '#862e9c') + d.papillon(40, 8, '#f783ac')],
+  emma:          [(r, d) => d.bloc(24, 'E', '#f06595') + d.bloc(37, 'M', '#b197fc'),
+                  (r, d) => d.bloc(24, 'M', '#63e6be') + d.bloc(37, 'A', '#fcc419'),
+                  (r, d) => d.canard(30)],
+  charlie:       [(r, d) => d.herbe(r, 30, 26, HERBE, 6) + d.os(33),
+                  (r, d) => d.bol(30),
+                  (r, d) => d.os(30) + d.coccinelle(42)]
+};
+/* Les touffes d'un thème, en SVG, ou null si le thème n'en a pas. */
+function svgTouffes(theme){
+  const variantes = TOUFFES_SAISON[theme];
+  if(!variantes) return null;
+  let graine = 0;
+  for(const c of theme) graine = (graine * 31 + c.charCodeAt(0)) | 0;
+  const r = hasardSeme(graine);
+  return variantes.map(f => `<svg xmlns="http://www.w3.org/2000/svg" width="${TOUFFE_L}" height="${TOUFFE_H}" viewBox="0 0 ${TOUFFE_L} ${TOUFFE_H}">${f(r, DESSINS_TOUFFE)}</svg>`);
+}
+
+/* Donne à chaque carte (sauf paramètres et formulaire d'ajout) sa variante de détail et sa
+   position sur le rebord, dans l'ordre de la page : deux cartes voisines n'ont jamais le même
+   dessin au même endroit. Rappelée à chaque rafraîchissement pour les cartes créées depuis. */
+const NB_TOUFFES_MAX = 5;
+const POSITIONS_TOUFFE = ['18px', 'calc(100% - 84px)', '42%', '24%', 'calc(100% - 160px)'];
+let nombreTouffesSaison = 0;
+function distribuerTouffes(){
+  if(!nombreTouffesSaison) return;
+  document.querySelectorAll('.card:not(.form-card):not(.settings-section)').forEach((carte, i)=>{
+    const cle = `${i}/${nombreTouffesSaison}`;
+    if(carte.dataset.touffe === cle) return;
+    carte.dataset.touffe = cle;
+    carte.style.setProperty('--touffe-img', `var(--saison-touffe-${i % nombreTouffesSaison + 1})`);
+    carte.style.setProperty('--touffe-x', POSITIONS_TOUFFE[(i * 2) % POSITIONS_TOUFFE.length]);
+  });
+}
 const ICONES_ONGLETS_BASE = ['👤','👥'];
 let etatSaisonApplique;
 
@@ -749,6 +1002,7 @@ function appliquerThemeSaison(){
   const def = theme ? THEMES_SAISON[theme] : null;
   const anime = !!theme && animationsSaisonPermises();
   const etat = `${theme}|${def ? def.embleme : ''}|${anime}`;
+  distribuerTouffes();   // cartes créées depuis le dernier passage
   if(etat === etatSaisonApplique) return;
   etatSaisonApplique = etat;
 
@@ -768,6 +1022,15 @@ function appliquerThemeSaison(){
   document.body.classList.toggle('avec-guirlande', !!(def && def.guirlande));
   if(def && def.guirlande) document.body.style.setProperty('--saison-guirlande', `url("data:image/svg+xml,${encodeURIComponent(svgGuirlande(def.guirlande))}")`);
   else document.body.style.removeProperty('--saison-guirlande');
+  /* Petits détails sur le rebord des cartes (variantes : voir svgTouffes et distribuerTouffes). */
+  const touffes = theme ? svgTouffes(theme) : null;
+  nombreTouffesSaison = touffes ? touffes.length : 0;
+  document.body.classList.toggle('avec-touffes', !!touffes);
+  for(let i = 1; i <= NB_TOUFFES_MAX; i++){
+    if(touffes && touffes[i - 1]) document.body.style.setProperty(`--saison-touffe-${i}`, `url("data:image/svg+xml,${encodeURIComponent(touffes[i - 1])}")`);
+    else document.body.style.removeProperty(`--saison-touffe-${i}`);
+  }
+  distribuerTouffes();
   /* Pastille des interrupteurs (voir .switch-track::after dans style.css). */
   if(def) document.body.style.setProperty('--saison-bouton', `"${def.bouton}"`);
   else document.body.style.removeProperty('--saison-bouton');
