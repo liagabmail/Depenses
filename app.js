@@ -542,10 +542,10 @@ const THEMES_SAISON = {
   noel:          { nom:'Noël',           embleme:'🎄', icones:[bouleNoel('#c5221f'), bouleNoel('#c5221f') + bouleNoel('#137333')],
                    particules:['❄','❅','❆'], nombre:22, teinte:true, barre:'#c5221f', bouton:'❄️', guirlande:{ type:'ampoules', couleurs:['#e03131','#fcc419','#2f9e44','#4dabf7'], fil:'#556b5a' } },
   /* Anniversaires de la famille : un thème complet par personne (dates dans PERIODES_SAISON). */
-  gabriel:       { nom:'Fête de Gabriel', embleme:'🎂', icones:['🎁','🎁🎁'], particules:['🎈','🎁','🎉'], nombre:14, montee:true, barre:'#1f4e79', bouton:'🎁', guirlande:{ type:'fanions', couleurs:['#1f4e79','#f08c00','#4dabf7'], fil:'#1f4e79' } },
-  melissa:       { nom:'Fête de Mélissa', embleme:'💐', icones:['🌷','🌷🌷'], particules:['🌸','🌺','🌷','✨'], nombre:14, barre:'#862e9c', bouton:'🌺', guirlande:{ type:'fleurs', couleurs:['#f783ac','#cc5de8'], fil:'#2b8a3e' } },
-  emma:          { nom:"Fête d'Emma",     embleme:'👶', icones:['🎀','🎀🎀'], particules:['🎀','🧸','💗','🍼'], nombre:14, barre:'#d6336c', bouton:'🎀', guirlande:{ type:'fanions', couleurs:['#faa2c1','#ffffff','#d0bfff'], fil:'#f783ac' } },
-  charlie:       { nom:'Fête de Charlie', embleme:schnauzer(), icones:[schnauzer(), schnauzer() + '🦴'], particules:['🦴','🐾','🦴','🐾'], nombre:14, barre:'#343a40', bouton:'🦴', guirlande:{ type:'pattes', couleurs:['#868e96'] } },
+  gabriel:       { nom:'Fête de Gabriel', banniere:'Bonne fête Gabriel !', embleme:'🎂', icones:['🎁','🎁🎁'], particules:['🎈','🎁','🎉'], nombre:14, montee:true, barre:'#1f4e79', bouton:'🎁', guirlande:{ type:'fanions', couleurs:['#1f4e79','#f08c00','#4dabf7'], fil:'#1f4e79' } },
+  melissa:       { nom:'Fête de Mélissa', banniere:'Bonne fête Mélissa !', embleme:'💐', icones:['🌷','🌷🌷'], particules:['🌸','🌺','🌷','✨'], nombre:14, barre:'#862e9c', bouton:'🌺', guirlande:{ type:'fleurs', couleurs:['#f783ac','#cc5de8'], fil:'#2b8a3e' } },
+  emma:          { nom:"Fête d'Emma",     banniere:'Bonne fête Emma !', embleme:'👶', icones:['🎀','🎀🎀'], particules:['🎀','🧸','💗','🍼'], nombre:14, barre:'#d6336c', bouton:'🎀', guirlande:{ type:'fanions', couleurs:['#faa2c1','#ffffff','#d0bfff'], fil:'#f783ac' } },
+  charlie:       { nom:'Fête de Charlie', banniere:'Bonne fête Charlie !', embleme:schnauzer(), icones:[schnauzer(), schnauzer() + '🦴'], particules:['🦴','🐾','🦴','🐾'], nombre:14, barre:'#343a40', bouton:'🦴', guirlande:{ type:'pattes', couleurs:['#868e96'] } },
   /* Fêtes et traditions québécoises. */
   poissonavril:  { nom:"Poisson d'avril",   embleme:'🐟', icones:['🐟','🐟🐠'], particules:['🐟','🐠','🐡'], nombre:12, barre:'#1098ad', bouton:'🐟', guirlande:{ type:'poissons', couleurs:['#ff922b','#22b8cf','#f06595','#94d82d'], fil:'#495057' } },
   meres:         { nom:'Fête des Mères',    embleme:'💝', icones:['💝','💝💝'], particules:['💖','🌹','💐'], nombre:12, barre:'#099268', bouton:'💝', guirlande:{ type:'fleurs', couleurs:['#f06595','#ffa8a8','#e599f7'], fil:'#099268' } },
@@ -724,11 +724,6 @@ const DESSINS_TOUFFE = {
     const y = SOL_Y - 2.4;
     return `<ellipse cx="${x}" cy="${y}" rx="3.4" ry="2.6" fill="#e03131"/><path d="M${x} ${y - 2.6} V${y + 2.6}" stroke="#212529" stroke-width=".6"/><circle cx="${x - 1.5}" cy="${y - .6}" r=".6" fill="#212529"/><circle cx="${x + 1.5}" cy="${y + .6}" r=".6" fill="#212529"/><circle cx="${x + 3.4}" cy="${y - .4}" r="1.3" fill="#212529"/>`;
   },
-  /* Banc de neige arrondi, posé sur le rebord. */
-  bancNeige(x, largeur, hauteur){
-    const l = largeur / 2;
-    return `<path d="M${x - l} ${SOL_Y + 1} Q${x - l * .7} ${SOL_Y - hauteur * .9} ${x - l * .2} ${SOL_Y - hauteur} Q${x + l * .3} ${SOL_Y - hauteur * 1.1} ${x + l * .6} ${SOL_Y - hauteur * .6} Q${x + l * .85} ${SOL_Y - hauteur * .3} ${x + l} ${SOL_Y + 1} Z" fill="#fff" stroke="#a5d8ff" stroke-width=".8"/><path d="M${x - l * .5} ${SOL_Y - hauteur * .45} q${l * .3} -${hauteur * .25} ${l * .6} 0" stroke="#d0ebff" stroke-width=".8" fill="none"/>`;
-  },
   /* Sapin aux branches blanchies. */
   sapinEnneige(x, h){
     const base = SOL_Y;
@@ -782,11 +777,10 @@ const TOUFFES_SAISON = {
                   (r, d) => d.tasFeuilles(r, 28, 28, 6, FEUILLES_TOMBEES) + d.champignon(42),
                   (r, d) => d.gland(26) + d.gland(33) + d.eparpilles(r, 30, 30, 4, FEUILLES_TOMBEES),
                   (r, d) => d.tasFeuilles(r, 30, 34, 8, FEUILLES_TOMBEES) + d.citrouille(44, 4.5)],
-  hiver:         [(r, d) => d.bancNeige(30, 44, 9),
-                  (r, d) => d.sapinEnneige(30, 17),
-                  (r, d) => d.bancNeige(30, 40, 7) + d.miniBonhomme(34),
+  hiver:         [(r, d) => d.sapinEnneige(30, 17),
+                  (r, d) => d.miniBonhomme(30),
                   (r, d) => d.sapinEnneige(24, 15) + d.sapinEnneige(37, 12),
-                  (r, d) => d.bancNeige(24, 30, 6) + d.bancNeige(40, 22, 4)],
+                  (r, d) => d.miniBonhomme(26) + d.sapinEnneige(40, 13)],
   noel:          [(r, d) => d.cadeau(24, 10, 8, '#c92a2a', '#fcc419') + d.cadeau(35, 8, 6, '#2f9e44', '#f8f9fa'),
                   (r, d) => d.sapinEnneige(28, 17) + d.cadeau(40, 7, 6, '#c92a2a', '#fcc419'),
                   (r, d) => d.canneMini(24) + d.cadeau(38, 9, 7, '#1864ab', '#f8f9fa'),
@@ -859,6 +853,9 @@ function distribuerTouffes(){
     carte.dataset.touffe = cle;
     carte.style.setProperty('--touffe-img', `var(--saison-touffe-${i % nombreTouffesSaison + 1})`);
     carte.style.setProperty('--touffe-x', POSITIONS_TOUFFE[(i * 2) % POSITIONS_TOUFFE.length]);
+    /* Hiver et Noël : quelques glaçons sur une carte sur deux, ailleurs que le dessin. */
+    carte.toggleAttribute('data-glacons', i % 2 === 1);
+    carte.style.setProperty('--glacons-x', POSITIONS_TOUFFE[(i * 2 + 3) % POSITIONS_TOUFFE.length]);
   });
 }
 const ICONES_ONGLETS_BASE = ['👤','👥'];
@@ -949,8 +946,7 @@ function ouvrirDatesSaison(){
     <h4 class="saison-dates-titre">Fêtes et traditions</h4>
     <ul class="saison-dates">${trier(PERIODES_SAISON.filter(p=>p.fete)).map(ligne).join('')}</ul>
     <h4 class="saison-dates-titre">Saisons</h4>
-    <ul class="saison-dates">${trier(PERIODES_SAISON.filter(p=>!p.fete && !p.anniv)).map(ligne).join('')}</ul>
-    <p class="saison-dates-note">Un anniversaire passe avant une fête, et une fête avant une saison. Ces dates s'appliquent en mode « Selon la date ».</p>`;
+    <ul class="saison-dates">${trier(PERIODES_SAISON.filter(p=>!p.fete && !p.anniv)).map(ligne).join('')}</ul>`;
   document.getElementById('saison-dates-modal').style.display = 'flex';
 }
 
@@ -980,6 +976,215 @@ function rafraichirApresChangementSaison(){
   if(currentSession && currentUser) rafraichirActif();
 }
 
+/* ===================== Météo, jour et nuit, promenade de Charlie =====================
+   La météo de Saint-Jean-sur-Richelieu (Open-Meteo : gratuit, sans clé ni compte) ne change
+   que les particules des quatre saisons : pluie, neige, vent fort ou orage. Les fêtes et
+   anniversaires gardent les leurs. Toute erreur (pas d'internet, service lent, réponse
+   inattendue) est ignorée : l'app fait alors exactement comme sans météo. */
+const METEO_LIEU = { nom:'Saint-Jean-sur-Richelieu', lat:45.3073, lon:-73.2625 };
+const METEO_CLE = 'depenses_meteo';
+const METEO_DUREE = 30 * 60000;        // on redemande la météo au plus aux 30 minutes
+const METEO_PEREMPTION = 3 * 3600000;  // une météo gardée plus de 3 h n'est plus utilisée
+const SAISONS_METEO = ['hiver','printemps','ete','automne'];
+const NOMS_METEO = { pluie:'pluie', neige:'neige', vent:'vent fort', orage:'orage', degage:'ni pluie ni neige' };
+let meteoActuelle = lireMeteoCache();
+let meteoEnCours = false;
+/* Aperçu (Paramètres › Apparence) : volontairement oublié au rechargement de la page. */
+let apercuMeteo = 'auto', apercuMoment = 'auto';
+
+function lireMeteoCache(){
+  try {
+    const m = JSON.parse(localStorage.getItem(METEO_CLE) || 'null');
+    return m && typeof m.t === 'number' && NOMS_METEO[m.type] ? m : null;
+  } catch(e){ return null; }
+}
+function meteoFraiche(){
+  return meteoActuelle && Date.now() - meteoActuelle.t < METEO_PEREMPTION ? meteoActuelle : null;
+}
+/* Codes météo OMM : 51-67 et 80-82 bruine/pluie, 71-77 et 85-86 neige, 95-99 orage.
+   Sans précipitations, des rafales de 45 km/h (ou un vent de 30) comptent comme « vent fort ». */
+function typeMeteo(code, vent, rafales){
+  if(code >= 95) return 'orage';
+  if((code >= 71 && code <= 77) || code === 85 || code === 86) return 'neige';
+  if((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'pluie';
+  if(rafales >= 45 || vent >= 30) return 'vent';
+  return 'degage';
+}
+async function actualiserMeteo(){
+  if(meteoEnCours || localStorage.getItem('depenses_saison_meteo') === '0') return;
+  if(meteoActuelle && Date.now() - meteoActuelle.t < METEO_DUREE) return;
+  meteoEnCours = true;
+  const controle = new AbortController();
+  const minuterie = setTimeout(()=> controle.abort(), 8000);
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${METEO_LIEU.lat}&longitude=${METEO_LIEU.lon}` +
+      '&current=weather_code,wind_speed_10m,wind_gusts_10m,is_day&timezone=America%2FToronto';
+    const reponse = await fetch(url, { signal: controle.signal });
+    if(!reponse.ok) return;
+    const c = (await reponse.json())?.current;
+    if(!c || !Number.isFinite(c.weather_code)) return;
+    const vent = Number(c.wind_speed_10m) || 0, rafales = Number(c.wind_gusts_10m) || 0;
+    meteoActuelle = { t: Date.now(), type: typeMeteo(c.weather_code, vent, rafales),
+      vent: Math.round(vent), rafales: Math.round(rafales), jour: c.is_day !== 0 };
+    try { localStorage.setItem(METEO_CLE, JSON.stringify(meteoActuelle)); } catch(e){}
+    appliquerThemeSaison();
+  } catch(e){
+    /* Pas d'internet, délai dépassé, réponse illisible : on garde l'ambiance habituelle. */
+  } finally {
+    clearTimeout(minuterie);
+    meteoEnCours = false;
+  }
+}
+/* Météo en cours (aperçu, sinon météo réelle récente), ou null si inconnue ou désactivée. */
+function meteoActive(){
+  if(apercuMeteo !== 'auto') return apercuMeteo;
+  if(localStorage.getItem('depenses_saison_meteo') === '0') return null;
+  const m = meteoFraiche();
+  return m ? m.type : null;
+}
+/* Météo qui pilote les particules : seulement pour les saisons (les fêtes gardent les leurs). */
+function meteoPourParticules(theme){
+  return SAISONS_METEO.includes(theme) ? meteoActive() : null;
+}
+/* Ciel couvert : pas d'étoiles ni de lucioles, fond grisé (voir body.ciel-* dans style.css). */
+function cielCouvert(meteo){
+  return meteo === 'pluie' || meteo === 'orage' || meteo === 'neige';
+}
+/* Nuit : d'après l'heure du soleil donnée par une météo récente, sinon entre 20 h et 6 h. */
+function nuitActive(){
+  if(apercuMoment !== 'auto') return apercuMoment === 'nuit';
+  if(localStorage.getItem('depenses_saison_nuit') === '0') return false;
+  if(meteoActuelle && Date.now() - meteoActuelle.t < METEO_DUREE * 1.5 && typeof meteoActuelle.jour === 'boolean') return !meteoActuelle.jour;
+  const h = new Date().getHours();
+  return h >= 20 || h < 6;
+}
+
+/* Particules : celles du thème, ou celles de la météo (pluie, neige, vent, orage). */
+function construireParticules(deco, def, meteo){
+  if(meteo === 'pluie' || meteo === 'orage'){
+    const n = meteo === 'orage' ? 70 : 45;
+    for(let i = 0; i < n; i++){
+      const p = document.createElement('span');
+      p.className = 'saison-particule goutte';
+      const duree = .7 + Math.random() * .5;
+      p.style.left = `${Math.random() * 110}%`;
+      p.style.animationDuration = `${duree}s`;
+      p.style.animationDelay = `${-Math.random() * duree}s`;
+      deco.appendChild(p);
+    }
+    return;
+  }
+  /* Neige : des flocons, quelle que soit la saison. Beau temps : 60 % de particules en moins. */
+  const base = meteo === 'neige' ? { ...def, particules:['❄','❅','❆'], teinte:true, confetti:null, montee:false, nombre:24 }
+    : meteo === 'degage' ? { ...def, nombre: Math.max(4, Math.round(def.nombre * .4)) } : def;
+  for(let i = 0; i < base.nombre; i++){
+    const p = creerParticuleSaison(base, i);
+    let duree;
+    if(meteo === 'vent'){
+      /* Poussées de côté, à toutes les hauteurs de l'écran. */
+      p.classList.add('vent');
+      duree = 3.5 + Math.random() * 3.5;
+      p.style.top = `${Math.random() * 85}%`;
+      p.style.setProperty('--derive', `${(Math.random() * 2 - 1) * 90}px`);
+    } else {
+      if(base.montee) p.classList.add('montee');
+      duree = (base.montee ? 14 : 9) + Math.random() * 9;
+      p.style.left = `${Math.random() * 100}%`;
+      p.style.setProperty('--derive', `${(Math.random() * 2 - 1) * 60}px`);
+    }
+    p.style.animationDuration = `${duree}s`;
+    /* Délai négatif : les particules sont déjà réparties dans l'écran dès l'ouverture. */
+    p.style.animationDelay = `${-Math.random() * duree}s`;
+    deco.appendChild(p);
+  }
+}
+/* Orage : environ aux 18 secondes, un éclair en zigzag dans le haut et un flash, sur le fond
+   seulement (derrière les cartes). L'éclair change de place à chaque fois. */
+function ajouterEclairs(){
+  const conteneur = document.createElement('div');
+  conteneur.id = 'saison-eclair';
+  conteneur.setAttribute('aria-hidden', 'true');
+  conteneur.innerHTML = '<div class="eclair-flash"></div><svg class="eclair" viewBox="0 0 30 46" width="30" height="46"><polygon points="15,0 4,24 12,24 7,46 27,17 17,17 24,0" fill="#fff9db" stroke="#fcc419" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  const eclair = conteneur.querySelector('.eclair');
+  const deplacer = ()=>{
+    eclair.style.left = `${8 + Math.random() * 78}%`;
+    eclair.style.top = `${3 + Math.random() * 16}%`;
+  };
+  deplacer();
+  eclair.addEventListener('animationiteration', deplacer);
+  document.body.appendChild(conteneur);
+}
+/* Nuit : quelques étoiles qui scintillent dans le haut ; l'été, des lucioles plus bas. */
+function ajouterCielDeNuit(deco, theme){
+  for(let i = 0; i < 26; i++){
+    const e = document.createElement('span');
+    e.className = 'saison-etoile';
+    e.style.left = `${Math.random() * 100}%`;
+    e.style.top = `${Math.random() * 45}%`;
+    e.style.animationDelay = `${-Math.random() * 4}s`;
+    e.style.animationDuration = `${2.5 + Math.random() * 3}s`;
+    deco.appendChild(e);
+  }
+  if(theme !== 'ete') return;
+  for(let i = 0; i < 12; i++){
+    const l = document.createElement('span');
+    l.className = 'saison-luciole';
+    l.style.left = `${Math.random() * 100}%`;
+    l.style.top = `${50 + Math.random() * 45}%`;
+    l.style.animationDelay = `${-Math.random() * 8}s, ${-Math.random() * 3}s`;
+    l.style.setProperty('--derive', `${(Math.random() * 2 - 1) * 50}px`);
+    deco.appendChild(l);
+  }
+}
+
+/* Réglages : état des interrupteurs et de la météo reçue. */
+function majReglagesMeteo(){
+  const coche = (id, cle) => { const el = document.getElementById(id); if(el) el.checked = localStorage.getItem(cle) !== '0'; };
+  coche('saison-meteo', 'depenses_saison_meteo');
+  coche('saison-nuit', 'depenses_saison_nuit');
+  coche('saison-charlie', 'depenses_charlie');
+  const etat = document.getElementById('saison-meteo-etat');
+  if(!etat) return;
+  const m = meteoFraiche();
+  if(!m){ etat.textContent = `Météo à ${METEO_LIEU.nom} : pas encore reçue.`; return; }
+  const minutes = Math.max(0, Math.round((Date.now() - m.t) / 60000));
+  etat.textContent = `Météo à ${METEO_LIEU.nom} : ${NOMS_METEO[m.type]}, vent ${m.vent} km/h (rafales ${m.rafales}) · il y a ${minutes} min.`;
+}
+
+/* Charlie, schnauzer noir, de profil ; les pattes et le corps bougent en marchant. */
+function charlieDeProfil(){
+  const patte = x => `<rect x="${x}" y="24" width="4.5" height="13" rx="2" fill="#1a1a1a"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 42" width="64" height="42">` +
+    `<path d="M11 17 Q6 11 8.5 5" stroke="#1f1f1f" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+    `<g class="patte-a">${patte(13)}${patte(36)}</g><g class="patte-b">${patte(19)}${patte(42)}</g>` +
+    `<g class="corps"><rect x="10" y="14" width="35" height="14" rx="7" fill="#1f1f1f"/><rect x="38" y="8" width="9" height="13" fill="#1f1f1f"/>` +
+    `<rect x="39" y="15" width="4" height="7" rx="1" fill="#c92a2a"/><rect x="38" y="4" width="15" height="12" rx="4" fill="#1f1f1f"/>` +
+    `<rect x="47" y="9" width="13" height="7" rx="2" fill="#262626"/><path d="M47 14 L60 14 L59 20 L57 18 L55 21 L53 18 L51 21 L49 18 Z" fill="#4d4d4d"/>` +
+    `<path d="M40 5 L46 4 L42.5 11.5 Z" fill="#111"/><path d="M46 7.2 L52 6.6 L51.4 8.3 Z" fill="#9a9a9a"/>` +
+    `<circle cx="49.5" cy="9.6" r="1" fill="#fff"/><circle cx="49.8" cy="9.7" r=".5" fill="#000"/><circle cx="59.6" cy="10.6" r="1.6" fill="#000"/></g></svg>`;
+}
+function promenerCharlie(){
+  if(document.getElementById('charlie-promenade')) return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const el = document.createElement('div');
+  el.id = 'charlie-promenade';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = charlieDeProfil();
+  el.addEventListener('animationend', e => { if(e.target === el) el.remove(); });
+  document.body.appendChild(el);
+  setTimeout(()=> el.remove(), 15000);   // filet de sécurité si l'animation est interrompue
+}
+/* Une promenade par jour au plus, à un moment au hasard (20 s à 2 min après l'ouverture). */
+function planifierPromenadeCharlie(){
+  if(localStorage.getItem('depenses_charlie') === '0') return;
+  if(localStorage.getItem('depenses_charlie_jour') === formaterDateISO(new Date())) return;
+  setTimeout(()=>{
+    if(document.hidden || localStorage.getItem('depenses_charlie') === '0' || !document.body.classList.contains('saison')) return;
+    try { localStorage.setItem('depenses_charlie_jour', formaterDateISO(new Date())); } catch(e){}
+    promenerCharlie();
+  }, 20000 + Math.random() * 100000);
+}
+
 function appliquerThemeSaison(){
   const actif = localStorage.getItem('depenses_saison_actif') !== '0';
   const choix = localStorage.getItem('depenses_saison_choix') || 'auto';
@@ -1001,13 +1206,19 @@ function appliquerThemeSaison(){
   const theme = themeSaisonVoulu();
   const def = theme ? THEMES_SAISON[theme] : null;
   const anime = !!theme && animationsSaisonPermises();
-  const etat = `${theme}|${def ? def.embleme : ''}|${anime}`;
+  const meteo = theme ? meteoPourParticules(theme) : null;
+  const ciel = theme ? meteoActive() : null;   // aussi pendant les fêtes : pas d'étoiles sous la pluie
+  const nuit = !!theme && nuitActive();
+  const etat = `${theme}|${def ? def.embleme : ''}|${anime}|${meteo}|${ciel}|${nuit}`;
   distribuerTouffes();   // cartes créées depuis le dernier passage
+  majReglagesMeteo();
   if(etat === etatSaisonApplique) return;
   etatSaisonApplique = etat;
 
   document.body.classList.toggle('saison', !!theme);
   document.body.classList.toggle('saison-anime', anime);
+  document.body.classList.toggle('saison-nuit', nuit);
+  ['pluie','orage','neige'].forEach(m => document.body.classList.toggle(`ciel-${m}`, ciel === m));
   Object.keys(THEMES_SAISON).forEach(t => document.body.classList.toggle(`saison-${t}`, t === theme));
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', def ? def.barre : '#1a73e8');
   const logo = document.querySelector('.logo-mark');
@@ -1022,6 +1233,14 @@ function appliquerThemeSaison(){
   document.body.classList.toggle('avec-guirlande', !!(def && def.guirlande));
   if(def && def.guirlande) document.body.style.setProperty('--saison-guirlande', `url("data:image/svg+xml,${encodeURIComponent(svgGuirlande(def.guirlande))}")`);
   else document.body.style.removeProperty('--saison-guirlande');
+  /* Anniversaires : « Bonne fête … ! » au centre de la guirlande. */
+  document.getElementById('saison-banniere')?.remove();
+  if(def && def.banniere){
+    const banniere = document.createElement('div');
+    banniere.id = 'saison-banniere';
+    banniere.textContent = def.banniere;
+    document.body.appendChild(banniere);
+  }
   /* Petits détails sur le rebord des cartes (variantes : voir svgTouffes et distribuerTouffes). */
   const touffes = theme ? svgTouffes(theme) : null;
   nombreTouffesSaison = touffes ? touffes.length : 0;
@@ -1042,24 +1261,15 @@ function appliquerThemeSaison(){
   });
 
   document.getElementById('saison-deco')?.remove();
+  document.getElementById('saison-eclair')?.remove();
   if(!anime) return;
   const deco = document.createElement('div');
   deco.id = 'saison-deco';
   deco.setAttribute('aria-hidden', 'true');
-  for(let i = 0; i < def.nombre; i++){
-    const p = creerParticuleSaison(def, i);
-    if(def.montee) p.classList.add('montee');
-    const duree = (def.montee ? 14 : 9) + Math.random() * 9;
-    p.style.left = `${Math.random() * 100}%`;
-    p.style.animationDuration = `${duree}s`;
-    /* Délai négatif : les particules sont déjà réparties dans l'écran dès l'ouverture. */
-    p.style.animationDelay = `${-Math.random() * duree}s`;
-    p.style.setProperty('--derive', `${(Math.random() * 2 - 1) * 60}px`);
-    /* Une particule éclatée (voir eclaterParticulesTouchees) réapparaît au tour suivant. */
-    p.addEventListener('animationiteration', ()=> p.classList.remove('eclatee'));
-    deco.appendChild(p);
-  }
+  if(nuit && !cielCouvert(ciel)) ajouterCielDeNuit(deco, theme);
+  construireParticules(deco, def, meteo);
   document.body.appendChild(deco);
+  if(ciel === 'orage') ajouterEclairs();
 }
 
 function creerParticuleSaison(def, i){
@@ -1077,7 +1287,7 @@ function creerParticuleSaison(def, i){
 }
 
 /* Gerbe de particules du thème qui jaillit d'un point puis retombe en s'effaçant. Sert à la
-   surprise après un ajout et quand on touche une particule. */
+   surprise après un ajout. */
 function gerbeSaison(x, y, nombre, force){
   const def = defThemeSaisonActuel();
   if(!def) return;
@@ -1110,23 +1320,6 @@ function celebrerAjoutSaison(){
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   gerbeSaison(window.innerWidth / 2, window.innerHeight * .62, 22, Math.min(260, window.innerWidth * .45));
 }
-
-/* Toucher une particule la fait éclater. On écoute sans jamais bloquer le toucher : le clic
-   continue vers le bouton ou la ligne en dessous, les particules ne gênent donc rien. */
-document.addEventListener('pointerdown', e=>{
-  const deco = document.getElementById('saison-deco');
-  if(!deco) return;
-  const marge = 14;
-  for(const p of deco.children){
-    if(p.classList.contains('eclatee')) continue;
-    const r = p.getBoundingClientRect();
-    if(e.clientX >= r.left - marge && e.clientX <= r.right + marge && e.clientY >= r.top - marge && e.clientY <= r.bottom + marge){
-      p.classList.add('eclatee');
-      gerbeSaison(r.left + r.width / 2, r.top + r.height / 2, 7, 55);
-      break;
-    }
-  }
-}, { passive:true, capture:true });
 
 document.getElementById('f-date-conjoint').value = formaterDateISO(debutJour(new Date()));
 document.getElementById('f-date-personnel').value = formaterDateISO(debutJour(new Date()));
@@ -6189,6 +6382,23 @@ document.getElementById('saison-surprise')?.addEventListener('change',e=>{
   localStorage.setItem('depenses_saison_surprise',e.target.checked?'1':'0');
   if(e.target.checked) celebrerAjoutSaison();   // aperçu immédiat
 });
+/* Météo, jour et nuit, promenade de Charlie (voir « Météo, jour et nuit » plus haut). */
+const interrupteurSaison = (id, cle, apres) => document.getElementById(id)?.addEventListener('change', e=>{
+  try { localStorage.setItem(cle, e.target.checked ? '1' : '0'); } catch(err){}
+  if(apres) apres(e.target.checked);
+  appliquerThemeSaison();
+});
+interrupteurSaison('saison-meteo', 'depenses_saison_meteo', actif => { if(actif) actualiserMeteo(); });
+interrupteurSaison('saison-nuit', 'depenses_saison_nuit');
+interrupteurSaison('saison-charlie', 'depenses_charlie');
+document.getElementById('apercu-meteo')?.addEventListener('change', e=>{ apercuMeteo = e.target.value; appliquerThemeSaison(); });
+document.getElementById('apercu-moment')?.addEventListener('change', e=>{ apercuMoment = e.target.value; appliquerThemeSaison(); });
+document.getElementById('apercu-charlie')?.addEventListener('click', promenerCharlie);
+actualiserMeteo();
+/* Aux 10 minutes : météo (si elle date de plus de 30 min) et passage jour ↔ nuit. */
+setInterval(()=>{ actualiserMeteo(); appliquerThemeSaison(); }, 10 * 60000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ actualiserMeteo(); appliquerThemeSaison(); } });
+planifierPromenadeCharlie();
 appliquerThemeSaison();
 
 /* ===================== NOTIFICATIONS : DÉPÔT AU COMPTE CONJOINT =====================

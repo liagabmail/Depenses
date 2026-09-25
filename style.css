@@ -770,7 +770,6 @@
   .saison-date-periode{font-size:13px;color:var(--text-secondary);white-space:nowrap;}
   .saison-date-badge{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:10px;font-size:11px;
     font-weight:500;background:var(--accent);color:#fff;vertical-align:1px;}
-  .saison-dates-note{margin:0;font-size:12px;color:var(--text-secondary);}
 
   /* Interrupteurs : la pastille ronde devient l'emoji du thème (--saison-bouton, posé par
      app.js : 🍁, ❄️, 🎃…) et fait un tour sur elle-même en glissant. Le rail est éclairci
@@ -799,10 +798,15 @@
 
   /* Bouton « + » mobile : dégradé du thème, et une forme propre à certaines fêtes. */
   body.saison .mobile-add-btn{background:var(--saison-logo);}
-  /* Automne : une feuille (deux coins arrondis, deux pointus) avec sa tige. */
-  body.saison-automne .mobile-add-btn{border-radius:50% 6px;}
-  body.saison-automne .mobile-add-btn::after{content:"";position:absolute;left:-8px;bottom:-2px;width:14px;height:3px;
-    border-radius:2px;background:#8a3a0e;transform:rotate(-45deg);}
+  /* Hiver : une balle de neige, « + » bleu glacé. */
+  body.saison-hiver .mobile-add-btn{color:#364fc7;background:radial-gradient(circle at 35% 30%,#fff 0 30%,#e7f5ff 60%,#a5d8ff 100%);
+    box-shadow:inset -3px -4px 6px rgba(116,192,252,.45),var(--shadow-2);}
+  /* Printemps : une fleur à cinq pétales roses, cœur vert. */
+  body.saison-printemps .mobile-add-btn{width:58px;height:58px;border-radius:0;box-shadow:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
+    background:radial-gradient(circle 12px at 29px 29px,#2b8a3e 98%,transparent),
+      radial-gradient(circle 13px at 29px 14px,#f783ac 98%,transparent),radial-gradient(circle 13px at 43px 24.5px,#faa2c1 98%,transparent),
+      radial-gradient(circle 13px at 37.5px 41px,#f783ac 98%,transparent),radial-gradient(circle 13px at 20.5px 41px,#faa2c1 98%,transparent),
+      radial-gradient(circle 13px at 15px 24.5px,#f783ac 98%,transparent);}
   /* Noël : une boule de sapin avec son attache dorée. */
   body.saison-noel .mobile-add-btn{background:radial-gradient(circle at 35% 30%,#ef5350,#c5221f 55%,#8c1d18);}
   body.saison-noel .mobile-add-btn::before{content:"";position:absolute;top:-6px;left:50%;width:14px;height:8px;
@@ -869,10 +873,6 @@
   body.saison-actiongrace{--bg:#fbf6ee;--accent:#862e2e;--accent-dark:#632121;--accent-menu:#c2410c;--accent-halo:rgba(134,46,46,.16);--saison-logo:linear-gradient(135deg,#f59f00,#862e2e);}
   body.dark.saison-actiongrace{--bg:#1c1715;--accent-dark:#ffb38a;--accent-menu:#ffa94d;}
 
-  /* Poisson d'avril : un poisson (corps ovale + queue). */
-  body.saison-poissonavril .mobile-add-btn{width:62px;height:44px;border-radius:50%;background:linear-gradient(135deg,#22b8cf,#0c7489);}
-  body.saison-poissonavril .mobile-add-btn::after{content:"";position:absolute;left:-14px;top:50%;transform:translateY(-50%);
-    border-style:solid;border-width:13px 18px 13px 0;border-color:transparent #f76707 transparent transparent;}
   /* Fête des Pères : chemise à carreaux. */
   body.saison-peres .mobile-add-btn{border-radius:12px;text-shadow:0 1px 2px rgba(0,0,0,.5);
     background:repeating-linear-gradient(90deg,rgba(26,26,26,.55) 0 8px,transparent 8px 20px),
@@ -886,6 +886,11 @@
     content:"";position:absolute;left:0;right:0;top:env(safe-area-inset-top);height:28px;z-index:-1;pointer-events:none;
     background:var(--saison-guirlande) repeat-x 0 0 / 96px 28px;}
   body.saison-anime.saison-noel::before{animation:saison-scintille 1.6s ease-in-out infinite alternate;}
+  /* Anniversaires : « Bonne fête … ! » au centre de la guirlande (#saison-banniere, app.js),
+     sur une étiquette aux couleurs du thème. */
+  #saison-banniere{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 3px);transform:translateX(-50%);z-index:-1;
+    pointer-events:none;white-space:nowrap;padding:3px 14px;border-radius:12px;background:var(--saison-logo);color:#fff;
+    font-size:13px;font-weight:700;letter-spacing:.2px;box-shadow:0 1px 3px rgba(0,0,0,.25);text-shadow:0 1px 1px rgba(0,0,0,.25);}
 
   body.saison-halloween::before{content:"";position:absolute;right:0;top:env(safe-area-inset-top);width:130px;height:130px;
     z-index:-1;pointer-events:none;opacity:.55;
@@ -930,7 +935,7 @@
     80%{transform:rotate(25deg);}
   }
 
-  /* Gerbe : surprise après un ajout, et éclat d'une particule touchée. Au-dessus de tout,
+  /* Gerbe : surprise après un ajout. Au-dessus de tout,
      mais sans jamais capter un clic. */
   .saison-gerbe{position:fixed;inset:0;pointer-events:none;z-index:3000;overflow:hidden;}
   .saison-gerbe .saison-particule{position:absolute;margin:-8px 0 0 -8px;opacity:0;
@@ -940,8 +945,6 @@
     60% {transform:translate(var(--dx),var(--dy)) rotate(calc(var(--rot) * .7)) scale(1);opacity:1;}
     100%{transform:translate(var(--dx),calc(var(--dy) + 90px)) rotate(var(--rot)) scale(.9);opacity:0;}
   }
-  /* Particule touchée : cachée jusqu'à son prochain passage. */
-  .saison-particule.eclatee{visibility:hidden;}
 
   @media (prefers-reduced-motion: reduce){
     body.saison .logo-mark::after,body.saison::before,body.saison::after{animation:none !important;}
@@ -960,11 +963,11 @@
   /* La carte du calendrier coupe ce qui déborde (elle touche les bords de l'écran) : on ne
      coupe plus qu'à l'horizontale, pour que le détail et la neige restent visibles au-dessus. */
   body.avec-touffes #calendrier-recurrent-card-conjoint,body.avec-touffes #calendrier-recurrent-card-personnel{overflow:visible;overflow-x:clip;}
-  /* Hiver et Noël : couche de neige sur le dessus des cartes, avec des glaçons qui pendent un
-     peu dans la marge du haut, sans atteindre le texte. */
-  body.saison-hiver .card[data-touffe]::before,body.saison-noel .card[data-touffe]::before{content:"";position:absolute;
-    top:-6px;left:9px;right:9px;height:22px;pointer-events:none;filter:drop-shadow(0 1px 0 rgba(116,192,252,.6));
-    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='22'><path d='M0 5 Q5 0 11 3.5 Q15 1 20 3 Q27 -1 34 3.5 Q39 1.5 44 3 Q52 0 58 4 Q63 1 69 3 Q77 -.5 83 3.5 Q87 2 90 5 V9.5 H0 Z' fill='white'/><path d='M3 8.5 L7 8.5 L5 13.5 Z M11.6 8.5 L16.4 8.5 L14 18.5 Z M19.4 8.5 L22.6 8.5 L21 12.5 Z M29.8 8.5 L34.2 8.5 L32 15.5 Z M43.4 8.5 L48.6 8.5 L46 20.5 Z M53.2 8.5 L56.8 8.5 L55 12.5 Z M64.7 8.5 L69.3 8.5 L67 16.5 Z M79 8.5 L83 8.5 L81 13.5 Z' fill='%23d0ebff'/><path d='M14.6 9 L14.1 16 M46.7 9 L46.1 18 M67.5 9 L67.1 14' stroke='white' stroke-width='.8'/></svg>") repeat-x 0 0 / 90px 22px;}
+  /* Hiver et Noël : sur une carte sur deux (data-glacons, posé par distribuerTouffes), un petit
+     paquet de neige et quelques glaçons qui pendent dans la marge du haut, sans atteindre le texte. */
+  body.saison-hiver .card[data-glacons]::before,body.saison-noel .card[data-glacons]::before{content:"";position:absolute;
+    top:-7px;left:var(--glacons-x, 40%);width:56px;height:22px;pointer-events:none;filter:drop-shadow(0 1px .5px rgba(116,192,252,.8));
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='22'><g fill='%23d0ebff'><path d='M12 8 L16.4 8 L14.2 17.5 Z'/><path d='M21.6 8 L26.6 8 L24.1 21 Z'/><path d='M29 8 L31.6 8 L30.3 12.5 Z'/><path d='M36 8 L40 8 L38 15 Z'/></g><path d='M14.8 9 L14.4 15 M24.7 9 L24.3 18 M38.5 9 L38.2 13' stroke='white' stroke-width='.8'/><g fill='white'><circle cx='11' cy='6.5' r='3.6'/><circle cx='18' cy='4.8' r='4.6'/><circle cx='26.5' cy='5' r='4.4'/><circle cx='34.5' cy='4.6' r='4'/><circle cx='41.5' cy='6.4' r='3.4'/><rect x='8' y='5.5' width='37' height='3.6' rx='1.8'/></g></svg>") no-repeat 0 0 / 56px 22px;}
 
   /* Particules : conteneur fixe DERRIÈRE le contenu (z-index:-1, comme la guirlande) et qui ne
      capte aucun clic. Elles passent sous les cartes, rendues un peu translucides plus haut. */
@@ -988,6 +991,96 @@
     66% {transform:translate(calc(var(--derive) * -1),-66vh);}
     100%{transform:translate(0,calc(-100vh - 60px));}
   }
+
+  /* Météo (voir construireParticules dans app.js). Pluie : fines gouttes rapides, en biais. */
+  .saison-particule.goutte{width:1.5px;height:16px;border-radius:1px;opacity:.55;
+    background:linear-gradient(transparent,#4a7fc1);animation-name:saison-pluie;}
+  body.dark .saison-particule.goutte{background:linear-gradient(transparent,#a5c8ff);}
+  @keyframes saison-pluie{
+    from{transform:translate(0,0) rotate(6deg);}
+    to{transform:translate(-80px,calc(100vh + 60px)) rotate(6deg);}
+  }
+  /* Orage (ajouterEclairs) : environ aux 18 secondes, un éclair en zigzag et un flash, sur le
+     fond seulement (z-index:-1, derrière les cartes comme les particules). */
+  #saison-eclair{position:fixed;inset:0;z-index:-1;pointer-events:none;}
+  #saison-eclair .eclair-flash{position:absolute;inset:0;background:#fff;opacity:0;animation:saison-flash 18s linear infinite;}
+  #saison-eclair .eclair{position:absolute;opacity:0;filter:drop-shadow(0 0 6px rgba(255,236,153,.95));
+    animation:saison-eclair 18s linear infinite;}
+  @keyframes saison-flash{
+    0%,95%,96.6%,97.4%,100%{opacity:0;}
+    95.6%{opacity:.6;}
+    97%{opacity:.35;}
+  }
+  @keyframes saison-eclair{
+    0%,94.8%,97.8%,100%{opacity:0;}
+    95.3%,97.3%{opacity:1;}
+  }
+  /* Ciel selon la météo (aussi pendant les fêtes) : gris quand il pleut ou neige, plus sombre
+     pendant l'orage ; la nuit s'y ajoute. Le dégradé est posé par-dessus la couleur du thème. */
+  body.saison{--ciel:linear-gradient(transparent,transparent);background:var(--ciel) fixed,var(--bg);}
+  body.saison.ciel-pluie,body.saison.ciel-neige{--ciel:linear-gradient(rgba(90,100,115,.16),rgba(90,100,115,.05) 75%);}
+  body.saison.ciel-orage{--ciel:linear-gradient(rgba(45,50,70,.3),rgba(45,50,70,.1) 75%);}
+  /* Vent fort : les particules traversent l'écran de gauche à droite en tourbillonnant. */
+  .saison-particule.vent{left:-40px;animation-name:saison-vent;}
+  @keyframes saison-vent{
+    0%  {transform:translate(0,0) rotate(0deg);}
+    50% {transform:translate(55vw,var(--derive)) rotate(300deg);}
+    100%{transform:translate(calc(100vw + 80px),calc(var(--derive) * -.5)) rotate(620deg);}
+  }
+
+  /* Nuit : le ciel (--ciel) bleuit, ou s'assombrit s'il pleut, neige ou fait orage ; par ciel dégagé, des
+     étoiles qui scintillent dans le haut et, l'été, des lucioles. */
+  body.saison.saison-nuit{--ciel:linear-gradient(rgba(40,62,150,.2),rgba(40,62,150,.05) 75%);}
+  body.saison.saison-nuit.ciel-pluie,body.saison.saison-nuit.ciel-neige{--ciel:linear-gradient(rgba(40,48,72,.3),rgba(40,48,72,.1) 75%);}
+  body.saison.saison-nuit.ciel-orage{--ciel:linear-gradient(rgba(22,26,44,.4),rgba(22,26,44,.14) 75%);}
+  body.dark.saison.ciel-pluie,body.dark.saison.ciel-neige{--ciel:linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.06) 75%);}
+  body.dark.saison.ciel-orage{--ciel:linear-gradient(rgba(0,0,10,.35),rgba(0,0,10,.1) 75%);}
+  body.dark.saison.saison-nuit{--ciel:linear-gradient(rgba(0,0,20,.45),rgba(0,0,20,.1) 70%);}
+  .saison-etoile{position:absolute;width:3px;height:3px;border-radius:50%;background:#fab005;
+    box-shadow:0 0 5px 1px rgba(250,176,5,.7);animation:saison-scintille-etoile 4s ease-in-out infinite;}
+  body.dark .saison-etoile{background:#fff3bf;box-shadow:0 0 4px 1px rgba(255,236,153,.8);}
+  @keyframes saison-scintille-etoile{
+    0%,100%{opacity:.25;transform:scale(.7);}
+    50%{opacity:1;transform:scale(1.15);}
+  }
+  .saison-luciole{position:absolute;width:4px;height:4px;border-radius:50%;background:#d8f5a2;
+    box-shadow:0 0 6px 2px rgba(216,245,162,.8);
+    animation:saison-luciole-vol 8s ease-in-out infinite alternate,saison-luciole-lueur 3s ease-in-out infinite;}
+  @keyframes saison-luciole-vol{
+    from{transform:translate(0,0);}
+    to{transform:translate(var(--derive),-40px);}
+  }
+  @keyframes saison-luciole-lueur{
+    0%,100%{opacity:.15;}
+    50%{opacity:1;}
+  }
+
+  /* Charlie qui traverse le bas de l'écran (promenerCharlie). Il passe sous le bouton « + »
+     et les fenêtres, ne capte aucun clic et disparaît à la fin de sa promenade. */
+  #charlie-promenade{position:fixed;left:0;bottom:calc(env(safe-area-inset-bottom) + 8px);width:64px;height:42px;
+    z-index:650;pointer-events:none;animation:charlie-marche 10s linear forwards;}
+  #charlie-promenade svg{display:block;overflow:visible;}
+  body.dark #charlie-promenade svg{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7));}
+  #charlie-promenade .corps{animation:charlie-sautille .32s ease-in-out infinite alternate;}
+  #charlie-promenade .patte-a,#charlie-promenade .patte-b{transform-box:fill-box;transform-origin:50% 0;
+    animation:charlie-pas .32s ease-in-out infinite alternate;}
+  #charlie-promenade .patte-b{animation-direction:alternate-reverse;}
+  @keyframes charlie-marche{
+    from{transform:translateX(-80px);}
+    to{transform:translateX(calc(100vw + 20px));}
+  }
+  @keyframes charlie-sautille{
+    from{transform:translateY(0);}
+    to{transform:translateY(-1.2px);}
+  }
+  @keyframes charlie-pas{
+    from{transform:rotate(-16deg);}
+    to{transform:rotate(16deg);}
+  }
+
+  /* Réglages : petites notes (météo reçue, aperçu) et bloc « Aperçu ». */
+  .saison-note{margin:4px 0 0;font-size:12px;color:var(--text-secondary);}
+  .saison-apercu{margin-top:16px;padding-top:12px;border-top:1px solid var(--border);}
   .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
   .toggle-perso-scope{display:flex;width:fit-content;margin-left:auto;margin-right:auto;}
   .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:20px;cursor:pointer;}
