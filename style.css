@@ -10,6 +10,8 @@
     --teal:#00acc1;
     --bg:#f6f8fc;
     --surface:#ffffff;
+    --surface-2:#f1f3f4;      /* fonds gris clairs : pastilles, interrupteurs, blocs */
+    --surface-hover:#f8f9fa;  /* survol des lignes de tableau, lignes secondaires */
     --border:#dadce0;
     --text:#202124;
     --text-secondary:#5f6368;
@@ -18,6 +20,11 @@
        ce bleu devient illisible sur fond foncé, d'où une variable dédiée (voir body.dark).
        --blue reste réservé aux fonds pleins avec texte blanc (boutons, bascules). */
     --accent-menu:#1a73e8;
+    /* Couleur des boutons, bascules et liens. Distincte de --blue, qui reste la couleur de la
+       personne 1 : un thème saisonnier peut changer l'accent sans toucher aux personnes. */
+    --accent:#1a73e8;
+    --accent-dark:#174ea6;
+    --accent-halo:rgba(26,115,232,.15);
     --shadow-1: 0 1px 2px 0 rgba(60,64,67,.30), 0 1px 3px 1px rgba(60,64,67,.15);
     --shadow-2: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
   }
@@ -60,14 +67,14 @@
   .auth-form{text-align:left;display:flex;flex-direction:column;gap:14px;}
   .auth-form .field label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:500;}
   .auth-form .field input{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
-  .auth-form .field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,115,232,.15);}
-  .auth-submit{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;}
-  .auth-submit:hover{background:var(--blue-dark);}
+  .auth-form .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-halo);}
+  .auth-submit{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;}
+  .auth-submit:hover{background:var(--accent-dark);}
   .auth-submit:disabled{opacity:.6;cursor:default;}
   .auth-error{color:var(--red);font-size:13px;margin:0;min-height:16px;}
   .auth-success{color:var(--green);font-size:13px;margin:0;min-height:16px;}
-  .link-btn{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;}
-  .link-btn:hover{color:var(--blue-dark);}
+  .link-btn{background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit;}
+  .link-btn:hover{color:var(--accent-dark);}
 
   /* Boîte de message custom (remplace alert() natif, dont l'entête "x dit" est disgracieuse) */
   #alerte-modal{
@@ -94,7 +101,7 @@
     background:var(--surface);border-radius:28px;box-shadow:var(--shadow-2);
     width:100%;max-width:328px;overflow:hidden;
   }
-  .dp-header{background:var(--blue);color:#fff;padding:20px 24px;}
+  .dp-header{background:var(--accent);color:#fff;padding:20px 24px;}
   .dp-header-label{font-size:12px;letter-spacing:.3px;opacity:.85;margin-bottom:12px;}
   .dp-header-date{font-size:26px;font-weight:500;line-height:1.2;}
   .dp-body{padding:12px 12px 0;}
@@ -108,8 +115,8 @@
   .dp-days div{position:relative;display:flex;align-items:center;justify-content:center;padding:2px 0;}
   .dp-day-btn{width:36px;height:36px;border:none;background:none;border-radius:50%;color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;}
   .dp-day-btn:hover{background:rgba(128,128,128,.15);}
-  .dp-day-btn.dp-today{color:var(--blue-dark);font-weight:600;}
-  .dp-day-btn.dp-selected{background:var(--blue);color:#fff;}
+  .dp-day-btn.dp-today{color:var(--accent-dark);font-weight:600;}
+  .dp-day-btn.dp-selected{background:var(--accent);color:#fff;}
   .dp-day-btn:disabled{color:var(--border);cursor:default;pointer-events:none;}
   .dp-actions{display:flex;justify-content:flex-end;gap:8px;padding:8px 12px 12px;}
   .dp-actions .link-btn{padding:10px 14px;border-radius:8px;font-weight:500;text-decoration:none;font-size:14px;}
@@ -125,7 +132,7 @@
   }
   .logo-mark{
     width:40px;height:40px;border-radius:10px;
-    background:var(--blue);
+    background:var(--accent);
     display:flex;align-items:center;justify-content:center;
     flex-shrink:0;
   }
@@ -142,7 +149,7 @@
     gap:12px;
   }
   .settings-top-btn{margin-left:auto;width:40px;height:40px;border:1px solid var(--border);border-radius:50%;background:var(--surface);color:var(--text);font-size:20px;cursor:pointer;}
-  .settings-top-btn:hover{border-color:var(--blue);color:var(--blue);}
+  .settings-top-btn:hover{border-color:var(--accent);color:var(--accent);}
   .chip{
     display:flex;align-items:center;gap:6px;
     background:var(--surface);
@@ -181,13 +188,13 @@
     border:1px solid var(--border);background:var(--surface);color:var(--text);
     border-radius:8px;padding:8px 12px;font-family:inherit;cursor:pointer;
   }
-  .period-nav button:hover,.icon-btn:hover{border-color:var(--blue);color:var(--blue);}
+  .period-nav button:hover,.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
   .period-label{min-width:150px;text-align:center;font-weight:500;cursor:pointer;border-radius:6px;padding:4px 6px;}
-  .period-label:hover{color:var(--blue);text-decoration:underline;}
-  .period-type-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-wrap:wrap;justify-content:center;}
-  body.dark .period-type-switch{background:#2c3136;}
+  .period-label:hover{color:var(--accent);text-decoration:underline;}
+  .period-type-switch{display:flex;gap:4px;background:var(--surface-2);border-radius:8px;padding:3px;flex-wrap:wrap;justify-content:center;}
+  body.dark .period-type-switch{background:var(--surface-2);}
   .period-type-switch button{border:none!important;background:transparent;color:var(--text-secondary);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
-  .period-type-switch button.active{background:var(--surface);color:var(--blue);font-weight:600;box-shadow:var(--shadow-1);}
+  .period-type-switch button.active{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:var(--shadow-1);}
   .tab-btn{
     background:none;border:none;cursor:pointer;
     font-family:inherit;font-size:14px;font-weight:500;
@@ -225,9 +232,9 @@
   .recurrent-info{display:flex;flex-direction:column;gap:5px;min-width:0;}
   .recurrent-nom{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .recurrent-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .freq-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f1f3f4;color:var(--text-secondary);white-space:nowrap;}
-  body.dark .freq-pill{background:#2c3136;}
-  input[type="range"]{accent-color:var(--blue);width:100%;cursor:pointer;}
+  .freq-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:var(--surface-2);color:var(--text-secondary);white-space:nowrap;}
+  body.dark .freq-pill{background:var(--surface-2);}
+  input[type="range"]{accent-color:var(--accent);width:100%;cursor:pointer;}
   .recurrent-actions{display:flex;align-items:center;gap:14px;flex-shrink:0;}
   .recurrent-montant{font-weight:500;font-size:14px;min-width:70px;text-align:right;white-space:nowrap;}
   .switch.small{width:38px;height:22px;}
@@ -244,12 +251,12 @@
     display:flex;flex-direction:column;gap:3px;
     transition:border-color .15s ease, background .15s ease;
   }
-  .portee-option:hover{border-color:var(--blue);background:color-mix(in srgb, var(--blue) 6%, var(--surface));}
+  .portee-option:hover{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 6%, var(--surface));}
   .portee-titre{font-size:14px;font-weight:600;}
   .portee-desc{font-size:12px;color:var(--text-secondary);}
   .jours-semaine-select{display:flex;gap:6px;flex-wrap:wrap;}
   .jour-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-size:12px;font-weight:500;}
-  .jour-btn.selected{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .jour-btn.selected{background:var(--accent);color:#fff;border-color:var(--accent);}
 
   /* Couple « intervalle + unité » sur une seule ligne, comme dans Google Agenda. */
   .rec-intervalle{display:flex;gap:8px;}
@@ -284,12 +291,12 @@
   #calendrier-recurrent-card-conjoint .cal-head, #calendrier-recurrent-card-personnel .cal-head,
   #calendrier-recurrent-card-conjoint .cal-nav, #calendrier-recurrent-card-personnel .cal-nav{padding:0 14px;}
   .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
-  .cal-mode-switch{display:flex;gap:4px;background:#f1f3f4;border-radius:8px;padding:3px;flex-shrink:0;}
-  body.dark .cal-mode-switch{background:#2c3136;}
+  .cal-mode-switch{display:flex;gap:4px;background:var(--surface-2);border-radius:8px;padding:3px;flex-shrink:0;}
+  body.dark .cal-mode-switch{background:var(--surface-2);}
   .cal-mode-switch button{border:none;background:transparent;color:var(--text-secondary);font-size:14px;padding:5px 9px;border-radius:6px;cursor:pointer;line-height:1;}
   .cal-mode-switch button.active{background:var(--surface);box-shadow:var(--shadow-1);}
   .cal-hamburger-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:32px;height:32px;border-radius:8px;font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-  .cal-hamburger-btn.active{border-color:var(--blue);color:var(--blue);}
+  .cal-hamburger-btn.active{border-color:var(--accent);color:var(--accent);}
   /* Barre d'outils du calendrier/liste : filtres à gauche, bascule grille/liste centrée
      (visible seulement en vue Mois), tri à droite — toujours sur une seule ligne. */
   .cal-toolbar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 14px 10px;gap:8px;}
@@ -299,15 +306,15 @@
   .cal-menu-section-title{font-size:11px;text-transform:uppercase;color:var(--text-secondary);font-weight:600;margin:10px 0 4px;}
   .cal-menu-section-title:first-child{margin-top:0;}
   .cal-menu-vue-option{display:flex;align-items:center;gap:10px;padding:7px 4px;border-radius:6px;cursor:pointer;font-size:13px;}
-  .cal-menu-vue-option:hover{background:#f1f3f4;}
-  body.dark .cal-menu-vue-option:hover{background:#2c3136;}
-  .cal-menu-vue-option.active{color:var(--blue);font-weight:600;}
+  .cal-menu-vue-option:hover{background:var(--surface-2);}
+  body.dark .cal-menu-vue-option:hover{background:var(--surface-2);}
+  .cal-menu-vue-option.active{color:var(--accent);font-weight:600;}
   .cal-menu-check{display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:13px;}
-  .cal-menu-check input{accent-color:var(--blue);width:16px;height:16px;flex-shrink:0;}
+  .cal-menu-check input{accent-color:var(--accent);width:16px;height:16px;flex-shrink:0;}
   .cal-menu-check .dot-cat{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .cal-menu-montant-valeurs{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:var(--text);margin:4px 0 6px;}
   .cal-menu-montant-sliders{position:relative;height:28px;}
-  .cal-menu-montant-sliders input[type="range"]{position:absolute;left:0;top:9px;width:100%;margin:0;accent-color:var(--blue);pointer-events:none;}
+  .cal-menu-montant-sliders input[type="range"]{position:absolute;left:0;top:9px;width:100%;margin:0;accent-color:var(--accent);pointer-events:none;}
   .cal-menu-montant-sliders input[type="range"]::-webkit-slider-thumb{pointer-events:auto;}
   .cal-menu-montant-sliders input[type="range"]::-moz-range-thumb{pointer-events:auto;}
   .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
@@ -321,10 +328,10 @@
   .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border);border-left:1px solid var(--border);}
   .cal-month-dow{font-size:10px;color:var(--text-secondary);text-align:center;padding:6px 0;text-transform:uppercase;}
   .cal-month-cell{min-height:46px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:hidden;cursor:pointer;position:relative;}
-  .cal-month-cell:active{background:color-mix(in srgb, var(--blue) 6%, transparent);}
+  .cal-month-cell:active{background:color-mix(in srgb, var(--accent) 6%, transparent);}
   .cal-month-cell.outside{opacity:.35;}
   .cal-month-daynum{font-size:11px;color:var(--text-secondary);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
-  .cal-month-cell.today .cal-month-daynum{background:var(--blue);color:#fff;font-weight:700;}
+  .cal-month-cell.today .cal-month-daynum{background:var(--accent);color:#fff;font-weight:700;}
   /* Jour de paie : une petite enveloppe dans le coin de la case, posée en absolu pour ne
      jamais décaler le numéro du jour ni les pastilles de dépenses en dessous. */
   .cal-paie-marqueur{position:absolute;top:2px;right:3px;font-size:9px;line-height:1;
@@ -339,10 +346,10 @@
 
   .cal-agenda-day{margin-bottom:14px;padding:0 14px;}
   .cal-agenda-day-header{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:capitalize;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border);}
-  .cal-agenda-day-header.today{color:var(--blue);}
+  .cal-agenda-day-header.today{color:var(--accent);}
   .cal-agenda-empty{font-size:12px;color:var(--text-secondary);padding:4px 0 10px;}
-  .cal-agenda-item{display:block;padding:9px 10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:#f1f3f4;}
-  body.dark .cal-agenda-item{background:#2c3136;}
+  .cal-agenda-item{display:block;padding:9px 10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--surface-2);}
+  body.dark .cal-agenda-item{background:var(--surface-2);}
   .cal-agenda-item-ligne1{display:flex;align-items:center;gap:6px;}
   .cal-agenda-item-ligne2{display:flex;align-items:center;gap:6px;margin-top:5px;}
   /* Largeur fixe pour la date, pour que "1 sept" et "23 sept" prennent la même place et
@@ -352,7 +359,7 @@
   .cal-agenda-item-right{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;}
   .cal-agenda-pct{font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;min-width:28px;text-align:right;}
   .cal-agenda-item-montant{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;min-width:72px;text-align:right;}
-  .cal-agenda-item-recur{width:16px;flex-shrink:0;text-align:center;color:var(--blue);font-size:13px;}
+  .cal-agenda-item-recur{width:16px;flex-shrink:0;text-align:center;color:var(--accent);font-size:13px;}
   .cal-agenda-item-note{font-size:13px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px;}
   .cal-agenda-item-cat{font-size:12px;font-weight:500;flex-shrink:0;margin-left:auto;padding-left:8px;white-space:nowrap;}
 
@@ -469,7 +476,7 @@
   }
   .field select:focus, .field input:focus{
     border-color:var(--accent-menu);
-    box-shadow:0 0 0 3px rgba(26,115,232,.15);
+    box-shadow:0 0 0 3px var(--accent-halo);
   }
   /* Les <select> gardaient le rendu natif du système : flèche, hauteur et couleurs
      différentes des <input> voisins, et fond clair en thème sombre. On neutralise le style
@@ -492,11 +499,11 @@
   .field select:disabled, .field input:disabled{
     opacity:.45;
     cursor:not-allowed;
-    background:#f1f3f4;
+    background:var(--surface-2);
   }
-  body.dark .field select:disabled, body.dark .field input:disabled{background:#2c3136;}
+  body.dark .field select:disabled, body.dark .field input:disabled{background:var(--surface-2);}
   .btn-add{
-    background:var(--blue);
+    background:var(--accent);
     color:#fff;
     border:none;
     border-radius:8px;
@@ -508,20 +515,20 @@
     white-space:nowrap;
     transition:background .15s ease, box-shadow .15s ease;
   }
-  .btn-add:hover{background:var(--blue-dark);box-shadow:var(--shadow-1);}
+  .btn-add:hover{background:var(--accent-dark);box-shadow:var(--shadow-1);}
   .type-toggle{display:flex;gap:8px;}
   .type-btn{
     flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
     background:var(--surface);color:var(--text-secondary);font-family:inherit;font-size:13px;font-weight:500;
     cursor:pointer;transition:all .15s ease;
   }
-  .type-btn:hover{border-color:var(--blue);color:var(--blue);}
-  .type-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .type-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .type-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
   .type-pill{
     display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
-    background:#f1f3f4;color:var(--text-secondary);margin-left:6px;white-space:nowrap;
+    background:var(--surface-2);color:var(--text-secondary);margin-left:6px;white-space:nowrap;
   }
-  body.dark .type-pill{background:#2c3136;}
+  body.dark .type-pill{background:var(--surface-2);}
   .type-pill.personnelle{background:#fff3cd;color:#8a6100;}
   body.dark .type-pill.personnelle{background:#4a3f1f;color:#f5d78a;}
   .mobile-add-btn{display:none;}
@@ -579,7 +586,7 @@
     .modal-body{padding:14px 16px;}
     .modal-footer{padding:12px 16px;}
 
-    .mobile-add-btn{display:flex;position:fixed;right:20px;bottom:20px;width:56px;height:56px;border:0;border-radius:50%;background:var(--blue);color:#fff;font-size:32px;line-height:1;align-items:center;justify-content:center;box-shadow:var(--shadow-2);z-index:700;cursor:pointer;}
+    .mobile-add-btn{display:flex;position:fixed;right:20px;bottom:20px;width:56px;height:56px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:32px;line-height:1;align-items:center;justify-content:center;box-shadow:var(--shadow-2);z-index:700;cursor:pointer;}
   }
 
   /* Tableau */
@@ -594,7 +601,7 @@
   .mobile-sort select{border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:13px inherit;padding:7px 9px;}
   .mobile-sort{display:none;gap:6px;align-items:center;}
   .sort-direction{width:34px;height:34px;padding:0!important;font-size:16px!important;line-height:1;cursor:pointer;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;font-family:inherit;}
-  .sort-direction:hover{border-color:var(--blue);color:var(--blue);}
+  .sort-direction:hover{border-color:var(--accent);color:var(--accent);}
   .table-filters{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px;gap:10px;flex-wrap:wrap;}
   .table-filters .field{margin-bottom:0;}
   .table-filters select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);}
@@ -613,12 +620,12 @@
     white-space:nowrap;
   }
   thead th:hover{color:var(--text);}
-  thead th .arrow{font-size:10px;margin-left:4px;color:var(--blue);}
+  thead th .arrow{font-size:10px;margin-left:4px;color:var(--accent);}
   tbody td{
     padding:12px 20px;
     border-bottom:1px solid #eef0f3;
   }
-  tbody tr:hover{background:#f8f9fa;}
+  tbody tr:hover{background:var(--surface-hover);}
   tbody tr:last-child td{border-bottom:none;}
   .who-badge{
     display:inline-flex;align-items:center;gap:6px;
@@ -634,7 +641,7 @@
     color:var(--blue-dark);
   }
   .amount-cell{font-weight:500;text-align:right;}
-  .recurring-icon{display:inline-block;font-size:13px;color:var(--blue);margin-left:2px;cursor:default;}
+  .recurring-icon{display:inline-block;font-size:13px;color:var(--accent);margin-left:2px;cursor:default;}
   body.dark .recurring-icon{color:#8ab4f8;}
   .row-icons{display:inline-flex;align-items:center;gap:2px;}
   .row-icons:empty{display:none;}
@@ -653,8 +660,8 @@
   .budget-row-amounts{font-size:12px;color:var(--text-secondary);white-space:nowrap;}
   .budget-row-amounts strong{color:var(--text);font-weight:500;}
   .budget-row-conjoint{font-size:11px;color:var(--text-secondary);text-align:right;margin:-2px 0 6px;}
-  .budget-bar{height:8px;border-radius:6px;background:#eef0f3;overflow:hidden;}
-  body.dark .budget-bar{background:#2c3136;}
+  .budget-bar{height:8px;border-radius:6px;background:var(--surface-2);overflow:hidden;}
+  body.dark .budget-bar{background:var(--surface-2);}
   .budget-bar-fill{height:100%;border-radius:6px;transition:width .25s ease;}
   .budget-empty{font-size:13px;color:var(--text-secondary);padding:8px 0;}
   .budget-input-field{margin-bottom:0;}
@@ -690,15 +697,281 @@
   .switch input{position:absolute;opacity:0;width:0;height:0;}
   .switch-track{position:absolute;inset:0;border-radius:18px;background:#9aa0a6;transition:background .2s;}
   .switch-track::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s;}
-  .switch input:checked + .switch-track{background:var(--blue);}
+  .switch input:checked + .switch-track{background:var(--accent);}
   .switch input:checked + .switch-track::after{transform:translateX(20px);}
-  body.dark{--accent-menu:#8ab4f8;--bg:#17191c;--surface:#23272b;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
-  body.dark tbody tr:hover{background:#2b3035;} body.dark tbody td{border-bottom-color:#343a40;}
+  body.dark{--accent-menu:#8ab4f8;--bg:#17191c;--surface:#23272b;--surface-2:#2c3136;--surface-hover:#2b3035;--border:#3b4249;--text:#f1f3f4;--text-secondary:#bdc1c6;--blue-dark:#8ab4f8;--accent-dark:#8ab4f8;--mauve:#b48fc9;--mauve-dark:#c9a8db;--shadow-1:0 1px 3px rgba(0,0,0,.4);}
+  body.dark tbody tr:hover{background:var(--surface-hover);} body.dark tbody td{border-bottom-color:#343a40;}
   body.dark .cat-pill{background:#303b4a;color:#b8d1f5;}
+
+  /* Thèmes saisonniers (voir THEMES_SAISON et appliquerThemeSaison dans app.js). Le body reçoit
+     « saison » + « saison-<nom> ». Un thème change le fond et l'accent (boutons, bascules,
+     onglets) ; --blue et --mauve gardent la couleur des personnes. --saison-logo sert au logo
+     et au bouton « + ». Les variantes body.dark.saison-* gardent le texte lisible sur fond foncé. */
+  body.saison-automne{--bg:#fbf5ec;--accent:#b54d12;--accent-dark:#8a3a0e;--accent-menu:#b54d12;--accent-halo:rgba(181,77,18,.18);--saison-logo:linear-gradient(135deg,#e8710a,#b3261e);}
+  body.dark.saison-automne{--bg:#1d1a17;--accent-dark:#f6ae6b;--accent-menu:#f6ae6b;}
+  body.saison-halloween{--bg:#f8f4fb;--accent:#d9480f;--accent-dark:#a63c06;--accent-menu:#7b2cbf;--accent-halo:rgba(217,72,15,.18);--saison-logo:linear-gradient(135deg,#7b2cbf,#e8590c);}
+  body.dark.saison-halloween{--bg:#18141c;--accent-dark:#ffa94d;--accent-menu:#d0a2f7;}
+  body.saison-noel{--bg:#f4f8f5;--accent:#c5221f;--accent-dark:#8c1d18;--accent-menu:#137333;--accent-halo:rgba(197,34,31,.16);--saison-logo:linear-gradient(135deg,#c5221f,#137333);}
+  body.dark.saison-noel{--bg:#161b1a;--accent-dark:#f28b82;--accent-menu:#81c995;}
+  body.saison-nouvelan{--bg:#f7f5ee;--accent:#1f2a5c;--accent-dark:#141c40;--accent-menu:#8a6a10;--accent-halo:rgba(31,42,92,.16);--saison-logo:linear-gradient(135deg,#1f2a5c,#c9a227);}
+  body.dark.saison-nouvelan{--bg:#17161a;--accent:#3a4a9a;--accent-dark:#f3d27a;--accent-menu:#f3d27a;}
+  body.saison-hiver{--bg:#f2f6fc;--accent:#364fc7;--accent-dark:#25379a;--accent-menu:#364fc7;--accent-halo:rgba(54,79,199,.16);--saison-logo:linear-gradient(135deg,#74c0fc,#364fc7);}
+  body.dark.saison-hiver{--bg:#151a21;--accent-dark:#a5b4fc;--accent-menu:#a5b4fc;}
+  body.saison-valentin{--bg:#fdf3f5;--accent:#c2185b;--accent-dark:#880e4f;--accent-menu:#c2185b;--accent-halo:rgba(194,24,91,.16);--saison-logo:linear-gradient(135deg,#f06292,#c2185b);}
+  body.dark.saison-valentin{--bg:#1d1618;--accent-dark:#f48fb1;--accent-menu:#f48fb1;}
+  body.saison-stpatrick{--bg:#f2f8f1;--accent:#2e7d32;--accent-dark:#1b5e20;--accent-menu:#2e7d32;--accent-halo:rgba(46,125,50,.16);--saison-logo:linear-gradient(135deg,#66bb6a,#1b5e20);}
+  body.dark.saison-stpatrick{--bg:#141a15;--accent-dark:#81c784;--accent-menu:#81c784;}
+  body.saison-paques{--bg:#fbf8f0;--accent:#7b5ea7;--accent-dark:#563d7c;--accent-menu:#7b5ea7;--accent-halo:rgba(123,94,167,.16);--saison-logo:linear-gradient(135deg,#f9c74f,#9b7fd1);}
+  body.dark.saison-paques{--bg:#1a1917;--accent-dark:#c7b3f0;--accent-menu:#c7b3f0;}
+  body.saison-printemps{--bg:#fbf6f8;--accent:#2b8a3e;--accent-dark:#1e6b2e;--accent-menu:#2b8a3e;--accent-halo:rgba(43,138,62,.16);--saison-logo:linear-gradient(135deg,#f783ac,#2b8a3e);}
+  body.dark.saison-printemps{--bg:#1b1719;--accent-dark:#8ce99a;--accent-menu:#8ce99a;}
+  body.saison-fetenationale{--bg:#f2f5fb;--accent:#0b3d91;--accent-dark:#072a66;--accent-menu:#0b3d91;--accent-halo:rgba(11,61,145,.16);--saison-logo:linear-gradient(135deg,#3d7bd9,#0b3d91);}
+  body.dark.saison-fetenationale{--bg:#141820;--accent:#2f63c0;--accent-dark:#8fb3ff;--accent-menu:#8fb3ff;}
+  body.saison-ete{--bg:#fffaf0;--accent:#0c8599;--accent-dark:#0b6b7a;--accent-menu:#0c8599;--accent-halo:rgba(12,133,153,.16);--saison-logo:linear-gradient(135deg,#ffd43b,#0c8599);}
+  body.dark.saison-ete{--bg:#1b1a15;--accent-dark:#66d9e8;--accent-menu:#66d9e8;}
+
+  /* Cartes, tableaux, fenêtres et blocs gris prennent une touche de la couleur du thème, pour
+     que rien ne reste blanc pur sur le fond teinté. */
+  body.saison{
+    --surface:color-mix(in srgb, var(--accent) 4%, #fff);
+    --surface-2:color-mix(in srgb, var(--accent) 9%, #f1f3f4);
+    --surface-hover:color-mix(in srgb, var(--accent) 7%, #fff);
+    --border:color-mix(in srgb, var(--accent) 16%, #dadce0);
+  }
+  body.dark.saison{
+    --surface:color-mix(in srgb, var(--accent) 7%, #23272b);
+    --surface-2:color-mix(in srgb, var(--accent) 12%, #2c3136);
+    --surface-hover:color-mix(in srgb, var(--accent) 11%, #2b3035);
+    --border:color-mix(in srgb, var(--accent) 22%, #3b4249);
+  }
+
+  /* Logo : dégradé de saison + emblème posé sur le coin (hors du flux, pour ne pas déplacer le
+     titre). L'emblème vient de l'attribut data-embleme, rempli par app.js. */
+  body.saison .logo-mark{background:var(--saison-logo);position:relative;}
+  body.saison .logo-mark::after{content:var(--embleme-img, attr(data-embleme));position:absolute;top:-8px;right:-9px;
+    font-size:17px;line-height:1;transform:rotate(15deg);}
+
+  /* Icônes des onglets : une pour Personnel, deux pour Conjoint (voir icones dans THEMES_SAISON). */
+  .tab-ico{display:inline-flex;align-items:center;gap:1px;vertical-align:-2px;}
+  .tab-ico svg{display:block;}
+
+  /* Réglages : thème du jour + bouton « Dates », et la fenêtre qui liste les périodes. */
+  .saison-actuel-ligne{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;}
+  #saison-actuel{margin:0;font-size:12px;color:var(--text-secondary);}
+  #saison-dates-btn{padding:6px 12px;font-size:13px;flex-shrink:0;}
+  .saison-dates-titre{margin:4px 0 8px;font-size:13px;font-weight:500;color:var(--text-secondary);}
+  .saison-dates{list-style:none;margin:0 0 16px;padding:0;}
+  .saison-date{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:8px;}
+  .saison-date + .saison-date{border-top:1px solid var(--border);}
+  .saison-date.actuel{background:color-mix(in srgb, var(--accent) 10%, transparent);border-top-color:transparent;}
+  .saison-date.actuel + .saison-date{border-top-color:transparent;}
+  .saison-date-ico{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
+  .saison-date-nom{flex:1;min-width:0;font-size:14px;}
+  .saison-date-periode{font-size:13px;color:var(--text-secondary);white-space:nowrap;}
+  .saison-date-badge{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:10px;font-size:11px;
+    font-weight:500;background:var(--accent);color:#fff;vertical-align:1px;}
+  .saison-dates-note{margin:0;font-size:12px;color:var(--text-secondary);}
+
+  /* Interrupteurs : la pastille ronde devient l'emoji du thème (--saison-bouton, posé par
+     app.js : 🍁, ❄️, 🎃…) et fait un tour sur elle-même en glissant. Le rail est éclairci
+     pour que l'emoji ressorte sur la couleur d'accent. */
+  body.saison .switch-track{background:color-mix(in srgb, #9aa0a6 55%, var(--surface));}
+  body.saison .switch input:checked + .switch-track{background:color-mix(in srgb, var(--accent) 45%, var(--surface));}
+  body.saison .switch-track::after{content:var(--saison-bouton, "");background:none;box-shadow:none;
+    display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;
+    filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.35));transition:transform .4s ease;}
+  body.saison .switch input:checked + .switch-track::after{transform:translateX(20px) rotate(360deg);}
+  body.saison .switch.small .switch-track::after{font-size:13px;}
+  body.saison .switch.small input:checked + .switch-track::after{transform:translateX(16px) rotate(360deg);}
+
+  /* Onglet principal actif : l'emoji du thème pend au milieu du trait, avec un petit rebond
+     quand on change d'onglet. */
+  body.saison .tab-btn.active::before{content:var(--saison-bouton, "");position:absolute;left:50%;bottom:-10px;
+    font-size:12px;line-height:1;transform:translateX(-50%);pointer-events:none;}
+  body.saison-anime .tab-btn.active::before{animation:saison-breloque .6s ease-out;}
+  @keyframes saison-breloque{
+    0%{transform:translate(-50%,-8px) scale(.4);opacity:0;}
+    60%{transform:translate(-50%,2px) scale(1.15);opacity:1;}
+    100%{transform:translate(-50%,0) scale(1);}
+  }
+  /* Texte sélectionné aux couleurs du thème (la barre de défilement : voir appliquerThemeSaison). */
+  body.saison ::selection{background:color-mix(in srgb, var(--accent) 28%, transparent);}
+
+  /* Bouton « + » mobile : dégradé du thème, et une forme propre à certaines fêtes. */
+  body.saison .mobile-add-btn{background:var(--saison-logo);}
+  /* Automne : une feuille (deux coins arrondis, deux pointus) avec sa tige. */
+  body.saison-automne .mobile-add-btn{border-radius:50% 6px;}
+  body.saison-automne .mobile-add-btn::after{content:"";position:absolute;left:-8px;bottom:-2px;width:14px;height:3px;
+    border-radius:2px;background:#8a3a0e;transform:rotate(-45deg);}
+  /* Noël : une boule de sapin avec son attache dorée. */
+  body.saison-noel .mobile-add-btn{background:radial-gradient(circle at 35% 30%,#ef5350,#c5221f 55%,#8c1d18);}
+  body.saison-noel .mobile-add-btn::before{content:"";position:absolute;top:-6px;left:50%;width:14px;height:8px;
+    transform:translateX(-50%);border-radius:3px 3px 1px 1px;background:linear-gradient(#f9d976,#d4a017);}
+  /* Halloween et Action de grâce : une citrouille côtelée avec sa queue verte. */
+  body.saison-halloween .mobile-add-btn,body.saison-actiongrace .mobile-add-btn{border-radius:46% 46% 42% 42%;width:60px;
+    background:radial-gradient(ellipse 22% 55% at 50% 52%,rgba(0,0,0,.14),transparent 70%),
+      radial-gradient(ellipse 18% 55% at 28% 52%,rgba(0,0,0,.12),transparent 70%),
+      radial-gradient(ellipse 18% 55% at 72% 52%,rgba(0,0,0,.12),transparent 70%),
+      radial-gradient(circle at 40% 35%,#ffa94d,#e8590c 60%,#a63c06);}
+  body.saison-halloween .mobile-add-btn::before,body.saison-actiongrace .mobile-add-btn::before{content:"";position:absolute;top:-7px;left:50%;width:6px;height:10px;
+    transform:translateX(-50%) rotate(12deg);border-radius:3px;background:#2b8a3e;}
+  /* Pâques : un œuf, plus étroit en haut. */
+  body.saison-paques .mobile-add-btn{height:62px;border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    background:radial-gradient(circle at 40% 30%,#d0bfff,#9b7fd1 60%,#7b5ea7);}
+  /* Saint-Valentin : un cœur (carré tourné + deux ronds), le « + » reste au-dessus. */
+  body.saison-valentin .mobile-add-btn{background:none;box-shadow:none;isolation:isolate;}
+  body.saison-valentin .mobile-add-btn::before,body.saison-valentin .mobile-add-btn::after{content:"";position:absolute;z-index:-1;
+    width:29px;height:46px;top:2px;border-radius:29px 29px 0 0;background:linear-gradient(#f06292,#c2185b);}
+  body.saison-valentin .mobile-add-btn::before{left:28px;transform:rotate(-45deg);transform-origin:0 100%;}
+  body.saison-valentin .mobile-add-btn::after{left:-1px;transform:rotate(45deg);transform-origin:100% 100%;}
+
+  /* Anniversaires : un thème par personne.
+     Gabriel : bleu nuit et orange, bouton « + » en boîte-cadeau avec son nœud.
+     Mélissa : prune et rose, bouton en fleur, guirlande de fleurs.
+     Emma (bébé fille) : rose pastel, bouton rond coiffé d'une boucle 🎀, fanions pastel.
+     Charlie (schnauzer noir) : anthracite et rouge collier, bouton en os, traces de pattes. */
+  body.saison-gabriel{--bg:#f1f5fa;--accent:#1f4e79;--accent-dark:#153655;--accent-menu:#1f4e79;--accent-halo:rgba(31,78,121,.16);--saison-logo:linear-gradient(135deg,#1f4e79,#f08c00);}
+  body.dark.saison-gabriel{--bg:#141a21;--accent:#2f6aa3;--accent-dark:#ffc078;--accent-menu:#ffc078;}
+  body.saison-melissa{--bg:#fbf4fc;--accent:#862e9c;--accent-dark:#5f1f6f;--accent-menu:#862e9c;--accent-halo:rgba(134,46,156,.16);--saison-logo:linear-gradient(135deg,#f783ac,#862e9c);}
+  body.dark.saison-melissa{--bg:#1b1520;--accent-dark:#eebefa;--accent-menu:#eebefa;}
+  body.saison-emma{--bg:#fff4f7;--accent:#d6336c;--accent-dark:#a61e4d;--accent-menu:#d6336c;--accent-halo:rgba(214,51,108,.16);--saison-logo:linear-gradient(135deg,#faa2c1,#e64980);}
+  body.dark.saison-emma{--bg:#1f161a;--accent-dark:#fcc2d7;--accent-menu:#fcc2d7;}
+  body.saison-charlie{--bg:#f4f4f3;--accent:#343a40;--accent-dark:#212529;--accent-menu:#c92a2a;--accent-halo:rgba(52,58,64,.16);--saison-logo:linear-gradient(135deg,#495057,#141414);}
+  body.dark.saison-charlie{--bg:#151515;--accent:#495057;--accent-dark:#ffa8a8;--accent-menu:#ff8787;}
+
+  body.saison-gabriel .mobile-add-btn{border-radius:9px;text-shadow:0 1px 2px rgba(0,0,0,.4);
+    background:linear-gradient(90deg,transparent 43%,#f08c00 43% 57%,transparent 57%),
+      linear-gradient(transparent 43%,#f08c00 43% 57%,transparent 57%),linear-gradient(135deg,#2f6aa3,#1f4e79);}
+  body.saison-gabriel .mobile-add-btn::before{content:"";position:absolute;top:-11px;left:50%;width:30px;height:14px;transform:translateX(-50%);
+    background:radial-gradient(circle 3px at 15px 10px,#d9480f 98%,transparent),
+      radial-gradient(ellipse 7px 5px at 8px 8px,#f08c00 98%,transparent),radial-gradient(ellipse 7px 5px at 22px 8px,#f08c00 98%,transparent);}
+  body.saison-melissa .mobile-add-btn{border-radius:0;box-shadow:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
+    background:radial-gradient(circle 12px at 28px 28px,#862e9c 98%,transparent),
+      radial-gradient(circle 13px at 28px 14px,#f783ac 98%,transparent),radial-gradient(circle 13px at 41.3px 23.7px,#f783ac 98%,transparent),
+      radial-gradient(circle 13px at 36.2px 39.3px,#f783ac 98%,transparent),radial-gradient(circle 13px at 19.8px 39.3px,#f783ac 98%,transparent),
+      radial-gradient(circle 13px at 14.7px 23.7px,#f783ac 98%,transparent);}
+  body.saison-emma .mobile-add-btn{background:radial-gradient(circle at 38% 30%,#fcc2d7,#f06595 60%,#d6336c);}
+  body.saison-emma .mobile-add-btn::before{content:"🎀";position:absolute;top:-13px;left:50%;font-size:22px;line-height:1;
+    transform:translateX(-50%) rotate(-8deg);}
+  body.saison-charlie .mobile-add-btn{width:68px;height:44px;border-radius:0;box-shadow:none;color:#343a40;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));background-repeat:no-repeat;
+    background:radial-gradient(circle 11px at 11px 11px,#f1f3f5 98%,transparent),radial-gradient(circle 11px at 11px 33px,#f1f3f5 98%,transparent),
+      radial-gradient(circle 11px at 57px 11px,#f1f3f5 98%,transparent),radial-gradient(circle 11px at 57px 33px,#f1f3f5 98%,transparent),
+      linear-gradient(#f1f3f5,#f1f3f5) 10px 11px / 48px 22px no-repeat;}
+
+  /* Fêtes et traditions québécoises. */
+  body.saison-poissonavril{--bg:#f0fbfc;--accent:#0c7489;--accent-dark:#0b5c6b;--accent-menu:#e8590c;--accent-halo:rgba(12,116,137,.16);--saison-logo:linear-gradient(135deg,#22b8cf,#f76707);}
+  body.dark.saison-poissonavril{--bg:#121b1d;--accent-dark:#66d9e8;--accent-menu:#ffa94d;}
+  body.saison-meres{--bg:#fff5f7;--accent:#087f5b;--accent-dark:#06634a;--accent-menu:#c2255c;--accent-halo:rgba(8,127,91,.16);--saison-logo:linear-gradient(135deg,#f783ac,#0ca678);}
+  body.dark.saison-meres{--bg:#1d1619;--accent-dark:#96f2d7;--accent-menu:#faa2c1;}
+  body.saison-peres{--bg:#f7f4f4;--accent:#b02a37;--accent-dark:#7d1d27;--accent-menu:#b02a37;--accent-halo:rgba(176,42,55,.16);--saison-logo:linear-gradient(135deg,#b02a37,#1a1a1a);}
+  body.dark.saison-peres{--bg:#181414;--accent-dark:#ffa8a8;--accent-menu:#ff8787;}
+  body.saison-actiongrace{--bg:#fbf6ee;--accent:#862e2e;--accent-dark:#632121;--accent-menu:#c2410c;--accent-halo:rgba(134,46,46,.16);--saison-logo:linear-gradient(135deg,#f59f00,#862e2e);}
+  body.dark.saison-actiongrace{--bg:#1c1715;--accent-dark:#ffb38a;--accent-menu:#ffa94d;}
+
+  /* Poisson d'avril : un poisson (corps ovale + queue). */
+  body.saison-poissonavril .mobile-add-btn{width:62px;height:44px;border-radius:50%;background:linear-gradient(135deg,#22b8cf,#0c7489);}
+  body.saison-poissonavril .mobile-add-btn::after{content:"";position:absolute;left:-14px;top:50%;transform:translateY(-50%);
+    border-style:solid;border-width:13px 18px 13px 0;border-color:transparent #f76707 transparent transparent;}
+  /* Fête des Pères : chemise à carreaux. */
+  body.saison-peres .mobile-add-btn{border-radius:12px;text-shadow:0 1px 2px rgba(0,0,0,.5);
+    background:repeating-linear-gradient(90deg,rgba(26,26,26,.55) 0 8px,transparent 8px 20px),
+      repeating-linear-gradient(0deg,rgba(26,26,26,.45) 0 8px,transparent 8px 20px),#b02a37;}
+
+  /* Décor fixe, derrière tout le contenu (z-index:-1 : au-dessus du fond seulement), en haut
+     de la page : la guirlande du thème, dessinée par svgGuirlande (app.js) dans
+     --saison-guirlande. Les ampoules de Noël scintillent. Halloween : toile d'araignée dans le
+     coin et araignée suspendue, à la place de la guirlande. */
+  body.avec-guirlande::before{
+    content:"";position:absolute;left:0;right:0;top:env(safe-area-inset-top);height:28px;z-index:-1;pointer-events:none;
+    background:var(--saison-guirlande) repeat-x 0 0 / 96px 28px;}
+  body.saison-anime.saison-noel::before{animation:saison-scintille 1.6s ease-in-out infinite alternate;}
+
+  body.saison-halloween::before{content:"";position:absolute;right:0;top:env(safe-area-inset-top);width:130px;height:130px;
+    z-index:-1;pointer-events:none;opacity:.55;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 130'><g fill='none' stroke='%23868e96' stroke-width='1'><path d='M130 0 L0 8 M130 0 L12 58 M130 0 L48 100 M130 0 L94 124 M130 0 L128 130'/><path d='M100 2 Q104 20 109 22 Q114 26 128 30'/><path d='M70 4 Q80 38 88 44 Q100 58 128 62'/><path d='M38 6 Q56 58 66 68 Q88 92 128 96'/><path d='M8 8 Q30 76 44 92 Q76 120 128 128'/></g></svg>") no-repeat top right / contain;}
+  body.saison-halloween::after{content:"🕷️";position:absolute;right:26%;top:calc(env(safe-area-inset-top) - 20px);width:24px;height:84px;
+    z-index:-1;pointer-events:none;display:flex;align-items:flex-end;justify-content:center;font-size:18px;line-height:1;
+    background:linear-gradient(#868e96,#868e96) no-repeat center top / 1px calc(100% - 14px);opacity:.8;}
+  body.saison-anime.saison-halloween::after{animation:saison-araignee 5s ease-in-out infinite;}
+
+  @keyframes saison-scintille{
+    from{filter:brightness(1);}
+    to{filter:brightness(1.4) drop-shadow(0 0 3px rgba(255,220,120,.9));}
+  }
+  @keyframes saison-araignee{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-26px);}
+  }
+
+  /* Emblème du logo animé, selon le thème (si les animations sont activées). */
+  body.saison-anime .logo-mark::after{animation:saison-emb-balance 3.2s ease-in-out infinite;transform-origin:50% 0;}
+  body.saison-anime.saison-valentin .logo-mark::after,body.saison-anime.saison-emma .logo-mark::after{animation:saison-emb-battement 1.3s ease-in-out infinite;transform-origin:50% 50%;}
+  body.saison-anime.saison-halloween .logo-mark::after{animation:saison-emb-clignote 3.5s steps(1) infinite;}
+  body.saison-anime.saison-nouvelan .logo-mark::after{animation:saison-emb-trinque 2.4s ease-in-out infinite;transform-origin:50% 100%;}
+  @keyframes saison-emb-balance{
+    0%,100%{transform:rotate(5deg);}
+    50%{transform:rotate(28deg);}
+  }
+  @keyframes saison-emb-battement{
+    0%,40%,100%{transform:rotate(15deg) scale(1);}
+    15%{transform:rotate(15deg) scale(1.25);}
+    28%{transform:rotate(15deg) scale(1.1);}
+  }
+  @keyframes saison-emb-clignote{
+    0%,100%{transform:rotate(15deg);filter:none;}
+    46%{transform:rotate(15deg);filter:brightness(1.6) drop-shadow(0 0 4px #ffa94d);}
+    52%{transform:rotate(15deg);filter:none;}
+    58%{transform:rotate(15deg);filter:brightness(1.6) drop-shadow(0 0 4px #ffa94d);}
+  }
+  @keyframes saison-emb-trinque{
+    0%,60%,100%{transform:rotate(15deg);}
+    70%{transform:rotate(-10deg) translateY(-2px);}
+    80%{transform:rotate(25deg);}
+  }
+
+  /* Gerbe : surprise après un ajout, et éclat d'une particule touchée. Au-dessus de tout,
+     mais sans jamais capter un clic. */
+  .saison-gerbe{position:fixed;inset:0;pointer-events:none;z-index:3000;overflow:hidden;}
+  .saison-gerbe .saison-particule{position:absolute;margin:-8px 0 0 -8px;opacity:0;
+    animation:saison-eclat 1.3s cubic-bezier(.2,.7,.4,1) forwards;}
+  @keyframes saison-eclat{
+    0%  {transform:translate(0,0) rotate(0) scale(.4);opacity:1;}
+    60% {transform:translate(var(--dx),var(--dy)) rotate(calc(var(--rot) * .7)) scale(1);opacity:1;}
+    100%{transform:translate(var(--dx),calc(var(--dy) + 90px)) rotate(var(--rot)) scale(.9);opacity:0;}
+  }
+  /* Particule touchée : cachée jusqu'à son prochain passage. */
+  .saison-particule.eclatee{visibility:hidden;}
+
+  @media (prefers-reduced-motion: reduce){
+    body.saison .logo-mark::after,body.saison::before,body.saison::after{animation:none !important;}
+  }
+
+  /* Particules : conteneur fixe qui ne capte aucun clic, sous les fenêtres (z-index 700+). */
+  #saison-deco{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:5;}
+  .saison-particule{position:absolute;top:-40px;line-height:1;opacity:.75;will-change:transform;
+    animation-name:saison-chute;animation-timing-function:linear;animation-iteration-count:infinite;}
+  .saison-particule.teinte{color:#8ab4f8;opacity:.8;}
+  body.dark .saison-particule.teinte{color:#e8f0fe;}
+  .saison-particule.confetti{width:7px;height:11px;border-radius:2px;opacity:.85;}
+  .saison-particule.montee{top:auto;bottom:-40px;animation-name:saison-montee;opacity:.6;}
+  @keyframes saison-chute{
+    0%  {transform:translate(0,0) rotate(0deg);}
+    25% {transform:translate(var(--derive),25vh) rotate(90deg);}
+    50% {transform:translate(0,50vh) rotate(180deg);}
+    75% {transform:translate(calc(var(--derive) * -1),75vh) rotate(270deg);}
+    100%{transform:translate(0,calc(100vh + 60px)) rotate(360deg);}
+  }
+  @keyframes saison-montee{
+    0%  {transform:translate(0,0);}
+    33% {transform:translate(var(--derive),-33vh);}
+    66% {transform:translate(calc(var(--derive) * -1),-66vh);}
+    100%{transform:translate(0,calc(-100vh - 60px));}
+  }
   .compare-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:4px;margin-bottom:20px;}
   .toggle-perso-scope{display:flex;width:fit-content;margin-left:auto;margin-right:auto;}
   .compare-toggle button{border:0;background:none;color:var(--text-secondary);font:500 13px inherit;padding:8px 18px;border-radius:20px;cursor:pointer;}
-  .compare-toggle button.active{background:var(--blue);color:#fff;}
+  .compare-toggle button.active{background:var(--accent);color:#fff;}
   .compare-selects{display:flex;gap:16px;align-items:center;margin-bottom:24px;flex-wrap:wrap;}
   #tab-comparer{text-align:center;}
   #tab-comparer .compare-selects{justify-content:center;}
@@ -777,7 +1050,7 @@
   .btn-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:10px 16px;font:500 14px inherit;cursor:pointer;}
   .btn-danger{background:#d93025;color:#fff;border-color:#d93025;}
   .btn-danger:hover{background:#b0261a;border-color:#b0261a;}
-  #save-edit{background:var(--blue);}
+  #save-edit{background:var(--accent);}
   .edit-actions{grid-column:1 / -1;display:flex;justify-content:flex-end;gap:12px;}
   @media (max-width:760px){
     .edit-modal{align-items:stretch;justify-content:stretch;background:var(--surface);padding:0;}
@@ -808,8 +1081,8 @@
   }
   #table-personnel.hide-qui-column th:first-child,
   #table-personnel.hide-qui-column td:first-child{display:none;}
-  .row-conjoint-share,.row-compte-item,.row-revenu-item{background:#f8f9fa;}
-  body.dark .row-conjoint-share,body.dark .row-compte-item,body.dark .row-revenu-item{background:#2b3035;}
+  .row-conjoint-share,.row-compte-item,.row-revenu-item{background:var(--surface-hover);}
+  body.dark .row-conjoint-share,body.dark .row-compte-item,body.dark .row-revenu-item{background:var(--surface-hover);}
   @media (max-width:760px){
     .table-card>div[style]{overflow:visible!important;}
     .table-card table,.table-card tbody,.table-card tr,.table-card td{display:block;width:100%;}
@@ -929,8 +1202,8 @@
   .cs-min-champ{display:flex;align-items:center;gap:6px;}
   .cs-min-champ input{width:110px;text-align:right;font-size:16px;font-family:inherit;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);}
   .cs-min-champ .btn-add{width:auto;padding:8px 14px;margin:0;}
-  .cs-bloc{border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#f1f3f4;}
-  body.dark .cs-bloc{background:#2c3136;}
+  .cs-bloc{border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--surface-2);}
+  body.dark .cs-bloc{background:var(--surface-2);}
   .cs-bloc.cs-ok{background:rgba(52,168,83,.12);}
   .cs-bloc.cs-manque{background:rgba(234,67,53,.12);}
   .cs-bloc.cs-avert{background:rgba(251,188,4,.15);}
@@ -957,7 +1230,7 @@
   .cs-graphique{position:relative;height:170px;margin:4px 0 6px;}
   .cs-journal{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
   .cs-jour{border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
-  .cs-jour.aujourdhui{border-color:var(--blue, #1a73e8);border-width:2px;}
+  .cs-jour.aujourdhui{border-color:var(--accent);border-width:2px;}
   .cs-jour-haut{display:flex;justify-content:space-between;gap:10px;align-items:baseline;}
   .cs-jour-date{font-size:14px;font-weight:600;}
   .cs-jour-solde{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
@@ -968,7 +1241,7 @@
   .cs-bloc.cs-attente{background:rgba(251,188,4,.15);}
   .cs-plages{display:flex;gap:6px;margin:4px 0;}
   .cs-plage{border:1px solid var(--border);background:transparent;color:var(--text-secondary);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;}
-  .cs-plage.actif{background:var(--blue, #1a73e8);border-color:var(--blue, #1a73e8);color:#fff;}
+  .cs-plage.actif{background:var(--accent);border-color:var(--accent);color:#fff;}
   /* Récurrence « dates précises » */
   .dates-multiples{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
   .date-puce{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;}

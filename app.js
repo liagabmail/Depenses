@@ -445,7 +445,356 @@ function appliquerTheme(){
   document.body.classList.toggle('dark', localStorage.getItem('depenses_theme') === 'dark');
   const darkMode = document.getElementById('dark-mode');
   if(darkMode) darkMode.checked = document.body.classList.contains('dark');
+  appliquerThemeSaison();
 }
+
+/* Thèmes saisonniers. Réglages locaux à l'appareil, comme le mode sombre : thèmes activés par
+   défaut en mode « Selon la date », animations et surprise à l'ajout activées. Les couleurs,
+   le décor et les formes du bouton « + » sont dans style.css (body.saison-<nom>) ; ici :
+   icônes, emblème, particules.
+   - icones : [Personnel, Conjoint] — une chose pour soi, deux pour le couple.
+   - particules : caractères qui tombent ; teinte = coloré par le CSS (flocons) ;
+     confetti = petits rectangles de couleur ; montee = remonte au lieu de tomber. */
+function bouleNoel(couleur){
+  return `<svg viewBox="0 0 16 19" width="13" height="16" aria-hidden="true"><rect x="6" y="0.5" width="4" height="3.5" rx="1" fill="#d4a017"/><circle cx="8" cy="11.5" r="6.5" fill="${couleur}"/><circle cx="5.8" cy="9.2" r="1.7" fill="#fff" opacity=".55"/></svg>`;
+}
+const CONFETTIS_FETE = ['#c9a227','#f3d27a','#e64980','#4dabf7','#51cf66'];
+const THEMES_SAISON = {
+  hiver:         { nom:'Hiver',          embleme:'⛄', icones:['⛄','⛄⛄'],   particules:['❄','❅','❆'], nombre:18, teinte:true, barre:'#364fc7', bouton:'❄️' },
+  printemps:     { nom:'Printemps',      embleme:'🌸', icones:['🌷','🌷🌷'],   particules:['🌸','🌸','💮'], nombre:14, barre:'#2b8a3e', bouton:'🌸' },
+  ete:           { nom:'Été',            embleme:'☀️', icones:['🍉','🍉🍉'],   particules:['🫧'], nombre:10, montee:true, barre:'#0c8599', bouton:'☀️' },
+  automne:       { nom:'Automne',        embleme:'🍁', icones:['🍁','🍁🍂'],   particules:['🍂','🍁','🍂'], nombre:14, barre:'#b54d12', bouton:'🍁' },
+  nouvelan:      { nom:'Nouvel An',      embleme:'🥂', icones:['🎉','🎉🎉'],   confetti:CONFETTIS_FETE, nombre:30, barre:'#1f2a5c', bouton:'⭐', guirlande:{ type:'fanions', couleurs:['#c9a227','#1f2a5c','#adb5bd'], fil:'#c9a227' } },
+  valentin:      { nom:'Saint-Valentin', embleme:'💘', icones:['❤️','💕'],     particules:['💕','❤️','💗'], nombre:12, barre:'#c2185b', bouton:'❤️', guirlande:{ type:'coeurs', couleurs:['#e64980','#f783ac','#c2185b'], fil:'#c2185b' } },
+  stpatrick:     { nom:'Saint-Patrick',  embleme:'🍀', icones:['☘️','☘️☘️'],   particules:['☘️','🍀','☘️'], nombre:14, barre:'#2e7d32', bouton:'🍀', guirlande:{ type:'trefles', couleurs:['#2f9e44','#40c057','#2b8a3e'], fil:'#2b8a3e' } },
+  paques:        { nom:'Pâques',         embleme:'🐰', icones:['🥚','🥚🥚'],   particules:['🥚','🐣','🌷'], nombre:12, barre:'#7b5ea7', bouton:'🥚', guirlande:{ type:'oeufs', couleurs:['#ffd43b','#b197fc','#74c0fc','#f783ac'], fil:'#9b7fd1' } },
+  fetenationale: { nom:'Fête nationale', embleme:'⚜️', icones:['⚜️','⚜️⚜️'],   particules:['⚜️'], nombre:12, barre:'#0b3d91', bouton:'⚜️', guirlande:{ type:'fanions', couleurs:['#0b3d91','#ffffff','#0b3d91'], fil:'#0b3d91' } },
+  halloween:     { nom:'Halloween',      embleme:'🎃', icones:['🎃','🎃🎃'],   particules:['🦇','👻','🦇'], nombre:10, barre:'#7b2cbf', bouton:'🎃' },
+  noel:          { nom:'Noël',           embleme:'🎄', icones:[bouleNoel('#c5221f'), bouleNoel('#c5221f') + bouleNoel('#137333')],
+                   particules:['❄','❅','❆'], nombre:22, teinte:true, barre:'#c5221f', bouton:'❄️', guirlande:{ type:'ampoules', couleurs:['#e03131','#fcc419','#2f9e44','#4dabf7'], fil:'#556b5a' } },
+  /* Anniversaires de la famille : un thème complet par personne (dates dans PERIODES_SAISON). */
+  gabriel:       { nom:'Fête de Gabriel', embleme:'🎂', icones:['🎁','🎁🎁'], particules:['🎈','🎁','🎉'], nombre:14, montee:true, barre:'#1f4e79', bouton:'🎁', guirlande:{ type:'fanions', couleurs:['#1f4e79','#f08c00','#4dabf7'], fil:'#1f4e79' } },
+  melissa:       { nom:'Fête de Mélissa', embleme:'💐', icones:['🌷','🌷🌷'], particules:['🌸','🌺','🌷','✨'], nombre:14, barre:'#862e9c', bouton:'🌺', guirlande:{ type:'fleurs', couleurs:['#f783ac','#cc5de8'], fil:'#2b8a3e' } },
+  emma:          { nom:"Fête d'Emma",     embleme:'👶', icones:['🎀','🎀🎀'], particules:['🎀','🧸','💗','🍼'], nombre:14, barre:'#d6336c', bouton:'🎀', guirlande:{ type:'fanions', couleurs:['#faa2c1','#ffffff','#d0bfff'], fil:'#f783ac' } },
+  charlie:       { nom:'Fête de Charlie', embleme:schnauzer(), icones:[schnauzer(), schnauzer() + '🦴'], particules:['🦴','🐾','🦴','🐾'], nombre:14, barre:'#343a40', bouton:'🦴', guirlande:{ type:'pattes', couleurs:['#868e96'] } },
+  /* Fêtes et traditions québécoises. */
+  poissonavril:  { nom:"Poisson d'avril",   embleme:'🐟', icones:['🐟','🐟🐠'], particules:['🐟','🐠','🐡'], nombre:12, barre:'#1098ad', bouton:'🐟', guirlande:{ type:'poissons', couleurs:['#ff922b','#22b8cf','#f06595','#94d82d'], fil:'#495057' } },
+  meres:         { nom:'Fête des Mères',    embleme:'💝', icones:['💝','💝💝'], particules:['💖','🌹','💐'], nombre:12, barre:'#099268', bouton:'💝', guirlande:{ type:'fleurs', couleurs:['#f06595','#ffa8a8','#e599f7'], fil:'#099268' } },
+  peres:         { nom:'Fête des Pères',    embleme:'👔', icones:['👔','👔👔'], particules:['👔','⭐','🔧'], nombre:10, barre:'#b02a37', bouton:'👔', guirlande:{ type:'carreaux' } },
+  actiongrace:   { nom:'Action de grâce',   embleme:'🦃', icones:['🥧','🥧🥧'], particules:['🍂','🌽','🍁'], nombre:12, barre:'#862e2e', bouton:'🥧', guirlande:{ type:'feuilles', couleurs:['#d9480f','#f59f00','#862e2e'], fil:'#5c3a1e' } }
+};
+
+/* Charlie, schnauzer noir : tête de face, oreilles repliées, sourcils et barbe touffus. */
+function schnauzer(){
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="6" y="3.5" width="12" height="11.5" rx="4" fill="#262626" stroke="#6b6b6b" stroke-width=".4"/><path d="M5.1 5 L9.8 3.4 L6.4 10.4 Z M18.9 5 L14.2 3.4 L17.6 10.4 Z" fill="#141414"/><path d="M7.4 8.6 Q9 6.6 11.2 8.1 L10.6 8.9 Q9 8 7.6 9.4 Z M16.6 8.6 Q15 6.6 12.8 8.1 L13.4 8.9 Q15 8 16.4 9.4 Z" fill="#9a9a9a"/><circle cx="9.4" cy="10.3" r=".95" fill="#fff"/><circle cx="14.6" cy="10.3" r=".95" fill="#fff"/><circle cx="9.5" cy="10.4" r=".5" fill="#000"/><circle cx="14.5" cy="10.4" r=".5" fill="#000"/><path d="M6.4 12.3 Q12 10.9 17.6 12.3 L17.4 16.8 L16.4 19.2 L15 18.3 L13.6 20.7 L12 19.5 L10.4 20.7 L9 18.3 L7.6 19.2 L6.6 16.8 Z" fill="#4d4d4d"/><ellipse cx="12" cy="12.9" rx="1.8" ry="1.2" fill="#000"/></svg>`;
+}
+
+/* Guirlande du haut de page : un motif de 96 × 28 répété sur toute la largeur (voir
+   body.avec-guirlande::before dans style.css). Les objets pendent d'un fil qui s'affaisse ;
+   « carreaux » (chemise de bûcheron) est une bande, sans fil. */
+function svgGuirlande({ type, couleurs = [], fil = '#868e96' }){
+  const c = i => couleurs[i % couleurs.length];
+  const filSvg = `<path d="M0 3 Q24 10 48 3 Q72 10 96 3" fill="none" stroke="${fil}" stroke-width="1.2"/>`;
+  const trois = f => [16, 48, 80].map((x, i) => f(x, i)).join('');
+  /* Petit fil vertical entre le fil principal et l'objet. */
+  const attache = (x, y) => `<path d="M${x} 5.5 V${y}" stroke="${fil}" stroke-width=".8"/>`;
+  let corps = '';
+  switch(type){
+    case 'fanions':
+      corps = filSvg + trois((x, i) => `<path d="M${x - 10} 5.5 L${x + 10} 5.5 L${x} 24 Z" fill="${c(i)}" stroke="${fil}" stroke-width=".6"/>`);
+      break;
+    case 'ampoules':
+      corps = filSvg + [12, 36, 60, 84].map((x, i) => `<rect x="${x - 2}" y="6" width="4" height="3" rx="1" fill="#777"/><ellipse cx="${x}" cy="14" rx="4" ry="6" fill="${c(i)}"/>`).join('');
+      break;
+    case 'fleurs':
+      corps = filSvg + trois((x, i) => {
+        const p = [[0,-3.4],[3.2,-1],[2,2.8],[-2,2.8],[-3.2,-1]].map(([dx, dy]) => `<circle cx="${x + dx}" cy="${11 + dy}" r="3"/>`).join('');
+        return `<ellipse cx="${x - 9}" cy="8" rx="3" ry="1.3" fill="#40c057" transform="rotate(25 ${x - 9} 8)"/><g fill="${c(i)}">${p}</g><circle cx="${x}" cy="11" r="2" fill="#fcc419"/>`;
+      });
+      break;
+    case 'feuilles':
+      corps = filSvg + trois((x, i) => `${attache(x, 8)}<path d="M${x} 8 L${x + 2} 11 L${x + 6} 10 L${x + 4.5} 14 L${x + 7} 16 L${x + 2} 17 L${x} 22 L${x - 2} 17 L${x - 7} 16 L${x - 4.5} 14 L${x - 6} 10 L${x - 2} 11 Z" fill="${c(i)}"/>`);
+      break;
+    case 'coeurs':
+      corps = filSvg + trois((x, i) => `${attache(x, 9)}<path d="M${x} 21 C${x - 10} 14 ${x - 6} 6 ${x} 10.5 C${x + 6} 6 ${x + 10} 14 ${x} 21 Z" fill="${c(i)}"/>`);
+      break;
+    case 'trefles':
+      corps = filSvg + trois((x, i) => `${attache(x, 8)}<g fill="${c(i)}"><circle cx="${x}" cy="11" r="3.2"/><circle cx="${x - 3.2}" cy="15" r="3.2"/><circle cx="${x + 3.2}" cy="15" r="3.2"/></g><path d="M${x} 15 Q${x + 1} 20 ${x + 3} 22" stroke="${c(i)}" stroke-width="1.2" fill="none"/>`);
+      break;
+    case 'oeufs':
+      corps = filSvg + [12, 36, 60, 84].map((x, i) => `${attache(x, 8)}<ellipse cx="${x}" cy="15" rx="4.6" ry="6.4" fill="${c(i)}"/><path d="M${x - 4.4} 14 l2.2 -1.6 l2.2 1.6 l2.2 -1.6 l2.2 1.6" stroke="#fff" stroke-width="1" fill="none"/>`).join('');
+      break;
+    case 'poissons':
+      corps = filSvg + trois((x, i) => `${attache(x, 10)}<path d="M${x + 8} 15 Q${x} 7 ${x - 6} 15 Q${x} 23 ${x + 8} 15 Z M${x - 5} 15 L${x - 11} 10.5 L${x - 11} 19.5 Z" fill="${c(i)}"/><circle cx="${x + 4}" cy="14" r="1" fill="#212529"/>`);
+      break;
+    case 'pattes':
+      corps = [[22, 15, -20], [70, 11, 20]].map(([x, y, a]) => `<g fill="${c(0)}" transform="translate(${x} ${y}) rotate(${a})"><ellipse cx="0" cy="3" rx="4" ry="3.2"/><circle cx="-4" cy="-1.6" r="1.7"/><circle cx="-1.4" cy="-4" r="1.7"/><circle cx="1.4" cy="-4" r="1.7"/><circle cx="4" cy="-1.6" r="1.7"/></g>`).join('');
+      break;
+    case 'carreaux':
+      /* Carreaux rouge et noir de la chemise de bûcheron. */
+      corps = `<rect width="96" height="14" fill="#b02a37"/>` +
+        [0, 16, 32, 48, 64, 80].map(x => `<rect x="${x + 5}" width="6" height="14" fill="#1a1a1a" opacity=".55"/>`).join('') +
+        `<rect y="4" width="96" height="5" fill="#1a1a1a" opacity=".45"/><path d="M0 11.5 H96" stroke="#1a1a1a" stroke-width=".7" opacity=".6"/>`;
+      break;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="28">${corps}</svg>`;
+}
+const ICONES_ONGLETS_BASE = ['👤','👥'];
+let etatSaisonApplique;
+
+/* Dimanche de Pâques (calendrier grégorien, méthode de Meeus/Jones/Butcher). */
+function dimanchePaques(annee){
+  const a = annee % 19, b = Math.floor(annee / 100), c = annee % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const mois = Math.floor((h + l - 7 * m + 114) / 31), jour = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(annee, mois - 1, jour);
+}
+
+/* Périodes de chaque thème, en « mois*100 + jour » (1024 = 24 octobre), du premier au dernier
+   jour inclus. Une période peut passer le 1er janvier (du > au). Dans l'ordre de priorité : la
+   première qui correspond gagne : anniversaires, puis fêtes, puis saisons. Une fête ne dure que
+   son jour, sauf Halloween (la semaine avant), Noël (du 20 au 30) et le Jour de l'an (31 et 1er).
+   Sert aussi à la fenêtre « Dates des thèmes ». */
+function jourMoisDe(date){ return (date.getMonth() + 1) * 100 + date.getDate(); }
+/* n-ième jour de la semaine d'un mois (jourSemaine : 0 = dimanche ; mois : 1 à 12). */
+function niemeJourSemaine(annee, mois, jourSemaine, n){
+  const premier = new Date(annee, mois - 1, 1);
+  return new Date(annee, mois - 1, 1 + (jourSemaine - premier.getDay() + 7) % 7 + 7 * (n - 1));
+}
+/* Une fête d'un seul jour, à date mobile. */
+function jourSeul(date){ const md = jourMoisDe(date); return [md, md]; }
+const PERIODES_SAISON = [
+  { theme:'gabriel',       anniv:true, dates:()=>[202, 202] },
+  { theme:'melissa',       anniv:true, dates:()=>[412, 412] },
+  { theme:'emma',          anniv:true, dates:()=>[813, 813] },
+  { theme:'charlie',       anniv:true, dates:()=>[1211, 1211] },
+  { theme:'nouvelan',      fete:true, dates:()=>[1231, 101] },
+  { theme:'noel',          fete:true, dates:()=>[1220, 1230] },
+  { theme:'halloween',     fete:true, dates:()=>[1025, 1031] },
+  { theme:'valentin',      fete:true, dates:()=>[214, 214] },
+  { theme:'stpatrick',     fete:true, dates:()=>[317, 317] },
+  { theme:'poissonavril',  fete:true, dates:()=>[401, 401] },
+  { theme:'fetenationale', fete:true, dates:()=>[624, 624] },
+  /* Dates mobiles : recalculées chaque année. */
+  { theme:'paques',        fete:true, dates:annee=> jourSeul(dimanchePaques(annee)) },
+  { theme:'meres',         fete:true, dates:annee=> jourSeul(niemeJourSemaine(annee, 5, 0, 2)) },  // 2e dimanche de mai
+  { theme:'peres',         fete:true, dates:annee=> jourSeul(niemeJourSemaine(annee, 6, 0, 3)) },  // 3e dimanche de juin
+  { theme:'actiongrace',   fete:true, dates:annee=> jourSeul(niemeJourSemaine(annee, 10, 1, 2)) }, // 2e lundi d'octobre
+  { theme:'automne',   dates:()=>[922, 1130] },
+  { theme:'ete',       dates:()=>[621, 921] },
+  { theme:'printemps', dates:()=>[320, 620] },
+  { theme:'hiver',     dates:()=>[1201, 319] }
+];
+
+function themeSaisonSelonDate(d = new Date()){
+  const md = jourMoisDe(d);
+  const periode = PERIODES_SAISON.find(p=>{
+    const [du, au] = p.dates(d.getFullYear());
+    return du <= au ? (md >= du && md <= au) : (md >= du || md <= au);
+  });
+  return periode ? periode.theme : null;
+}
+
+const MOIS_COURTS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+function formaterJourMois(md){
+  const jour = md % 100;
+  return `${jour === 1 ? '1er' : jour} ${MOIS_COURTS[Math.floor(md / 100) - 1]}`;
+}
+
+/* Fenêtre « Dates des thèmes » : anniversaires, fêtes puis saisons, dans l'ordre de
+   l'année, avec le thème du jour mis en évidence. */
+function ouvrirDatesSaison(){
+  const annee = new Date().getFullYear();
+  const actuel = themeSaisonSelonDate();
+  const ordre = md => md >= 1231 ? 0 : md;   // le Nouvel An ouvre l'année
+  const ligneHtml = (embleme, nom, periode, estActuel)=>`<li class="saison-date${estActuel ? ' actuel' : ''}">
+      <span class="saison-date-ico">${embleme}</span>
+      <span class="saison-date-nom">${nom}${estActuel ? ' <span class="saison-date-badge">Aujourd\'hui</span>' : ''}</span>
+      <span class="saison-date-periode">${periode}</span></li>`;
+  const ligne = p=>{
+    const [du, au] = p.dates(annee);
+    const def = THEMES_SAISON[p.theme];
+    const periode = du === au ? formaterJourMois(du) : `${formaterJourMois(du)} → ${formaterJourMois(au)}`;
+    return ligneHtml(def.embleme, def.nom, periode, p.theme === actuel);
+  };
+  const trier = liste => liste.slice().sort((a, b)=> ordre(a.dates(annee)[0]) - ordre(b.dates(annee)[0]));
+  document.getElementById('saison-dates-annee').textContent = `Calendrier ${annee}`;
+  document.getElementById('saison-dates-contenu').innerHTML = `
+    <h4 class="saison-dates-titre">Anniversaires</h4>
+    <ul class="saison-dates">${trier(PERIODES_SAISON.filter(p=>p.anniv)).map(ligne).join('')}</ul>
+    <h4 class="saison-dates-titre">Fêtes et traditions</h4>
+    <ul class="saison-dates">${trier(PERIODES_SAISON.filter(p=>p.fete)).map(ligne).join('')}</ul>
+    <h4 class="saison-dates-titre">Saisons</h4>
+    <ul class="saison-dates">${trier(PERIODES_SAISON.filter(p=>!p.fete && !p.anniv)).map(ligne).join('')}</ul>
+    <p class="saison-dates-note">Un anniversaire passe avant une fête, et une fête avant une saison. Ces dates s'appliquent en mode « Selon la date ».</p>`;
+  document.getElementById('saison-dates-modal').style.display = 'flex';
+}
+
+
+/* Couleur des graphiques qui ne représentent ni une personne ni une catégorie (solde,
+   comparaison). En sombre avec un thème, l'accent des menus, plus clair, reste lisible. */
+function couleurAccent(){
+  const corps = document.body.classList;
+  const nomVar = corps.contains('dark') && corps.contains('saison') ? '--accent-menu' : '--accent';
+  const v = getComputedStyle(document.body).getPropertyValue(nomVar).trim();
+  return /^#[0-9a-f]{6}$/i.test(v) ? v : '#1a73e8';
+}
+
+function themeSaisonVoulu(){
+  if(localStorage.getItem('depenses_saison_actif') === '0') return null;
+  const choix = localStorage.getItem('depenses_saison_choix') || 'auto';
+  return choix === 'auto' ? themeSaisonSelonDate() : (THEMES_SAISON[choix] ? choix : null);
+}
+function animationsSaisonPermises(){
+  return localStorage.getItem('depenses_saison_particules') !== '0'
+    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/* Après un changement de réglage : le thème, puis les graphiques (couleur d'accent). */
+function rafraichirApresChangementSaison(){
+  appliquerThemeSaison();
+  if(currentSession && currentUser) rafraichirActif();
+}
+
+function appliquerThemeSaison(){
+  const actif = localStorage.getItem('depenses_saison_actif') !== '0';
+  const choix = localStorage.getItem('depenses_saison_choix') || 'auto';
+  const toggle = document.getElementById('saison-toggle');
+  const select = document.getElementById('saison-choix');
+  const togglePart = document.getElementById('saison-particules');
+  const toggleSurprise = document.getElementById('saison-surprise');
+  if(toggle) toggle.checked = actif;
+  if(select) select.value = THEMES_SAISON[choix] ? choix : 'auto';
+  if(togglePart) togglePart.checked = localStorage.getItem('depenses_saison_particules') !== '0';
+  if(toggleSurprise) toggleSurprise.checked = localStorage.getItem('depenses_saison_surprise') !== '0';
+  const reglages = document.getElementById('saison-reglages');
+  if(reglages) reglages.style.display = actif ? '' : 'none';
+  const actuel = document.getElementById('saison-actuel');
+  if(actuel) actuel.textContent = choix === 'auto' || !THEMES_SAISON[choix]
+    ? `Aujourd'hui : ${THEMES_SAISON[themeSaisonSelonDate()].nom}` : '';
+
+  /* Appelée à chaque rafraîchissement : on ne reconstruit que si quelque chose a changé. */
+  const theme = themeSaisonVoulu();
+  const def = theme ? THEMES_SAISON[theme] : null;
+  const anime = !!theme && animationsSaisonPermises();
+  const etat = `${theme}|${def ? def.embleme : ''}|${anime}`;
+  if(etat === etatSaisonApplique) return;
+  etatSaisonApplique = etat;
+
+  document.body.classList.toggle('saison', !!theme);
+  document.body.classList.toggle('saison-anime', anime);
+  Object.keys(THEMES_SAISON).forEach(t => document.body.classList.toggle(`saison-${t}`, t === theme));
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', def ? def.barre : '#1a73e8');
+  const logo = document.querySelector('.logo-mark');
+  if(logo){
+    /* Un emblème dessiné (SVG, ex. Charlie) passe par une image ; un emoji par le texte. */
+    const dessin = def && def.embleme.startsWith('<svg');
+    logo.dataset.embleme = def && !dessin ? def.embleme : '';
+    if(dessin) logo.style.setProperty('--embleme-img', `url("data:image/svg+xml,${encodeURIComponent(def.embleme.replace('width="19" height="19"', 'width="22" height="22"'))}")`);
+    else logo.style.removeProperty('--embleme-img');
+  }
+  /* Guirlande du haut de page, dessinée à partir de def.guirlande. */
+  document.body.classList.toggle('avec-guirlande', !!(def && def.guirlande));
+  if(def && def.guirlande) document.body.style.setProperty('--saison-guirlande', `url("data:image/svg+xml,${encodeURIComponent(svgGuirlande(def.guirlande))}")`);
+  else document.body.style.removeProperty('--saison-guirlande');
+  /* Pastille des interrupteurs (voir .switch-track::after dans style.css). */
+  if(def) document.body.style.setProperty('--saison-bouton', `"${def.bouton}"`);
+  else document.body.style.removeProperty('--saison-bouton');
+  /* La barre de défilement de la page appartient à <html>, qui ne voit pas les variables du body. */
+  document.documentElement.style.scrollbarColor = def ? `${def.barre}99 transparent` : '';
+  const icones = def ? def.icones : ICONES_ONGLETS_BASE;
+  document.querySelectorAll('.tab-ico').forEach(el=>{
+    el.innerHTML = icones[el.dataset.ico === 'conjoint' ? 1 : 0];
+  });
+
+  document.getElementById('saison-deco')?.remove();
+  if(!anime) return;
+  const deco = document.createElement('div');
+  deco.id = 'saison-deco';
+  deco.setAttribute('aria-hidden', 'true');
+  for(let i = 0; i < def.nombre; i++){
+    const p = creerParticuleSaison(def, i);
+    if(def.montee) p.classList.add('montee');
+    const duree = (def.montee ? 14 : 9) + Math.random() * 9;
+    p.style.left = `${Math.random() * 100}%`;
+    p.style.animationDuration = `${duree}s`;
+    /* Délai négatif : les particules sont déjà réparties dans l'écran dès l'ouverture. */
+    p.style.animationDelay = `${-Math.random() * duree}s`;
+    p.style.setProperty('--derive', `${(Math.random() * 2 - 1) * 60}px`);
+    /* Une particule éclatée (voir eclaterParticulesTouchees) réapparaît au tour suivant. */
+    p.addEventListener('animationiteration', ()=> p.classList.remove('eclatee'));
+    deco.appendChild(p);
+  }
+  document.body.appendChild(deco);
+}
+
+function creerParticuleSaison(def, i){
+  const p = document.createElement('span');
+  p.className = 'saison-particule';
+  if(def.confetti){
+    p.classList.add('confetti');
+    p.style.background = def.confetti[i % def.confetti.length];
+  } else {
+    p.textContent = def.particules[i % def.particules.length];
+    p.style.fontSize = `${12 + Math.random() * 12}px`;
+    if(def.teinte) p.classList.add('teinte');
+  }
+  return p;
+}
+
+/* Gerbe de particules du thème qui jaillit d'un point puis retombe en s'effaçant. Sert à la
+   surprise après un ajout et quand on touche une particule. */
+function gerbeSaison(x, y, nombre, force){
+  const def = defThemeSaisonActuel();
+  if(!def) return;
+  const gerbe = document.createElement('div');
+  gerbe.className = 'saison-gerbe';
+  gerbe.setAttribute('aria-hidden', 'true');
+  for(let i = 0; i < nombre; i++){
+    const p = creerParticuleSaison(def, i);
+    const angle = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.3;
+    const distance = force * (.55 + Math.random() * .45);
+    p.style.left = `${x}px`;
+    p.style.top = `${y}px`;
+    p.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+    p.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+    p.style.setProperty('--rot', `${(Math.random() - .5) * 540}deg`);
+    p.style.animationDelay = `${Math.random() * .12}s`;
+    gerbe.appendChild(p);
+  }
+  document.body.appendChild(gerbe);
+  setTimeout(()=> gerbe.remove(), 1600);
+}
+function defThemeSaisonActuel(){
+  const theme = themeSaisonVoulu();
+  return theme ? THEMES_SAISON[theme] : null;
+}
+
+/* Petite fête après l'ajout d'une dépense : une gerbe au milieu de l'écran. */
+function celebrerAjoutSaison(){
+  if(localStorage.getItem('depenses_saison_surprise') === '0') return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  gerbeSaison(window.innerWidth / 2, window.innerHeight * .62, 22, Math.min(260, window.innerWidth * .45));
+}
+
+/* Toucher une particule la fait éclater. On écoute sans jamais bloquer le toucher : le clic
+   continue vers le bouton ou la ligne en dessous, les particules ne gênent donc rien. */
+document.addEventListener('pointerdown', e=>{
+  const deco = document.getElementById('saison-deco');
+  if(!deco) return;
+  const marge = 14;
+  for(const p of deco.children){
+    if(p.classList.contains('eclatee')) continue;
+    const r = p.getBoundingClientRect();
+    if(e.clientX >= r.left - marge && e.clientX <= r.right + marge && e.clientY >= r.top - marge && e.clientY <= r.bottom + marge){
+      p.classList.add('eclatee');
+      gerbeSaison(r.left + r.width / 2, r.top + r.height / 2, 7, 55);
+      break;
+    }
+  }
+}, { passive:true, capture:true });
 
 document.getElementById('f-date-conjoint').value = formaterDateISO(debutJour(new Date()));
 document.getElementById('f-date-personnel').value = formaterDateISO(debutJour(new Date()));
@@ -1605,8 +1954,8 @@ function dessinerGraphiqueSuivi(r, per){
     data: {
       labels: jours.map(n => dateCourte(n)),
       datasets: [
-        { label: 'Solde', data: passe, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, stepped: true, fill: false },
-        { label: 'Prévu', data: prevu, borderColor: '#8ab4f8', backgroundColor: 'rgba(138,180,248,.12)',
+        { label: 'Solde', data: passe, borderColor: couleurAccent(), borderWidth: 2, pointRadius: 0, stepped: true, fill: false },
+        { label: 'Prévu', data: prevu, borderColor: couleurAccent() + '80', backgroundColor: couleurAccent() + '1f',
           borderWidth: 2, pointRadius: 0, stepped: true, fill: 'origin' },
         { label: 'Minimum', data: jours.map(() => enDollars(r.coussin)), borderColor: '#ea4335', borderWidth: 1,
           borderDash: [2, 3], pointRadius: 0, fill: false }
@@ -1965,8 +2314,8 @@ function dessinerGraphiqueSuiviPersonnel(r, per){
     data: {
       labels: jours.map(n => dateCourte(n)),
       datasets: [
-        { label: 'Solde', data: passe, borderColor: '#1a73e8', borderWidth: 2, pointRadius: 0, stepped: true, fill: false },
-        { label: 'Prévu', data: prevu, borderColor: '#8ab4f8', backgroundColor: 'rgba(138,180,248,.12)',
+        { label: 'Solde', data: passe, borderColor: couleurAccent(), borderWidth: 2, pointRadius: 0, stepped: true, fill: false },
+        { label: 'Prévu', data: prevu, borderColor: couleurAccent() + '80', backgroundColor: couleurAccent() + '1f',
           borderWidth: 2, pointRadius: 0, stepped: true, fill: 'origin' },
         { label: 'Minimum', data: jours.map(() => enDollars(r.coussin)), borderColor: '#ea4335', borderWidth: 1,
           borderDash: [2, 3], pointRadius: 0, fill: false }
@@ -4532,7 +4881,7 @@ function afficherComparaison(){
   const totalA=listA.reduce((s,e)=>s+e.amount,0),totalB=listB.reduce((s,e)=>s+e.amount,0),diff=totalB-totalA;
   document.getElementById('compare-stats').innerHTML=`<div class="stat-card"><div class="label">${label(a.value||'')}</div><div class="value">${formaterMonnaie(totalA)}</div></div><div class="stat-card"><div class="label">${label(b.value||'')}</div><div class="value">${formaterMonnaie(totalB)}</div></div><div class="stat-card"><div class="label">Écart</div><div class="value">${diff>=0?'+':''}${formaterMonnaie(diff)}</div></div>`;
   detruireGraphique('compare');
-  charts.compare=new Chart(document.getElementById('chart-compare'),{type:'bar',data:{labels:[label(a.value||''),label(b.value||'')],datasets:[{label:'Dépenses',data:[totalA,totalB],backgroundColor:couleursPersonnes.p1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>formaterMonnaie(v)}}}}});
+  charts.compare=new Chart(document.getElementById('chart-compare'),{type:'bar',data:{labels:[label(a.value||''),label(b.value||'')],datasets:[{label:'Dépenses',data:[totalA,totalB],backgroundColor:couleurAccent(),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>formaterMonnaie(v)}}}}});
 }
 document.querySelectorAll('#compare-scope-toggle button').forEach(bouton=>{
   bouton.addEventListener('click', ()=>{
@@ -4774,6 +5123,7 @@ async function ajouterDepense(scope){
     reinitialiserFormulaireAjoutDepense(scope);
     afficherRecurrencesScope(scope);
     rafraichirActif();
+    celebrerAjoutSaison();
     if(type==='conjointe') notifierActivitePartenaire('ajout', aConfirmer ? `${note} à confirmer — ${formaterMonnaie(amount)}` : `${category} — ${formaterMonnaie(amount)}`);
     if(depotPrevu) delete document.getElementById('f-depot-qui-conjoint').dataset.choisi;
     return;
@@ -4828,6 +5178,7 @@ async function ajouterDepense(scope){
 
   reinitialiserFormulaireAjoutDepense(scope);
   rafraichirActif();
+  celebrerAjoutSaison();
   if(type==='conjointe') notifierActivitePartenaire('ajout', `${category} — ${formaterMonnaie(amount)}`);
 }
 
@@ -5513,6 +5864,16 @@ document.getElementById('save-edit').addEventListener('click', actionVerrouillee
 }));
 
 document.getElementById('dark-mode').addEventListener('change',e=>{localStorage.setItem('depenses_theme',e.target.checked?'dark':'light');appliquerTheme();});
+document.getElementById('saison-toggle').addEventListener('change',e=>{localStorage.setItem('depenses_saison_actif',e.target.checked?'1':'0');rafraichirApresChangementSaison();});
+document.getElementById('saison-choix').addEventListener('change',e=>{localStorage.setItem('depenses_saison_choix',e.target.value);rafraichirApresChangementSaison();});
+document.getElementById('saison-dates-btn').addEventListener('click', ouvrirDatesSaison);
+document.getElementById('close-saison-dates').addEventListener('click',()=>{ document.getElementById('saison-dates-modal').style.display = 'none'; });
+document.getElementById('saison-particules').addEventListener('change',e=>{localStorage.setItem('depenses_saison_particules',e.target.checked?'1':'0');appliquerThemeSaison();});
+document.getElementById('saison-surprise').addEventListener('change',e=>{
+  localStorage.setItem('depenses_saison_surprise',e.target.checked?'1':'0');
+  if(e.target.checked) celebrerAjoutSaison();   // aperçu immédiat
+});
+appliquerThemeSaison();
 
 /* ===================== NOTIFICATIONS : DÉPÔT AU COMPTE CONJOINT =====================
    Une notification push (Web Push) annonce le montant à déposer au compte conjoint, un

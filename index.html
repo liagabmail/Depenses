@@ -139,8 +139,8 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="conjoint">👥 Conjoint</button>
-    <button class="tab-btn" data-tab="personnel">👤 Personnel</button>
+    <button class="tab-btn active" data-tab="conjoint"><span class="tab-ico" data-ico="conjoint">👥</span> Conjoint</button>
+    <button class="tab-btn" data-tab="personnel"><span class="tab-ico" data-ico="personnel">👤</span> Personnel</button>
     <button class="tab-btn" data-tab="comparer">Comparer</button>
   </nav>
 
@@ -161,7 +161,7 @@
       <button class="subtab-btn active" data-scope="conjoint" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="resume">Résumé</button>
       <button class="subtab-btn" data-scope="conjoint" data-sub="compte">Compte</button>
-      <button class="subtab-btn" data-scope="conjoint" data-sub="budget">Budget</button>
+      <button class="subtab-btn" data-scope="conjoint" data-sub="budget" hidden>Budget</button>
     </nav>
     <div id="period-nav-slot-conjoint"></div>
 
@@ -354,7 +354,7 @@
     <nav class="subtabs">
       <button class="subtab-btn active" data-scope="personnel" data-sub="mois">Transactions</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="resume">Résumé</button>
-      <button class="subtab-btn" data-scope="personnel" data-sub="compte">Compte</button>
+      <button class="subtab-btn" data-scope="personnel" data-sub="compte" hidden>Compte</button>
       <button class="subtab-btn" data-scope="personnel" data-sub="budget">Budget</button>
     </nav>
     <div id="period-nav-slot-personnel"></div>
@@ -603,6 +603,48 @@
       <div class="card settings-section">
         <h3>Apparence</h3>
         <div class="theme-toggle"><span>Mode sombre</span><label class="switch" for="dark-mode"><input type="checkbox" id="dark-mode"><span class="switch-track"></span></label></div>
+        <div class="theme-toggle" style="margin-top:14px;"><span>Thèmes saisonniers</span><label class="switch" for="saison-toggle"><input type="checkbox" id="saison-toggle"><span class="switch-track"></span></label></div>
+        <div id="saison-reglages">
+          <div class="field" style="margin-top:12px;">
+            <label for="saison-choix">Thème</label>
+            <select id="saison-choix">
+              <option value="auto">Selon la date</option>
+              <optgroup label="Saisons">
+                <option value="hiver">⛄ Hiver</option>
+                <option value="printemps">🌸 Printemps</option>
+                <option value="ete">☀️ Été</option>
+                <option value="automne">🍂 Automne</option>
+              </optgroup>
+              <optgroup label="Fêtes">
+                <option value="nouvelan">🎉 Nouvel An</option>
+                <option value="valentin">💕 Saint-Valentin</option>
+                <option value="stpatrick">☘️ Saint-Patrick</option>
+                <option value="paques">🐣 Pâques</option>
+                <option value="fetenationale">⚜️ Fête nationale</option>
+                <option value="halloween">🎃 Halloween</option>
+                <option value="noel">🎄 Noël</option>
+              </optgroup>
+              <optgroup label="Québec">
+                <option value="poissonavril">🐟 Poisson d'avril</option>
+                <option value="meres">💝 Fête des Mères</option>
+                <option value="peres">👔 Fête des Pères</option>
+                <option value="actiongrace">🦃 Action de grâce</option>
+              </optgroup>
+              <optgroup label="Anniversaires">
+                <option value="gabriel">🎁 Fête de Gabriel</option>
+                <option value="melissa">💐 Fête de Mélissa</option>
+                <option value="emma">🎀 Fête d'Emma</option>
+                <option value="charlie">🐶 Fête de Charlie</option>
+              </optgroup>
+            </select>
+            <div class="saison-actuel-ligne">
+              <p id="saison-actuel"></p>
+              <button type="button" class="btn-secondary" id="saison-dates-btn">📅 Dates</button>
+            </div>
+          </div>
+          <div class="theme-toggle" style="margin-top:12px;"><span>Animations (particules, décor)</span><label class="switch" for="saison-particules"><input type="checkbox" id="saison-particules"><span class="switch-track"></span></label></div>
+          <div class="theme-toggle" style="margin-top:12px;"><span>Petite fête à chaque ajout</span><label class="switch" for="saison-surprise"><input type="checkbox" id="saison-surprise"><span class="switch-track"></span></label></div>
+        </div>
       </div>
       <div class="card settings-section" id="notifications-section">
         <h3>Notifications</h3>
@@ -932,6 +974,20 @@
   </div>
   <div class="modal-footer">
     <button class="btn-secondary" id="close-cal-filtres-modal">Fermer</button>
+  </div>
+</div></div>
+
+<!-- Ouverte depuis Paramètres › Apparence ; placée après la fenêtre des paramètres pour
+     s'afficher par-dessus. Contenu rempli par ouvrirDatesSaison (app.js). -->
+<div class="edit-modal" id="saison-dates-modal"><div class="edit-card">
+  <div class="modal-header">
+    <h3>Dates des thèmes<span class="modal-sous-titre" id="saison-dates-annee"></span></h3>
+  </div>
+  <div class="modal-body">
+    <div id="saison-dates-contenu"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-secondary" id="close-saison-dates">Fermer</button>
   </div>
 </div></div>
 
