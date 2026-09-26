@@ -347,7 +347,9 @@
   .cal-agenda-day{margin-bottom:14px;padding:0 14px;}
   .cal-agenda-day-header{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:capitalize;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--border);}
   .cal-agenda-day-header.today{color:var(--accent);}
-  .cal-agenda-empty{font-size:12px;color:var(--text-secondary);padding:4px 0 10px;}
+  .cal-agenda-empty{font-size:12px;color:var(--text-secondary);padding:18px 0 14px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;}
+  .charlie-couche{opacity:.85;}
+  body.dark .charlie-couche{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.55));}
   .cal-agenda-item{display:block;padding:9px 10px;border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--surface-2);}
   body.dark .cal-agenda-item{background:var(--surface-2);}
   .cal-agenda-item-ligne1{display:flex;align-items:center;gap:6px;}
@@ -1449,3 +1451,56 @@
   .depot-total.final{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     padding:12px 0 2px;margin-top:4px;border-top:2px solid var(--border);font-weight:600;font-size:15px;}
   .depot-total.final .value{font-weight:600;}
+
+  /* ===================== Polissage ===================== */
+  /* Chiffres de même largeur : les colonnes de montants s'alignent parfaitement. */
+  body{font-variant-numeric:tabular-nums;}
+
+  /* Cartes : une ombre très légère ; titres de cartes un peu plus affirmés. */
+  .card{box-shadow:0 1px 2px rgba(60,64,67,.07);}
+  body.dark .card{box-shadow:none;}
+  .card h3{font-weight:600;letter-spacing:.1px;}
+
+  /* Enfoncement au toucher : boutons et lignes de la liste réagissent au doigt. */
+  button,.cal-agenda-item,.tab-btn,.subtab-btn{transition:transform .1s ease;}
+  button:active:not(:disabled),.cal-agenda-item:active{transform:scale(.97);}
+
+  /* Changement d'onglet : léger fondu (opacité seulement : un transform déplacerait les
+     éléments fixes des panneaux, comme le bouton « + »). */
+  .tab-panel.active,.subtab-panel.active{animation:panneau-apparait .22s ease-out;}
+  @keyframes panneau-apparait{from{opacity:0;}to{opacity:1;}}
+
+  /* Dépense tout juste ajoutée : glisse en place et s'illumine un instant. */
+  .cal-agenda-item.nouvelle{animation:ligne-nouvelle 1.6s ease-out;}
+  @keyframes ligne-nouvelle{
+    0%{transform:translateY(-6px);opacity:0;box-shadow:0 0 0 2px var(--accent);}
+    15%{transform:translateY(0);opacity:1;}
+    60%{box-shadow:0 0 0 2px var(--accent);}
+    100%{box-shadow:0 0 0 2px transparent;}
+  }
+
+  /* Chargement après la connexion (body.chargement, app.js) : cartes fantômes qui pulsent
+     au lieu d'un écran vide. */
+  body.chargement .subtab-panel.active > *{display:none !important;}
+  body.chargement .subtab-panel.active::before{content:"";display:block;height:360px;border-radius:12px;
+    background:linear-gradient(var(--surface-2),var(--surface-2)) 0 0 / 100% 88px no-repeat,
+      linear-gradient(var(--surface-2),var(--surface-2)) 0 104px / 100% 56px no-repeat,
+      linear-gradient(var(--surface-2),var(--surface-2)) 0 172px / 100% 56px no-repeat,
+      linear-gradient(var(--surface-2),var(--surface-2)) 0 240px / 100% 56px no-repeat,
+      linear-gradient(var(--surface-2),var(--surface-2)) 0 308px / 70% 52px no-repeat;
+    animation:squelette 1.1s ease-in-out infinite alternate;}
+  @keyframes squelette{from{opacity:.45;}to{opacity:1;}}
+
+  /* « Dépense supprimée · Annuler » (afficherAnnulation) : bandeau en bas, au-dessus de tout
+     sauf les fenêtres. */
+  #bandeau-annuler{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 88px);transform:translateX(-50%);
+    z-index:850;display:flex;align-items:center;gap:14px;padding:10px 10px 10px 16px;border-radius:10px;
+    background:#323232;color:#fff;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.3);white-space:nowrap;
+    animation:bandeau-entree .25s ease-out;}
+  #bandeau-annuler button{border:0;background:none;color:#8ab4f8;font:600 14px inherit;padding:6px 8px;border-radius:6px;cursor:pointer;}
+  #bandeau-annuler.sortie{opacity:0;transition:opacity .25s;}
+  @keyframes bandeau-entree{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
+
+  @media (prefers-reduced-motion: reduce){
+    .tab-panel.active,.subtab-panel.active,.cal-agenda-item.nouvelle,#bandeau-annuler,body.chargement .subtab-panel.active::before{animation:none;}
+  }

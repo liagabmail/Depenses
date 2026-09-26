@@ -107,6 +107,11 @@ async function gererSession(session){
   rafraichirOptionsFormulaires();
   /* Récurrences d'abord : chargerExceptionsSupabase s'appuie sur le mode (Supabase ou local)
      déterminé par ce chargement. */
+  /* Pendant le chargement : des cartes « fantômes » au lieu d'un écran vide (voir
+     body.chargement dans style.css). Retirées à la fin, ou après 15 s par sécurité. */
+  document.body.classList.add('chargement');
+  const finChargement = ()=> document.body.classList.remove('chargement');
+  setTimeout(finChargement, 15000);
   await chargerRecurrencesSupabase();
   await Promise.all([ chargerDepensesSupabase(), chargerBudgetsSupabase(), chargerExceptionsSupabase() ]);
   /* Le moteur du compte n'enregistre un nouveau plan qu'une fois toutes les données en main. */
@@ -115,6 +120,7 @@ async function gererSession(session){
   recalculerDepenses();
   setTimeout(ouvrirDepotDepuisURL, 0);
   rafraichirActif();
+  finChargement();
   chargerPreferencesNotification();
   enregistrerPersonneUtilisateur();
 }
@@ -460,6 +466,26 @@ let exceptions = [];
 let etatTri = { conjoint:{key:"Date", dir:"desc"}, personnel:{key:"Date", dir:"desc"} };
 
 const formaterMonnaie = (n) => n.toLocaleString('fr-CA', {style:'currency', currency:'CAD'});
+
+/* Graphiques : réglages communs plus doux (police de l'app, barres arrondies, légende
+   aérée, infobulles en français avec le montant en dollars). Les graphiques qui ont leurs
+   propres infobulles les gardent. */
+if(window.Chart){
+  try {
+    Chart.defaults.font.family = "'Google Sans','Roboto',Arial,sans-serif";
+    Chart.defaults.locale = 'fr-CA';
+    Chart.defaults.elements.bar.borderRadius = 6;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.padding = 14;
+    Object.assign(Chart.defaults.plugins.tooltip, { padding:10, cornerRadius:8, boxPadding:4, usePointStyle:true });
+    Chart.defaults.plugins.tooltip.callbacks.label = function(ctx){
+      const p = ctx.parsed;
+      const valeur = typeof p === 'number' ? p : (p && (ctx.chart.options.indexAxis === 'y' ? p.x : p.y));
+      const nom = ctx.dataset.label || ctx.label || '';
+      return typeof valeur === 'number' ? `${nom ? nom + ' : ' : ''}${formaterMonnaie(valeur)}` : nom;
+    };
+  } catch(e){ /* réglages décoratifs : on garde ceux de Chart.js */ }
+}
 const aujourdhui = new Date();
 let moisActif = {year:aujourdhui.getFullYear(), month:aujourdhui.getMonth()};
 let anneeActive = aujourdhui.getFullYear();
@@ -505,6 +531,9 @@ document.querySelectorAll('.toggle-perso-scope button').forEach(b=>{
 });
 appliquerToggleInclusionConjoint();
 let depenseEnEdition = null;
+/* Dernière dépense ajoutée : sa ligne est brièvement mise en valeur dans la liste (voir
+   rendreCarteDepenseHTML et .cal-agenda-item.nouvelle dans style.css). */
+let derniereDepenseAjoutee = null;
 let activeMainTab = 'conjoint';
 let activeSubtab = { conjoint:'mois', personnel:'mois' };
 let charts = {};
@@ -5098,11 +5127,13 @@ function rendreCarteDepenseHTML(e, scope){
   const statutAConfirmer = STATUT_DEPOT_TEXTE[e.depotStatut] || 'À confirmer';
   const categorieAffichee = e.depotPlanifie ? (estDepotClassique ? statutAConfirmer : `${statutAConfirmer} · ${e.category}`)
     : estDepotConfirme(e) ? (estDepotPersonne(e) ? 'Dépôt confirmé' : `${e.category} · confirmé`) : (e.estRevenu ? 'Revenu' : e.category);
+  /* Tout juste ajoutée : glisse en place avec un bref surlignage (voir .nouvelle). */
+  const estNouvelle = !!derniereDepenseAjoutee && derniereDepenseAjoutee.id === e.id && Date.now() - derniereDepenseAjoutee.t < 4000;
   const couleurCategorie = e.depotPlanifie && e.depotStatut !== 'prevu' ? '#e8710a'
     : e.estRevenu ? 'var(--green)' : (COULEURS_CATEGORIES[e.category]||'#9aa0a6');
 
   return `
-    <div class="cal-agenda-item${e.depotPlanifie ? ' depot-planifie' : ''}" onclick="ouvrirDetailOccurrence('${e.id}')">
+    <div class="cal-agenda-item${e.depotPlanifie ? ' depot-planifie' : ''}${estNouvelle ? ' nouvelle' : ''}" onclick="ouvrirDetailOccurrence('${e.id}')">
       <div class="cal-agenda-item-ligne1">
         <span class="cal-agenda-item-date">${dateCourte}</span>
         <span class="cal-agenda-item-recur">${iconeRecurrente}</span>
@@ -5159,8 +5190,22 @@ function rendreAgendaCorpsHTML(scope, debut, fin, tri){
   const items = trierListeDepenses(depensesPourCalendrier(scope, debut, fin), tri);
   const corps = items.length
     ? items.map(e=>rendreCarteDepenseHTML(e, scope)).join('')
-    : '<div class="cal-agenda-empty">Aucune dépense pour cette période</div>';
+    : `<div class="cal-agenda-empty">${charlieCouche()}<span>Aucune dépense pour cette période</span></div>`;
   return corps;
+}
+
+/* État vide : Charlie couché qui fait la sieste, la tête sur les pattes. */
+function charlieCouche(){
+  return `<svg class="charlie-couche" viewBox="0 0 90 46" width="96" height="49" aria-hidden="true">` +
+    `<path d="M15 27 Q8 23 10 17" stroke="#1f1f1f" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+    `<rect x="13" y="22" width="47" height="16" rx="8" fill="#1f1f1f"/><rect x="50" y="33" width="26" height="5" rx="2.5" fill="#1a1a1a"/>` +
+    `<rect x="55" y="21" width="3.5" height="9" rx="1" fill="#c92a2a"/>` +
+    `<rect x="56" y="13" width="18" height="15" rx="5" fill="#1f1f1f"/><rect x="69" y="17" width="12" height="8" rx="2" fill="#262626"/>` +
+    `<path d="M65 22 L81 22 L80 30 L78 28 L76 31 L74 28 L72 31 L70 28 L67 30 Z" fill="#4d4d4d"/>` +
+    `<path d="M57 13 L63 12 L59.5 20 Z" fill="#111"/><path d="M64 15.5 L70 15 L69.4 16.7 Z" fill="#9a9a9a"/>` +
+    `<path d="M65.5 18.6 q1.3 1.1 2.6 0" stroke="#fff" stroke-width=".9" fill="none" stroke-linecap="round"/><circle cx="80.8" cy="18.6" r="1.6" fill="#000"/>` +
+    `<text x="76" y="10" font-family="sans-serif" font-style="italic" font-weight="700" font-size="7" fill="#868e96">z</text>` +
+    `<text x="81" y="6" font-family="sans-serif" font-style="italic" font-weight="700" font-size="9" fill="#868e96">Z</text></svg>`;
 }
 
 /* Fenêtre « jour » : plus ouverte depuis que cliquer une date bascule en vue Jour (voir
@@ -5831,6 +5876,7 @@ async function ajouterDepense(scope){
   });
   recalculerDepenses();
 
+  derniereDepenseAjoutee = { id: nouvelleDepenseDB.id, t: Date.now() };
   reinitialiserFormulaireAjoutDepense(scope);
   rafraichirActif();
   celebrerAjoutSaison();
@@ -6384,7 +6430,7 @@ document.getElementById('delete-edit').addEventListener('click', actionVerrouill
     else if(portee === 'serie'){ fermerEditModal(); await supprimerSerieComplete(d.recurrenceId); }
     return;
   }
-  if(confirm('Supprimer cette dépense ?')){ fermerEditModal(); await supprimerDepense(d.id); }
+  if(confirm('Supprimer cette dépense ?')){ fermerEditModal(); await supprimerDepense(d.id, { annulable:true }); }
 }));
 
 document.getElementById('save-edit').addEventListener('click', actionVerrouillee(document.getElementById('save-edit'), async()=>{
@@ -6811,11 +6857,16 @@ document.getElementById('notif-activite-toggle').addEventListener('change', asyn
 });
 
 /* Suppression d'une dépense */
-async function supprimerDepense(id){
+async function supprimerDepense(id, options = {}){
   /* Une occurrence de récurrence n'existe pas en base : sa "suppression" passe par une
      exception (voir supprimerOccurrenceSeule), jamais par un DELETE. */
   const occurrence = depenses.find(e => e.id === id);
   if(occurrence && occurrence.virtuelle){ await supprimerOccurrenceSeule(occurrence); return; }
+
+  /* Copie gardée pour « Annuler » : seulement une dépense ordinaire, pas un dépôt confirmé
+     (son lien avec le dépôt prévu est défait par libererDepotConfirme). */
+  const copie = depensesReelles.find(e => e.id === id);
+  const lieeADepot = exceptions.some(x => x.supprimee && x.note === PREFIXE_CONFIRMATION + id);
 
   const res = await ecritureVerifiee(supabaseClient.from('Depenses').delete().eq('id', id));
   if(!res.ok){
@@ -6826,6 +6877,49 @@ async function supprimerDepense(id){
   await libererDepotConfirme(id);
   recalculerDepenses();
   rafraichirActif();
+  if(options.annulable && copie && !lieeADepot && !copie.recurrenceId){
+    afficherAnnulation('Dépense supprimée', ()=> restaurerDepense({ ...copie }));
+  }
+}
+
+/* « Annuler » : remet la dépense supprimée telle quelle (même identifiant). */
+async function restaurerDepense(e){
+  if(depensesReelles.some(x => x.id === e.id)) return;
+  const ligne = {
+    id: e.id,
+    Qui: nomPersonneSupabase(e.who),
+    Montant: e.amount,
+    Date: e.date,
+    Categorie: e.category,
+    Note: e.note,
+    Type: e.type,
+    EstCompte: e.estCompte,
+    EstRevenu: e.estRevenu,
+    PourcentageP1: e.pourcentageP1,
+    user_id: e.type === 'personnelle' ? (currentSession?.user?.id || null) : null
+  };
+  if(!(await insererAvecRepli('Depenses', ligne, COLONNES_RECENTES_DEPENSES, "Le retour de la dépense"))) return;
+  depensesReelles.push(e);
+  recalculerDepenses();
+  rafraichirActif();
+}
+
+/* Bandeau en bas de l'écran : « Dépense supprimée · Annuler », quelques secondes. Un seul à
+   la fois ; le bouton ne peut servir qu'une fois. */
+function afficherAnnulation(message, annuler){
+  document.getElementById('bandeau-annuler')?.remove();
+  const bandeau = document.createElement('div');
+  bandeau.id = 'bandeau-annuler';
+  bandeau.setAttribute('role', 'status');
+  bandeau.innerHTML = `<span>${echapperHTML(message)}</span><button type="button">Annuler</button>`;
+  const fermer = ()=>{ bandeau.classList.add('sortie'); setTimeout(()=> bandeau.remove(), 250); };
+  const minuterie = setTimeout(fermer, 6000);
+  bandeau.querySelector('button').addEventListener('click', async ()=>{
+    clearTimeout(minuterie);
+    fermer();
+    await annuler();
+  }, { once:true });
+  document.body.appendChild(bandeau);
 }
 
 /* Duplication d'une dépense : crée une nouvelle dépense ponctuelle indépendante avec les
