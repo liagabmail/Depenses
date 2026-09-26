@@ -1074,9 +1074,10 @@ function construireParticules(deco, def, meteo){
     }
     return;
   }
-  /* Neige : des flocons, quelle que soit la saison. Beau temps : 60 % de particules en moins. */
-  const base = meteo === 'neige' ? { ...def, particules:['❄','❅','❆'], teinte:true, confetti:null, montee:false, nombre:24 }
-    : meteo === 'degage' ? { ...def, nombre: Math.max(4, Math.round(def.nombre * .4)) } : def;
+  /* Beau temps (saisons seulement) : aucune particule. */
+  if(meteo === 'degage') return;
+  /* Neige : des flocons, quelle que soit la saison. */
+  const base = meteo === 'neige' ? { ...def, particules:['❄','❅','❆'], teinte:true, confetti:null, montee:false, nombre:24 } : def;
   for(let i = 0; i < base.nombre; i++){
     const p = creerParticuleSaison(base, i);
     let duree;
@@ -5127,6 +5128,8 @@ function ouvrirEditionRecurrence(id){
   document.getElementById('edit-rec-compte-nom-p1').textContent = nomsPersonnes.p1;
   document.getElementById('edit-rec-compte-repartition').value = rec.pourcentageP1 != null ? rec.pourcentageP1 : 50;
   estRevenuCheckbox.checked = !!rec.estRevenu;
+  /* Série personnelle : « Qui » et « Part » sortent de la grille, comme pour une dépense. */
+  document.getElementById('edit-recurrent-modal').classList.toggle('personnelle', rec.type !== 'conjointe');
 
   if(rec.type==='conjointe'){
     remplirOptionsQui('edit-rec-qui', true);
@@ -6069,6 +6072,9 @@ document.getElementById('f-who-conjoint').addEventListener('change', ()=>
 /* Affiche ou cache le champ "Qui" selon le type actuellement sélectionné dans le modal
    d'édition (le type peut être basculé via le bouton "↔ Rendre..." avant de sauvegarder). */
 function appliquerVerrouEditType(type){
+  /* Dépense personnelle : « Qui » et « Part » sortent de la grille (voir .personnelle dans
+     style.css), pour que Montant et Catégorie soient côte à côte comme dans l'ajout. */
+  document.getElementById('edit-modal').classList.toggle('personnelle', type === 'personnelle');
   const whoSelect = document.getElementById('edit-who');
   const compteField = document.getElementById('edit-compte-repartition-field');
   const repartitionInput = document.getElementById('edit-compte-repartition');
