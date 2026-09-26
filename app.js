@@ -3458,9 +3458,10 @@ function rendreVueDepotPlanifie(){
   const lier = (id, f) => { const el = document.getElementById(id); if(el) el.addEventListener('click', f); };
   lier('occ-depot-fermer', fermerOccurrenceModal);
   lier('occ-depot-modifier', () => rendreChoixPorteeDepot('modifier'));
-  lier('occ-depot-supprimer', () => passe
-    ? (confirm('Supprimer cette transaction à confirmer ?') && (fermerOccurrenceModal(), supprimerDepot(d, 'seule')))
-    : rendreChoixPorteeDepot('supprimer'));
+  lier('occ-depot-supprimer', async () => {
+    if(!passe){ rendreChoixPorteeDepot('supprimer'); return; }
+    if(await demanderConfirmation('Supprimer cette transaction à confirmer ?')){ fermerOccurrenceModal(); supprimerDepot(d, 'seule'); }
+  });
   const confirmer = document.getElementById('occ-depot-confirmer');
   if(confirmer) confirmer.addEventListener('click', actionVerrouillee(confirmer, async () => {
     const montant = parseFloat(document.getElementById('occ-depot-montant').value);
@@ -3481,7 +3482,9 @@ function rendreChoixPorteeDepot(action){
   const unique = estTransactionUnique(rec);
   if(unique){
     if(action === 'modifier'){ rendreFormulaireDepot('seule'); return; }
-    if(confirm('Supprimer cette transaction à confirmer ?')){ fermerOccurrenceModal(); supprimerDepot(d, 'seule'); }
+    demanderConfirmation('Supprimer cette transaction à confirmer ?').then(oui => {
+      if(oui){ fermerOccurrenceModal(); supprimerDepot(d, 'seule'); }
+    });
     return;
   }
   const verbe = action === 'modifier' ? 'Modifier' : 'Supprimer';
@@ -3513,7 +3516,7 @@ function rendreChoixPorteeDepot(action){
     if(action === 'modifier'){ rendreFormulaireDepot(portee); return; }
     const texte = { seule: 'Supprimer cette occurrence à confirmer ?', suivantes: 'Supprimer cette occurrence et toutes les suivantes ?',
       serie: 'Supprimer toutes les occurrences à venir de cette série ? Les occurrences déjà confirmées restent.' }[portee];
-    if(!confirm(texte)) return;
+    if(!(await demanderConfirmation(texte))) return;
     fermerOccurrenceModal();
     await supprimerDepot(d, portee);
   })));
@@ -3578,7 +3581,7 @@ function rendreVueDepotConfirme(){
   document.getElementById('occ-fermer-bas').addEventListener('click', fermerOccurrenceModal);
   const bouton = document.getElementById('occ-annuler-confirmation');
   bouton.addEventListener('click', actionVerrouillee(bouton, async () => {
-    if(!confirm('Annuler la confirmation de cette transaction ?')) return;
+    if(!(await demanderConfirmation('Annuler la confirmation de cette transaction ?', { oui:'Annuler la confirmation', non:'Garder' }))) return;
     fermerOccurrenceModal();
     await supprimerDepense(d.id);
     if(d.type === 'conjointe') notifierActivitePartenaire('suppression', `Confirmation annulée : ${d.note || d.category} du ${dateLongueISO(d.date)}`);
@@ -4030,7 +4033,7 @@ async function transfererSuppressions(deRecurrenceId, versRecurrenceId, depuis){
 }
 
 async function supprimerRecurrence(id, sansConfirmation){
-  if(!sansConfirmation && !confirm("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")) return;
+  if(!sansConfirmation && !(await demanderConfirmation("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront."))) return;
   const rec = recurrences.find(r=>r.id===id);
 
   if(!(await supprimerExceptions(id))) return false;
@@ -4078,7 +4081,7 @@ async function supprimerRecurrence(id, sansConfirmation){
 async function supprimerSerieComplete(recurrenceId, sansConfirmation){
   const rec = recurrences.find(r=>r.id===recurrenceId);
   if(!rec) return;
-  if(!sansConfirmation && !confirm("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")) return;
+  if(!sansConfirmation && !(await demanderConfirmation("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront."))) return;
   for(const segment of familleDeRecurrence(rec)){
     if(!(await supprimerRecurrence(segment.id, true))) break;
   }
@@ -5315,13 +5318,13 @@ document.getElementById('edit-rec-qui').addEventListener('change', ()=>{
 document.getElementById('cancel-edit-recurrent').addEventListener('click', ()=>document.getElementById('edit-recurrent-modal').style.display='none');
 document.getElementById('delete-edit-recurrent').addEventListener('click', actionVerrouillee(document.getElementById('delete-edit-recurrent'), async ()=>{
   if(recurrenceEnEdition && estSerieAConfirmer(recurrenceEnEdition)){
-    if(confirm("Supprimer les occurrences à confirmer de cette série (à venir et non confirmées) ? Les occurrences déjà confirmées restent.")){
+    if(await demanderConfirmation("Supprimer les occurrences à confirmer de cette série (à venir et non confirmées) ? Les occurrences déjà confirmées restent.")){
       document.getElementById('edit-recurrent-modal').style.display='none';
       await supprimerSerieDepotEdition(recurrenceEnEdition);
     }
     return;
   }
-  if(recurrenceEnEdition && confirm("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")){
+  if(recurrenceEnEdition && await demanderConfirmation("Supprimer ce paiement récurrent ? Toutes ses occurrences (passées et futures) disparaîtront.")){
     document.getElementById('edit-recurrent-modal').style.display='none';
     /* Supprime toute la famille : une série fractionnée par des "et les suivantes" est
        composée de plusieurs segments, qui doivent tous disparaître ensemble. */
@@ -6412,7 +6415,7 @@ document.getElementById('delete-edit').addEventListener('click', actionVerrouill
   /* Transaction unique : une seule occurrence existe, la question de la portée ne se pose
      pas. On supprime directement, comme pour une dépense ponctuelle. */
   if(d.recurrenceId && estOccurrenceUnique(d)){
-    if(confirm('Supprimer cette transaction ?')){ fermerEditModal(); await supprimerOccurrenceSeule(d); }
+    if(await demanderConfirmation('Supprimer cette transaction ?')){ fermerEditModal(); await supprimerOccurrenceSeule(d); }
     return;
   }
   if(d.recurrenceId){
@@ -6425,12 +6428,12 @@ document.getElementById('delete-edit').addEventListener('click', actionVerrouill
         { cle:'serie', titre:'Toute la série', desc:'Toutes les occurrences, passées et futures' }
       ]
     });
-    if(portee === 'seule' && confirm('Supprimer seulement cette occurrence ? Le reste de la série ne sera pas touché.')){ fermerEditModal(); await supprimerOccurrenceSeule(d); }
-    else if(portee === 'suivantes' && confirm('Supprimer cette dépense et toutes celles qui suivent dans la série ?')){ fermerEditModal(); await supprimerDepuisOccurrence(d); }
+    if(portee === 'seule' && await demanderConfirmation('Supprimer seulement cette occurrence ? Le reste de la série ne sera pas touché.')){ fermerEditModal(); await supprimerOccurrenceSeule(d); }
+    else if(portee === 'suivantes' && await demanderConfirmation('Supprimer cette dépense et toutes celles qui suivent dans la série ?')){ fermerEditModal(); await supprimerDepuisOccurrence(d); }
     else if(portee === 'serie'){ fermerEditModal(); await supprimerSerieComplete(d.recurrenceId); }
     return;
   }
-  if(confirm('Supprimer cette dépense ?')){ fermerEditModal(); await supprimerDepense(d.id, { annulable:true }); }
+  if(await demanderConfirmation('Supprimer cette dépense ?')){ fermerEditModal(); await supprimerDepense(d.id, { annulable:true }); }
 }));
 
 document.getElementById('save-edit').addEventListener('click', actionVerrouillee(document.getElementById('save-edit'), async()=>{
@@ -7726,6 +7729,30 @@ function afficherAlerte(message){
 document.getElementById('alerte-ok').addEventListener('click', ()=>{
   document.getElementById('alerte-modal').classList.remove('visible');
 });
+
+/* Confirmation maison, à la place de confirm() natif (qui affiche l'adresse du site en
+   titre). Renvoie une promesse : true si l'action est confirmée, false sinon (bouton
+   « Annuler » ou toucher à côté). Le bouton de confirmation est rouge pour une suppression. */
+let resoudreConfirmation = null;
+function demanderConfirmation(message, { oui = 'Supprimer', non = 'Annuler', danger = true } = {}){
+  resoudreConfirmation?.(false);   // une ancienne demande restée ouverte compte comme refusée
+  document.getElementById('confirm-message').textContent = message;
+  const boutonOui = document.getElementById('confirm-oui');
+  boutonOui.textContent = oui;
+  boutonOui.classList.toggle('danger', danger);
+  document.getElementById('confirm-non').textContent = non;
+  document.getElementById('confirm-modal').classList.add('visible');
+  return new Promise(resoudre => { resoudreConfirmation = resoudre; });
+}
+function repondreConfirmation(reponse){
+  document.getElementById('confirm-modal').classList.remove('visible');
+  const resoudre = resoudreConfirmation;
+  resoudreConfirmation = null;
+  resoudre?.(reponse);
+}
+document.getElementById('confirm-oui').addEventListener('click', ()=> repondreConfirmation(true));
+document.getElementById('confirm-non').addEventListener('click', ()=> repondreConfirmation(false));
+document.getElementById('confirm-modal').addEventListener('click', e=>{ if(e.target.id === 'confirm-modal') repondreConfirmation(false); });
 
 /* ===================== Sélecteur de date personnalisé =====================
    Remplace le picker natif des <input type="date"> (dont l'apparence dépend du

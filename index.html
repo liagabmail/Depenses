@@ -31,7 +31,7 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <!-- ?v= : à changer à chaque mise en ligne de style.css ou app.js, pour que les téléphones
      ne gardent pas en cache une ancienne version qui ne correspondrait plus à cette page. -->
-<link rel="stylesheet" href="style.css?v=2026-09-30d">
+<link rel="stylesheet" href="style.css?v=2026-09-30e">
 </head>
 <body>
 
@@ -40,6 +40,17 @@
     <div class="alerte-card">
       <p id="alerte-message"></p>
       <button type="button" class="auth-submit" id="alerte-ok">OK</button>
+    </div>
+  </div>
+  <!-- Confirmation maison (même style que l'alerte), à la place de confirm() natif qui
+       affiche l'adresse du site en titre. Voir demanderConfirmation dans app.js. -->
+  <div id="confirm-modal">
+    <div class="alerte-card">
+      <p id="confirm-message"></p>
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" id="confirm-non">Annuler</button>
+        <button type="button" class="auth-submit" id="confirm-oui">Supprimer</button>
+      </div>
     </div>
   </div>
 
@@ -1029,6 +1040,6 @@
 </div></div>
 
 
-<script src="app.js?v=2026-09-30d"></script>
+<script src="app.js?v=2026-09-30e"></script>
 </body>
 </html>
