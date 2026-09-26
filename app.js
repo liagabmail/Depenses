@@ -1239,7 +1239,11 @@ function appliquerThemeSaison(){
   if(togglePart) togglePart.checked = localStorage.getItem('depenses_saison_particules') !== '0';
   if(toggleSurprise) toggleSurprise.checked = localStorage.getItem('depenses_saison_surprise') !== '0';
   const reglages = document.getElementById('saison-reglages');
-  if(reglages) reglages.style.display = actif && !simplifie ? '' : 'none';
+  if(reglages){
+    reglages.style.display = actif ? '' : 'none';
+    /* Mélissa : seulement « Aujourd'hui : … » et le bouton 📅 Dates (voir #saison-reglages.simplifie). */
+    reglages.classList.toggle('simplifie', simplifie);
+  }
   const actuel = document.getElementById('saison-actuel');
   if(actuel) actuel.textContent = choix === 'auto' || !THEMES_SAISON[choix]
     ? `Aujourd'hui : ${THEMES_SAISON[themeSaisonSelonDate()].nom}` : '';
