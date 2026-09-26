@@ -31,7 +31,7 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <!-- ?v= : à changer à chaque mise en ligne de style.css ou app.js, pour que les téléphones
      ne gardent pas en cache une ancienne version qui ne correspondrait plus à cette page. -->
-<link rel="stylesheet" href="style.css?v=2026-09-29">
+<link rel="stylesheet" href="style.css?v=2026-09-29c">
 </head>
 <body>
 
@@ -644,6 +644,8 @@
             <p id="saison-actuel"></p>
             <button type="button" class="btn-secondary" id="saison-dates-btn">📅 Dates</button>
           </div>
+          <!-- Mélissa seulement (réglages simplifiés) : un seul interrupteur pour la météo, le jour et la nuit. -->
+          <div class="theme-toggle simple-seulement" style="margin-top:12px;"><span>Météo, jour et nuit</span><label class="switch" for="saison-meteo-simple"><input type="checkbox" id="saison-meteo-simple"><span class="switch-track"></span></label></div>
           <div class="theme-toggle" style="margin-top:12px;"><span>Animations (particules, décor)</span><label class="switch" for="saison-particules"><input type="checkbox" id="saison-particules"><span class="switch-track"></span></label></div>
           <div class="theme-toggle" style="margin-top:12px;"><span>Petite fête à chaque ajout</span><label class="switch" for="saison-surprise"><input type="checkbox" id="saison-surprise"><span class="switch-track"></span></label></div>
           <!-- Météo, jour et nuit, Charlie : voir « Météo, jour et nuit » dans app.js. -->
@@ -1028,6 +1030,6 @@
 </div></div>
 
 
-<script src="app.js?v=2026-09-29"></script>
+<script src="app.js?v=2026-09-29c"></script>
 </body>
 </html>
