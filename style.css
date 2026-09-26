@@ -979,6 +979,7 @@
   .saison-particule{position:absolute;top:-40px;line-height:1;opacity:.6;will-change:transform;
     animation-name:saison-chute;animation-timing-function:linear;animation-iteration-count:infinite;}
   .saison-particule.teinte{color:#8ab4f8;opacity:.7;}
+  .saison-particule svg{display:block;}
   body.dark .saison-particule.teinte{color:#e8f0fe;}
   .saison-particule.confetti{width:7px;height:11px;border-radius:2px;opacity:.85;}
   .saison-particule.montee{top:auto;bottom:-40px;animation-name:saison-montee;opacity:.6;}

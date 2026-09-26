@@ -524,8 +524,8 @@ function appliquerTheme(){
    - icones : [Personnel, Conjoint] — une chose pour soi, deux pour le couple.
    - particules : caractères qui tombent ; teinte = coloré par le CSS (flocons) ;
      confetti = petits rectangles de couleur ; montee = remonte au lieu de tomber. */
-function bouleNoel(couleur){
-  return `<svg viewBox="0 0 16 19" width="13" height="16" aria-hidden="true"><rect x="6" y="0.5" width="4" height="3.5" rx="1" fill="#d4a017"/><circle cx="8" cy="11.5" r="6.5" fill="${couleur}"/><circle cx="5.8" cy="9.2" r="1.7" fill="#fff" opacity=".55"/></svg>`;
+function bouleNoel(couleur, largeur = 13, hauteur = 16){
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 19" width="${largeur}" height="${hauteur}" aria-hidden="true"><rect x="6" y="0.5" width="4" height="3.5" rx="1" fill="#d4a017"/><circle cx="8" cy="11.5" r="6.5" fill="${couleur}"/><circle cx="5.8" cy="9.2" r="1.7" fill="#fff" opacity=".55"/></svg>`;
 }
 const CONFETTIS_FETE = ['#c9a227','#f3d27a','#e64980','#4dabf7','#51cf66'];
 const THEMES_SAISON = {
@@ -540,7 +540,8 @@ const THEMES_SAISON = {
   fetenationale: { nom:'Fête nationale', embleme:'⚜️', icones:['⚜️','⚜️⚜️'],   particules:['⚜️'], nombre:12, barre:'#0b3d91', bouton:'⚜️', guirlande:{ type:'fanions', couleurs:['#0b3d91','#ffffff','#0b3d91'], fil:'#0b3d91' } },
   halloween:     { nom:'Halloween',      embleme:'🎃', icones:['🎃','🎃🎃'],   particules:['🦇','👻','🦇'], nombre:10, barre:'#7b2cbf', bouton:'🎃' },
   noel:          { nom:'Noël',           embleme:'🎄', icones:[bouleNoel('#c5221f'), bouleNoel('#c5221f') + bouleNoel('#137333')],
-                   particules:['❄','❅','❆'], nombre:22, teinte:true, barre:'#c5221f', bouton:'❄️', guirlande:{ type:'ampoules', couleurs:['#e03131','#fcc419','#2f9e44','#4dabf7'], fil:'#556b5a' } },
+                   particules:['🎁', bouleNoel('#c5221f', '1em', '1.2em'), bouleNoel('#2f9e44', '1em', '1.2em'), '🎁', bouleNoel('#fcc419', '1em', '1.2em'), bouleNoel('#1c7ed6', '1em', '1.2em')],
+                   nombre:18, barre:'#c5221f', bouton:bouleNoel('#c5221f', 17, 20), guirlande:{ type:'ampoules', couleurs:['#e03131','#fcc419','#2f9e44','#4dabf7'], fil:'#556b5a' } },
   /* Anniversaires de la famille : un thème complet par personne (dates dans PERIODES_SAISON). */
   gabriel:       { nom:'Fête de Gabriel', banniere:'Bonne fête Gabriel !', embleme:'🎂', icones:['🎁','🎁🎁'], particules:['🎈','🎁','🎉'], nombre:14, montee:true, barre:'#1f4e79', bouton:'🎁', guirlande:{ type:'fanions', couleurs:['#1f4e79','#f08c00','#4dabf7'], fil:'#1f4e79' } },
   melissa:       { nom:'Fête de Mélissa', banniere:'Bonne fête Mélissa !', embleme:'💐', icones:['🌷','🌷🌷'], particules:['🌸','🌺','🌷','✨'], nombre:14, barre:'#862e9c', bouton:'🌺', guirlande:{ type:'fleurs', couleurs:['#f783ac','#cc5de8'], fil:'#2b8a3e' } },
@@ -1300,7 +1301,8 @@ function appliquerThemeSaison(){
   /* Pastille des interrupteurs : l'emoji du thème, ou un rond à ses couleurs pour les saisons
      (voir .switch-track::after dans style.css). */
   document.body.classList.toggle('bouton-rond', !!def && !def.bouton);
-  if(def && def.bouton) document.body.style.setProperty('--saison-bouton', `"${def.bouton}"`);
+  if(def && def.bouton) document.body.style.setProperty('--saison-bouton', def.bouton.startsWith('<svg')
+    ? `url("data:image/svg+xml,${encodeURIComponent(def.bouton)}")` : `"${def.bouton}"`);
   else document.body.style.removeProperty('--saison-bouton');
   /* La barre de défilement de la page appartient à <html>, qui ne voit pas les variables du body. */
   document.documentElement.style.scrollbarColor = def ? `${def.barre}99 transparent` : '';
@@ -1328,7 +1330,10 @@ function creerParticuleSaison(def, i){
     p.classList.add('confetti');
     p.style.background = def.confetti[i % def.confetti.length];
   } else {
-    p.textContent = def.particules[i % def.particules.length];
+    /* Un emoji, ou un petit dessin SVG (ex. boules de Noël, dimensionné en em). */
+    const motif = def.particules[i % def.particules.length];
+    if(motif.startsWith('<svg')) p.innerHTML = motif;
+    else p.textContent = motif;
     p.style.fontSize = `${12 + Math.random() * 12}px`;
     if(def.teinte) p.classList.add('teinte');
   }
