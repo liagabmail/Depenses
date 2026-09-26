@@ -31,7 +31,7 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <!-- ?v= : à changer à chaque mise en ligne de style.css ou app.js, pour que les téléphones
      ne gardent pas en cache une ancienne version qui ne correspondrait plus à cette page. -->
-<link rel="stylesheet" href="style.css?v=2026-09-27c">
+<link rel="stylesheet" href="style.css?v=2026-09-28c">
 </head>
 <body>
 
@@ -650,7 +650,7 @@
           <div class="theme-toggle" style="margin-top:12px;"><span>Particules selon la météo</span><label class="switch" for="saison-meteo"><input type="checkbox" id="saison-meteo"><span class="switch-track"></span></label></div>
           <p id="saison-meteo-etat" class="saison-note"></p>
           <div class="theme-toggle" style="margin-top:12px;"><span>Jour et nuit (étoiles le soir)</span><label class="switch" for="saison-nuit"><input type="checkbox" id="saison-nuit"><span class="switch-track"></span></label></div>
-          <div class="theme-toggle" style="margin-top:12px;"><span>Charlie se promène (une fois par jour)</span><label class="switch" for="saison-charlie"><input type="checkbox" id="saison-charlie"><span class="switch-track"></span></label></div>
+          <div class="theme-toggle" style="margin-top:12px;"><span>Visites surprises de Charlie (environ aux deux semaines)</span><label class="switch" for="saison-charlie"><input type="checkbox" id="saison-charlie"><span class="switch-track"></span></label></div>
           <div class="saison-apercu">
             <h4 class="saison-dates-titre">Aperçu</h4>
             <div class="modal-grid">
@@ -674,7 +674,10 @@
                 </select>
               </div>
             </div>
-            <button type="button" class="btn-secondary" id="apercu-charlie" style="margin-top:10px;">🐶 Faire passer Charlie</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+              <button type="button" class="btn-secondary" id="apercu-charlie">🐶 Charlie se promène</button>
+              <button type="button" class="btn-secondary" id="apercu-charlie-coucou">🐶 Charlie jette un œil</button>
+            </div>
             <p class="saison-note">La météo ne change que les saisons (pas les fêtes ni les anniversaires). L'aperçu s'efface au prochain chargement de l'app.</p>
           </div>
         </div>
@@ -1025,6 +1028,6 @@
 </div></div>
 
 
-<script src="app.js?v=2026-09-27c"></script>
+<script src="app.js?v=2026-09-28c"></script>
 </body>
 </html>

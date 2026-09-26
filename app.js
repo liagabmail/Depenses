@@ -529,10 +529,10 @@ function bouleNoel(couleur){
 }
 const CONFETTIS_FETE = ['#c9a227','#f3d27a','#e64980','#4dabf7','#51cf66'];
 const THEMES_SAISON = {
-  hiver:         { nom:'Hiver',          embleme:'⛄', icones:['⛄','⛄⛄'],   particules:['❄','❅','❆'], nombre:18, teinte:true, barre:'#364fc7', bouton:'❄️' },
-  printemps:     { nom:'Printemps',      embleme:'🌸', icones:['🌷','🌷🌷'],   particules:['🌸','🌸','💮'], nombre:14, barre:'#2b8a3e', bouton:'🌸' },
-  ete:           { nom:'Été',            embleme:'☀️', icones:['🍉','🍉🍉'],   particules:['🫧'], nombre:10, montee:true, barre:'#0c8599', bouton:'☀️' },
-  automne:       { nom:'Automne',        embleme:'🍁', icones:['🍁','🍁🍂'],   particules:['🍂','🍁','🍂'], nombre:14, barre:'#b54d12', bouton:'🍁' },
+  hiver:         { nom:'Hiver',          embleme:'⛄', icones:['⛄','⛄⛄'],   particules:['❄','❅','❆'], nombre:18, teinte:true, barre:'#364fc7' },
+  printemps:     { nom:'Printemps',      embleme:'🌸', icones:['🌷','🌷🌷'],   particules:['🌸','🌸','💮'], nombre:14, barre:'#2b8a3e' },
+  ete:           { nom:'Été',            embleme:'☀️', icones:['🍉','🍉🍉'],   particules:['🫧'], nombre:10, montee:true, barre:'#0c8599' },
+  automne:       { nom:'Automne',        embleme:'🍁', icones:['🍁','🍁🍂'],   particules:['🍂','🍁','🍂'], nombre:14, barre:'#b54d12' },
   nouvelan:      { nom:'Nouvel An',      embleme:'🥂', icones:['🎉','🎉🎉'],   confetti:CONFETTIS_FETE, nombre:30, barre:'#1f2a5c', bouton:'⭐', guirlande:{ type:'fanions', couleurs:['#c9a227','#1f2a5c','#adb5bd'], fil:'#c9a227' } },
   valentin:      { nom:'Saint-Valentin', embleme:'💘', icones:['❤️','💕'],     particules:['💕','❤️','💗'], nombre:12, barre:'#c2185b', bouton:'❤️', guirlande:{ type:'coeurs', couleurs:['#e64980','#f783ac','#c2185b'], fil:'#c2185b' } },
   stpatrick:     { nom:'Saint-Patrick',  embleme:'🍀', icones:['☘️','☘️☘️'],   particules:['☘️','🍀','☘️'], nombre:14, barre:'#2e7d32', bouton:'🍀', guirlande:{ type:'trefles', couleurs:['#2f9e44','#40c057','#2b8a3e'], fil:'#2b8a3e' } },
@@ -1174,18 +1174,60 @@ function promenerCharlie(){
   document.body.appendChild(el);
   setTimeout(()=> el.remove(), 15000);   // filet de sécurité si l'animation est interrompue
 }
-/* Une promenade par jour au plus, à un moment au hasard (20 s à 2 min après l'ouverture). */
-function planifierPromenadeCharlie(){
+/* Charlie jette un œil : sa tête sort de derrière le dessus d'une carte visible, regarde
+   quelques secondes, puis redescend. Le cadre coupe tout ce qui est sous le rebord, comme si
+   Charlie se cachait derrière la carte. Sans carte visible, il fait plutôt sa promenade. */
+function charlieCoucou(){
+  if(document.querySelector('.charlie-coucou')) return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cartes = [...document.querySelectorAll('.card:not(.form-card):not(.settings-section)')].filter(c=>{
+    const r = c.getBoundingClientRect();
+    return r.width > 120 && r.top > 70 && r.top < window.innerHeight - 90;
+  });
+  if(!cartes.length){ promenerCharlie(); return; }
+  const carte = cartes[Math.floor(Math.random() * cartes.length)];
+  const positionAvant = carte.style.position;
+  if(getComputedStyle(carte).position === 'static') carte.style.position = 'relative';
+  const cadre = document.createElement('div');
+  cadre.className = 'charlie-coucou';
+  cadre.setAttribute('aria-hidden', 'true');
+  cadre.style.left = `${15 + Math.random() * 60}%`;
+  cadre.innerHTML = schnauzer().replace('width="19" height="19"', 'width="44" height="44"');
+  const fin = ()=>{ cadre.remove(); carte.style.position = positionAvant; };
+  cadre.firstElementChild.addEventListener('animationend', fin);
+  carte.appendChild(cadre);
+  setTimeout(fin, 9000);   // filet de sécurité si l'animation est interrompue
+}
+/* Une visite de Charlie environ aux deux semaines, au hasard : à la première ouverture de
+   chaque jour, une chance sur 14. Il se promène ou jette un œil (moitié-moitié), à un
+   moment au hasard entre 20 s et 2 min après l'ouverture. */
+function planifierVisiteCharlie(){
   if(localStorage.getItem('depenses_charlie') === '0') return;
-  if(localStorage.getItem('depenses_charlie_jour') === formaterDateISO(new Date())) return;
+  const aujourdhui = formaterDateISO(new Date());
+  if(localStorage.getItem('depenses_charlie_jour') === aujourdhui) return;   // déjà tiré au sort
+  try { localStorage.setItem('depenses_charlie_jour', aujourdhui); } catch(e){ return; }
+  if(Math.random() >= 1 / 14) return;
   setTimeout(()=>{
     if(document.hidden || localStorage.getItem('depenses_charlie') === '0' || !document.body.classList.contains('saison')) return;
-    try { localStorage.setItem('depenses_charlie_jour', formaterDateISO(new Date())); } catch(e){}
-    promenerCharlie();
+    if(Math.random() < .5) promenerCharlie();
+    else charlieCoucou();
   }, 20000 + Math.random() * 100000);
 }
 
+/* Réglages d'ambiance qui suivent l'interrupteur « Thèmes saisonniers » (retirés = activés). */
+const CLES_REGLAGES_SAISON = ['depenses_saison_particules','depenses_saison_surprise','depenses_saison_meteo','depenses_saison_nuit','depenses_charlie'];
+function activerTousReglagesSaison(avecChoix){
+  [...CLES_REGLAGES_SAISON, ...(avecChoix ? ['depenses_saison_choix'] : [])].forEach(cle=>{
+    try { localStorage.removeItem(cle); } catch(e){}
+  });
+}
+/* Mélissa (p2) : thèmes « tout ou rien ». Elle ne voit que l'interrupteur principal ; tout le
+   reste est activé, en mode « Selon la date », même si un ancien réglage traîne sur l'appareil. */
+function reglagesSaisonSimplifies(){ return currentUser === 'p2'; }
+
 function appliquerThemeSaison(){
+  const simplifie = reglagesSaisonSimplifies();
+  if(simplifie) activerTousReglagesSaison(true);
   const actif = localStorage.getItem('depenses_saison_actif') !== '0';
   const choix = localStorage.getItem('depenses_saison_choix') || 'auto';
   const toggle = document.getElementById('saison-toggle');
@@ -1197,7 +1239,7 @@ function appliquerThemeSaison(){
   if(togglePart) togglePart.checked = localStorage.getItem('depenses_saison_particules') !== '0';
   if(toggleSurprise) toggleSurprise.checked = localStorage.getItem('depenses_saison_surprise') !== '0';
   const reglages = document.getElementById('saison-reglages');
-  if(reglages) reglages.style.display = actif ? '' : 'none';
+  if(reglages) reglages.style.display = actif && !simplifie ? '' : 'none';
   const actuel = document.getElementById('saison-actuel');
   if(actuel) actuel.textContent = choix === 'auto' || !THEMES_SAISON[choix]
     ? `Aujourd'hui : ${THEMES_SAISON[themeSaisonSelonDate()].nom}` : '';
@@ -1250,8 +1292,10 @@ function appliquerThemeSaison(){
     else document.body.style.removeProperty(`--saison-touffe-${i}`);
   }
   distribuerTouffes();
-  /* Pastille des interrupteurs (voir .switch-track::after dans style.css). */
-  if(def) document.body.style.setProperty('--saison-bouton', `"${def.bouton}"`);
+  /* Pastille des interrupteurs : l'emoji du thème, ou un rond à ses couleurs pour les saisons
+     (voir .switch-track::after dans style.css). */
+  document.body.classList.toggle('bouton-rond', !!def && !def.bouton);
+  if(def && def.bouton) document.body.style.setProperty('--saison-bouton', `"${def.bouton}"`);
   else document.body.style.removeProperty('--saison-bouton');
   /* La barre de défilement de la page appartient à <html>, qui ne voit pas les variables du body. */
   document.documentElement.style.scrollbarColor = def ? `${def.barre}99 transparent` : '';
@@ -6373,7 +6417,12 @@ document.getElementById('save-edit').addEventListener('click', actionVerrouillee
 }));
 
 document.getElementById('dark-mode').addEventListener('change',e=>{localStorage.setItem('depenses_theme',e.target.checked?'dark':'light');appliquerTheme();});
-document.getElementById('saison-toggle')?.addEventListener('change',e=>{localStorage.setItem('depenses_saison_actif',e.target.checked?'1':'0');rafraichirApresChangementSaison();});
+document.getElementById('saison-toggle')?.addEventListener('change',e=>{
+  localStorage.setItem('depenses_saison_actif',e.target.checked?'1':'0');
+  /* Tout ou rien : réactiver les thèmes réactive aussi toutes les options d'ambiance. */
+  if(e.target.checked) activerTousReglagesSaison(false);
+  rafraichirApresChangementSaison();
+});
 document.getElementById('saison-choix')?.addEventListener('change',e=>{localStorage.setItem('depenses_saison_choix',e.target.value);rafraichirApresChangementSaison();});
 document.getElementById('saison-dates-btn')?.addEventListener('click', ouvrirDatesSaison);
 document.getElementById('close-saison-dates')?.addEventListener('click',()=>{ document.getElementById('saison-dates-modal').style.display = 'none'; });
@@ -6394,11 +6443,12 @@ interrupteurSaison('saison-charlie', 'depenses_charlie');
 document.getElementById('apercu-meteo')?.addEventListener('change', e=>{ apercuMeteo = e.target.value; appliquerThemeSaison(); });
 document.getElementById('apercu-moment')?.addEventListener('change', e=>{ apercuMoment = e.target.value; appliquerThemeSaison(); });
 document.getElementById('apercu-charlie')?.addEventListener('click', promenerCharlie);
+document.getElementById('apercu-charlie-coucou')?.addEventListener('click', ()=>{ fermerSettingsModal(); setTimeout(charlieCoucou, 400); });
 actualiserMeteo();
 /* Aux 10 minutes : météo (si elle date de plus de 30 min) et passage jour ↔ nuit. */
 setInterval(()=>{ actualiserMeteo(); appliquerThemeSaison(); }, 10 * 60000);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ actualiserMeteo(); appliquerThemeSaison(); } });
-planifierPromenadeCharlie();
+planifierVisiteCharlie();
 appliquerThemeSaison();
 
 /* ===================== NOTIFICATIONS : DÉPÔT AU COMPTE CONJOINT =====================
