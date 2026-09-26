@@ -758,8 +758,7 @@
   /* Réglages : thème du jour + bouton « Dates », et la fenêtre qui liste les périodes. */
   .saison-actuel-ligne{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;}
   /* Mélissa (reglagesSaisonSimplifies) : de toutes les options, seule la ligne des dates reste. */
-  #saison-reglages.simplifie > :not(.saison-actuel-ligne):not(.simple-seulement){display:none;}
-  #saison-reglages:not(.simplifie) .simple-seulement{display:none;}
+  #saison-reglages.simplifie > :not(.saison-actuel-ligne){display:none;}
   #saison-actuel{margin:0;font-size:12px;color:var(--text-secondary);}
   #saison-dates-btn{padding:6px 12px;font-size:13px;flex-shrink:0;}
   .saison-dates-titre{margin:4px 0 8px;font-size:13px;font-weight:500;color:var(--text-secondary);}

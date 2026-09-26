@@ -902,11 +902,11 @@ const PERIODES_SAISON = [
   { theme:'meres',         fete:true, dates:annee=> jourSeul(niemeJourSemaine(annee, 5, 0, 2)) },  // 2e dimanche de mai
   { theme:'peres',         fete:true, dates:annee=> jourSeul(niemeJourSemaine(annee, 6, 0, 3)) },  // 3e dimanche de juin
   { theme:'actiongrace',   fete:true, dates:annee=> jourSeul(niemeJourSemaine(annee, 10, 1, 2)) }, // 2e lundi d'octobre
-  /* Saisons : une semaine à leur arrivée seulement, pour garder l'effet de surprise. */
-  { theme:'automne',   dates:()=>[922, 928] },
-  { theme:'ete',       dates:()=>[621, 627] },
-  { theme:'printemps', dates:()=>[320, 326] },
-  { theme:'hiver',     dates:()=>[1201, 1207] }
+  /* Saisons : 10 jours à leur arrivée seulement, pour garder l'effet de surprise. */
+  { theme:'automne',   dates:()=>[922, 1001] },
+  { theme:'ete',       dates:()=>[621, 630] },
+  { theme:'printemps', dates:()=>[320, 329] },
+  { theme:'hiver',     dates:()=>[1201, 1210] }
 ];
 
 function themeSaisonSelonDate(d = new Date()){
@@ -1147,8 +1147,6 @@ function majReglagesMeteo(){
   coche('saison-meteo', 'depenses_saison_meteo');
   coche('saison-nuit', 'depenses_saison_nuit');
   coche('saison-charlie', 'depenses_charlie');
-  const simple = document.getElementById('saison-meteo-simple');
-  if(simple) simple.checked = localStorage.getItem('depenses_saison_meteo') !== '0' && localStorage.getItem('depenses_saison_nuit') !== '0';
   const etat = document.getElementById('saison-meteo-etat');
   if(!etat) return;
   const m = meteoFraiche();
@@ -1223,19 +1221,19 @@ function planifierVisiteCharlie(){
 
 /* Réglages d'ambiance qui suivent l'interrupteur « Thèmes saisonniers » (retirés = activés). */
 const CLES_REGLAGES_SAISON = ['depenses_saison_particules','depenses_saison_surprise','depenses_saison_meteo','depenses_saison_nuit','depenses_charlie'];
-const CLES_METEO_NUIT = ['depenses_saison_meteo','depenses_saison_nuit'];
-function activerTousReglagesSaison(avecChoix, saufMeteo){
-  CLES_REGLAGES_SAISON.filter(cle => !(saufMeteo && CLES_METEO_NUIT.includes(cle)))
-    .concat(avecChoix ? ['depenses_saison_choix'] : [])
-    .forEach(cle=>{ try { localStorage.removeItem(cle); } catch(e){} });
+function activerTousReglagesSaison(avecChoix){
+  [...CLES_REGLAGES_SAISON, ...(avecChoix ? ['depenses_saison_choix'] : [])].forEach(cle=>{
+    try { localStorage.removeItem(cle); } catch(e){}
+  });
 }
-/* Mélissa (p2) : thèmes « tout ou rien », en mode « Selon la date ». Elle ne choisit que la
-   météo (avec le jour et la nuit) ; le reste est activé, même si un ancien réglage traîne. */
+/* Mélissa (p2) : thèmes « tout ou rien », en mode « Selon la date ». Elle ne voit que
+   l'interrupteur principal et les dates ; tout le reste (dont la météo et le jour/nuit) est
+   activé, même si un ancien réglage traîne sur l'appareil. */
 function reglagesSaisonSimplifies(){ return currentUser === 'p2'; }
 
 function appliquerThemeSaison(){
   const simplifie = reglagesSaisonSimplifies();
-  if(simplifie) activerTousReglagesSaison(true, true);
+  if(simplifie) activerTousReglagesSaison(true);
   const actif = localStorage.getItem('depenses_saison_actif') !== '0';
   const choix = localStorage.getItem('depenses_saison_choix') || 'auto';
   const toggle = document.getElementById('saison-toggle');
@@ -6445,7 +6443,7 @@ document.getElementById('dark-mode').addEventListener('change',e=>{localStorage.
 document.getElementById('saison-toggle')?.addEventListener('change',e=>{
   localStorage.setItem('depenses_saison_actif',e.target.checked?'1':'0');
   /* Tout ou rien : réactiver les thèmes réactive aussi toutes les options d'ambiance. */
-  if(e.target.checked) activerTousReglagesSaison(false, reglagesSaisonSimplifies());
+  if(e.target.checked) activerTousReglagesSaison(false);
   rafraichirApresChangementSaison();
 });
 document.getElementById('saison-choix')?.addEventListener('change',e=>{localStorage.setItem('depenses_saison_choix',e.target.value);rafraichirApresChangementSaison();});
@@ -6465,17 +6463,20 @@ const interrupteurSaison = (id, cle, apres) => document.getElementById(id)?.addE
 interrupteurSaison('saison-meteo', 'depenses_saison_meteo', actif => { if(actif) actualiserMeteo(); });
 interrupteurSaison('saison-nuit', 'depenses_saison_nuit');
 interrupteurSaison('saison-charlie', 'depenses_charlie');
-/* Mélissa : un seul interrupteur pour la météo et le jour/nuit. */
-document.getElementById('saison-meteo-simple')?.addEventListener('change', e=>{
-  const valeur = e.target.checked ? '1' : '0';
-  try { CLES_METEO_NUIT.forEach(cle => localStorage.setItem(cle, valeur)); } catch(err){}
-  if(e.target.checked) actualiserMeteo();
-  appliquerThemeSaison();
-});
 document.getElementById('apercu-meteo')?.addEventListener('change', e=>{ apercuMeteo = e.target.value; appliquerThemeSaison(); });
 document.getElementById('apercu-moment')?.addEventListener('change', e=>{ apercuMoment = e.target.value; appliquerThemeSaison(); });
 document.getElementById('apercu-charlie')?.addEventListener('click', promenerCharlie);
 document.getElementById('apercu-charlie-coucou')?.addEventListener('click', ()=>{ fermerSettingsModal(); setTimeout(charlieCoucou, 400); });
+/* Surprise : 5 touchers rapides sur le logo (en moins de 2 secondes) font apparaître Charlie. */
+let touchersLogo = [];
+document.querySelector('.logo-mark')?.addEventListener('click', ()=>{
+  const maintenant = Date.now();
+  touchersLogo = touchersLogo.filter(t => maintenant - t < 2000).concat(maintenant);
+  if(touchersLogo.length < 5) return;
+  touchersLogo = [];
+  if(Math.random() < .5) promenerCharlie();
+  else charlieCoucou();
+});
 actualiserMeteo();
 /* Aux 10 minutes : météo (si elle date de plus de 30 min) et passage jour ↔ nuit. */
 setInterval(()=>{ actualiserMeteo(); appliquerThemeSaison(); }, 10 * 60000);
