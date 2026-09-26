@@ -1095,6 +1095,58 @@
     70%,84%{transform:translateY(16%) rotate(0deg);}
     100%{transform:translateY(100%);}
   }
+  /* Attraper Charlie (attraperCharlie) : on peut le toucher ; il s'arrête un instant, remue la
+     queue, « Wouf ! » et un cœur s'envolent, puis il repart. */
+  #charlie-promenade,.charlie-coucou{pointer-events:auto;cursor:pointer;}
+  #charlie-promenade.attrape,#charlie-promenade.attrape .corps,#charlie-promenade.attrape .patte-a,
+  #charlie-promenade.attrape .patte-b,.charlie-coucou.attrape svg{animation-play-state:paused;}
+  #charlie-promenade.attrape .queue{transform-box:fill-box;transform-origin:100% 100%;animation:charlie-queue .15s ease-in-out infinite alternate;}
+  @keyframes charlie-queue{
+    from{transform:rotate(-18deg);}
+    to{transform:rotate(18deg);}
+  }
+  .charlie-attrape{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);pointer-events:none;white-space:nowrap;
+    display:flex;flex-direction:column;align-items:center;animation:charlie-bulle 1.7s ease-out forwards;}
+  .charlie-attrape b{font-size:12px;font-weight:700;color:#212529;background:#fff;border-radius:10px;padding:2px 8px;
+    box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .charlie-attrape i{font-style:normal;font-size:16px;line-height:1;margin-top:2px;}
+  @keyframes charlie-bulle{
+    0%{opacity:0;transform:translate(-50%,6px) scale(.6);}
+    15%{opacity:1;transform:translate(-50%,0) scale(1);}
+    75%{opacity:1;transform:translate(-50%,-10px);}
+    100%{opacity:0;transform:translate(-50%,-22px);}
+  }
+  /* Calque au-dessus du cadre du coucou (bulle, « Z ») : même position, sans couper. */
+  .charlie-coucou-calque{position:absolute;bottom:calc(100% + 26px);width:44px;height:0;pointer-events:none;z-index:3;}
+
+  /* Charlie endormi (la nuit) : yeux fermés, marche lente, petits « Z » qui montent. */
+  #charlie-promenade.endormi{animation-duration:17s;}
+  #charlie-promenade.endormi .corps,#charlie-promenade.endormi .patte-a,#charlie-promenade.endormi .patte-b{animation-duration:.6s;}
+  .charlie-zzz{position:absolute;left:44px;bottom:36px;pointer-events:none;}
+  .charlie-coucou-calque .charlie-zzz{left:30px;bottom:0;}
+  .charlie-zzz i{position:absolute;left:0;bottom:0;font:italic 700 11px/1 sans-serif;color:#5c7cfa;opacity:0;
+    animation:charlie-z 2.4s ease-out infinite;}
+  body.dark .charlie-zzz i{color:#a5b4fc;}
+  .charlie-zzz i:nth-child(2){animation-delay:.8s;font-size:13px;}
+  .charlie-zzz i:nth-child(3){animation-delay:1.6s;font-size:15px;}
+  @keyframes charlie-z{
+    0%{opacity:0;transform:translate(0,0);}
+    20%{opacity:1;}
+    100%{opacity:0;transform:translate(10px,-22px);}
+  }
+
+  /* Poisson d'avril (poissonDAvril) : poisson de papier collé à côté du titre ; le toucher
+     le décolle et il tombe en tournoyant. */
+  header.top h1{position:relative;}
+  #poisson-colle{position:absolute;left:100%;top:-6px;margin-left:6px;transform:rotate(-12deg);cursor:pointer;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));}
+  #poisson-colle svg{display:block;}
+  #poisson-colle.decolle{animation:poisson-decolle 1.2s ease-in forwards;pointer-events:none;}
+  @keyframes poisson-decolle{
+    0%{transform:rotate(-12deg);}
+    20%{transform:translate(4px,-8px) rotate(10deg);}
+    100%{transform:translate(40px,110vh) rotate(260deg);opacity:.2;}
+  }
 
   /* Réglages : petites notes (météo reçue, aperçu) et bloc « Aperçu ». */
   .saison-note{margin:4px 0 0;font-size:12px;color:var(--text-secondary);}

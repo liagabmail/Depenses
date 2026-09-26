@@ -1147,6 +1147,11 @@ function majReglagesMeteo(){
   coche('saison-meteo', 'depenses_saison_meteo');
   coche('saison-nuit', 'depenses_saison_nuit');
   coche('saison-charlie', 'depenses_charlie');
+  const compteur = document.getElementById('charlie-compteur');
+  if(compteur){
+    const n = parseInt(localStorage.getItem('depenses_charlie_attrape'), 10) || 0;
+    compteur.textContent = n ? `Charlie attrapé : ${n} fois 🐾` : "Touche Charlie quand il passe pour l'attraper !";
+  }
   const etat = document.getElementById('saison-meteo-etat');
   if(!etat) return;
   const m = meteoFraiche();
@@ -1155,28 +1160,59 @@ function majReglagesMeteo(){
   etat.textContent = `Météo à ${METEO_LIEU.nom} : ${NOMS_METEO[m.type]}, vent ${m.vent} km/h (rafales ${m.rafales}) · il y a ${minutes} min.`;
 }
 
-/* Charlie, schnauzer noir, de profil ; les pattes et le corps bougent en marchant. */
-function charlieDeProfil(){
+/* Charlie, schnauzer noir, de profil ; les pattes et le corps bougent en marchant. Endormi
+   (la nuit), il a les yeux fermés. */
+function charlieDeProfil(endormi){
   const patte = x => `<rect x="${x}" y="24" width="4.5" height="13" rx="2" fill="#1a1a1a"/>`;
+  const oeil = endormi
+    ? `<path d="M48.4 9.6 q1.1 1 2.2 0" stroke="#fff" stroke-width=".8" fill="none" stroke-linecap="round"/>`
+    : `<circle cx="49.5" cy="9.6" r="1" fill="#fff"/><circle cx="49.8" cy="9.7" r=".5" fill="#000"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 42" width="64" height="42">` +
-    `<path d="M11 17 Q6 11 8.5 5" stroke="#1f1f1f" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+    `<path class="queue" d="M11 17 Q6 11 8.5 5" stroke="#1f1f1f" stroke-width="3" fill="none" stroke-linecap="round"/>` +
     `<g class="patte-a">${patte(13)}${patte(36)}</g><g class="patte-b">${patte(19)}${patte(42)}</g>` +
     `<g class="corps"><rect x="10" y="14" width="35" height="14" rx="7" fill="#1f1f1f"/><rect x="38" y="8" width="9" height="13" fill="#1f1f1f"/>` +
     `<rect x="39" y="15" width="4" height="7" rx="1" fill="#c92a2a"/><rect x="38" y="4" width="15" height="12" rx="4" fill="#1f1f1f"/>` +
     `<rect x="47" y="9" width="13" height="7" rx="2" fill="#262626"/><path d="M47 14 L60 14 L59 20 L57 18 L55 21 L53 18 L51 21 L49 18 Z" fill="#4d4d4d"/>` +
     `<path d="M40 5 L46 4 L42.5 11.5 Z" fill="#111"/><path d="M46 7.2 L52 6.6 L51.4 8.3 Z" fill="#9a9a9a"/>` +
-    `<circle cx="49.5" cy="9.6" r="1" fill="#fff"/><circle cx="49.8" cy="9.7" r=".5" fill="#000"/><circle cx="59.6" cy="10.6" r="1.6" fill="#000"/></g></svg>`;
+    `${oeil}<circle cx="59.6" cy="10.6" r="1.6" fill="#000"/></g></svg>`;
+}
+/* Petits « Z » qui montent au-dessus de Charlie quand il dort. */
+function zzzCharlie(){
+  return '<span class="charlie-zzz" aria-hidden="true"><i>z</i><i>z</i><i>Z</i></span>';
+}
+/* Attraper Charlie : le toucher pendant qu'il est là l'arrête un instant ; il remue la queue,
+   un cœur s'envole, « Wouf ! », le téléphone vibre. Une seule fois par apparition ; le
+   nombre de fois est gardé sur l'appareil (affiché dans les réglages). */
+function attraperCharlie(el){
+  if(el.dataset.attrape) return;
+  el.dataset.attrape = '1';
+  try {
+    const n = (parseInt(localStorage.getItem('depenses_charlie_attrape'), 10) || 0) + 1;
+    localStorage.setItem('depenses_charlie_attrape', String(n));
+  } catch(e){}
+  try { navigator.vibrate?.([40, 60, 40]); } catch(e){}
+  const bulle = document.createElement('span');
+  bulle.className = 'charlie-attrape';
+  bulle.setAttribute('aria-hidden', 'true');
+  bulle.innerHTML = '<b>Wouf !</b><i>❤️</i>';
+  el.appendChild(bulle);
+  el.classList.add('attrape');
+  setTimeout(()=>{ el.classList.remove('attrape'); bulle.remove(); }, 1700);
+  majReglagesMeteo();
 }
 function promenerCharlie(){
   if(document.getElementById('charlie-promenade')) return;
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const endormi = nuitActive();
   const el = document.createElement('div');
   el.id = 'charlie-promenade';
   el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = charlieDeProfil();
+  el.classList.toggle('endormi', endormi);
+  el.innerHTML = charlieDeProfil(endormi) + (endormi ? zzzCharlie() : '');
+  el.addEventListener('pointerdown', ()=> attraperCharlie(el));
   el.addEventListener('animationend', e => { if(e.target === el) el.remove(); });
   document.body.appendChild(el);
-  setTimeout(()=> el.remove(), 15000);   // filet de sécurité si l'animation est interrompue
+  setTimeout(()=> el.remove(), 25000);   // filet de sécurité si l'animation est interrompue
 }
 /* Charlie jette un œil : sa tête sort de derrière le dessus d'une carte visible, regarde
    quelques secondes, puis redescend. Le cadre coupe tout ce qui est sous le rebord, comme si
@@ -1189,19 +1225,59 @@ function charlieCoucou(){
     return r.width > 120 && r.top > 70 && r.top < window.innerHeight - 90;
   });
   if(!cartes.length){ promenerCharlie(); return; }
+  const endormi = nuitActive();
   const carte = cartes[Math.floor(Math.random() * cartes.length)];
   const positionAvant = carte.style.position;
   if(getComputedStyle(carte).position === 'static') carte.style.position = 'relative';
+  const gauche = `${15 + Math.random() * 60}%`;
   const cadre = document.createElement('div');
   cadre.className = 'charlie-coucou';
   cadre.setAttribute('aria-hidden', 'true');
-  cadre.style.left = `${15 + Math.random() * 60}%`;
-  cadre.innerHTML = schnauzer().replace('width="19" height="19"', 'width="44" height="44"');
-  const fin = ()=>{ cadre.remove(); carte.style.position = positionAvant; };
+  cadre.classList.toggle('endormi', endormi);
+  cadre.style.left = gauche;
+  let tete = schnauzer().replace('width="19" height="19"', 'width="44" height="44"');
+  /* Endormi : les yeux (cercles blancs et pupilles) deviennent deux petits traits fermés. */
+  if(endormi) tete = tete.replace(/<circle cx="9\.4"[^>]*\/><circle cx="14\.6"[^>]*\/><circle cx="9\.5"[^>]*\/><circle cx="14\.5"[^>]*\/>/,
+    '<path d="M8.4 10.4 q1 .9 2 0 M13.6 10.4 q1 .9 2 0" stroke="#fff" stroke-width=".7" fill="none" stroke-linecap="round"/>');
+  cadre.innerHTML = tete;
+  /* Les « Z » et la bulle « Wouf ! » vont dans un calque à part, au-dessus du cadre qui coupe. */
+  const calque = document.createElement('div');
+  calque.className = 'charlie-coucou-calque';
+  calque.style.left = gauche;
+  if(endormi) calque.innerHTML = zzzCharlie();
+  const fin = ()=>{ cadre.remove(); calque.remove(); carte.style.position = positionAvant; };
   cadre.firstElementChild.addEventListener('animationend', fin);
+  cadre.addEventListener('pointerdown', ()=>{ attraperCharlie(calque); cadre.classList.add('attrape'); setTimeout(()=> cadre.classList.remove('attrape'), 1700); });
   carte.appendChild(cadre);
-  setTimeout(fin, 9000);   // filet de sécurité si l'animation est interrompue
+  carte.appendChild(calque);
+  setTimeout(fin, 12000);   // filet de sécurité si l'animation est interrompue
 }
+
+/* Poisson d'avril : un poisson de papier « collé » à côté du titre. Le toucher le décolle ;
+   selon la date, il ne revient pas de la journée (choisi à la main, il revient pour l'essai). */
+function poissonDAvril(theme){
+  document.getElementById('poisson-colle')?.remove();
+  if(theme !== 'poissonavril') return;
+  const aujourdhui = formaterDateISO(new Date());
+  const selonDate = (localStorage.getItem('depenses_saison_choix') || 'auto') === 'auto';
+  if(selonDate && localStorage.getItem('depenses_poisson_decolle') === aujourdhui) return;
+  const titre = document.querySelector('header.top h1');
+  if(!titre) return;
+  const poisson = document.createElement('span');
+  poisson.id = 'poisson-colle';
+  poisson.setAttribute('aria-hidden', 'true');
+  poisson.innerHTML = '<svg viewBox="0 0 40 26" width="40" height="26"><path d="M30 13 Q20 2 8 13 Q20 24 30 13 Z M9 13 L1 6 L1 20 Z" fill="#ff922b" stroke="#e8590c" stroke-width="1"/>' +
+    '<path d="M15 9 q2 4 0 8 M20 7.5 q2 5.5 0 11" stroke="#e8590c" stroke-width=".9" fill="none"/><circle cx="25" cy="11.5" r="1.4" fill="#212529"/>' +
+    '<rect x="26" y="1" width="12" height="6" rx="1" fill="#fff3bf" opacity=".85" transform="rotate(25 32 4)"/></svg>';
+  poisson.addEventListener('pointerdown', ()=>{
+    if(poisson.classList.contains('decolle')) return;
+    poisson.classList.add('decolle');
+    if(selonDate) try { localStorage.setItem('depenses_poisson_decolle', aujourdhui); } catch(e){}
+    setTimeout(()=> poisson.remove(), 1300);
+  });
+  titre.appendChild(poisson);
+}
+
 /* Une visite de Charlie environ aux deux semaines, au hasard : à la première ouverture de
    chaque jour, une chance sur 14. Il se promène ou jette un œil (moitié-moitié), à un
    moment au hasard entre 20 s et 2 min après l'ouverture. */
@@ -1318,6 +1394,7 @@ function appliquerThemeSaison(){
     el.innerHTML = icones[el.dataset.ico === 'conjoint' ? 1 : 0];
   });
 
+  poissonDAvril(theme);
   document.getElementById('saison-deco')?.remove();
   document.getElementById('saison-eclair')?.remove();
   if(!anime) return;
