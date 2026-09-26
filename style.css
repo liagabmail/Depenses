@@ -877,14 +877,6 @@
   body.dark.saison-peres{--bg:#181414;--accent-dark:#ffa8a8;--accent-menu:#ff8787;}
   body.saison-actiongrace{--bg:#fbf6ee;--accent:#862e2e;--accent-dark:#632121;--accent-menu:#c2410c;--accent-halo:rgba(134,46,46,.16);--saison-logo:linear-gradient(135deg,#f59f00,#862e2e);}
   body.dark.saison-actiongrace{--bg:#1c1715;--accent-dark:#ffb38a;--accent-menu:#ffa94d;}
-  /* Neutre (hors fêtes et semaines de saison) : l'apparence habituelle de l'app — fonds,
-     bordures et interrupteurs d'origine, logo bleu. Seuls la météo et la nuit s'y ajoutent. */
-  body.saison-neutre{--saison-logo:linear-gradient(135deg,#1a73e8,#174ea6);}
-  body.saison.saison-neutre{--surface:#ffffff;--surface-2:#f1f3f4;--surface-hover:#f8f9fa;--border:#dadce0;}
-  body.dark.saison.saison-neutre{--surface:#23272b;--surface-2:#2c3136;--surface-hover:#2b3035;--border:#3b4249;}
-  body.saison.saison-neutre .switch-track{background:#9aa0a6;}
-  body.saison.saison-neutre .switch input:checked + .switch-track{background:var(--accent);}
-  body.saison.saison-neutre.bouton-rond .switch-track::after{background:#fff;}
 
   /* Fête des Pères : chemise à carreaux. */
   body.saison-peres .mobile-add-btn{border-radius:12px;text-shadow:0 1px 2px rgba(0,0,0,.5);

@@ -542,10 +542,6 @@ const THEMES_SAISON = {
   noel:          { nom:'Noël',           embleme:'🎄', icones:[bouleNoel('#c5221f'), bouleNoel('#c5221f') + bouleNoel('#137333')],
                    particules:['🎁', bouleNoel('#c5221f', '1em', '1.2em'), bouleNoel('#2f9e44', '1em', '1.2em'), '🎁', bouleNoel('#fcc419', '1em', '1.2em'), bouleNoel('#1c7ed6', '1em', '1.2em')],
                    nombre:18, barre:'#c5221f', bouton:bouleNoel('#c5221f', 17, 20), guirlande:{ type:'ampoules', couleurs:['#e03131','#fcc419','#2f9e44','#4dabf7'], fil:'#556b5a' } },
-  /* Hors des fêtes et des semaines de saison : le look habituel de l'app (voir
-     body.saison-neutre dans style.css). Pas de particules ni de décor ; la météo, la nuit,
-     Charlie continuent ; pas de petite fête après un ajout. */
-  neutre:        { nom:'aucun thème (look habituel)', embleme:'', icones:['👤','👥'], particules:[], nombre:0, barre:'#1a73e8' },
   /* Anniversaires de la famille : un thème complet par personne (dates dans PERIODES_SAISON). */
   gabriel:       { nom:'Fête de Gabriel', banniere:'Bonne fête Gabriel !', embleme:'🎂', icones:['🎁','🎁🎁'], particules:['🎈','🎁','🎉'], nombre:14, montee:true, barre:'#1f4e79', bouton:'🎁', guirlande:{ type:'fanions', couleurs:['#1f4e79','#f08c00','#4dabf7'], fil:'#1f4e79' } },
   melissa:       { nom:'Fête de Mélissa', banniere:'Bonne fête Mélissa !', embleme:'💐', icones:['🌷','🌷🌷'], particules:['🌸','🌺','🌷','✨'], nombre:14, barre:'#862e9c', bouton:'🌺', guirlande:{ type:'fleurs', couleurs:['#f783ac','#cc5de8'], fil:'#2b8a3e' } },
@@ -919,8 +915,8 @@ function themeSaisonSelonDate(d = new Date()){
     const [du, au] = p.dates(d.getFullYear());
     return du <= au ? (md >= du && md <= au) : (md >= du || md <= au);
   });
-  /* Hors des périodes : le thème « neutre » (look habituel, avec météo, nuit et Charlie). */
-  return periode ? periode.theme : 'neutre';
+  /* Hors des fêtes et des semaines de saison : aucun thème, l'app reste telle quelle. */
+  return periode ? periode.theme : null;
 }
 
 const MOIS_COURTS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
@@ -992,7 +988,7 @@ const METEO_LIEU = { nom:'Saint-Jean-sur-Richelieu', lat:45.3073, lon:-73.2625 }
 const METEO_CLE = 'depenses_meteo';
 const METEO_DUREE = 30 * 60000;        // on redemande la météo au plus aux 30 minutes
 const METEO_PEREMPTION = 3 * 3600000;  // une météo gardée plus de 3 h n'est plus utilisée
-const SAISONS_METEO = ['hiver','printemps','ete','automne','neutre'];
+const SAISONS_METEO = ['hiver','printemps','ete','automne'];
 const NOMS_METEO = { pluie:'pluie', neige:'neige', vent:'vent fort', orage:'orage', degage:'ni pluie ni neige' };
 let meteoActuelle = lireMeteoCache();
 let meteoEnCours = false;
@@ -1218,7 +1214,8 @@ function planifierVisiteCharlie(){
   try { localStorage.setItem('depenses_charlie_jour', aujourdhui); } catch(e){ return; }
   if(Math.random() >= 1 / 14) return;
   setTimeout(()=>{
-    if(document.hidden || localStorage.getItem('depenses_charlie') === '0' || !document.body.classList.contains('saison')) return;
+    /* Même les jours sans thème : il suffit que « Thèmes saisonniers » soit activé. */
+    if(document.hidden || localStorage.getItem('depenses_charlie') === '0' || localStorage.getItem('depenses_saison_actif') === '0') return;
     if(Math.random() < .5) promenerCharlie();
     else charlieCoucou();
   }, 20000 + Math.random() * 100000);
@@ -1256,8 +1253,11 @@ function appliquerThemeSaison(){
     reglages.classList.toggle('simplifie', simplifie);
   }
   const actuel = document.getElementById('saison-actuel');
-  if(actuel) actuel.textContent = choix === 'auto' || !THEMES_SAISON[choix]
-    ? `Aujourd'hui : ${THEMES_SAISON[themeSaisonSelonDate()].nom}` : '';
+  if(actuel){
+    const duJour = themeSaisonSelonDate();   // null hors des fêtes et des semaines de saison
+    actuel.textContent = choix === 'auto' || !THEMES_SAISON[choix]
+      ? `Aujourd'hui : ${duJour ? THEMES_SAISON[duJour].nom : 'aucun thème'}` : '';
+  }
 
   /* Appelée à chaque rafraîchissement : on ne reconstruit que si quelque chose a changé. */
   const theme = themeSaisonVoulu();
