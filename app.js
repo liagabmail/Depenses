@@ -576,6 +576,7 @@ const THEMES_SAISON = {
   melissa:       { nom:'Fête de Mélissa', banniere:'Bonne fête Mélissa !', embleme:'💐', icones:['🌷','🌷🌷'], particules:['🌸','🌺','🌷','✨'], nombre:14, barre:'#862e9c', bouton:'🌺', guirlande:{ type:'fleurs', couleurs:['#f783ac','#cc5de8'], fil:'#2b8a3e' } },
   emma:          { nom:"Fête d'Emma",     banniere:'Bonne fête Emma !', embleme:'👶', icones:['🎀','🎀🎀'], particules:['🎀','🧸','💗','🍼'], nombre:14, barre:'#d6336c', bouton:'🎀', guirlande:{ type:'fanions', couleurs:['#faa2c1','#ffffff','#d0bfff'], fil:'#f783ac' } },
   charlie:       { nom:'Fête de Charlie', banniere:'Bonne fête Charlie !', embleme:schnauzer(), icones:[schnauzer(), schnauzer() + '🦴'], particules:['🦴','🐾','🦴','🐾'], nombre:14, barre:'#343a40', bouton:'🦴', guirlande:{ type:'pattes', couleurs:['#868e96'] } },
+  couple:        { nom:'Anniversaire de couple', banniere:'Mélissa 💘 Gabriel', embleme:'💞', icones:['❤️','💑'], particules:['💕','🌹','🥂','❤️'], nombre:14, barre:'#a61e4d', bouton:'💞', guirlande:{ type:'coeurs', couleurs:['#a61e4d','#e0b53a','#f06595'], fil:'#c9a227' } },
   /* Fêtes et traditions québécoises. */
   poissonavril:  { nom:"Poisson d'avril",   embleme:'🐟', icones:['🐟','🐟🐠'], particules:['🐟','🐠','🐡'], nombre:12, barre:'#1098ad', bouton:'🐟', guirlande:{ type:'poissons', couleurs:['#ff922b','#22b8cf','#f06595','#94d82d'], fil:'#495057' } },
   meres:         { nom:'Fête des Mères',    embleme:'💝', icones:['💝','💝💝'], particules:['💖','🌹','💐'], nombre:12, barre:'#099268', bouton:'💝', guirlande:{ type:'fleurs', couleurs:['#f06595','#ffa8a8','#e599f7'], fil:'#099268' } },
@@ -857,7 +858,10 @@ const TOUFFES_SAISON = {
                   (r, d) => d.canard(30)],
   charlie:       [(r, d) => d.herbe(r, 30, 26, HERBE, 6) + d.os(33),
                   (r, d) => d.bol(30),
-                  (r, d) => d.os(30) + d.coccinelle(42)]
+                  (r, d) => d.os(30) + d.coccinelle(42)],
+  couple:        [(r, d) => d.herbe(r, 30, 26, HERBE_TENDRE, 5) + d.coeurFleur(26, 12, '#a61e4d') + d.coeurFleur(35, 15, '#f06595'),
+                  (r, d) => d.flute(26) + d.flute(34),
+                  (r, d) => d.coeurFleur(30, 13, '#a61e4d') + d.papillon(42, 8, '#e0b53a')]
 };
 /* Les touffes d'un thème, en SVG, ou null si le thème n'en a pas. */
 function svgTouffes(theme){
@@ -916,6 +920,7 @@ function niemeJourSemaine(annee, mois, jourSemaine, n){
 function jourSeul(date){ const md = jourMoisDe(date); return [md, md]; }
 const PERIODES_SAISON = [
   { theme:'gabriel',       anniv:true, dates:()=>[202, 202] },
+  { theme:'couple',        anniv:true, dates:()=>[1002, 1002] },
   { theme:'melissa',       anniv:true, dates:()=>[412, 412] },
   { theme:'emma',          anniv:true, dates:()=>[813, 813] },
   { theme:'charlie',       anniv:true, dates:()=>[1211, 1211] },
@@ -1207,7 +1212,7 @@ function charlieDeProfil(endormi){
 }
 /* Chapeau de Charlie selon le thème du moment : bonnet de Noël pendant Noël, chapeau de fête
    les jours d'anniversaire. Le dessin déborde au-dessus de la tête (overflow visible). */
-const ANNIVERSAIRES_FAMILLE = ['gabriel','melissa','emma','charlie'];
+const ANNIVERSAIRES_FAMILLE = ['gabriel','melissa','emma','charlie','couple'];
 function chapeauDuJour(){
   const theme = themeSaisonVoulu();
   if(theme === 'noel') return 'noel';

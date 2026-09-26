@@ -872,6 +872,13 @@
     background:radial-gradient(circle 11px at 11px 11px,#f1f3f5 98%,transparent),radial-gradient(circle 11px at 11px 33px,#f1f3f5 98%,transparent),
       radial-gradient(circle 11px at 57px 11px,#f1f3f5 98%,transparent),radial-gradient(circle 11px at 57px 33px,#f1f3f5 98%,transparent),
       linear-gradient(#f1f3f5,#f1f3f5) 10px 11px / 48px 22px no-repeat;}
+  /* Anniversaire de couple (2 octobre) : bordeaux et or ; bouton « + » rond bordeaux avec
+     deux petits cœurs posés dessus. */
+  body.saison-couple{--bg:#fdf4f6;--accent:#a61e4d;--accent-dark:#7a1638;--accent-menu:#a61e4d;--accent-halo:rgba(166,30,77,.16);--saison-logo:linear-gradient(135deg,#e0b53a,#a61e4d);}
+  body.dark.saison-couple{--bg:#1e1519;--accent-dark:#f3a6be;--accent-menu:#f3a6be;}
+  body.saison-couple .mobile-add-btn{background:radial-gradient(circle at 40% 32%,#d6336c,#a61e4d 60%,#7a1638);}
+  body.saison-couple .mobile-add-btn::before{content:"💞";position:absolute;top:-14px;left:50%;font-size:20px;line-height:1;
+    transform:translateX(-50%) rotate(-8deg);}
 
   /* Fêtes et traditions québécoises. */
   body.saison-poissonavril{--bg:#f0fbfc;--accent:#0c7489;--accent-dark:#0b5c6b;--accent-menu:#e8590c;--accent-halo:rgba(12,116,137,.16);--saison-logo:linear-gradient(135deg,#22b8cf,#f76707);}
