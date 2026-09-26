@@ -1090,19 +1090,19 @@
   }
   /* Charlie jette un œil (charlieCoucou) : sa tête monte de derrière le rebord d'une carte.
      Le cadre coupe le bas, pour qu'il ait l'air caché derrière la carte. */
-  .charlie-coucou{position:absolute;bottom:100%;width:44px;height:40px;overflow:hidden;pointer-events:none;z-index:2;}
-  .charlie-coucou svg{display:block;transform:translateY(100%);animation:charlie-coucou 6s ease-in-out forwards;}
+  .charlie-coucou{position:absolute;bottom:100%;width:44px;height:40px;clip-path:inset(-30px -14px 0 -14px);pointer-events:none;z-index:2;}
+  .charlie-coucou svg{display:block;overflow:visible;transform:translateY(135%);animation:charlie-coucou 6s ease-in-out forwards;}
   body.dark .charlie-coucou svg{filter:drop-shadow(0 0 1.5px rgba(255,255,255,.7));}
   @keyframes charlie-coucou{
-    0%{transform:translateY(100%);}
+    0%{transform:translateY(135%);}
     14%{transform:translateY(12%);}
     18%,40%{transform:translateY(16%) rotate(0deg);}
     48%,62%{transform:translateY(16%) rotate(-12deg);}
     70%,84%{transform:translateY(16%) rotate(0deg);}
-    100%{transform:translateY(100%);}
+    100%{transform:translateY(135%);}
   }
   /* Attraper Charlie (attraperCharlie) : on peut le toucher ; il s'arrête un instant, remue la
-     queue, « Wouf ! » et un cœur s'envolent, puis il repart. */
+     queue, un cœur s'envole, puis il repart. */
   #charlie-promenade,.charlie-coucou{pointer-events:auto;cursor:pointer;}
   #charlie-promenade.attrape,#charlie-promenade.attrape .corps,#charlie-promenade.attrape .patte-a,
   #charlie-promenade.attrape .patte-b,.charlie-coucou.attrape svg{animation-play-state:paused;}
@@ -1113,9 +1113,7 @@
   }
   .charlie-attrape{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);pointer-events:none;white-space:nowrap;
     display:flex;flex-direction:column;align-items:center;animation:charlie-bulle 1.7s ease-out forwards;}
-  .charlie-attrape b{font-size:12px;font-weight:700;color:#212529;background:#fff;border-radius:10px;padding:2px 8px;
-    box-shadow:0 1px 3px rgba(0,0,0,.25);}
-  .charlie-attrape i{font-style:normal;font-size:16px;line-height:1;margin-top:2px;}
+  .charlie-attrape i{font-style:normal;font-size:18px;line-height:1;}
   @keyframes charlie-bulle{
     0%{opacity:0;transform:translate(-50%,6px) scale(.6);}
     15%{opacity:1;transform:translate(-50%,0) scale(1);}

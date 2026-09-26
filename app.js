@@ -585,7 +585,7 @@ const THEMES_SAISON = {
 
 /* Charlie, schnauzer noir : tête de face, oreilles repliées, sourcils et barbe touffus. */
 function schnauzer(){
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="6" y="3.5" width="12" height="11.5" rx="4" fill="#262626" stroke="#6b6b6b" stroke-width=".4"/><path d="M5.1 5 L9.8 3.4 L6.4 10.4 Z M18.9 5 L14.2 3.4 L17.6 10.4 Z" fill="#141414"/><path d="M7.4 8.6 Q9 6.6 11.2 8.1 L10.6 8.9 Q9 8 7.6 9.4 Z M16.6 8.6 Q15 6.6 12.8 8.1 L13.4 8.9 Q15 8 16.4 9.4 Z" fill="#9a9a9a"/><circle cx="9.4" cy="10.3" r=".95" fill="#fff"/><circle cx="14.6" cy="10.3" r=".95" fill="#fff"/><circle cx="9.5" cy="10.4" r=".5" fill="#000"/><circle cx="14.5" cy="10.4" r=".5" fill="#000"/><path d="M6.4 12.3 Q12 10.9 17.6 12.3 L17.4 16.8 L16.4 19.2 L15 18.3 L13.6 20.7 L12 19.5 L10.4 20.7 L9 18.3 L7.6 19.2 L6.6 16.8 Z" fill="#4d4d4d"/><ellipse cx="12" cy="12.9" rx="1.8" ry="1.2" fill="#000"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="6" y="3.5" width="12" height="11.5" rx="4" fill="#262626" stroke="#6b6b6b" stroke-width=".4"/><path d="M5.1 5 L9.8 3.4 L6.4 10.4 Z M18.9 5 L14.2 3.4 L17.6 10.4 Z" fill="#141414"/><path d="M7.4 8.6 Q9 6.6 11.2 8.1 L10.6 8.9 Q9 8 7.6 9.4 Z M16.6 8.6 Q15 6.6 12.8 8.1 L13.4 8.9 Q15 8 16.4 9.4 Z" fill="#9a9a9a"/><circle cx="9.4" cy="10.3" r=".95" fill="#fff"/><circle cx="14.6" cy="10.3" r=".95" fill="#fff"/><circle cx="9.5" cy="10.4" r=".5" fill="#000"/><circle cx="14.5" cy="10.4" r=".5" fill="#000"/><path d="M8 20.4 Q12 21.8 16 20.4 L15.8 22.6 Q12 23.8 8.2 22.6 Z" fill="#2e6b3f"/><path d="M6.4 12.3 Q12 10.9 17.6 12.3 L17.4 16.8 L16.4 19.2 L15 18.3 L13.6 20.7 L12 19.5 L10.4 20.7 L9 18.3 L7.6 19.2 L6.6 16.8 Z" fill="#f3f3f1" stroke="#cfcfcb" stroke-width=".35"/><ellipse cx="12" cy="12.9" rx="1.8" ry="1.2" fill="#000"/></svg>`;
 }
 
 /* Guirlande du haut de page : un motif de 96 × 28 répété sur toute la largeur (voir
@@ -1197,20 +1197,47 @@ function charlieDeProfil(endormi){
     ? `<path d="M48.4 9.6 q1.1 1 2.2 0" stroke="#fff" stroke-width=".8" fill="none" stroke-linecap="round"/>`
     : `<circle cx="49.5" cy="9.6" r="1" fill="#fff"/><circle cx="49.8" cy="9.7" r=".5" fill="#000"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 42" width="64" height="42">` +
-    `<path class="queue" d="M11 17 Q6 11 8.5 5" stroke="#1f1f1f" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+    `<path class="queue" d="M11 17 Q3 13 5.5 2" stroke="#1f1f1f" stroke-width="3" fill="none" stroke-linecap="round"/>` +
     `<g class="patte-a">${patte(13)}${patte(36)}</g><g class="patte-b">${patte(19)}${patte(42)}</g>` +
-    `<g class="corps"><rect x="10" y="14" width="35" height="14" rx="7" fill="#1f1f1f"/><rect x="38" y="8" width="9" height="13" fill="#1f1f1f"/>` +
-    `<rect x="39" y="15" width="4" height="7" rx="1" fill="#c92a2a"/><rect x="38" y="4" width="15" height="12" rx="4" fill="#1f1f1f"/>` +
-    `<rect x="47" y="9" width="13" height="7" rx="2" fill="#262626"/><path d="M47 14 L60 14 L59 20 L57 18 L55 21 L53 18 L51 21 L49 18 Z" fill="#4d4d4d"/>` +
+    `<g class="corps"><rect x="10" y="14" width="35" height="14" rx="7" fill="#1f1f1f"/><path d="M16 25.6 Q27.5 29.6 39 25.6 Q37 28 27.5 28 Q18 28 16 25.6 Z" fill="#f3f3f1"/><rect x="38" y="8" width="9" height="13" fill="#1f1f1f"/>` +
+    `<rect x="39" y="15" width="4" height="7" rx="1" fill="#2e6b3f"/><rect x="38" y="4" width="15" height="12" rx="4" fill="#1f1f1f"/>` +
+    `<rect x="47" y="9" width="13" height="7" rx="2" fill="#262626"/><path d="M47 14 L60 14 L59 20 L57 18 L55 21 L53 18 L51 21 L49 18 Z" fill="#f3f3f1" stroke="#cfcfcb" stroke-width=".35"/>` +
     `<path d="M40 5 L46 4 L42.5 11.5 Z" fill="#111"/><path d="M46 7.2 L52 6.6 L51.4 8.3 Z" fill="#9a9a9a"/>` +
-    `${oeil}<circle cx="59.6" cy="10.6" r="1.6" fill="#000"/></g></svg>`;
+    `${oeil}<circle cx="59.6" cy="10.6" r="1.6" fill="#000"/>${chapeauCharlie(chapeauDuJour(), 'profil')}</g></svg>`;
+}
+/* Chapeau de Charlie selon le thème du moment : bonnet de Noël pendant Noël, chapeau de fête
+   les jours d'anniversaire. Le dessin déborde au-dessus de la tête (overflow visible). */
+const ANNIVERSAIRES_FAMILLE = ['gabriel','melissa','emma','charlie'];
+function chapeauDuJour(){
+  const theme = themeSaisonVoulu();
+  if(theme === 'noel') return 'noel';
+  if(ANNIVERSAIRES_FAMILLE.includes(theme)) return 'fete';
+  return null;
+}
+/* Position du chapeau pour chaque dessin : centre du dessus de la tête (x, y) et largeur. */
+const POSE_CHAPEAU = { face:{ x:12, y:4, l:11 }, profil:{ x:45.5, y:4.6, l:13 }, couche:{ x:65, y:13.6, l:15 } };
+function chapeauCharlie(type, pose){
+  if(!type) return '';
+  const { x, y, l } = POSE_CHAPEAU[pose];
+  const d = l / 2, h = l * 1.05;
+  if(type === 'noel'){
+    /* Bonnet rouge qui retombe vers l'arrière, bordure et pompon blancs. */
+    return `<g class="chapeau"><path d="M${x - d + .4} ${y} Q${x - d * .1} ${y - h * 1.15} ${x - d * 1.55} ${y - h * .7} Q${x + d * .5} ${y - h * 1.05} ${x + d - .4} ${y} Z" fill="#d6282b"/>` +
+      `<path d="M${x - d * .2} ${y - h * .55} Q${x - d * .6} ${y - h * .85} ${x - d * 1.2} ${y - h * .72}" stroke="#a61e21" stroke-width="${l * .05}" fill="none"/>` +
+      `<rect x="${x - d - .4}" y="${y - l * .16}" width="${l + .8}" height="${l * .28}" rx="${l * .14}" fill="#fff"/>` +
+      `<circle cx="${x - d * 1.55}" cy="${y - h * .7}" r="${l * .16}" fill="#fff"/></g>`;
+  }
+  /* Chapeau de fête : cône rayé, un peu penché, pompon doré. */
+  return `<g class="chapeau" transform="rotate(-12 ${x} ${y})"><path d="M${x - d * .8} ${y} L${x} ${y - h * 1.1} L${x + d * .8} ${y} Z" fill="#7048e8"/>` +
+    `<path d="M${x - d * .55} ${y - h * .33} L${x + d * .55} ${y - h * .33} M${x - d * .3} ${y - h * .66} L${x + d * .3} ${y - h * .66}" stroke="#fcc419" stroke-width="${l * .1}"/>` +
+    `<circle cx="${x}" cy="${y - h * 1.12}" r="${l * .13}" fill="#fcc419"/></g>`;
 }
 /* Petits « Z » qui montent au-dessus de Charlie quand il dort. */
 function zzzCharlie(){
   return '<span class="charlie-zzz" aria-hidden="true"><i>z</i><i>z</i><i>Z</i></span>';
 }
 /* Attraper Charlie : le toucher pendant qu'il est là l'arrête un instant ; il remue la queue,
-   un cœur s'envole, « Wouf ! », le téléphone vibre. Une seule fois par apparition ; le
+   un cœur s'envole et le téléphone vibre. Une seule fois par apparition ; le
    nombre de fois est gardé sur l'appareil (affiché dans les réglages). */
 function attraperCharlie(el){
   if(el.dataset.attrape) return;
@@ -1223,7 +1250,7 @@ function attraperCharlie(el){
   const bulle = document.createElement('span');
   bulle.className = 'charlie-attrape';
   bulle.setAttribute('aria-hidden', 'true');
-  bulle.innerHTML = '<b>Wouf !</b><i>❤️</i>';
+  bulle.innerHTML = '<i>❤️</i>';
   el.appendChild(bulle);
   el.classList.add('attrape');
   setTimeout(()=>{ el.classList.remove('attrape'); bulle.remove(); }, 1700);
@@ -1268,8 +1295,9 @@ function charlieCoucou(){
   /* Endormi : les yeux (cercles blancs et pupilles) deviennent deux petits traits fermés. */
   if(endormi) tete = tete.replace(/<circle cx="9\.4"[^>]*\/><circle cx="14\.6"[^>]*\/><circle cx="9\.5"[^>]*\/><circle cx="14\.5"[^>]*\/>/,
     '<path d="M8.4 10.4 q1 .9 2 0 M13.6 10.4 q1 .9 2 0" stroke="#fff" stroke-width=".7" fill="none" stroke-linecap="round"/>');
-  cadre.innerHTML = tete;
-  /* Les « Z » et la bulle « Wouf ! » vont dans un calque à part, au-dessus du cadre qui coupe. */
+  /* Bonnet de Noël ou chapeau de fête selon le jour (voir chapeauDuJour). */
+  cadre.innerHTML = tete.replace('</svg>', chapeauCharlie(chapeauDuJour(), 'face') + '</svg>');
+  /* Les « Z » et le cœur vont dans un calque à part, au-dessus du cadre qui coupe. */
   const calque = document.createElement('div');
   calque.className = 'charlie-coucou-calque';
   calque.style.left = gauche;
@@ -1307,21 +1335,39 @@ function poissonDAvril(theme){
   titre.appendChild(poisson);
 }
 
-/* Une visite de Charlie environ aux deux semaines, au hasard : à la première ouverture de
-   chaque jour, une chance sur 14. Il se promène ou jette un œil (moitié-moitié), à un
-   moment au hasard entre 20 s et 2 min après l'ouverture. */
+/* Visites de Charlie. En temps normal, environ aux deux semaines, au hasard : à la première
+   ouverture de chaque jour, une chance sur 14. Certains jours, il vient à coup sûr (une fois) :
+   les 24 et 25 décembre, le 31 décembre et le 1er janvier, et chaque anniversaire. Il se
+   promène ou jette un œil (moitié-moitié), à un moment au hasard après l'ouverture. */
+let visiteCharliePrevue = false;
+function visiteCharlieGarantie(d = new Date()){
+  const md = jourMoisDe(d);
+  if([1224, 1225, 1231, 101].includes(md)) return true;
+  return PERIODES_SAISON.some(p => p.anniv && p.dates(d.getFullYear())[0] === md);
+}
 function planifierVisiteCharlie(){
-  if(localStorage.getItem('depenses_charlie') === '0') return;
+  if(visiteCharliePrevue || localStorage.getItem('depenses_charlie') === '0') return;
   const aujourdhui = formaterDateISO(new Date());
-  if(localStorage.getItem('depenses_charlie_jour') === aujourdhui) return;   // déjà tiré au sort
-  try { localStorage.setItem('depenses_charlie_jour', aujourdhui); } catch(e){ return; }
-  if(Math.random() >= 1 / 14) return;
+  if(localStorage.getItem('depenses_charlie_jour') === aujourdhui) return;   // déjà fait aujourd'hui
+  const garantie = visiteCharlieGarantie();
+  if(!garantie){
+    try { localStorage.setItem('depenses_charlie_jour', aujourdhui); } catch(e){ return; }
+    if(Math.random() >= 1 / 14) return;
+  }
+  visiteCharliePrevue = true;
   setTimeout(()=>{
+    visiteCharliePrevue = false;
     /* Même les jours sans thème : il suffit que « Thèmes saisonniers » soit activé. */
     if(document.hidden || localStorage.getItem('depenses_charlie') === '0' || localStorage.getItem('depenses_saison_actif') === '0') return;
+    /* Jour garanti : marqué seulement quand il passe vraiment (sinon, il reviendra à la
+       prochaine ouverture de l'app dans la journée). */
+    if(garantie){
+      if(localStorage.getItem('depenses_charlie_jour') === aujourdhui) return;
+      try { localStorage.setItem('depenses_charlie_jour', aujourdhui); } catch(e){}
+    }
     if(Math.random() < .5) promenerCharlie();
     else charlieCoucou();
-  }, 20000 + Math.random() * 100000);
+  }, garantie ? 8000 + Math.random() * 20000 : 20000 + Math.random() * 100000);
 }
 
 /* Réglages d'ambiance qui suivent l'interrupteur « Thèmes saisonniers » (retirés = activés). */
@@ -5200,13 +5246,14 @@ function rendreAgendaCorpsHTML(scope, debut, fin, tri){
 /* État vide : Charlie couché qui fait la sieste, la tête sur les pattes. */
 function charlieCouche(){
   return `<svg class="charlie-couche" viewBox="0 0 90 46" width="96" height="49" aria-hidden="true">` +
-    `<path d="M15 27 Q8 23 10 17" stroke="#1f1f1f" stroke-width="3" fill="none" stroke-linecap="round"/>` +
-    `<rect x="13" y="22" width="47" height="16" rx="8" fill="#1f1f1f"/><rect x="50" y="33" width="26" height="5" rx="2.5" fill="#1a1a1a"/>` +
-    `<rect x="55" y="21" width="3.5" height="9" rx="1" fill="#c92a2a"/>` +
+    `<path d="M15 27 Q5 23 8.5 11" stroke="#1f1f1f" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+    `<rect x="13" y="22" width="47" height="16" rx="8" fill="#1f1f1f"/><path d="M22 35.4 Q36 39.4 50 35.4 Q48 38 36 38 Q24 38 22 35.4 Z" fill="#f3f3f1"/><rect x="50" y="33" width="26" height="5" rx="2.5" fill="#1a1a1a"/>` +
+    `<rect x="55" y="21" width="3.5" height="9" rx="1" fill="#2e6b3f"/>` +
     `<rect x="56" y="13" width="18" height="15" rx="5" fill="#1f1f1f"/><rect x="69" y="17" width="12" height="8" rx="2" fill="#262626"/>` +
-    `<path d="M65 22 L81 22 L80 30 L78 28 L76 31 L74 28 L72 31 L70 28 L67 30 Z" fill="#4d4d4d"/>` +
+    `<path d="M65 22 L81 22 L80 30 L78 28 L76 31 L74 28 L72 31 L70 28 L67 30 Z" fill="#f3f3f1" stroke="#cfcfcb" stroke-width=".35"/>` +
     `<path d="M57 13 L63 12 L59.5 20 Z" fill="#111"/><path d="M64 15.5 L70 15 L69.4 16.7 Z" fill="#9a9a9a"/>` +
     `<path d="M65.5 18.6 q1.3 1.1 2.6 0" stroke="#fff" stroke-width=".9" fill="none" stroke-linecap="round"/><circle cx="80.8" cy="18.6" r="1.6" fill="#000"/>` +
+    chapeauCharlie(chapeauDuJour(), 'couche') +
     `<text x="76" y="10" font-family="sans-serif" font-style="italic" font-weight="700" font-size="7" fill="#868e96">z</text>` +
     `<text x="81" y="6" font-family="sans-serif" font-style="italic" font-weight="700" font-size="9" fill="#868e96">Z</text></svg>`;
 }
@@ -6606,7 +6653,7 @@ document.querySelector('.logo-mark')?.addEventListener('click', ()=>{
 actualiserMeteo();
 /* Aux 10 minutes : météo (si elle date de plus de 30 min) et passage jour ↔ nuit. */
 setInterval(()=>{ actualiserMeteo(); appliquerThemeSaison(); }, 10 * 60000);
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ actualiserMeteo(); appliquerThemeSaison(); } });
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ actualiserMeteo(); appliquerThemeSaison(); planifierVisiteCharlie(); } });
 planifierVisiteCharlie();
 appliquerThemeSaison();
 
